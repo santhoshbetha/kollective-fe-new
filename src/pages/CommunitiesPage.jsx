@@ -37,16 +37,16 @@ export const CommunitiesPage = () => {
 
   const getPostGeoScope = (post) => {
     // Map specific posts to scopes for realistic demo data
-    if (post.id === 'strike-post-1') return 'Country';
-    if (post.id === 'carousel-post-1') return 'Local';
-    if (post.id === 'renaissance-post') return 'World';
-    if (post.id === 'system-post-1') return 'Local';
+    if (post?.id === 'strike-post-1') return 'Country';
+    if (post?.id === 'carousel-post-1') return 'Local';
+    if (post?.id === 'renaissance-post') return 'World';
+    if (post?.id === 'system-post-1') return 'Local';
     // Fallbacks
-    if (post.isVoice) return 'State';
+    if (post?.isVoice) return 'State';
     return 'Local';
   };
 
-  const filteredPosts = posts.filter(post => getPostGeoScope(post) === activeTab);
+  const filteredPosts = posts?.filter(post => getPostGeoScope(post) === activeTab);
 
   const PostSkeleton = () => (
     <div className="glass-card rounded-[16px] p-6 border border-white/5 animate-pulse flex flex-col gap-4">
@@ -75,7 +75,7 @@ export const CommunitiesPage = () => {
             Communities Feed
           </h1>
           <p className="text-text-secondary font-body-md text-lg font-semibold leading-relaxed">
-            Stay informed about concerning issues and voices in your geographic area. Select a scope to view posts.
+            Stay informed about concerning issues and voices in your geographic area. Select a scope to view posts?.
           </p>
         </div>
 
@@ -105,7 +105,7 @@ export const CommunitiesPage = () => {
               <PostSkeleton />
               <PostSkeleton />
             </>
-          ) : filteredPosts.length === 0 ? (
+          ) : filteredPosts?.length === 0 ? (
             <div className="glass-card rounded-[16px] p-12 text-center border border-white/5">
               <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">
                 distance
@@ -116,8 +116,8 @@ export const CommunitiesPage = () => {
               </p>
             </div>
           ) : (
-            filteredPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
+            filteredPosts?.map((post) => (
+              <PostCard key={post?.id} post={post} />
             ))
           )}
         </div>

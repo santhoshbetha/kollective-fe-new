@@ -166,42 +166,42 @@ export const ImageCarouselModal = ({ isOpen, onClose, images = [], imageAlts = [
           <div className="flex items-center justify-center gap-10 md:gap-14 text-white/70">
             {/* Like Action */}
             <button
-              onClick={() => toggleLike(post.id)}
-              className={`flex items-center gap-2 hover:text-primary-container transition-colors cursor-pointer bg-transparent border-none outline-none ${post.liked ? 'text-primary-container font-semibold' : ''
+              onClick={() => toggleLike(post?.id)}
+              className={`flex items-center gap-2 hover:text-primary-container transition-colors cursor-pointer bg-transparent border-none outline-none ${post?.liked ? 'text-primary-container font-semibold' : ''
                 }`}
             >
-              <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: post.liked ? "'FILL' 1" : "'FILL' 0" }}>
+              <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
                 thumb_up
               </span>
-              <span className="text-sm">{post.likes}</span>
+              <span className="text-sm">{post?.likes}</span>
             </button>
 
             {/* Reblog / Boost Action */}
             <button
-              onClick={() => toggleReblog(post.id)}
-              className={`flex items-center gap-2 hover:text-green-500 transition-colors cursor-pointer bg-transparent border-none outline-none ${post.reblogged ? 'text-green-500 font-semibold' : ''
+              onClick={() => toggleReblog(post?.id)}
+              className={`flex items-center gap-2 hover:text-green-500 transition-colors cursor-pointer bg-transparent border-none outline-none ${post?.reblogged ? 'text-green-500 font-semibold' : ''
                 }`}
             >
-              <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: post.reblogged ? "'wght' 700" : "'wght' 400" }}>
+              <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: post?.reblogged ? "'wght' 700" : "'wght' 400" }}>
                 repeat
               </span>
-              <span className="text-sm">{post.shares || 0}</span>
+              <span className="text-sm">{post?.shares || 0}</span>
             </button>
 
             {/* Comment Count Display (Purely info inside slider) */}
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[22px]">mode_comment</span>
-              <span className="text-sm">{post.commentsCount}</span>
+              <span className="text-sm">{post?.commentsCount}</span>
             </div>
 
             {/* Bookmark Action */}
             <button
-              onClick={() => toggleBookmark(post.id)}
-              className={`flex items-center hover:text-primary-container transition-colors cursor-pointer bg-transparent border-none outline-none ${post.bookmarked ? 'text-primary-container' : ''
+              onClick={() => toggleBookmark(post?.id)}
+              className={`flex items-center hover:text-primary-container transition-colors cursor-pointer bg-transparent border-none outline-none ${post?.bookmarked ? 'text-primary-container' : ''
                 }`}
               title="Bookmark"
             >
-              <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: post.bookmarked ? "'FILL' 1" : "'FILL' 0" }}>
+              <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}>
                 bookmark
               </span>
             </button>

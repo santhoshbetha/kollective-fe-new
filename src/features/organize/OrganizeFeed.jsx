@@ -24,23 +24,23 @@ export function OrganizeFeed() {
             ) : (
                 <div className="flex flex-col gap-4">
                     {organizeActions.map((action) => {
-                        const isAttending = action.userStatus === 'attending';
+                        const isAttending = action?.userStatus === 'attending';
 
                         return (
                             <article
-                                key={action.id}
+                                key={action?.id}
                                 className="bg-surface-container-low border border-white/5 p-6 rounded-2xl shadow-sm flex flex-col justify-between md:flex-row md:items-center gap-4 transition-all hover:bg-surface-container-high/40"
                             >
                                 <div className="flex flex-col gap-1">
-                                    <h3 className="text-xl font-extrabold text-text-primary tracking-tight">{action.title}</h3>
-                                    <p className="text-text-secondary text-body-md max-w-xl leading-relaxed">{action.description}</p>
+                                    <h3 className="text-xl font-extrabold text-text-primary tracking-tight">{action?.title}</h3>
+                                    <p className="text-text-secondary text-body-md max-w-xl leading-relaxed">{action?.description}</p>
                                 </div>
 
                                 {/* RSVP Interactive Action Button Trigger */}
                                 <div className="shrink-0 flex items-center gap-2">
                                     <button
                                         onClick={() => rsvpMutation.mutate({
-                                            actionId: action.id,
+                                            actionId: action?.id,
                                             status: isAttending ? 'declined' : 'attending'
                                         })}
                                         disabled={rsvpMutation.isPending}

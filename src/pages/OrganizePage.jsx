@@ -53,11 +53,11 @@ export const OrganizePage = () => {
               </p>
             </div>
           ) : organizeActions.map((action) => {
-            const isAttending = action.rsvp === 'Attending';
-            const isInterested = action.rsvp === 'Interested';
+            const isAttending = action?.rsvp === 'Attending';
+            const isInterested = action?.rsvp === 'Interested';
 
             return (
-              <ActionCard key={action.id} action={action} setToastMessage={setToastMessage} />
+              <ActionCard key={action?.id} action={action} setToastMessage={setToastMessage} />
             );
           })}
         </div>

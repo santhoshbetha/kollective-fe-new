@@ -110,7 +110,7 @@ export const CreateEventPage = () => {
       },
       onError: (err) => {
         setIsSubmitting(false);
-        triggerToast(err?.message || 'Error occurred while creating event.');
+        triggerToast(err?.message || 'Error occurred while creating event?.');
       }
     });
   };
@@ -268,7 +268,7 @@ export const CreateEventPage = () => {
                   onChange={(e) => setDescription(e.target.value)}
                   rows="6"
                   className="w-full bg-surface-container-low border border-white/5 rounded-xl px-4 py-3 text-text-primary placeholder:text-text-secondary/20 focus:border-primary-container focus:ring-4 focus:ring-primary-container/10 transition-all outline-none text-lg md:text-lg resize-none"
-                  placeholder="Describe your event. What will participants experience? What is the main agenda?"
+                  placeholder="Describe your event?. What will participants experience? What is the main agenda?"
                 ></textarea>
                 <div className="flex justify-between items-center text-[18px] text-text-secondary/60">
                   <span>Describe the schedules, panels, and coordination rules.</span>
@@ -446,7 +446,7 @@ export const CreateEventPage = () => {
               className={`flex-1 md:flex-none px-8 py-3.5 rounded-xl bg-primary-container text-white font-bold text-lg md:text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 border-none cursor-pointer hover:brightness-110 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
             >
-              {isSubmitting ? 'Creating Event...' : 'Create Event'}
+              {isSubmitting ? 'Creating event?...' : 'Create Event'}
               <span className="material-symbols-outlined text-sm">rocket_launch</span>
             </button>
           </div>

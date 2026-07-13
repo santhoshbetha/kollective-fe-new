@@ -28,22 +28,22 @@ export function PollsFeed() {
             ) : (
                 <div className="flex flex-col gap-4">
                     {polls.map((poll) => (
-                        <article key={poll.id} className="bg-surface-container-low border border-white/5 p-6 rounded-2xl shadow-sm flex flex-col gap-4">
+                        <article key={poll?.id} className="bg-surface-container-low border border-white/5 p-6 rounded-2xl shadow-sm flex flex-col gap-4">
                             <div>
-                                <h3 className="text-xl font-extrabold text-text-primary tracking-tight">{poll.question}</h3>
-                                <p className="text-xs text-text-secondary mt-1">{poll.totalVotes} collective votes cast</p>
+                                <h3 className="text-xl font-extrabold text-text-primary tracking-tight">{poll?.question}</h3>
+                                <p className="text-xs text-text-secondary mt-1">{poll?.totalVotes} collective votes cast</p>
                             </div>
 
                             {/* Poll Options Interactive List */}
                             <div className="flex flex-col gap-2">
-                                {poll.options.map((option) => {
+                                {poll?.options.map((option) => {
                                     // Calculate dynamic mathematical percentages safely
-                                    const pct = poll.totalVotes > 0 ? Math.round((option.votesCount / poll.totalVotes) * 100) : 0;
-                                    const isSelected = poll.userSelectedOptionId === option.id;
+                                    const pct = poll?.totalVotes > 0 ? Math.round((option.votesCount / poll?.totalVotes) * 100) : 0;
+                                    const isSelected = poll?.userSelectedOptionId === option.id;
 
                                     return (
                                         <div key={option.id} className="relative w-full">
-                                            {poll.voted ? (
+                                            {poll?.voted ? (
                                                 /* 📊 Display Results Mode */
                                                 <div className="relative overflow-hidden w-full bg-surface-container-lowest border border-white/5 p-4 rounded-xl flex justify-between items-center z-10">
                                                     {/* Progress Bar Background fill overlay */}
@@ -60,7 +60,7 @@ export function PollsFeed() {
                                             ) : (
                                                 /* 🗳️ Display Active Voting Interactive Mode */
                                                 <button
-                                                    onClick={() => voteMutation.mutate({ pollId: poll.id, optionId: option.id })}
+                                                    onClick={() => voteMutation.mutate({ pollId: poll?.id, optionId: option.id })}
                                                     disabled={voteMutation.isPending}
                                                     className="w-full text-left bg-surface-container-lowest hover:bg-surface-container-high/60 border border-white/10 hover:border-primary-container/40 p-4 rounded-xl text-body-md text-text-primary transition-all font-semibold active:scale-[0.99] cursor-pointer disabled:pointer-events-none"
                                                 >

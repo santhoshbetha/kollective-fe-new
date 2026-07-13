@@ -26,7 +26,7 @@ export const PostDetailsPage = () => {
   const [carouselIndex, setCarouselIndex] = useState(0);
 
   // Find post in app state
-  const post = posts.find(p => p.id === id);
+  const post = posts?.find(p => p.id === id);
 
   // Scroll to top on page enter / ID change
   useEffect(() => {
@@ -35,7 +35,7 @@ export const PostDetailsPage = () => {
 
   // Show a trending toast simulation on page open
   useEffect(() => {
-    if (post && post.id === 'renaissance-post') {
+    if (post && post?.id === 'renaissance-post') {
       const timer = setTimeout(() => {
         setShowToast(true);
         const hideTimer = setTimeout(() => {
@@ -83,7 +83,7 @@ export const PostDetailsPage = () => {
     const cleanText = commentText.trim();
     if (!cleanText && !commentImageUrl.trim() && !commentLinkUrl.trim()) return;
 
-    //  addComment(post.id, cleanText, {
+    //  addComment(post?.id, cleanText, {
     //   image: commentTab === 'image' ? commentImageUrl.trim() : undefined,
     ////    link: commentTab === 'link' ? commentLinkUrl.trim() : undefined,
     // contentWarning: commentCwText.trim() || undefined
@@ -140,51 +140,51 @@ export const PostDetailsPage = () => {
           {/* Post Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <UserHoverCard author={post.author}>
+              <UserHoverCard author={post?.author}>
                 <div className="w-14 h-14 rounded-full p-[2px] bg-gradient-to-tr from-gold-muted to-primary-container hover:opacity-85 transition-opacity">
                   <div className="w-full h-full rounded-full overflow-hidden border-2 border-surface-ink">
-                    {post.author.avatar ? (
-                      <img alt="Author avatar" className="w-full h-full object-cover" src={post.author.avatar} />
+                    {post?.author.avatar ? (
+                      <img alt="Author avatar" className="w-full h-full object-cover" src={post?.author.avatar} />
                     ) : (
                       <div className="w-full h-full bg-primary-container flex items-center justify-center text-white font-bold text-lg">
-                        {post.author.name[0]}
+                        {post?.author.name[0]}
                       </div>
                     )}
                   </div>
                 </div>
               </UserHoverCard>
               <div>
-                <UserHoverCard author={post.author}>
+                <UserHoverCard author={post?.author}>
                   <div className="hover:opacity-85 transition-opacity">
                     <div className="flex items-center gap-1">
-                      <h3 className="font-label-md text-sm text-text-primary font-bold">{post.author.name}</h3>
-                      {post.author.verified && (
+                      <h3 className="font-label-md text-sm text-text-primary font-bold">{post?.author.name}</h3>
+                      {post?.author.verified && (
                         <span className="material-symbols-outlined text-[16px] text-text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
                           verified
                         </span>
                       )}
-                      {post.isVoice && (
+                      {post?.isVoice && (
                         <span className="bg-secondary/10 text-text-secondary text-[14px] px-2 py-0.5 rounded-full font-bold tracking-wider ml-1">
                           VOICE
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-text-secondary">{post.author.role} • {post.time}</p>
+                    <p className="text-sm text-text-secondary">{post?.author.role} • {post?.time}</p>
                   </div>
                 </UserHoverCard>
-                {post.postedBy && (
+                {post?.postedBy && (
                   <div className="mt-1 flex items-center gap-1.5 text-sm text-text-secondary">
                     <span>posted by</span>
                     <span
                       onClick={(e) => {
                         e.stopPropagation();
-                        const username = post.postedBy.handle.replace('@', '');
+                        const username = post?.postedBy.handle.replace('@', '');
                         navigate(`/profile/${username}`, { state: { fromCard: true } });
                       }}
                       className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1"
                     >
-                      <img src={post.postedBy.avatar} className="w-4 h-4 rounded-full object-cover" alt="" />
-                      {post.postedBy.name}
+                      <img src={post?.postedBy.avatar} className="w-4 h-4 rounded-full object-cover" alt="" />
+                      {post?.postedBy.name}
                     </span>
                   </div>
                 )}
@@ -197,77 +197,77 @@ export const PostDetailsPage = () => {
 
           {/* Post Content */}
           <div className="mb-8">
-            {post.title && (
+            {post?.title && (
               <h2 className="font-headline-lg text-2xl font-bold mb-4 text-text-primary tracking-tight leading-snug">
-                {post.title}
+                {post?.title}
               </h2>
             )}
-            {post.contentWarning ? (
-              <ContentWarningWrapper warning={post.contentWarning}>
+            {post?.contentWarning ? (
+              <ContentWarningWrapper warning={post?.contentWarning}>
                 <p className="font-body-lg text-text-secondary leading-relaxed mb-6 text-md">
-                  {post.text}
+                  {post?.text}
                 </p>
               </ContentWarningWrapper>
             ) : (
               <p className="font-body-lg text-text-secondary leading-relaxed mb-6 text-md">
-                {post.text}
+                {post?.text}
               </p>
             )}
 
-            {post.images && post.images.length > 0 ? (
+            {post?.images && post?.images.length > 0 ? (
               <div className="rounded-2xl overflow-hidden border border-white/5 shadow-2xl mb-6">
-                {post.images.length === 1 ? (
+                {post?.images.length === 1 ? (
                   <div className="aspect-video w-full overflow-hidden">
-                    <img src={post.images[0]} alt={post.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(0); setCarouselOpen(true); }} />
+                    <img src={post?.images[0]} alt={post?.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(0); setCarouselOpen(true); }} />
                   </div>
-                ) : post.images.length === 2 ? (
+                ) : post?.images.length === 2 ? (
                   <div className="grid grid-cols-2 gap-2 aspect-video w-full overflow-hidden">
-                    <img src={post.images[0]} alt={post.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(0); setCarouselOpen(true); }} />
-                    <img src={post.images[1]} alt={post.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(1); setCarouselOpen(true); }} />
+                    <img src={post?.images[0]} alt={post?.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(0); setCarouselOpen(true); }} />
+                    <img src={post?.images[1]} alt={post?.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(1); setCarouselOpen(true); }} />
                   </div>
-                ) : post.images.length === 3 ? (
+                ) : post?.images.length === 3 ? (
                   <div className="grid grid-cols-2 gap-2 aspect-video w-full overflow-hidden">
                     <div className="h-full w-full relative overflow-hidden">
-                      <img src={post.images[0]} alt={post.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(0); setCarouselOpen(true); }} />
+                      <img src={post?.images[0]} alt={post?.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(0); setCarouselOpen(true); }} />
                     </div>
                     <div className="flex flex-col gap-2 h-full overflow-hidden">
                       <div className="flex-1 min-h-0 overflow-hidden flex">
-                        <img src={post.images[1]} alt={post.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(1); setCarouselOpen(true); }} />
+                        <img src={post?.images[1]} alt={post?.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(1); setCarouselOpen(true); }} />
                       </div>
                       <div className="flex-1 min-h-0 overflow-hidden flex">
-                        <img src={post.images[2]} alt={post.imageAlts?.[2] || "Attached image 2"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(2); setCarouselOpen(true); }} />
+                        <img src={post?.images[2]} alt={post?.imageAlts?.[2] || "Attached image 2"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(2); setCarouselOpen(true); }} />
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 grid-rows-2 gap-2 aspect-video w-full overflow-hidden">
-                    <img src={post.images[0]} alt={post.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(0); setCarouselOpen(true); }} />
-                    <img src={post.images[1]} alt={post.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(1); setCarouselOpen(true); }} />
-                    <img src={post.images[2]} alt={post.imageAlts?.[2] || "Attached image 2"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(2); setCarouselOpen(true); }} />
-                    <img src={post.images[3]} alt={post.imageAlts?.[3] || "Attached image 3"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(3); setCarouselOpen(true); }} />
+                    <img src={post?.images[0]} alt={post?.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(0); setCarouselOpen(true); }} />
+                    <img src={post?.images[1]} alt={post?.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(1); setCarouselOpen(true); }} />
+                    <img src={post?.images[2]} alt={post?.imageAlts?.[2] || "Attached image 2"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(2); setCarouselOpen(true); }} />
+                    <img src={post?.images[3]} alt={post?.imageAlts?.[3] || "Attached image 3"} className="w-full h-full object-cover cursor-pointer" onClick={() => { setCarouselIndex(3); setCarouselOpen(true); }} />
                   </div>
                 )}
               </div>
-            ) : post.image ? (
+            ) : post?.image ? (
               <div
                 className="rounded-2xl overflow-hidden aspect-video relative group border border-white/5 mb-6 cursor-pointer"
                 onClick={() => { setCarouselIndex(0); setCarouselOpen(true); }}
               >
-                <img alt="Article graphic" className="w-full h-full object-cover" src={post.image} />
+                <img alt="Article graphic" className="w-full h-full object-cover" src={post?.image} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                {post.imageMeta && (
+                {post?.imageMeta && (
                   <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
                     <span className="text-sm font-medium text-white/70 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full">
-                      {post.imageMeta}
+                      {post?.imageMeta}
                     </span>
                   </div>
                 )}
               </div>
             ) : null}
 
-            {post.tags && post.tags.length > 0 && (
+            {post?.tags && post?.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag, idx) => (
+                {post?.tags.map((tag, idx) => (
                   <span
                     key={idx}
                     className="px-3 py-1 bg-surface-container-high rounded-full text-sm font-medium text-primary hover:bg-primary-container/20 transition-colors cursor-pointer"
@@ -283,23 +283,23 @@ export const PostDetailsPage = () => {
           <div className="flex items-center justify-between pt-6 border-t border-white/5">
             <div className="flex items-center gap-6">
               <button
-                onClick={() => toggleLike(post.id)}
-                className={`flex items-center gap-2 group transition-all ${post.liked ? 'text-primary-container' : 'text-text-secondary hover:text-white'}`}
+                onClick={() => toggleLike(post?.id)}
+                className={`flex items-center gap-2 group transition-all ${post?.liked ? 'text-primary-container' : 'text-text-secondary hover:text-white'}`}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${post.liked ? 'bg-primary-container/20 text-primary-container' : 'bg-surface-container-highest/50 group-hover:bg-surface-container-highest'
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${post?.liked ? 'bg-primary-container/20 text-primary-container' : 'bg-surface-container-highest/50 group-hover:bg-surface-container-highest'
                   }`}>
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: post.liked ? "'FILL' 1" : "'FILL' 0" }}>
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
                     favorite
                   </span>
                 </div>
-                <span className="font-label-md text-sm">{post.likes.toLocaleString()}</span>
+                <span className="font-label-md text-sm">{post?.likes.toLocaleString()}</span>
               </button>
 
               <div className="flex items-center gap-2 text-text-secondary">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-highest/50 text-text-secondary">
                   <span className="material-symbols-outlined">mode_comment</span>
                 </div>
-                <span className="font-label-md text-sm">{post.commentsCount}</span>
+                <span className="font-label-md text-sm">{post?.commentsCount}</span>
               </div>
 
               <button
@@ -323,16 +323,16 @@ export const PostDetailsPage = () => {
               </button>
 
               <button
-                onClick={() => toggleReblog(post.id)}
-                className={`flex items-center gap-2 group transition-all ${post.reblogged ? 'text-green-500' : 'text-text-secondary hover:text-white'
+                onClick={() => toggleReblog(post?.id)}
+                className={`flex items-center gap-2 group transition-all ${post?.reblogged ? 'text-green-500' : 'text-text-secondary hover:text-white'
                   }`}
                 title="Boost Post"
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${post.reblogged ? 'bg-green-500/20 text-green-500' : 'bg-surface-container-highest/50 group-hover:bg-surface-container-highest'
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${post?.reblogged ? 'bg-green-500/20 text-green-500' : 'bg-surface-container-highest/50 group-hover:bg-surface-container-highest'
                   }`}>
                   <span className="material-symbols-outlined">repeat</span>
                 </div>
-                <span className="font-label-md text-sm">{post.shares || 0}</span>
+                <span className="font-label-md text-sm">{post?.shares || 0}</span>
               </button>
             </div>
             <button className="flex items-center gap-2 text-text-secondary hover:text-gold-muted transition-colors">
@@ -529,12 +529,12 @@ export const PostDetailsPage = () => {
 
           {/* Comment Thread */}
           <div className="flex flex-col">
-            {post.comments.length === 0 ? (
+            {post?.comments.length === 0 ? (
               <p className="text-text-secondary text-sm italic text-center py-6">
                 No perspectives shared yet. Join the conversation!
               </p>
             ) : (
-              post.comments.map((comment) => (
+              post?.comments.map((comment) => (
                 <CommentCard
                   key={comment.id}
                   comment={comment}
@@ -566,8 +566,8 @@ export const PostDetailsPage = () => {
         <ImageCarouselModal
           isOpen={carouselOpen}
           onClose={() => setCarouselOpen(false)}
-          images={post.images && post.images.length > 0 ? post.images : post.image ? [post.image] : []}
-          imageAlts={post.images && post.images.length > 0 ? post.imageAlts : post.image ? [post.imageMeta || ""] : []}
+          images={post?.images && post?.images.length > 0 ? post?.images : post?.image ? [post?.image] : []}
+          imageAlts={post?.images && post?.images.length > 0 ? post?.imageAlts : post?.image ? [post?.imageMeta || ""] : []}
           initialIndex={carouselIndex}
           post={post}
         />

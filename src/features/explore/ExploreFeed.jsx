@@ -70,7 +70,7 @@ export function ExploreFeed() {
                     ) : (
                         <div className="flex flex-col gap-3">
                             {activeTab === 'posts' ? (
-                                results.map((post) => <PostCard key={post.id} post={post} />)
+                                results.map((post) => <PostCard key={post?.id} post={post} />)
                             ) : (
                                 results.map((item) => (
                                     <div key={item.id} className="p-5 bg-surface-container-low border border-white/5 rounded-2xl">

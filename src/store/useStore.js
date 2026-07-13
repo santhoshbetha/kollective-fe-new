@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
 
 const getInitialTheme = () => {
   const saved = localStorage.getItem('kollective-theme');
@@ -17,7 +18,8 @@ const getInitialTheme = () => {
   return initial;
 };
 
-export const useStore = create((set) => ({
+export const useStore = create(
+  immer((set) => ({
   // 🎨 1. CORE UI LAYOUT STATE
   // Theme State 
   theme: getInitialTheme(),
@@ -99,7 +101,14 @@ export const useStore = create((set) => ({
   setCreatePostOpen: (isOpen) =>
     set((state) => {
       state.compose.isOpen = isOpen;
+      state.isCreatePostOpen = isOpen;
     }),
+  setComposeOpen: (isOpen) =>
+    set((state) => {
+      state.compose.isOpen = isOpen;
+      state.isCreatePostOpen = isOpen;
+    }),
+
 
   modals: {
     activeModal: null, // 'settings' | 'profile' | null
@@ -120,5 +129,6 @@ export const useStore = create((set) => ({
       state.modals.juryAlert = alert;
     }),
 
-}));
+})));
+
 

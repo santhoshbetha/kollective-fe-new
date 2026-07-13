@@ -36,9 +36,9 @@ export const HomePage = () => {
 
   const tabs = ['All Activity', 'Voices', 'Popular', 'Following'];
 
-  const filteredPosts = posts.filter(post => {
+  const filteredPosts = posts?.filter(post => {
     if (activeTab === 'All Activity') return true;
-    return post.category === activeTab;
+    return post?.category === activeTab;
   });
 
   const PostSkeleton = () => (
@@ -95,7 +95,7 @@ export const HomePage = () => {
               <PostSkeleton />
               <PostSkeleton />
             </>
-          ) : filteredPosts.length === 0 ? (
+          ) : filteredPosts?.length === 0 ? (
             <div className="glass-card rounded-[16px] p-12 text-center border border-white/5">
               <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">
                 feed
@@ -106,8 +106,8 @@ export const HomePage = () => {
               </p>
             </div>
           ) : (
-            filteredPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
+            filteredPosts?.map((post) => (
+              <PostCard key={post?.id} post={post} />
             ))
           )}
         </div>

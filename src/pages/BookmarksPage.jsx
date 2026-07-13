@@ -10,19 +10,19 @@ export const BookmarksPage = () => {
 
   // Filter bookmarked posts based on active category selection
   const bookmarkedPosts = posts?.filter((post) => {
-    if (!post.bookmarked) return false;
+    if (!post?.bookmarked) return false;
     if (activeFilter === 'All Categories') return true;
 
     // Categorize standard/voice posts based on content search
     if (activeFilter === 'Manifestos') {
-      return post.text.toLowerCase().includes('sovereign') ||
-        post.text.toLowerCase().includes('sovereignty') ||
-        post.text.toLowerCase().includes('reclamation');
+      return post?.text.toLowerCase().includes('sovereign') ||
+        post?.text.toLowerCase().includes('sovereignty') ||
+        post?.text.toLowerCase().includes('reclamation');
     }
     if (activeFilter === 'Strategy') {
-      return post.text.toLowerCase().includes('report') ||
-        post.text.toLowerCase().includes('negotiations') ||
-        post.tags?.some(tag => tag.toLowerCase().includes('governance'));
+      return post?.text.toLowerCase().includes('report') ||
+        post?.text.toLowerCase().includes('negotiations') ||
+        post?.tags?.some(tag => tag.toLowerCase().includes('governance'));
     }
     return true;
   });
@@ -72,7 +72,7 @@ export const BookmarksPage = () => {
           </div>
         ) : (
           bookmarkedPosts?.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard key={post?.id} post={post} />
           ))
         )}
       </div>

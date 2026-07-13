@@ -23,8 +23,8 @@ export function EventDetailsView() {
         <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
             {/* 🏙️ Header Card Block */}
             <div className="bg-surface-container-low border border-white/5 p-6 rounded-2xl flex flex-col gap-3">
-                <h2 className="text-headline-md font-extrabold text-text-primary tracking-tight">{event.title}</h2>
-                <p className="text-text-secondary text-body-md leading-relaxed">{event.description}</p>
+                <h2 className="text-headline-md font-extrabold text-text-primary tracking-tight">{event?.title}</h2>
+                <p className="text-text-secondary text-body-md leading-relaxed">{event?.description}</p>
             </div>
 
             {/* 💬 Conversation Section Header */}

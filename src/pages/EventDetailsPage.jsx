@@ -26,7 +26,7 @@ export const EventDetailsPage = () => {
     }, 3000);
   };
 
-  const event = events.find((e) => e.id === id);
+  const event = events?.find((e) => e.id === id);
 
   if (eventsLoading) {
     return (
@@ -114,15 +114,15 @@ export const EventDetailsPage = () => {
             {/* Cinematic banner with background blur and main image */}
             <div className="relative h-56 md:h-80 overflow-hidden bg-black/40">
               <img
-                alt={`${event.title} banner background`}
+                alt={`${event?.title} banner background`}
                 className="w-full h-full object-cover object-center scale-110 blur-[4px] brightness-[0.4]"
-                src={event.image}
+                src={event?.image}
               />
               <div className="absolute inset-0 flex items-center justify-center p-6 md:p-10">
                 <img
-                  alt={event.title}
+                  alt={event?.title}
                   className="max-h-full rounded-2xl shadow-2xl border border-outline-variant object-cover aspect-[16/9]"
-                  src={event.image}
+                  src={event?.image}
                 />
               </div>
             </div>
@@ -131,22 +131,22 @@ export const EventDetailsPage = () => {
               <div className="flex justify-between items-start mb-6 gap-4">
                 <div>
                   <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-4 leading-tight">
-                    {event.title}
+                    {event?.title}
                   </h2>
                   <div className="flex items-center gap-2.5 text-text-secondary">
-                    {event.organizerAvatar ? (
+                    {event?.organizerAvatar ? (
                       <img
-                        alt={event.organizer}
+                        alt={event?.organizer}
                         className="w-6 h-6 rounded-full object-cover border border-primary-container/20"
-                        src={event.organizerAvatar}
+                        src={event?.organizerAvatar}
                       />
                     ) : (
                       <div className="w-6 h-6 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container font-black text-sm">
-                        {event.organizer.charAt(0)}
+                        {event?.organizer.charAt(0)}
                       </div>
                     )}
                     <span className="text-sm md:text-sm">
-                      Organized by <strong className="text-text-primary font-medium">{event.organizer}</strong>
+                      Organized by <strong className="text-text-primary font-medium">{event?.organizer}</strong>
                     </span>
                     <span className="material-symbols-outlined text-blue-400 text-sm">verified</span>
                   </div>
@@ -164,20 +164,20 @@ export const EventDetailsPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-surface-container-low p-4 rounded-2xl border border-outline-variant">
                 <div className="flex items-center gap-3 text-text-secondary">
                   <span className="material-symbols-outlined text-primary-container text-xl">calendar_today</span>
-                  <span className="text-sm md:text-lg font-semibold">{event.date}</span>
+                  <span className="text-sm md:text-lg font-semibold">{event?.date}</span>
                 </div>
                 <div className="flex items-center gap-3 text-text-secondary">
                   <span className="material-symbols-outlined text-primary-container text-xl">schedule</span>
-                  <span className="text-sm md:text-lg font-semibold">{event.time}</span>
+                  <span className="text-sm md:text-lg font-semibold">{event?.time}</span>
                 </div>
                 <div className="flex items-center gap-3 text-text-secondary">
                   <span className="material-symbols-outlined text-primary-container text-xl">location_on</span>
-                  <span className="text- sm md:text-lg font-semibold truncate" title={event.location}>{event.location}</span>
+                  <span className="text- sm md:text-lg font-semibold truncate" title={event?.location}>{event?.location}</span>
                 </div>
                 <div className="flex items-center gap-3 text-text-secondary">
                   <span className="material-symbols-outlined text-primary-container text-xl">group</span>
                   <span className="text-sm md:text-lg font-semibold">
-                    {event.attendeesCount} attending • {event.interestedCount} interested
+                    {event?.attendeesCount} attending • {event?.interestedCount} interested
                   </span>
                 </div>
               </div>
@@ -185,29 +185,29 @@ export const EventDetailsPage = () => {
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-4 pt-6 border-t border-outline-variant">
                 <button
-                  onClick={() => toggleEventAttendanceMutation.mutate(event.id)}
-                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all cursor-pointer ${event.isAttending
+                  onClick={() => toggleEventAttendanceMutation.mutate(event?.id)}
+                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all cursor-pointer ${event?.isAttending
                     ? 'bg-primary-container/20 text-primary-container border-primary-container/30'
                     : 'bg-surface-container-high/20 hover:bg-surface-container-high/50 text-text-primary border-outline-variant'
                     }`}
                 >
-                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: event.isAttending ? "'FILL' 1" : "'FILL' 0" }}>
+                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: event?.isAttending ? "'FILL' 1" : "'FILL' 0" }}>
                     check_circle
                   </span>
-                  {event.isAttending ? 'Attending' : 'Attend Event'}
+                  {event?.isAttending ? 'Attending' : 'Attend Event'}
                 </button>
 
                 <button
-                  onClick={() => toggleEventInterestMutation.mutate(event.id)}
-                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all cursor-pointer ${event.isInterested
+                  onClick={() => toggleEventInterestMutation.mutate(event?.id)}
+                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all cursor-pointer ${event?.isInterested
                     ? 'bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/10'
                     : 'bg-surface-container-high/20 hover:bg-surface-container-high/50 text-text-primary border-outline-variant'
                     }`}
                 >
-                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: event.isInterested ? "'FILL' 1" : "'FILL' 0" }}>
+                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: event?.isInterested ? "'FILL' 1" : "'FILL' 0" }}>
                     favorite
                   </span>
-                  {event.isInterested ? 'Interested' : 'Mark Interested'}
+                  {event?.isInterested ? 'Interested' : 'Mark Interested'}
                 </button>
 
                 <button
@@ -241,7 +241,7 @@ export const EventDetailsPage = () => {
                   : 'text-text-secondary hover:text-text-primary'
                   }`}
               >
-                Discussion ({event.comments?.length || 0})
+                Discussion ({event?.comments?.length || 0})
               </button>
             </nav>
           </div>
@@ -252,10 +252,10 @@ export const EventDetailsPage = () => {
               <div className="glass-panel rounded-3xl p-6 md:p-8 border border-white/5 space-y-4">
                 <h4 className="font-bold text-white text-sm md:text-base">About this Gathering</h4>
                 <p className="text-text-secondary text-lg leading-relaxed whitespace-pre-line">
-                  {event.description}
+                  {event?.description}
                 </p>
                 <div className="pt-4 border-t border-white/5 text-[14px] text-text-secondary">
-                  Format: <span className="text-white font-bold uppercase">{event.format}</span> • Category: <span className="text-white font-bold uppercase">{event.category}</span>
+                  Format: <span className="text-white font-bold uppercase">{event?.format}</span> • Category: <span className="text-white font-bold uppercase">{event?.category}</span>
                 </div>
               </div>
             ) : (
@@ -291,7 +291,7 @@ export const EventDetailsPage = () => {
 
                 {/* Comment Feed */}
                 <div className="space-y-4">
-                  {event.comments?.length === 0 ? (
+                  {event?.comments?.length === 0 ? (
                     <div className="text-center py-10 bg-surface-container/20 rounded-2xl border border-dashed border-white/5">
                       <span className="material-symbols-outlined text-3xl text-text-secondary/50 mb-2">
                         forum
@@ -299,7 +299,7 @@ export const EventDetailsPage = () => {
                       <p className="text-text-secondary text-sm">No discussion yet. Start the conversation!</p>
                     </div>
                   ) : (
-                    event.comments?.map((comment) => (
+                    event?.comments?.map((comment) => (
                       <div key={comment.id} className="bg-surface-container rounded-2xl border border-white/5 p-5 space-y-4">
                         <div className="flex gap-4">
                           {comment.author?.avatar ? (
@@ -318,7 +318,7 @@ export const EventDetailsPage = () => {
                               <span className="text-sm md:text-base font-bold text-text-primary truncate">
                                 {comment.author?.name}
                               </span>
-                              {comment.author?.name === event.organizer && (
+                              {comment.author?.name === event?.organizer && (
                                 <span className="bg-primary-container/20 text-primary-container text-[12px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
                                   Organizer
                                 </span>
@@ -363,7 +363,7 @@ export const EventDetailsPage = () => {
                                     <span className="text-sm md:text-base font-bold text-text-primary truncate">
                                       {reply.author?.name}
                                     </span>
-                                    {(reply.author?.name === event.organizer || reply.role === 'Organizer') && (
+                                    {(reply.author?.name === event?.organizer || reply.role === 'Organizer') && (
                                       <span className="bg-primary-container/20 text-primary-container text-[12px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
                                         Organizer
                                       </span>
@@ -414,7 +414,7 @@ export const EventDetailsPage = () => {
               </div>
               <div className="overflow-hidden">
                 <h4 className="text-text-primary font-bold text-sm truncate">
-                  {event.organizer}
+                  {event?.organizer}
                 </h4>
                 <p className="text-[14px] text-text-secondary uppercase tracking-wider font-semibold">
                   Verified Hub
@@ -434,7 +434,7 @@ export const EventDetailsPage = () => {
                   <span className="material-symbols-outlined text-sm text-text-secondary/40">groups</span>
                   Attendees
                 </span>
-                <span className="font-bold text-white text-sm">{event.attendeesCount}</span>
+                <span className="font-bold text-white text-sm">{event?.attendeesCount}</span>
               </div>
 
               <div className="flex justify-between items-center text-sm">
@@ -442,7 +442,7 @@ export const EventDetailsPage = () => {
                   <span className="material-symbols-outlined text-sm text-text-secondary/40">favorite</span>
                   Interested
                 </span>
-                <span className="font-bold text-white text-sm">{event.interestedCount}</span>
+                <span className="font-bold text-white text-sm">{event?.interestedCount}</span>
               </div>
 
               <div className="flex justify-between items-center text-sm">
@@ -451,7 +451,7 @@ export const EventDetailsPage = () => {
                   Category
                 </span>
                 <span className="bg-surface-bright text-[14px] text-text-primary px-3 py-1 rounded-full uppercase tracking-wider font-bold border border-white/5">
-                  {event.category}
+                  {event?.category}
                 </span>
               </div>
             </div>

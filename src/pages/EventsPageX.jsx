@@ -71,20 +71,20 @@ export const EventsPageX = () => {
   const filteredEvents = events?.filter((event) => {
     // Search query match
     const matchesSearch =
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.location.toLowerCase().includes(searchQuery.toLowerCase());
+      event?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event?.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event?.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event?.location.toLowerCase().includes(searchQuery.toLowerCase());
 
     // Format filter match
     const matchesFormat =
       formatFilter === 'All Events' ||
-      event.format.toLowerCase() === formatFilter.toLowerCase();
+      event?.format.toLowerCase() === formatFilter.toLowerCase();
 
     // Category filter match
     const matchesCategory =
       categoryFilter === 'All' ||
-      event.category.toLowerCase() === categoryFilter.toLowerCase();
+      event?.category.toLowerCase() === categoryFilter.toLowerCase();
 
     return matchesSearch && matchesFormat && matchesCategory;
   });
@@ -188,24 +188,24 @@ export const EventsPageX = () => {
             ) : (
               filteredEvents?.map((event) => (
                 <div
-                  key={event.id}
+                  key={event?.id}
                   className="glass-card rounded-3xl overflow-hidden crimson-gradient-glow hover:shadow-2xl transition-all group border border-white/5 flex flex-col md:flex-row"
                 >
                   <div
-                    onClick={() => navigate(`/events/${event.id}`)}
+                    onClick={() => navigate(`/events/${event?.id}`)}
                     className="relative md:w-5/12 h-56 md:h-auto overflow-hidden cursor-pointer flex-shrink-0"
                   >
                     <img
-                      alt={event.title}
+                      alt={event?.title}
                       className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
-                      src={event.image}
+                      src={event?.image}
                     />
                     <div className="absolute top-4 left-4 flex gap-2">
                       <span className="bg-primary-container text-white text-sm uppercase tracking-widest font-bold px-3 py-1 rounded-full shadow-lg">
-                        {event.format}
+                        {event?.format}
                       </span>
                       <span className="bg-black/60 backdrop-blur-md text-white text-sm uppercase tracking-widest font-bold px-3 py-1 rounded-full border border-white/10">
-                        {event.date}
+                        {event?.date}
                       </span>
                     </div>
                   </div>
@@ -214,13 +214,13 @@ export const EventsPageX = () => {
                     <div>
                       <div className="flex justify-between items-start mb-3 gap-2">
                         <h2
-                          onClick={() => navigate(`/events/${event.id}`)}
+                          onClick={() => navigate(`/events/${event?.id}`)}
                           className="font-headline-md text-xl md:text-2xl font-extrabold text-text-primary group-hover:text-primary-container transition-colors leading-tight cursor-pointer"
                         >
-                          {event.title}
+                          {event?.title}
                         </h2>
                         <button
-                          onClick={() => showToast(`Sharing link copied for ${event.title}`)}
+                          onClick={() => showToast(`Sharing link copied for ${event?.title}`)}
                           className="p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer text-text-secondary bg-transparent border-none flex-shrink-0"
                         >
                           <span className="material-symbols-outlined text-base">share</span>
@@ -228,7 +228,7 @@ export const EventsPageX = () => {
                       </div>
 
                       <p className="text-text-primary/80 text-sm md:text-lg line-clamp-2 mb-5 leading-relaxed">
-                        {event.description}
+                        {event?.description}
                       </p>
 
                       <div className="space-y-2 mb-6">
@@ -236,13 +236,13 @@ export const EventsPageX = () => {
                           <span className="material-symbols-outlined text-primary-container text-base md:text-lg">
                             calendar_today
                           </span>
-                          <span className="text-sm md:text-base font-semibold">{event.displayDate}</span>
+                          <span className="text-sm md:text-base font-semibold">{event?.displayDate}</span>
                         </div>
                         <div className="flex items-center gap-3 text-text-secondary font-semibold">
                           <span className="material-symbols-outlined text-primary-container text-base md:text-lg">
                             location_on
                           </span>
-                          <span className="text-sm md:text-base truncate">{event.location}</span>
+                          <span className="text-sm md:text-base truncate">{event?.location}</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="w-6 h-6 rounded-full bg-gold-muted/20 border border-gold-muted/40 flex items-center justify-center flex-shrink-0">
@@ -251,7 +251,7 @@ export const EventsPageX = () => {
                             </span>
                           </div>
                           <span className="text-sm md:text-base text-text-secondary">
-                            Organized by <strong className="text-text-primary font-medium">{event.organizer}</strong> • <span className="text-primary-container font-semibold">{event.category}</span>
+                            Organized by <strong className="text-text-primary font-medium">{event?.organizer}</strong> • <span className="text-primary-container font-semibold">{event?.category}</span>
                           </span>
                         </div>
                       </div>
@@ -262,18 +262,18 @@ export const EventsPageX = () => {
                         <div className="w-8 h-8 rounded-full border-2 border-surface-ink bg-gray-800"></div>
                         <div className="w-8 h-8 rounded-full border-2 border-surface-ink bg-gray-700"></div>
                         <div className="w-8 h-8 rounded-full border-2 border-surface-ink bg-primary-container flex items-center justify-center text-sm font-bold text-white">
-                          +{event.attendeesCount}
+                          +{event?.attendeesCount}
                         </div>
                       </div>
 
                       <button
-                        onClick={() => toggleEventInterest(event.id)}
-                        className={`flex items-center gap-2 px-5 py-2 border rounded-full text-sm md:text-sm font-bold hover:bg-primary-container hover:text-white transition-all cursor-pointer ${event.isInterested
+                        onClick={() => toggleEventInterest(event?.id)}
+                        className={`flex items-center gap-2 px-5 py-2 border rounded-full text-sm md:text-sm font-bold hover:bg-primary-container hover:text-white transition-all cursor-pointer ${event?.isInterested
                           ? 'bg-primary-container text-white border-primary-container'
                           : 'border-primary-container text-primary-container bg-transparent'
                           }`}
                       >
-                        <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: event.isInterested ? "'FILL' 1" : "'FILL' 0" }}>
+                        <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: event?.isInterested ? "'FILL' 1" : "'FILL' 0" }}>
                           favorite
                         </span>
                         Interested

@@ -125,7 +125,7 @@ export const EventsPage = () => {
 
     return filteredEvents?.filter((event) => {
       try {
-        const parsedDate = new Date(event.date);
+        const parsedDate = new Date(event?.date);
         if (!isNaN(parsedDate.getTime())) {
           if (
             parsedDate.getFullYear() === year &&
@@ -135,16 +135,16 @@ export const EventsPage = () => {
             return true;
           }
         }
-      } catch (err) {}
+      } catch (err) { }
 
       try {
-        const parsedDate = new Date(event.date);
+        const parsedDate = new Date(event?.date);
         if (!isNaN(parsedDate.getTime())) {
           if (year === 2026 && month === 6) {
             return parsedDate.getDate() === day;
           }
         }
-      } catch (e) {}
+      } catch (e) { }
 
       return false;
     }) || [];
@@ -172,25 +172,25 @@ export const EventsPage = () => {
   const filteredEvents = events?.filter((event) => {
     // Search query match
     const matchesSearch =
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.location.toLowerCase().includes(searchQuery.toLowerCase());
+      event?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event?.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event?.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event?.location.toLowerCase().includes(searchQuery.toLowerCase());
 
     // Location query match
     const matchesLocation =
       !locationQuery ||
-      event.location.toLowerCase().includes(locationQuery.toLowerCase());
+      event?.location.toLowerCase().includes(locationQuery.toLowerCase());
 
     // Format filter match
     const matchesFormat =
       formatFilter === 'All Events' ||
-      event.format.toLowerCase() === formatFilter.toLowerCase();
+      event?.format.toLowerCase() === formatFilter.toLowerCase();
 
     // Category filter match
     const matchesCategory =
       categoryFilter === 'All' ||
-      event.category.toLowerCase() === categoryFilter.toLowerCase();
+      event?.category.toLowerCase() === categoryFilter.toLowerCase();
 
     return matchesSearch && matchesLocation && matchesFormat && matchesCategory;
   });
@@ -316,8 +316,8 @@ export const EventsPage = () => {
                     key={cat}
                     onClick={() => setCategoryFilter(cat)}
                     className={`category-tag px-4 py-2 border rounded-full text-xs font-bold cursor-pointer transition-all ${isActive
-                        ? 'bg-[#cc0000] border-[#cc0000] text-white'
-                        : 'bg-[#0a0a0a] border-[#262626] text-[#A19B95] hover:border-[#cc0000] hover:bg-zinc-900'
+                      ? 'bg-[#cc0000] border-[#cc0000] text-white'
+                      : 'bg-[#0a0a0a] border-[#262626] text-[#A19B95] hover:border-[#cc0000] hover:bg-zinc-900'
                       }`}
                   >
                     {cat}
@@ -349,8 +349,8 @@ export const EventsPage = () => {
                       key={opt}
                       onClick={() => setFormatFilter(opt)}
                       className={`px-4 py-1.5 text-xs font-bold rounded-[8px] transition-all cursor-pointer border-none ${isChecked
-                          ? 'bg-zinc-800 text-white'
-                          : 'text-[#A19B95] hover:text-white bg-transparent'
+                        ? 'bg-zinc-800 text-white'
+                        : 'text-[#A19B95] hover:text-white bg-transparent'
                         }`}
                     >
                       {opt}
@@ -386,13 +386,13 @@ export const EventsPage = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredEvents?.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <EventCard key={event?.id} event={event} />
               ))}
             </div>
           )}
 
           {/* Load More Button */}
-          {filteredEvents && filteredEvents.length > 0 && (
+          {filteredEvents && filteredEvents?.length > 0 && (
             <div className="mt-16 flex justify-center">
               <button
                 onClick={() => showToast('All adventures are loaded!')}
@@ -411,7 +411,7 @@ export const EventsPage = () => {
           <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-6">
               <h2 className="text-2xl font-bold text-white">{displayMonthName} {currentYear}</h2>
-              <button 
+              <button
                 onClick={handleToday}
                 className="px-4 py-1.5 border border-white/10 bg-transparent rounded-full text-xs font-bold text-text-secondary hover:text-white hover:bg-white/5 transition-all cursor-pointer"
               >
@@ -419,13 +419,13 @@ export const EventsPage = () => {
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 onClick={handlePrevMonth}
                 className="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 hover:border-[#cc0000]/50 hover:bg-[#cc0000]/10 transition-all group bg-transparent cursor-pointer"
               >
                 <span className="material-symbols-outlined text-text-secondary group-hover:text-[#cc0000]">chevron_left</span>
               </button>
-              <button 
+              <button
                 onClick={handleNextMonth}
                 className="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 hover:border-[#cc0000]/50 hover:bg-[#cc0000]/10 transition-all group bg-transparent cursor-pointer"
               >
@@ -447,42 +447,39 @@ export const EventsPage = () => {
           <div className="grid grid-cols-7 border-l border-t border-white/5">
             {getDaysInMonth(currentYear, currentMonth).map((dayObj, index) => {
               const dayEvents = getEventsForDay(dayObj);
-              const isToday = 
-                dayObj.day === new Date().getDate() && 
-                dayObj.month === new Date().getMonth() && 
+              const isToday =
+                dayObj.day === new Date().getDate() &&
+                dayObj.month === new Date().getMonth() &&
                 dayObj.year === new Date().getFullYear();
 
               return (
-                <div 
-                  key={index} 
-                  className={`min-h-[140px] p-4 border-r border-b border-white/5 transition-all duration-300 relative ${
-                    dayObj.isCurrentMonth ? 'text-white' : 'text-gray-600 opacity-30 font-bold'
-                  } ${
-                    isToday ? 'ring-2 ring-[#cc0000]/20 bg-[#cc0000]/5' : 'hover:bg-white/[0.02]'
-                  }`}
+                <div
+                  key={index}
+                  className={`min-h-[140px] p-4 border-r border-b border-white/5 transition-all duration-300 relative ${dayObj.isCurrentMonth ? 'text-white' : 'text-gray-600 opacity-30 font-bold'
+                    } ${isToday ? 'ring-2 ring-[#cc0000]/20 bg-[#cc0000]/5' : 'hover:bg-white/[0.02]'
+                    }`}
                 >
                   <span className={`font-bold ${isToday ? 'text-[#cc0000]' : ''}`}>
                     {dayObj.day}
                   </span>
 
                   <div className="mt-3 space-y-1">
-                    {dayObj.isCurrentMonth && dayEvents.map((event) => {
-                      const isOnline = event.format?.toLowerCase() === 'online';
+                    {dayObj.isCurrentMonth && dayEvents?.map((event) => {
+                      const isOnline = event?.format?.toLowerCase() === 'online';
                       return (
-                        <span 
-                          key={event.id}
+                        <span
+                          key={event?.id}
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/events/${event.id}`);
+                            navigate(`/events/${event?.id}`);
                           }}
-                          className={`text-[11px] px-1.5 py-0.5 rounded mb-0.5 whitespace-nowrap overflow-hidden text-ellipsis block font-bold cursor-pointer transition-all hover:brightness-110 ${
-                            isOnline 
-                              ? 'bg-[#93000a]/30 text-white border border-[#93000a]/20' 
-                              : 'bg-[#0052f9]/30 text-[#b7c4ff] border border-[#0052f9]/20'
-                          }`}
-                          title={`${event.time || ''} ${event.title}`}
+                          className={`text-[11px] px-1.5 py-0.5 rounded mb-0.5 whitespace-nowrap overflow-hidden text-ellipsis block font-bold cursor-pointer transition-all hover:brightness-110 ${isOnline
+                            ? 'bg-[#93000a]/30 text-white border border-[#93000a]/20'
+                            : 'bg-[#0052f9]/30 text-[#b7c4ff] border border-[#0052f9]/20'
+                            }`}
+                          title={`${event?.time || ''} ${event?.title}`}
                         >
-                          {event.time ? `${event.time} ` : ''}{event.title}
+                          {event?.time ? `${event?.time} ` : ''}{event?.title}
                         </span>
                       );
                     })}

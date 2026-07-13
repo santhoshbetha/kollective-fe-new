@@ -16,7 +16,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
       onClick={(e) => e.stopPropagation()}
     >
       <button
-        onClick={() => { setShowMenu(false); navigate(`/post/${post.id}`); }}
+        onClick={() => { setShowMenu(false); navigate(`/post/${post?.id}`); }}
         className="w-full text-left px-5 py-2.5 text-sm font-semibold text-[#e0deeb] hover:bg-[#2b2640] transition-colors flex items-center gap-3 cursor-pointer border-none"
       >
         <span className="material-symbols-outlined text-[18px]">open_in_new</span>
@@ -32,7 +32,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
       <button
         onClick={() => {
           setShowMenu(false);
-          const linkText = `${window.location.origin}/post/${post.id}`;
+          const linkText = `${window.location.origin}/post/${post?.id}`;
           navigator.clipboard.writeText(linkText);
           alert("Link copied to clipboard!");
         }}
@@ -121,19 +121,19 @@ export const PostCard = ({ post }) => {
 
   const handleLikeClick = (e) => {
     e.stopPropagation();
-    if (post.liked) {
+    if (post?.liked) {
       // Optimistic UI update is handled inside useLikePost mutation
-      likeMutation.mutate(post.id);
+      likeMutation.mutate(post?.id);
     } else {
       // Optimistic UI update is handled inside useLikePost mutation
-      likeMutation.mutate(post.id);
+      likeMutation.mutate(post?.id);
     }
   };
 
   const handleBookmarkClick = (e) => {
     e.stopPropagation();
     // Fire the optimistic bookmark state mutation instantly
-    bookmarkMutation.mutate(post.id);
+    bookmarkMutation.mutate(post?.id);
   };
 
   useEffect(() => {
@@ -147,19 +147,19 @@ export const PostCard = ({ post }) => {
     };
   }, [showMenu]);
 
-  const authorHandle = post.author.handle || ('@' + post.author.name.toLowerCase().replace(/\s+/g, ''));
-  const domain = post.domain || 'universeodon.com';
+  const authorHandle = post?.author.handle || ('@' + post?.author.name.toLowerCase().replace(/\s+/g, ''));
+  const domain = post?.domain || 'universeodon.com';
 
   const handleCardClick = (e) => {
     // Avoid navigating if clicking interactive buttons/links
     if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) {
       return;
     }
-    navigate(`/post/${post.id}`);
+    navigate(`/post/${post?.id}`);
   };
 
   // SYSTEM AI POST STYLE
-  if (post.isSystem) {
+  if (post?.isSystem) {
     return (
       <article className="bg-surface-crimson-low/20 rounded-[16px] p-6 border border-primary-container/20 flex flex-col gap-4">
         <div className="flex items-center gap-4">
@@ -167,8 +167,8 @@ export const PostCard = ({ post }) => {
             <span className="material-symbols-outlined">auto_awesome</span>
           </div>
           <div>
-            <h4 className="font-bold text-text-primary">{post.title}</h4>
-            <p className="text-sm text-text-secondary">{post.author.role} • {post.time}</p>
+            <h4 className="font-bold text-text-primary">{post?.title}</h4>
+            <p className="text-sm text-text-secondary">{post?.author.role} • {post?.time}</p>
           </div>
         </div>
         <p className="font-body-md text-text-primary/90">
@@ -183,14 +183,14 @@ export const PostCard = ({ post }) => {
             onClick={() => alert('Opening policy draft...')}
             className="text-primary-container font-bold text-sm hover:underline"
           >
-            {post.actionText}
+            {post?.actionText}
           </button>
         </div>
       </article>
     );
   }
 
-  if (post.isVoice) {
+  if (post?.isVoice) {
     return (
       <>
         <article
@@ -211,13 +211,13 @@ export const PostCard = ({ post }) => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                toggleBookmark(post.id);
+                toggleBookmark(post?.id);
               }}
-              className={`p-2 rounded-full backdrop-blur-md border border-white/10 z-20 focus:outline-none transition-all cursor-pointer ${post.bookmarked ? 'bg-primary-container/20 text-primary-container border-primary-container/40' : 'bg-black/40 text-text-secondary hover:text-white'
+              className={`p-2 rounded-full backdrop-blur-md border border-white/10 z-20 focus:outline-none transition-all cursor-pointer ${post?.bookmarked ? 'bg-primary-container/20 text-primary-container border-primary-container/40' : 'bg-black/40 text-text-secondary hover:text-white'
                 }`}
-              title={post.bookmarked ? 'Remove Bookmark' : 'Bookmark Pulse'}
+              title={post?.bookmarked ? 'Remove Bookmark' : 'Bookmark Pulse'}
             >
-              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post.bookmarked ? "'FILL' 1" : "'FILL' 0" }}>
+              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}>
                 bookmark
               </span>
             </button>
@@ -239,14 +239,14 @@ export const PostCard = ({ post }) => {
 
           <div className="p-8 flex flex-col gap-6">
             <div>
-              <UserHoverCard author={post.author}>
+              <UserHoverCard author={post?.author}>
                 <div className="flex items-center gap-4 hover:opacity-85 transition-opacity">
                   <div className="w-12 h-12 rounded-full border-2 border-primary-container p-0.5">
-                    <img alt="Author" className="w-full h-full rounded-full object-cover" src={post.author.avatar} />
+                    <img alt="Author" className="w-full h-full rounded-full object-cover" src={post?.author.avatar} />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-lg text-text-primary leading-tight">{post.author.name}</h3>
+                      <h3 className="font-bold text-lg text-text-primary leading-tight">{post?.author.name}</h3>
                       <span className="material-symbols-outlined text-[#008080] text-[18px]" hidden
                         style={{ fontVariationSettings: "'FILL' 1" }}>
                         verified
@@ -254,23 +254,23 @@ export const PostCard = ({ post }) => {
                       <VerificationBadge type="journalist" size='lg' />
                     </div>
 
-                    <p className="font-label-sm text-text-secondary">{post.author.role} • {post.time}</p>
+                    <p className="font-label-sm text-text-secondary">{post?.author.role} • {post?.time}</p>
                   </div>
                 </div>
               </UserHoverCard>
-              {post.postedBy && (
+              {post?.postedBy && (
                 <div className="mt-3 ml-16 flex items-center gap-1.5 text-sm text-text-secondary">
                   <span>posted by</span>
                   <span
                     onClick={(e) => {
                       e.stopPropagation();
-                      const username = post.postedBy.handle.replace('@', '');
+                      const username = post?.postedBy.handle.replace('@', '');
                       navigate(`/profile/${username}`, { state: { fromCard: true } });
                     }}
                     className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1.5"
                   >
-                    <img src={post.postedBy.avatar} className="w-5 h-5 rounded-full object-cover" alt="" />
-                    {post.postedBy.name}
+                    <img src={post?.postedBy.avatar} className="w-5 h-5 rounded-full object-cover" alt="" />
+                    {post?.postedBy.name}
                   </span>
                 </div>
               )}
@@ -278,22 +278,22 @@ export const PostCard = ({ post }) => {
 
             <div className="flex flex-col gap-3">
               <h2 className="text-3xl font-extrabold text-text-primary tracking-tight leading-tight group-hover:text-primary-container transition-colors duration-300">
-                {post.title}
+                {post?.title}
               </h2>
-              {post.contentWarning ? (
-                <ContentWarningWrapper warning={post.contentWarning}>
+              {post?.contentWarning ? (
+                <ContentWarningWrapper warning={post?.contentWarning}>
                   <p className="font-body-lg text-xl text-text-primary/90 leading-relaxed">
-                    {post.text}
+                    {post?.text}
                   </p>
                 </ContentWarningWrapper>
               ) : (
                 <p className="font-body-lg text-xl text-text-primary/90 leading-relaxed">
-                  {post.text}
+                  {post?.text}
                 </p>
               )}
             </div>
 
-            {post.image && (
+            {post?.image && (
               <div
                 className="relative aspect-[16/9] rounded-xl overflow-hidden border border-white/5 cursor-pointer"
                 onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }}
@@ -301,7 +301,7 @@ export const PostCard = ({ post }) => {
                 <img
                   alt="Strike Visual"
                   className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700"
-                  src={post.image}
+                  src={post?.image}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <div className="absolute bottom-4 left-6 flex items-center gap-3">
@@ -310,7 +310,7 @@ export const PostCard = ({ post }) => {
                     <div className="w-7 h-7 rounded-full border-2 border-surface-ink bg-gray-600"></div>
                     <div className="w-7 h-7 rounded-full border-2 border-surface-ink bg-gray-700"></div>
                   </div>
-                  <span className="text-[12px] font-bold text-white shadow-sm">{post.imageMeta}</span>
+                  <span className="text-[12px] font-bold text-white shadow-sm">{post?.imageMeta}</span>
                 </div>
               </div>
             )}
@@ -318,18 +318,18 @@ export const PostCard = ({ post }) => {
             <div className="flex items-center justify-between pt-4 border-t border-white/5">
               <div className="flex items-center gap-6">
                 <button
-                  onClick={() => handleLikeClick(post.id)} // togglelike
+                  onClick={() => handleLikeClick(post?.id)} // togglelike
                   disabled={likeMutation.isPending}
-                  className={`flex items-center gap-2 font-bold hover:brightness-125 transition-all ${post.liked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
+                  className={`flex items-center gap-2 font-bold hover:brightness-125 transition-all ${post?.liked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
                     }`}
                 >
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: post.liked ? "'FILL' 1" : "'FILL' 0" }}>
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
                     favorite
                   </span>
-                  <span className="text-sm">{post.liked ? !likeMutation.isPending ? post.likes - 1 : 'Liking...' : !likeMutation.isPending ? 'Liking...' : post.likes}</span>
+                  <span className="text-sm">{post?.liked ? !likeMutation.isPending ? post?.likes - 1 : 'Liking...' : !likeMutation.isPending ? 'Liking...' : post?.likes}</span>
                 </button>
                 <button
-                  onClick={() => navigate(`/post/${post.id}`)}
+                  onClick={() => navigate(`/post/${post?.id}`)}
                   className="flex items-center gap-2 text-text-secondary font-bold hover:text-white transition-all"
                 >
                   <span className="material-symbols-outlined">chat_bubble</span>
@@ -338,18 +338,18 @@ export const PostCard = ({ post }) => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleReblog(post.id);
+                    toggleReblog(post?.id);
                   }}
-                  className={`flex items-center gap-2 font-bold transition-all ${post.reblogged ? 'text-green-500 hover:brightness-110' : 'text-text-secondary hover:text-white'
+                  className={`flex items-center gap-2 font-bold transition-all ${post?.reblogged ? 'text-green-500 hover:brightness-110' : 'text-text-secondary hover:text-white'
                     }`}
                   title="Boost Voice"
                 >
                   <span className="material-symbols-outlined text-[20px]">repeat</span>
-                  <span className="text-sm">{post.shares || 0}</span>
+                  <span className="text-sm">{post?.shares || 0}</span>
                 </button>
               </div>
 
-              {post.id === 'strike-post-1' && (
+              {post?.id === 'strike-post-1' && (
                 <button
                   onClick={() => {
                     rsvpMutation.mutate({ actionId: 'action-1', status: 'Attending' });
@@ -366,8 +366,8 @@ export const PostCard = ({ post }) => {
         <ImageCarouselModal
           isOpen={carouselOpen}
           onClose={() => setCarouselOpen(false)}
-          images={post.image ? [post.image] : []}
-          imageAlts={post.image ? [post.imageMeta || ""] : []}
+          images={post?.image ? [post?.image] : []}
+          imageAlts={post?.image ? [post?.imageMeta || ""] : []}
           initialIndex={carouselIndex}
           post={post}
         />
@@ -383,16 +383,16 @@ export const PostCard = ({ post }) => {
         }`}
     >
       <div className="flex gap-4">
-        <UserHoverCard author={post.author}>
-          {post.author.avatar ? (
+        <UserHoverCard author={post?.author}>
+          {post?.author.avatar ? (
             <img
               alt="User"
               className="w-12 h-12 rounded-full object-cover border border-white/10"
-              src={post.author.avatar}
+              src={post?.author.avatar}
             />
           ) : (
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-secondary to-orange-600 flex items-center justify-center text-on-secondary font-bold">
-              {post.author.name.split(' ').map(n => n[0]).join('')}
+              {post?.author.name.split(' ').map(n => n[0]).join('')}
             </div>
           )}
         </UserHoverCard>
@@ -400,34 +400,34 @@ export const PostCard = ({ post }) => {
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
-              <UserHoverCard author={post.author}>
+              <UserHoverCard author={post?.author}>
                 <div className="hover:opacity-85 transition-opacity">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-text-primary">{post.author.name}</span>
-                    {post.author.role && (
+                    <span className="font-bold text-text-primary">{post?.author.name}</span>
+                    {post?.author.role && (
                       <span className="text-[12px] px-1.5 py-0.5 bg-surface-container-highest rounded text-text-secondary">
-                        {post.author.role}
+                        {post?.author.role}
                       </span>
                     )}
                   </div>
                   <span className="font-label-sm text-text-secondary">
-                    {post.author.handle || '@circle'} • {post.time}
+                    {post?.author.handle || '@circle'} • {post?.time}
                   </span>
                 </div>
               </UserHoverCard>
-              {post.postedBy && (
+              {post?.postedBy && (
                 <div className="mt-1.5 flex items-center gap-1.5 text-sm text-text-secondary">
                   <span>posted by</span>
                   <span
                     onClick={(e) => {
                       e.stopPropagation();
-                      const username = post.postedBy.handle.replace('@', '');
+                      const username = post?.postedBy.handle.replace('@', '');
                       navigate(`/profile/${username}`, { state: { fromCard: true } });
                     }}
                     className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1"
                   >
-                    <img src={post.postedBy.avatar} className="w-4 h-4 rounded-full object-cover" alt="" />
-                    {post.postedBy.name}
+                    <img src={post?.postedBy.avatar} className="w-4 h-4 rounded-full object-cover" alt="" />
+                    {post?.postedBy.name}
                   </span>
                 </div>
               )}
@@ -435,11 +435,11 @@ export const PostCard = ({ post }) => {
 
             <div className="flex items-center gap-1">
               <button
-                onClick={(e) => handleBookmarkClick(e)} // toggleBookmark(post.id);
+                onClick={(e) => handleBookmarkClick(e)} // toggleBookmark(post?.id);
                 disabled={bookmarkMutation.isPending}
-                className={`p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer ${post.bookmarked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
+                className={`p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer ${post?.bookmarked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
                   }`}
-                title={post.bookmarked ? 'Remove Bookmark' : 'Bookmark Pulse'}
+                title={post?.bookmarked ? 'Remove Bookmark' : 'Bookmark Pulse'}
               >
                 <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: bookmarkMutation.isPending ? "'FILL' 1" : "'FILL' 0" }}>
                   bookmark
@@ -462,59 +462,59 @@ export const PostCard = ({ post }) => {
             </div>
           </div>
 
-          {post.contentWarning ? (
-            <ContentWarningWrapper warning={post.contentWarning}>
+          {post?.contentWarning ? (
+            <ContentWarningWrapper warning={post?.contentWarning}>
               <p className="mt-3 font-body-md text-text-primary/90 leading-relaxed text-lg">
-                {post.text}
+                {post?.text}
               </p>
             </ContentWarningWrapper>
           ) : (
             <p className="mt-3 font-body-md text-text-primary/90 leading-relaxed text-lg">
-              {post.text}
+              {post?.text}
             </p>
           )}
 
           {/* Carousel Images Layout */}
-          {post.images && post.images.length > 0 && (
+          {post?.images && post?.images.length > 0 && (
             <div className="mt-4 rounded-xl overflow-hidden border border-white/5 shadow-inner">
-              {post.images.length === 1 ? (
+              {post?.images.length === 1 ? (
                 <div className="aspect-[16/9] w-full overflow-hidden">
-                  <img src={post.images[0]} alt={post.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
+                  <img src={post?.images[0]} alt={post?.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
                 </div>
-              ) : post.images.length === 2 ? (
+              ) : post?.images.length === 2 ? (
                 <div className="grid grid-cols-2 gap-2 aspect-[16/9] w-full overflow-hidden">
-                  <img src={post.images[0]} alt={post.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
-                  <img src={post.images[1]} alt={post.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(1); setCarouselOpen(true); }} />
+                  <img src={post?.images[0]} alt={post?.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
+                  <img src={post?.images[1]} alt={post?.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(1); setCarouselOpen(true); }} />
                 </div>
-              ) : post.images.length === 3 ? (
+              ) : post?.images.length === 3 ? (
                 <div className="grid grid-cols-2 gap-2 aspect-[16/9] w-full overflow-hidden">
                   <div className="h-full w-full relative overflow-hidden">
-                    <img src={post.images[0]} alt={post.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
+                    <img src={post?.images[0]} alt={post?.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
                   </div>
                   <div className="flex flex-col gap-2 h-full overflow-hidden">
                     <div className="flex-1 min-h-0 overflow-hidden flex">
-                      <img src={post.images[1]} alt={post.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(1); setCarouselOpen(true); }} />
+                      <img src={post?.images[1]} alt={post?.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(1); setCarouselOpen(true); }} />
                     </div>
                     <div className="flex-1 min-h-0 overflow-hidden flex">
-                      <img src={post.images[2]} alt={post.imageAlts?.[2] || "Attached image 2"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(2); setCarouselOpen(true); }} />
+                      <img src={post?.images[2]} alt={post?.imageAlts?.[2] || "Attached image 2"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(2); setCarouselOpen(true); }} />
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 grid-rows-2 gap-2 aspect-[16/9] w-full overflow-hidden">
-                  <img src={post.images[0]} alt={post.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
-                  <img src={post.images[1]} alt={post.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(1); setCarouselOpen(true); }} />
-                  <img src={post.images[2]} alt={post.imageAlts?.[2] || "Attached image 2"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(2); setCarouselOpen(true); }} />
-                  <img src={post.images[3]} alt={post.imageAlts?.[3] || "Attached image 3"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(3); setCarouselOpen(true); }} />
+                  <img src={post?.images[0]} alt={post?.imageAlts?.[0] || "Attached image 0"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
+                  <img src={post?.images[1]} alt={post?.imageAlts?.[1] || "Attached image 1"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(1); setCarouselOpen(true); }} />
+                  <img src={post?.images[2]} alt={post?.imageAlts?.[2] || "Attached image 2"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(2); setCarouselOpen(true); }} />
+                  <img src={post?.images[3]} alt={post?.imageAlts?.[3] || "Attached image 3"} className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(3); setCarouselOpen(true); }} />
                 </div>
               )}
             </div>
           )}
 
           {/* Tag Chips */}
-          {post.tags && post.tags.length > 0 && (
+          {post?.tags && post?.tags.length > 0 && (
             <div className="mt-4 flex gap-2">
-              {post.tags.map((tag, idx) => (
+              {post?.tags.map((tag, idx) => (
                 <span
                   key={idx}
                   className="px-3 py-1 rounded-lg bg-surface-container-highest/50 text-primary-container font-bold text-[15px] border border-primary-container/10"
@@ -528,40 +528,40 @@ export const PostCard = ({ post }) => {
           {/* Footer Actions */}
           <div className="mt-6 flex items-center gap-8 border-t border-white/5 pt-4">
             <button
-              onClick={() => toggleLike(post.id)}
-              className={`flex items-center gap-2 hover:text-primary-container transition-colors ${post.liked ? 'text-primary-container' : 'text-text-secondary'
+              onClick={() => toggleLike(post?.id)}
+              className={`flex items-center gap-2 hover:text-primary-container transition-colors ${post?.liked ? 'text-primary-container' : 'text-text-secondary'
                 }`}
             >
-              <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: post.liked ? "'FILL' 1" : "'FILL' 0" }}>
+              <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
                 thumb_up
               </span>
-              <span className="font-bold text-sm">{post.likes}</span>
+              <span className="font-bold text-sm">{post?.likes}</span>
             </button>
 
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                toggleReblog(post.id);
+                toggleReblog(post?.id);
               }}
-              className={`flex items-center gap-2 hover:text-green-500 transition-colors ${post.reblogged ? 'text-green-500 font-bold' : 'text-text-secondary'
+              className={`flex items-center gap-2 hover:text-green-500 transition-colors ${post?.reblogged ? 'text-green-500 font-bold' : 'text-text-secondary'
                 }`}
               title="Boost Post"
             >
-              <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: post.reblogged ? "'wght' 700" : "'wght' 400" }}>
+              <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: post?.reblogged ? "'wght' 700" : "'wght' 400" }}>
                 repeat
               </span>
-              <span className="font-bold text-sm">{post.shares || 0}</span>
+              <span className="font-bold text-sm">{post?.shares || 0}</span>
             </button>
 
             <button
-              onClick={() => navigate(`/post/${post.id}`)}
+              onClick={() => navigate(`/post/${post?.id}`)}
               className="flex items-center gap-2 text-text-secondary hover:text-primary-container transition-colors"
             >
               <span className="material-symbols-outlined text-[20px]">mode_comment</span>
-              <span className="font-bold text-sm">{post.commentsCount}</span>
+              <span className="font-bold text-sm">{post?.commentsCount}</span>
             </button>
 
-            {post.communityJoinable ? (
+            {post?.communityJoinable ? (
               <button
                 onClick={() => alert('Joined planning circle!')}
                 className="ml-auto px-4 py-1.5 rounded-full border border-primary-container/30 text-primary-container font-bold text-[12px] hover:bg-primary-container hover:text-white transition-all"
@@ -580,8 +580,8 @@ export const PostCard = ({ post }) => {
       <ImageCarouselModal
         isOpen={carouselOpen}
         onClose={() => setCarouselOpen(false)}
-        images={post.images && post.images.length > 0 ? post.images : post.image ? [post.image] : []}
-        imageAlts={post.images && post.images.length > 0 ? post.imageAlts : post.image ? [post.imageMeta || ""] : []}
+        images={post?.images && post?.images.length > 0 ? post?.images : post?.image ? [post?.image] : []}
+        imageAlts={post?.images && post?.images.length > 0 ? post?.imageAlts : post?.image ? [post?.imageMeta || ""] : []}
         initialIndex={carouselIndex}
         post={post}
       />

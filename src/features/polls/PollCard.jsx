@@ -43,14 +43,14 @@ export const PollCard = ({ poll }) => {
         return percent;
     };
 
-    const hasVoted = poll.voted;
-    const isClosed = !poll.active;
+    const hasVoted = poll?.voted;
+    const isClosed = !poll?.active;
     const showResults = hasVoted || isClosed;
-    const userVoteIdx = poll.votedIndex;
+    const userVoteIdx = poll?.votedIndex;
     return (
         <article
-            key={poll.id}
-            className={`glass-card rounded-2xl p-6 shadow-xl border-l-4 transition-all ${poll.active && !hasVoted
+            key={poll?.id}
+            className={`glass-card rounded-2xl p-6 shadow-xl border-l-4 transition-all ${poll?.active && !hasVoted
                 ? 'border-l-primary-container border-t border-r border-b border-white/5'
                 : 'border-white/5 border'
                 }`}
@@ -58,44 +58,44 @@ export const PollCard = ({ poll }) => {
             {/* Author Metadata */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    {poll.authorAvatar ? (
+                    {poll?.authorAvatar ? (
                         <img
-                            alt={poll.author}
+                            alt={poll?.author}
                             className="w-9 h-9 rounded-full object-cover border border-white/10"
-                            src={poll.authorAvatar}
+                            src={poll?.authorAvatar}
                         />
                     ) : (
                         <div className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center font-bold text-sm text-white uppercase">
-                            {poll.author[0]}
+                            {poll?.author[0]}
                         </div>
                     )}
                     <div>
                         <div className="flex items-center gap-2">
-                            <span className="font-bold text-md text-text-primary">@{poll.author}</span>
+                            <span className="font-bold text-md text-text-primary">@{poll?.author}</span>
                             <span className="w-1 h-1 bg-text-text-secondary rounded-full"></span>
-                            <span className="text-[14px] text-text-secondary">{poll.time}</span>
+                            <span className="text-[14px] text-text-secondary">{poll?.time}</span>
                         </div>
-                        <p className={`text-[14px] font-bold ${poll.active ? 'text-primary-container' : 'text-text-secondary'}`}>
-                            {poll.timeLeft}
+                        <p className={`text-[14px] font-bold ${poll?.active ? 'text-primary-container' : 'text-text-secondary'}`}>
+                            {poll?.timeLeft}
                         </p>
                     </div>
                 </div>
                 <span className="bg-surface-container-high text-primary-container px-3 py-1 rounded-full text-[14px] font-bold border border-white/5 uppercase tracking-wider">
-                    {poll.category}
+                    {poll?.category}
                 </span>
             </div>
 
             {/* Poll Question */}
             <h3 className="font-headline-md text-lg font-bold text-text-primary mb-6 leading-snug">
-                {poll.question}
+                {poll?.question}
             </h3>
 
             {/* Options / Results container */}
             <div className="space-y-4 mb-6">
                 {showResults ? (
                     // Results View
-                    poll.options.map((opt, idx) => {
-                        const totalVotes = poll.totalVotes || 1;
+                    poll?.options.map((opt, idx) => {
+                        const totalVotes = poll?.totalVotes || 1;
                         const rawPercent = Math.round((opt.votes / totalVotes) * 100);
                         const percent = sanitizePercentage(rawPercent);
                         const isUserChoice = idx === userVoteIdx;
@@ -138,12 +138,12 @@ export const PollCard = ({ poll }) => {
                     })
                 ) : (
                     // Voting View
-                    poll.options.map((opt, idx) => {
-                        const isSelected = selectedOptions[poll.id] === idx;
+                    poll?.options.map((opt, idx) => {
+                        const isSelected = selectedOptions[poll?.id] === idx;
                         return (
                             <button
                                 key={idx}
-                                onClick={() => handleSelectOption(poll.id, idx)}
+                                onClick={() => handleSelectOption(poll?.id, idx)}
                                 className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between group cursor-pointer ${isSelected
                                     ? 'border-primary-container bg-primary-container/10'
                                     : 'border-white/5 bg-surface-container/35 hover:border-primary-container/30 hover:bg-surface-container/50'
@@ -170,17 +170,17 @@ export const PollCard = ({ poll }) => {
                 <div className="flex items-center gap-2 text-text-secondary">
                     <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
                     <span className="text-lg font-bold text-on-surface-variant/70">
-                        {poll.totalVotes.toLocaleString()} votes cast
+                        {poll?.totalVotes.toLocaleString()} votes cast
                     </span>
                 </div>
 
-                {poll.active && !hasVoted && (
+                {poll?.active && !hasVoted && (
                     <button
-                        onClick={() => handleVoteSubmit(poll.id)}
-                        disabled={votingStates[poll.id] || selectedOptions[poll.id] === undefined}
+                        onClick={() => handleVoteSubmit(poll?.id)}
+                        disabled={votingStates[poll?.id] || selectedOptions[poll?.id] === undefined}
                         className="bg-primary-container text-white px-6 py-2 rounded-lg font-bold text-sm hover:brightness-110 active:scale-95 transition-all shadow-md disabled:opacity-40"
                     >
-                        {votingStates[poll.id] ? 'Voting...' : 'Cast Vote'}
+                        {votingStates[poll?.id] ? 'Voting...' : 'Cast Vote'}
                     </button>
                 )}
 
@@ -193,7 +193,7 @@ export const PollCard = ({ poll }) => {
                     </div>
                 )}
 
-                {!poll.active && (
+                {!poll?.active && (
                     <div className="flex items-center gap-1.5 text-text-secondary font-bold text-sm bg-white/5 px-3.5 py-1.5 rounded-lg border border-white/10">
                         <span className="material-symbols-outlined text-[16px]">
                             lock

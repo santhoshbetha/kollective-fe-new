@@ -30,27 +30,27 @@ export function EventsFeed() {
 
     return (
         <div className="events-feed w-full flex flex-col gap-6">
-            {events.length === 0 ? (
+            {events?.length === 0 ? (
                 <div className="py-16 text-center text-text-secondary/60 bg-surface-container-low border border-white/5 rounded-2xl p-8">
                     <span className="material-symbols-outlined text-[48px] opacity-40 mb-2">calendar_today</span>
                     <p className="font-medium">No upcoming events scheduled.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {events.map((event) => (
+                    {events?.map((event) => (
                         <article
-                            key={event.id}
+                            key={event?.id}
                             className="group bg-surface-container-low border border-white/5 p-6 rounded-2xl shadow-sm transition-all duration-200 hover:bg-surface-container-high/40 hover:border-white/10 flex flex-col justify-between gap-4"
                         >
                             <div className="flex flex-col gap-2">
                                 {/* Event Title */}
                                 <h3 className="text-xl font-extrabold text-text-primary group-hover:text-primary-container transition-colors tracking-tight">
-                                    {event.title}
+                                    {event?.title}
                                 </h3>
 
                                 {/* Event Description */}
                                 <p className="text-text-secondary text-body-md line-clamp-3 leading-relaxed">
-                                    {event.description}
+                                    {event?.description}
                                 </p>
                             </div>
 
@@ -58,11 +58,11 @@ export function EventsFeed() {
                             <div className="flex flex-col gap-1.5 pt-3 border-t border-white/5 text-label-sm text-text-secondary">
                                 <div className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-[16px] text-primary-container">calendar_today</span>
-                                    <span>{event.date}</span>
+                                    <span>{event?.date}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-[16px] text-primary-container">location_on</span>
-                                    <span className="truncate">{event.location}</span>
+                                    <span className="truncate">{event?.location}</span>
                                 </div>
                             </div>
                         </article>
@@ -78,7 +78,7 @@ export function EventsFeed() {
                         Syncing calendar entries...
                     </p>
                 )}
-                {!hasNextPage && events.length > 0 && (
+                {!hasNextPage && events?.length > 0 && (
                     <p className="end-of-feed-text text-text-secondary/50 text-sm font-medium">
                         You have reviewed all scheduled events.
                     </p>

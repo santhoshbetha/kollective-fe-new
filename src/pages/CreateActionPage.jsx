@@ -235,7 +235,7 @@ export const CreateActionPage = () => {
                     <textarea
                       className={`w-full bg-surface-ink border rounded-xl px-4 py-3.5 text-text-primary focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/40 transition-all font-body-md text-sm md:text-base ${errors.description ? 'border-error' : 'border-white/10'
                         }`}
-                      placeholder="Describe the primary goal of this collective action..."
+                      placeholder="Describe the primary goal of this collective action?..."
                       rows="4"
                       value={formData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}

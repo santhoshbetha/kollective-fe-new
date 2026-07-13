@@ -27,7 +27,7 @@ export function TimelineFeed() {
         staleTime: Infinity, // Prevent automatic background refetching on the local array
     });
 
-    const unreadCount = bufferedPosts.length;
+    const unreadCount = bufferedposts?.length;
 
     // 🪟 Sync unread counts with the browser tab title (e.g., "(3) Kollective")
     useEffect(() => {
@@ -98,8 +98,8 @@ export function TimelineFeed() {
             {/* 📝 Main Stream Content Grid */}
             <div className="posts-list flex flex-col gap-4">
                 {data?.pages.flatMap((page) => page.posts).map((post) => (
-                    <article key={post.id} className="post-card bg-surface-container-low border border-white/5 p-5 rounded-2xl shadow-sm transition-colors hover:bg-surface-container-high/40">
-                        <p className="text-text-primary text-body-md leading-relaxed">{post.content}</p>
+                    <article key={post?.id} className="post-card bg-surface-container-low border border-white/5 p-5 rounded-2xl shadow-sm transition-colors hover:bg-surface-container-high/40">
+                        <p className="text-text-primary text-body-md leading-relaxed">{post?.content}</p>
                     </article>
                 ))}
             </div>
@@ -109,7 +109,7 @@ export function TimelineFeed() {
                 {isFetchingNextPage && (
                     <p className="loading-more-text text-text-secondary text-sm font-medium flex items-center gap-2">
                         <span className="animate-spin inline-block w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full"></span>
-                        Fetching older posts...
+                        Fetching older posts?...
                     </p>
                 )}
                 {!hasNextPage && data?.pages?.[0]?.posts?.length > 0 && (

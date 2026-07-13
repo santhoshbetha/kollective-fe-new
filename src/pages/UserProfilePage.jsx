@@ -315,7 +315,7 @@ export const UserProfilePage = () => {
   const isOrg = profile && (profile.type === 'organization' || profile.badge_type?.toLowerCase() === 'organization' || profile.badge_type?.toLowerCase() === 'warned');
 
   // Filter posts for this user
-  const userFeedPosts = allPosts.filter(
+  const userFeedPosts = allposts?.filter(
     (p) =>
       p.author.name.toLowerCase() === profile.name.toLowerCase() ||
       p.author.handle?.toLowerCase().replace('@', '') === cleanUsername
@@ -326,7 +326,7 @@ export const UserProfilePage = () => {
 
   // De-duplicate by ID
   const uniquePostsMap = new Map();
-  combinedPosts.forEach(p => uniquePostsMap.set(p.id, p));
+  combinedposts?.forEach(p => uniquePostsMap.set(p.id, p));
   const finalUserPosts = Array.from(uniquePostsMap.values());
 
   // Dynamic organization badge / link for Julian Thorne if setting allows
@@ -724,7 +724,7 @@ export const UserProfilePage = () => {
                 </div>
               ))}
             </div>
-          ) : finalUserPosts.length === 0 ? (
+          ) : finalUserposts?.length === 0 ? (
             <div className="glass-panel rounded-xl p-12 text-center border border-white/5">
               <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">
                 feed
@@ -735,8 +735,8 @@ export const UserProfilePage = () => {
               </p>
             </div>
           ) : (
-            finalUserPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
+            finalUserposts?.map((post) => (
+              <PostCard key={post?.id} post={post} />
             ))
           )}
         </div>

@@ -31,7 +31,7 @@ export function BookmarksFeed() {
 
     return (
         <div className="bookmarks-feed w-full flex flex-col gap-4">
-            {posts.length === 0 ? (
+            {posts?.length === 0 ? (
                 <div className="py-16 text-center text-text-secondary/60 bg-surface-container-low border border-white/5 rounded-2xl p-8">
                     <span className="material-symbols-outlined text-[48px] opacity-40 mb-2">bookmark_border</span>
                     <p className="font-medium">You haven't saved any broadcasts yet.</p>
@@ -39,8 +39,8 @@ export function BookmarksFeed() {
                 </div>
             ) : (
                 <div className="posts-list flex flex-col gap-4">
-                    {posts.map((post) => (
-                        <PostCard key={post.id} post={post} />
+                    {posts?.map((post) => (
+                        <PostCard key={post?.id} post={post} />
                     ))}
                 </div>
             )}
@@ -53,7 +53,7 @@ export function BookmarksFeed() {
                         Retrieving saved items...
                     </p>
                 )}
-                {!hasNextPage && posts.length > 0 && (
+                {!hasNextPage && posts?.length > 0 && (
                     <p className="end-of-feed-text text-text-secondary/50 text-sm font-medium">
                         You have reviewed your complete bookmarked history.
                     </p>

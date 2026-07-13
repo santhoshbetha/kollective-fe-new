@@ -67,7 +67,7 @@ export const CreatePollPage = () => {
       onError: (err) => {
         setIsSubmitting(false);
         console.error('Error creating poll:', err);
-        alert('Failed to create the poll. Please try again.');
+        alert('Failed to create the poll?. Please try again.');
       }
     });
   };

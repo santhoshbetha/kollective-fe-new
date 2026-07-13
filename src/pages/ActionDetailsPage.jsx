@@ -50,8 +50,8 @@ export const ActionDetailsPage = () => {
     );
   }
 
-  const isAttending = action.rsvp === 'Attending';
-  const isInterested = action.rsvp === 'Interested';
+  const isAttending = action?.rsvp === 'Attending';
+  const isInterested = action?.rsvp === 'Interested';
 
   const defaultDescriptions = {
     'action-1': 'A massive public demonstration organized to demand secure, affordable, and dignified housing for all citizens in the Downtown District. We will assemble peacefully and walk towards City Hall.',
@@ -60,7 +60,7 @@ export const ActionDetailsPage = () => {
     'action-4': 'A public march and rally calling for the creation of community-owned clean energy jobs, solar microgrids, and green infrastructure investments.'
   };
 
-  const description = action.description || defaultDescriptions[action.id] || 'Join other community members in this grassroots action. Let us organize, mobilize, and create positive local impact together.';
+  const description = action?.description || defaultDescriptions[action?.id] || 'Join other community members in this grassroots action?. Let us organize, mobilize, and create positive local impact together.';
 
   return (
     <div className="max-w-[800px] mx-auto px-4 md:px-0 relative text-scale-large pb-20">
@@ -83,13 +83,13 @@ export const ActionDetailsPage = () => {
 
         {/* Category Badge & Action Type */}
         <div className="flex justify-between items-center">
-          <span className={`px-4 py-2 border text-[14px] font-bold uppercase tracking-widest rounded-full ${action.type === 'Protest'
+          <span className={`px-4 py-2 border text-[14px] font-bold uppercase tracking-widest rounded-full ${action?.type === 'Protest'
             ? 'bg-surface-crimson-low border-primary/20 text-primary-container'
-            : action.type === 'Town Hall'
+            : action?.type === 'Town Hall'
               ? 'bg-secondary/10 border-secondary/20 text-text-secondary'
               : 'bg-tertiary/10 border-tertiary/20 text-tertiary'
             }`}>
-            {action.type}
+            {action?.type}
           </span>
           <div className="flex items-center gap-2 text-gold-muted">
             <span className="material-symbols-outlined text-lg">verified</span>
@@ -100,10 +100,10 @@ export const ActionDetailsPage = () => {
         {/* Title */}
         <div>
           <h1 className="font-display-lg text-2xl md:text-3xl font-extrabold text-text-primary leading-tight">
-            {action.title}
+            {action?.title}
           </h1>
           <p className="text-text-secondary text-sm mt-2 font-medium">
-            Initiated by <span className="text-primary-container font-bold">{action.organizer}</span>
+            Initiated by <span className="text-primary-container font-bold">{action?.organizer}</span>
           </p>
         </div>
 
@@ -113,14 +113,14 @@ export const ActionDetailsPage = () => {
             <span className="material-symbols-outlined text-primary-container mt-0.5">calendar_today</span>
             <div>
               <p className="text-sm uppercase font-bold text-text-secondary tracking-wider">Date & Time</p>
-              <p className="text-lg font-semibold text-text-primary mt-0.5">{action.time}</p>
+              <p className="text-lg font-semibold text-text-primary mt-0.5">{action?.time}</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="material-symbols-outlined text-primary-container mt-0.5">location_on</span>
             <div>
               <p className="text-sm uppercase font-bold text-text-secondary tracking-wider">Location / Venue</p>
-              <p className="text-lg font-semibold text-text-primary mt-0.5">{action.location}</p>
+              <p className="text-lg font-semibold text-text-primary mt-0.5">{action?.location}</p>
             </div>
           </div>
         </div>
@@ -134,19 +134,19 @@ export const ActionDetailsPage = () => {
         </div>
 
         {/* RSVP Conditional details */}
-        {isAttending && action.meetingLink && (
+        {isAttending && action?.meetingLink && (
           <div className="p-4 bg-surface-crimson-low border border-primary-container/20 rounded-xl flex flex-col gap-2">
             <div className="flex items-center gap-2 text-primary-container">
               <span className="material-symbols-outlined">link</span>
               <p className="text-sm font-bold uppercase tracking-wider">Secure Access Link</p>
             </div>
             <a
-              href={action.meetingLink}
+              href={action?.meetingLink}
               target="_blank"
               rel="noreferrer"
               className="text-lg font-bold text-text-primary hover:underline break-all"
             >
-              {action.meetingLink}
+              {action?.meetingLink}
             </a>
           </div>
         )}
@@ -156,7 +156,7 @@ export const ActionDetailsPage = () => {
           <button
             onClick={() => {
               const newStatus = isAttending ? 'None' : 'Attending';
-              rsvpToActionMutation.mutate({ id: action.id, status: newStatus });
+              rsvpToActionMutation.mutate({ id: action?.id, status: newStatus });
               triggerToast(newStatus === 'Attending' ? 'Marked as Attending!' : 'RSVP Cancelled');
             }}
             className={`flex-1 py-3.5 rounded-none font-bold text-sm uppercase tracking-wider cursor-pointer border-none transition-all ${isAttending
@@ -170,7 +170,7 @@ export const ActionDetailsPage = () => {
           <button
             onClick={() => {
               const newStatus = isInterested ? 'None' : 'Interested';
-              rsvpToAction(action.id, newStatus);
+              rsvpToAction(action?.id, newStatus);
               triggerToast(newStatus === 'Interested' ? 'Marked as Interested!' : 'RSVP Cancelled');
             }}
             className={`flex-1 py-3.5 rounded-none font-bold text-sm uppercase tracking-wider cursor-pointer transition-all ${isInterested

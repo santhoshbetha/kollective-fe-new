@@ -12,12 +12,12 @@ export const PollsPage = () => {
 
   // Filter Logic
   const filteredPolls = polls.filter((poll) => {
-    const matchesSearch = poll.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      poll.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = poll?.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      poll?.category.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesFilter = filterTab === 'All' ||
-      (filterTab === 'Active' && poll.active) ||
-      (filterTab === 'Ended' && !poll.active);
+      (filterTab === 'Active' && poll?.active) ||
+      (filterTab === 'Ended' && !poll?.active);
 
     return matchesSearch && matchesFilter;
   });
@@ -121,7 +121,7 @@ export const PollsPage = () => {
             </div>
           ) : (
             filteredPolls.map((poll) => (
-              <PollCard key={poll.id} poll={poll} />
+              <PollCard key={poll?.id} poll={poll} />
             ))
           )}
         </div>
@@ -182,24 +182,24 @@ export const PollsPage = () => {
             <div className="space-y-4">
               {endedPolls.map((poll) => {
                 // Find winning option
-                const winningOpt = poll.options.reduce((prev, current) =>
+                const winningOpt = poll?.options.reduce((prev, current) =>
                   (prev.votes > current.votes) ? prev : current
-                  , poll.options[0]);
+                  , poll?.options[0]);
 
-                const total = poll.totalVotes || 1;
+                const total = poll?.totalVotes || 1;
                 const rawPercent = Math.round((winningOpt.votes / total) * 100);
                 const winPercent = sanitizePercentage(rawPercent);
 
                 return (
-                  <div key={poll.id} className="space-y-1.5 border-b border-white/5 pb-3 last:border-b-0 last:pb-0">
+                  <div key={poll?.id} className="space-y-1.5 border-b border-white/5 pb-3 last:border-b-0 last:pb-0">
                     <div className="flex justify-between items-center">
                       <span className="bg-surface-container-high text-primary-container px-2 py-0.5 rounded text-[12px] font-bold uppercase tracking-wider border border-white/5">
-                        {poll.category}
+                        {poll?.category}
                       </span>
-                      <span className="text-[12px] text-text-secondary">{poll.timeLeft}</span>
+                      <span className="text-[12px] text-text-secondary">{poll?.timeLeft}</span>
                     </div>
-                    <h5 className="text-text-primary font-bold text-sm line-clamp-2" title={poll.question}>
-                      {poll.question}
+                    <h5 className="text-text-primary font-bold text-sm line-clamp-2" title={poll?.question}>
+                      {poll?.question}
                     </h5>
                     <div className="flex items-center justify-between text-sm text-text-secondary pt-1">
                       <span>Winner: <strong className="text-text-primary font-bold">{winningOpt.text}</strong></span>

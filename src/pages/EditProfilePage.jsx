@@ -238,7 +238,7 @@ export const EditProfilePage = () => {
           <p className="text-lg text-text-secondary">Temporarily hide your profile and posts</p>
         </div>
         <button
-          onClick={() => alert('Account deactivation is a placeholder action.')}
+          onClick={() => alert('Account deactivation is a placeholder action?.')}
           className="px-6 py-2 border border-red-500/40 text-red-500 rounded-lg hover:bg-red-500/10 transition-colors font-bold text-sm uppercase tracking-wider cursor-pointer"
         >
           Deactivate
