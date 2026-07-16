@@ -65,7 +65,7 @@ export const SignupPage = () => {
             className="h-14 w-auto"
             src="/K99.png"
           />
-          <span className="font-headline-md text-xl font-bold text-primary tracking-tight hidden sm:block"
+          <span className="font-headline-md text-xl font-bold text-[#CC033B] tracking-tight hidden sm:block"
             style={{ fontSize: "36px", fontFamily: "Protest Riot, sans-serif" }}>
             Kollective
           </span>
@@ -117,7 +117,7 @@ export const SignupPage = () => {
               }`}>
               {/* Content Header */}
               <div className="text-center mb-10">
-                <h1 className="font-display-lg text-3xl md:text-4xl font-extrabold text-text-primary leading-tight mb-3">Welcome to the Vanguard.</h1>
+                <h1 className="font-display-lg text-3xl md:text-4xl font-extrabold text-text-primary leading-tight mb-3">Welcome to the Kollective.</h1>
                 <p className="font-body-md text-base text-text-secondary max-w-lg mx-auto">Before joining the revolution, please review our community code of conduct.</p>
               </div>
 
@@ -170,18 +170,15 @@ export const SignupPage = () => {
 
               {/* Terms & Buttons */}
               <div className="flex flex-col gap-8">
-                <label className="flex items-center gap-3 cursor-pointer group px-1">
-                  <div className="relative flex items-center">
-                    <input
-                      className="peer h-5 w-5 appearance-none rounded border border-outline-variant bg-surface-container-low focus:ring-0 focus:ring-offset-0 checked:bg-primary-container checked:border-primary transition-all"
-                      id="terms-agree"
-                      type="checkbox"
-                      checked={termsAgree}
-                      onChange={(e) => setTermsAgree(e.target.checked)}
-                    />
-                    <span className="material-symbols-outlined absolute text-[16px] text-white opacity-0 peer-checked:opacity-100 left-0.5 pointer-events-none">check</span>
-                  </div>
-                  <span className="font-body-md text-base text-on-surface-variant group-hover:text-text-primary transition-colors">I agree to follow these community guidelines</span>
+                <label className="flex items-center gap-2.5 cursor-pointer group select-none text-on-surface-variant hover:text-text-primary transition-colors">
+                  <input
+                    type="checkbox"
+                    id="terms-agree"
+                    className="w-4 h-4 rounded border-outline-variant bg-surface-container/40 text-primary focus:ring-primary/20 focus:ring-offset-0 accent-primary"
+                    checked={termsAgree}
+                    onChange={(e) => setTermsAgree(e.target.checked)}
+                  />
+                  I agree to follow these community guidelines
                 </label>
 
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -214,7 +211,7 @@ export const SignupPage = () => {
           {step === 2 && (
             <div className="w-full glass-panel rounded-lg p-8 md:p-12 shadow-2xl border border-white/10 relative">
               <h1 className="font-display-lg text-3xl md:text-4xl font-extrabold text-text-primary mb-2">Build your profile</h1>
-              <p className="font-body-md text-base text-text-secondary mb-10">Tell us a bit more about how you intend to use the Vanguard platform.</p>
+              <p className="font-body-md text-base text-text-secondary mb-10">Tell us a bit more about how you intend to use the Kollective platform.</p>
 
               <form className="space-y-10" onSubmit={handleStep2Submit}>
                 {/* Account Type Selection */}
@@ -280,7 +277,7 @@ export const SignupPage = () => {
                       required
                       className="w-full bg-surface-container-lowest border border-white/10 rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container input-glow transition-all font-body-md text-base"
                       id="fullname"
-                      placeholder="Alexander Vanguard"
+                      placeholder="Alexander Kollective"
                       type="text"
                       value={fullname}
                       onChange={(e) => setFullname(e.target.value)}
@@ -311,7 +308,7 @@ export const SignupPage = () => {
                       required
                       className="w-full bg-surface-container-lowest border border-white/10 rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container input-glow transition-all font-body-md text-base"
                       id="email"
-                      placeholder="alex@vanguard.io"
+                      placeholder="alex@kollective.social"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -442,7 +439,7 @@ export const SignupPage = () => {
               <div className="flex flex-col gap-4">
                 <h1 className="font-headline-lg text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight">Almost there!</h1>
                 <p className="font-body-md text-base text-on-surface-variant max-w-[340px] mx-auto leading-relaxed">
-                  A confirmation link has been sent to <span className="text-text-secondary font-semibold">{email || 'vanguard.user@example.com'}</span>. Please check your inbox and click the link to activate your account.
+                  A confirmation link has been sent to <span className="text-text-secondary font-semibold">{email || 'kollective.user@example.com'}</span>. Please check your inbox and click the link to activate your account.
                 </p>
               </div>
 
@@ -481,7 +478,7 @@ export const SignupPage = () => {
           )}
 
           <p className="text-label-sm text-sm text-text-secondary text-center opacity-60">
-            Securely processed by Vanguard Identity Labs. <br className="md:hidden" />
+            Securely processed by Kollective Identity Labs. <br className="md:hidden" />
             <a className="text-primary-container hover:underline underline-offset-4" href="#legal" onClick={(e) => e.preventDefault()}>Legal Compliance</a> &amp; <a className="text-primary-container hover:underline underline-offset-4" href="#terms" onClick={(e) => e.preventDefault()}>Terms of Use</a>.
           </p>
         </div>
@@ -492,10 +489,10 @@ export const SignupPage = () => {
         <div className="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop gap-6 w-full max-w-container-max mx-auto">
           <div className="flex flex-col items-center md:items-start gap-1">
             <div className="flex items-center gap-2">
-              <img alt="Vanguard" className="w-5 h-5 opacity-80" src="/K99.png" />
-              <span className="font-label-md font-bold text-text-primary text-sm">Vanguard</span>
+              <img alt="Kollective" className="w-5 h-5 opacity-80" src="/K99.png" />
+              <span className="font-label-md font-bold text-text-primary text-sm">Kollective</span>
             </div>
-            <span className="font-label-sm text-sm text-on-surface-variant opacity-60">© 2024 Vanguard. The Revolution is Digital.</span>
+            <span className="font-label-sm text-sm text-on-surface-variant opacity-60">© 2026 Kollective. The Revolution is Digital.</span>
           </div>
           <div className="flex gap-8">
             <a className="font-label-sm text-sm text-on-surface-variant hover:text-primary transition-colors" href="#terms" onClick={(e) => e.preventDefault()}>Terms</a>

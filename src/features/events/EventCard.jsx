@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToggleEventInterest } from '../../features/events/useEventsFeature';
+import { EventDateBadge, AttendeeStack } from './EventComponents';
 
 export const EventCard = ({ event }) => {
     const toggleEventInterest = useToggleEventInterest();
@@ -11,7 +12,7 @@ export const EventCard = ({ event }) => {
     return (
         <article
             onClick={() => navigate(`/events/${event?.id}`)}
-            className="group bg-[#141414] rounded-[8px] overflow-hidden border border-[#262626] hover:border-[#cc0000]/50 transition-all shadow-lg hover:shadow-[#cc0000]/5 cursor-pointer flex flex-col h-full"
+            className="group bg-[#141414] rounded-[8px] overflow-hidden border border-[#262626] hover:border-[#a10836]/50 transition-all shadow-lg hover:shadow-[#a10836]/5 cursor-pointer flex flex-col h-full"
         >
             <div className="relative h-56 overflow-hidden flex-shrink-0">
                 <img
@@ -21,7 +22,7 @@ export const EventCard = ({ event }) => {
                 />
                 <div className="absolute top-4 left-4">
                     {isLive ? (
-                        <span className="bg-[#cc0000] text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-tighter animate-pulse">Live Now</span>
+                        <span className="bg-[#a10836] text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-tighter animate-pulse">Live Now</span>
                     ) : (
                         <span className="bg-green-600/95 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-tighter backdrop-blur-sm">In-Person</span>
                     )}
@@ -29,16 +30,16 @@ export const EventCard = ({ event }) => {
             </div>
             <div className="p-6 flex flex-col justify-between flex-1">
                 <div>
-                    <h3 className="text-xl font-bold mb-2 group-hover:text-[#cc0000] transition-colors line-clamp-1">
+                    <h3 className="text-xl font-bold mb-2 group-hover:text-[#a10836] transition-colors line-clamp-1">
                         {event?.title}
                     </h3>
                     <div className="space-y-2 mb-4">
                         <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <span className="material-symbols-outlined text-[#cc0000] text-sm">calendar_today</span>
+                            <span className="material-symbols-outlined text-[#a10836] text-sm">calendar_today</span>
                             <span className="line-clamp-1">{event?.displayDate || event?.date}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <span className="material-symbols-outlined text-[#cc0000] text-sm">location_on</span>
+                            <span className="material-symbols-outlined text-[#a10836] text-sm">location_on</span>
                             <span className="line-clamp-1">{event?.location}</span>
                         </div>
                     </div>
@@ -53,7 +54,7 @@ export const EventCard = ({ event }) => {
                             e.stopPropagation();
                             toggleEventInterest(event?.id);
                         }}
-                        className={`hover:bg-red-700 text-white text-xs font-bold px-6 py-2.5 rounded-[8px] transition-colors uppercase tracking-widest border-none cursor-pointer ${event?.isInterested ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-[#cc0000]'
+                        className={`hover:bg-red-700 text-white text-xs font-bold px-6 py-2.5 rounded-[8px] transition-colors uppercase tracking-widest border-none cursor-pointer ${event?.isInterested ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-[#a10836]'
                             }`}
                     >
                         {event?.isInterested ? 'Interested' : 'Interest'}

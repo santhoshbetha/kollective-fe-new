@@ -27,7 +27,7 @@ export function useVoteInPoll() {
                     ...oldData,
                     pages: oldData.pages.map((page) => ({
                         ...page,
-                        polls: page.polls.map((poll) => {
+                        polls: page?.polls?.map((poll) => {
                             if (poll.id === pollId) {
                                 return {
                                     ...poll,

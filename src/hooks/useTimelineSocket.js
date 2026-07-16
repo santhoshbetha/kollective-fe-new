@@ -116,7 +116,7 @@ export function useTimelineSocket() {
                     ...oldData,
                     pages: oldData.pages.map((page) => ({
                         ...page,
-                        polls: page.polls.map((poll) =>
+                        polls: page?.polls?.map((poll) =>
                             poll.id === payload.poll_id
                                 ? { ...poll, totalVotes: payload.total_votes, options: payload.options }
                                 : poll

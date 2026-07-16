@@ -218,7 +218,7 @@ const profilesData = {
     under_investigation: false,
     recent_publications: [
       "Union Density and Automation Offsets in Heavy Manufacturing (2025)",
-      "Comparative Strike Tariffs: A Multi-district Longitudinal Survey (2024)"
+      "Comparative Strike Tariffs: A Multi-district Longitudinal Survey (2026)"
     ],
     posts: []
   },
@@ -278,7 +278,7 @@ export const UserProfilePage = () => {
       followersCount: '2.5K',
       metadata: [
         { key: 'Website', value: 'kollective.org', verified: false, url: 'https://kollective.org' },
-        { key: 'Joined', value: 'Jun 2024', verified: false }
+        { key: 'Joined', value: 'Jun 2026', verified: false }
       ],
       posts: []
     };
@@ -294,7 +294,7 @@ export const UserProfilePage = () => {
       publication_count: profile.publication_count || 14,
       recent_publications: profile.recent_publications || [
         "Union Density and Automation Offsets in Heavy Manufacturing (2025)",
-        "Comparative Strike Tariffs: A Multi-district Longitudinal Survey (2024)"
+        "Comparative Strike Tariffs: A Multi-district Longitudinal Survey (2026)"
       ],
       portfolio_url: profile.portfolio_url || (user.badge_type?.toLowerCase() === 'journalist' ? 'https://muckrack.com/j_thorne' : null),
       primary_outlet: profile.primary_outlet || (user.badge_type?.toLowerCase() === 'journalist' ? 'Independent Correspondent' : null),
@@ -315,7 +315,7 @@ export const UserProfilePage = () => {
   const isOrg = profile && (profile.type === 'organization' || profile.badge_type?.toLowerCase() === 'organization' || profile.badge_type?.toLowerCase() === 'warned');
 
   // Filter posts for this user
-  const userFeedPosts = allposts?.filter(
+  const userFeedPosts = allPosts?.filter(
     (p) =>
       p.author.name.toLowerCase() === profile.name.toLowerCase() ||
       p.author.handle?.toLowerCase().replace('@', '') === cleanUsername
@@ -326,7 +326,7 @@ export const UserProfilePage = () => {
 
   // De-duplicate by ID
   const uniquePostsMap = new Map();
-  combinedposts?.forEach(p => uniquePostsMap.set(p.id, p));
+  combinedPosts?.forEach(p => uniquePostsMap.set(p.id, p));
   const finalUserPosts = Array.from(uniquePostsMap.values());
 
   // Dynamic organization badge / link for Julian Thorne if setting allows
@@ -724,7 +724,7 @@ export const UserProfilePage = () => {
                 </div>
               ))}
             </div>
-          ) : finalUserposts?.length === 0 ? (
+          ) : finalUserPosts?.length === 0 ? (
             <div className="glass-panel rounded-xl p-12 text-center border border-white/5">
               <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">
                 feed
@@ -735,9 +735,11 @@ export const UserProfilePage = () => {
               </p>
             </div>
           ) : (
-            finalUserposts?.map((post) => (
-              <PostCard key={post?.id} post={post} />
-            ))
+            <div className="flex flex-col border border-[#262626] bg-[#141414] rounded-[16px] overflow-hidden shadow-2xl">
+              {finalUserPosts?.map((post) => (
+                <PostCard key={post?.id} post={post} />
+              ))}
+            </div>
           )}
         </div>
 

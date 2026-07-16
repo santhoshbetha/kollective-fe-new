@@ -464,7 +464,7 @@ export const CreateEventPage = () => {
 
       {/* Footer */}
       <footer className="mt-16 text-center text-text-secondary/30 text-lg pb-12">
-        © 2024 Kollective. Built for revolutionary community leadership. All Rights Reserved.
+        © 2026 Kollective. Built for revolutionary community leadership. All Rights Reserved.
       </footer>
     </div>
   );

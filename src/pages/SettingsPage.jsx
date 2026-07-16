@@ -1,275 +1,108 @@
-import { useState } from 'react';
+// src/pages/SettingsPage.jsx
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/auth/useAuthStore';
-
-// Reusable toggle switch component matching the redesign style
-const Toggle = ({ checked, onChange }) => (
-  <button
-    type="button"
-    onClick={onChange}
-    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${checked ? 'bg-primary-container' : 'bg-surface-container-high border border-white/5'
-      }`}
-  >
-    <span
-      className={`pointer-events-none inline-block h-[18px] w-[18px] transform rounded-full transition duration-200 ease-in-out mt-[2px] ml-[2px] ${checked ? 'translate-x-[20px] bg-white' : 'translate-x-0 bg-gold-muted'
-        }`}
-    />
-  </button>
-);
+import { useTranslation } from '../components/locales';
+import { AppPreferencesForm } from '../features/preferences/AppPreferencesForm';
+import { EmailSettingsForm, PasswordSettingsForm, DangerZoneSettingsForm } from '../features/settings/SettingsSubForms';
 
 export const SettingsPage = () => {
-  const navigate = useNavigate();
-  const theme = useAuthStore((state) => state.theme);
-  const toggleTheme = useAuthStore((state) => state.toggleTheme);
-  const user = useAuthStore((state) => state.user);
-  const showPersonalHandle = useStore((state) => state.showPersonalHandleOnOrg);
-  const setShowPersonalHandle = useStore((state) => state.setShowPersonalHandleOnOrg);
+    const navigate = useNavigate();
+    const currentUser = useAuthStore((state) => state.user);
 
-  // Settings states
-  const [selectedState, setSelectedState] = useState('');
-  const [selectedCity, setSelectedCity] = useState('');
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [emailEnabled, setEmailEnabled] = useState(true);
-  const [repliesEnabled, setRepliesEnabled] = useState(true);
-  const [privateProfile, setPrivateProfile] = useState(false);
-  const [twoFactor, setTwoFactor] = useState(false);
+    // 🗺️ Connect active language variables straight to translation dictionaries
+    const currentLanguage = useStore((state) => state.appLanguage);
+    const t = useTranslation(currentLanguage);
 
-  const states = ['California', 'New York', 'Texas'];
-  const citiesByState = {
-    California: ['Los Angeles', 'San Francisco', 'San Diego'],
-    'New York': ['New York City', 'Buffalo', 'Rochester'],
-    Texas: ['Houston', 'Austin', 'Dallas'],
-  };
+    // Switchboard tab state tracker: 'index' | 'email' | 'password' | 'account'
+    const [activeSettingsTab, setActiveSettingsTab] = useState('index');
 
-  const handleSaveChanges = () => {
-    navigate('/home');
-  };
+    const settingsMenu = [
+        { id: 'index', label: t('pref_heading'), icon: 'settings_accessibility', desc: t('pref_desc') },
+        { id: 'email', label: 'Email Configuration', icon: 'mail', desc: 'Manage your contact address links' },
+        { id: 'password', label: 'Security & Keys', icon: 'lock', desc: 'Modify entry passwords and authorization keys' },
+        { id: 'account', label: 'Danger Zone', icon: 'gavel', desc: 'Permanent account destruction matrices' }
+    ];
 
-  const handleCancel = () => {
-    navigate('/home');
-  };
+    const handleReturnClick = () => {
+        if (activeSettingsTab !== 'index') {
+            setActiveSettingsTab('index');
+        } else {
+            navigate('/home');
+        }
+    };
 
+    return (
+        <div className="max-w-[1280px] mx-auto flex flex-col lg:flex-row gap-8 pb-20 w-full animate-in fade-in duration-200">
 
+            {/* 🧭 LEFT SIDEBAR COLUMN: NAVIGATION STRIP TRACKING PANEL */}
+            <div className="w-full lg:w-80 flex flex-col gap-4 shrink-0 select-none">
+                <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                    <div>
+                        <h1 className="text-2xl font-black text-text-primary tracking-tight">{t('settings_title')}</h1>
+                        <p className="text-sm text-text-secondary mt-0.5">Control node parameters and profile locks</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleReturnClick}
+                        className="lg:hidden p-2 bg-surface-container border border-white/10 rounded-xl flex items-center justify-center text-text-primary"
+                    >
+                        <span className="material-symbols-outlined text-sm">arrow_back</span>
+                    </button>
+                </div>
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12 text-scale-large">
-      <header className="mb-10">
-        <h1 className="font-display-lg text-3xl font-extrabold text-text-primary mb-2">Settings</h1>
-        <p className="font-body-md text-xl font-semibold text-text-secondary">
-          Manage your account preferences, privacy, and digital experience.
-        </p>
-      </header>
-
-      {/* Edit Profile Quick Action */}
-      <section
-        onClick={() => navigate('/settings/profile')}
-        className="glass-card bg-surface-ink border border-white/10 rounded-xl p-1 flex items-center justify-between cursor-pointer hover:border-primary-container/40 hover:shadow-lg transition-all group"
-      >
-        <div className="flex items-center gap-6 p-4">
-          <div className="w-14 h-14 rounded-full border-2 border-primary-container/20 p-1 flex-shrink-0">
-            <img
-              alt="User avatar"
-              className="w-full h-full rounded-full object-cover"
-              src={user?.avatar}
-            />
-          </div>
-          <div>
-            <h3 className="font-headline-md text-xl text-text-primary group-hover:text-primary-container transition-colors font-bold">
-              Edit Profile
-            </h3>
-            <p className="text-lg text-text-secondary">
-              Update your profile picture, banner, and personal information
-            </p>
-          </div>
-        </div>
-        <span className="material-symbols-outlined text-text-secondary mr-6 transition-transform group-hover:translate-x-1">
-          chevron_right
-        </span>
-      </section>
-
-      {/* Identity & Verification Section */}
-      <section className="glass-card bg-surface-ink border border-white/10 rounded-xl p-8 space-y-6">
-        <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-          <span className="material-symbols-outlined text-primary-container">verified</span>
-          <h2 className="font-headline-md text-lg font-bold text-text-primary">Identity &amp; Verification</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div
-            onClick={() => navigate('/verify')}
-            className="p-5 bg-surface-container-low border border-white/10 hover:border-primary-container/40 rounded-xl cursor-pointer transition-all hover:shadow-md flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-center gap-2 text-text-primary font-bold text-lg mb-1">
-                <span className="material-symbols-outlined text-[20px] text-primary-container">assignment_ind</span>
-                Choose Account Role
-              </div>
-              <p className="text-md text-text-secondary leading-relaxed">
-                Select your platform category and authenticate with MuckRack, ORCID, or community boards.
-              </p>
+                {/* Menu Options Flat Stack Loops */}
+                <div className="flex flex-col gap-1.5 bg-[#141414] border border-[#262626] p-2 rounded-2xl shadow-xl">
+                    {settingsMenu.map((menuItem) => {
+                        const isTabActive = activeSettingsTab === menuItem.id;
+                        return (
+                            <button
+                                key={menuItem.id}
+                                type="button"
+                                onClick={() => setActiveSettingsTab(menuItem.id)}
+                                className={`flex items-center gap-4 w-full p-4 text-left rounded-xl transition-all border border-transparent cursor-pointer bg-transparent group ${isTabActive
+                                    ? 'bg-surface-container-high border-white/5 text-text-primary shadow-md'
+                                    : 'text-text-secondary hover:bg-white/[0.015] hover:text-text-primary'
+                                    }`}
+                            >
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 transition-colors ${isTabActive ? 'bg-primary-container/20 border-primary-container/20 text-primary-container' : 'bg-surface-container border-white/5 text-text-secondary group-hover:text-text-primary'
+                                    }`}>
+                                    <span className="material-symbols-outlined text-[20px]">{menuItem.icon}</span>
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-lg font-black tracking-tight text-white">{menuItem.label}</span>
+                                    <span className="text-[14px] text-text-secondary/50 font-medium truncate mt-0.5">{menuItem.desc}</span>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
-            <div className="text-primary-container font-bold text-xs uppercase mt-4 flex items-center gap-1">
-              Start Verification Onboarding <span className="text-[14px]">➔</span>
-            </div>
-          </div>
 
-          <div
-            onClick={() => navigate('/verify/citizen')}
-            className="p-5 bg-surface-container-low border border-white/10 hover:border-primary-container/40 rounded-xl cursor-pointer transition-all hover:shadow-md flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-center gap-2 text-text-primary font-bold text-lg mb-1">
-                <span className="material-symbols-outlined text-[20px] text-primary-container">qr_code_scanner</span>
-                Peer-to-Peer Vouching
-              </div>
-              <p className="text-md text-text-secondary leading-relaxed">
-                Verify other grassroots citizens in person or get vouched for by local trusted nodes.
-              </p>
-            </div>
-            <div className="text-primary-container font-bold text-xs uppercase mt-4 flex items-center gap-1">
-              Enter Citizen Vouching Desk <span className="text-[14px]">➔</span>
-            </div>
-          </div>
-        </div>
-      </section>
+            {/* 🖥️ RIGHT WORKSPACE COLUMN: EXPLICIT SUB-FORM DETACHED INTERFACES */}
+            <div className="flex-1 min-w-0 bg-[#141414] border border-[#262626] rounded-2xl p-6 shadow-2xl relative min-h-[500px]">
 
-      {/* Location Section */}
-      <section className="glass-card bg-surface-ink border border-white/10 rounded-xl p-8 space-y-6">
-        <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-          <span className="material-symbols-outlined text-primary-container">location_on</span>
-          <h2 className="font-headline-md text-lg font-bold text-text-primary">Location</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="font-label-md text-sm font-bold text-text-secondary block">State</label>
-            <select
-              value={selectedState}
-              onChange={(e) => {
-                setSelectedState(e.target.value);
-                setSelectedCity('');
-              }}
-              className="w-full bg-surface-container-low border border-white/10 rounded-xl py-3 px-4 text-text-primary focus:ring-2 focus:ring-primary-container/50 focus:border-primary-container focus:outline-none transition-all"
-            >
-              <option value="">Select your state</option>
-              {states.map((st) => (
-                <option key={st} value={st}>{st}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="font-label-md text-sm font-bold text-text-secondary block">City</label>
-            <select
-              value={selectedCity}
-              disabled={!selectedState}
-              onChange={(e) => setSelectedCity(e.target.value)}
-              className={`w-full bg-surface-container-low border border-white/10 rounded-xl py-3 px-4 text-text-primary focus:ring-2 focus:ring-primary-container/50 focus:border-primary-container focus:outline-none transition-all ${!selectedState ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-            >
-              <option value="">
-                {selectedState ? 'Select a city' : 'Select a state first'}
-              </option>
-              {selectedState &&
-                citiesByState[selectedState].map((city) => (
-                  <option key={city} value={city}>{city}</option>
-                ))}
-            </select>
-          </div>
-        </div>
-      </section>
+                {/* Quick Back Arrow Header for Desktop Sub-settings Views */}
+                {activeSettingsTab !== 'index' && (
+                    <button
+                        type="button"
+                        onClick={() => setActiveSettingsTab('index')}
+                        className="hidden lg:flex items-center gap-1.5 text-sm font-bold text-text-secondary hover:text-white transition-colors mb-4 bg-transparent border-none cursor-pointer p-0"
+                    >
+                        <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                        <span>Return to Preferences</span>
+                    </button>
+                )}
 
-      {/* Notifications Section */}
-      <section className="glass-card bg-surface-ink border border-white/10 rounded-xl p-8 space-y-6">
-        <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-          <span className="material-symbols-outlined text-primary-container">notifications_active</span>
-          <h2 className="font-headline-md text-xl font-bold text-text-primary">Notifications</h2>
-        </div>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-label-md text-lg font-semibold text-text-primary">Push Notifications</p>
-              <p className="text-md text-text-secondary">Receive push notifications on your device</p>
-            </div>
-            <Toggle checked={pushEnabled} onChange={() => setPushEnabled(!pushEnabled)} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-label-md text-lg font-semibold text-text-primary">Email Notifications</p>
-              <p className="text-md text-text-secondary">Receive notifications via email</p>
-            </div>
-            <Toggle checked={emailEnabled} onChange={() => setEmailEnabled(!emailEnabled)} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-label-md text-lg font-semibold text-text-primary">Comment Replies</p>
-              <p className="text-md text-text-secondary">Get notified when someone replies to your comment</p>
-            </div>
-            <Toggle checked={repliesEnabled} onChange={() => setRepliesEnabled(!repliesEnabled)} />
-          </div>
-        </div>
-      </section>
+                {/* 🏆 SUB-FORM MATRIX SWITCHBOARD INJECTION */}
+                {activeSettingsTab === 'index' && <AppPreferencesForm />}
+                {activeSettingsTab === 'email' && <EmailSettingsForm />}
+                {activeSettingsTab === 'password' && <PasswordSettingsForm />}
+                {activeSettingsTab === 'account' && <DangerZoneSettingsForm />}
 
-      {/* Privacy & Security */}
-      <section className="glass-card bg-surface-ink border border-white/10 rounded-xl p-8 space-y-6">
-        <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-          <span className="material-symbols-outlined text-primary-container">security</span>
-          <h2 className="font-headline-md text-xl font-bold text-text-primary">Privacy &amp; Security</h2>
-        </div>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-label-md text-lg font-semibold text-text-primary">Private Profile</p>
-              <p className="text-md text-text-secondary">Only approved followers can see your posts</p>
             </div>
-            <Toggle checked={privateProfile} onChange={() => setPrivateProfile(!privateProfile)} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-label-md text-lg font-semibold text-text-primary">Two-Factor Authentication</p>
-              <p className="text-md text-text-secondary">Add an extra layer of security to your account</p>
-            </div>
-            <Toggle checked={twoFactor} onChange={() => setTwoFactor(!twoFactor)} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-label-md text-lg font-semibold text-text-primary">Show Personal Handle on Organization Profile</p>
-              <p className="text-md text-text-secondary">Allow your personal account handle to be visible when listed under organizations</p>
-            </div>
-            <Toggle checked={showPersonalHandle} onChange={() => setShowPersonalHandle(!showPersonalHandle)} />
-          </div>
-        </div>
-      </section>
 
-      {/* Appearance */}
-      <section className="glass-card bg-surface-ink border border-white/10 rounded-xl p-8 space-y-6">
-        <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-          <span className="material-symbols-outlined text-primary-container">palette</span>
-          <h2 className="font-headline-md text-xl font-bold text-text-primary">Appearance</h2>
         </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-label-md text-lg font-semibold text-text-primary">Dark Mode</p>
-            <p className="text-lg text-text-secondary">Use dark theme across the application</p>
-          </div>
-          <Toggle checked={theme === 'dark'} onChange={toggleTheme} />
-        </div>
-      </section>
-
-      {/* Action Buttons */}
-      <div className="flex items-center gap-4 pt-4">
-        <button
-          onClick={handleSaveChanges}
-          className="flex items-center gap-2 bg-primary-container text-white px-8 py-3.5 rounded-xl font-bold text-sm hover:brightness-110 active:scale-95 transition-all crimson-glow cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-[16px]">save</span>
-          Save Changes
-        </button>
-        <button
-          onClick={handleCancel}
-          className="bg-surface-container-high border border-white/5 hover:bg-surface-container-highest text-text-primary px-8 py-3.5 rounded-xl font-bold text-sm transition-all cursor-pointer"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  );
+    );
 };

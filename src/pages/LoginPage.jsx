@@ -4,7 +4,8 @@ import { useStore } from '../store/useStore';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const theme = useStore((s) => s.theme);
+  const theme = useStore((state) => state.theme);
+  const toggleTheme = useStore((state) => state.toggleTheme);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +22,8 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-background text-on-surface overflow-x-hidden">
+    <div className="min-h-screen flex flex-col justify-between bg-background text-on-surface overflow-x-hidden isolate">
+
       {/* TopNavBar */}
       <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-6 bg-transparent border-b border-white/5 backdrop-blur-sm">
         <div className="flex items-center gap-0 cursor-pointer" onClick={() => navigate('/')}>
@@ -30,7 +32,7 @@ export const LoginPage = () => {
             className="h-14 w-auto"
             src="/K99.png"
           />
-          <span className="font-headline-md text-2xl font-bold text-primary tracking-tight hidden sm:block"
+          <span className="font-headline-md text-2xl font-bold text-[#CC033B] tracking-tight hidden sm:block"
             style={{ fontSize: "36px", fontFamily: "Protest Riot, sans-serif" }}>
             Kollective
           </span>
@@ -56,28 +58,31 @@ export const LoginPage = () => {
           {/* Center Card */}
           <div className="glass-panel rounded-lg p-8 md:p-10 shadow-2xl relative overflow-hidden">
             {/* Subtle brand accent */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-container/10 to-transparent pointer-events-none"></div>
+            {/* <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-container/10 to-transparent pointer-events-none"></div> */}
 
             <div className="text-center mb-10">
               <h1 className="font-display-lg text-3xl md:text-4xl font-extrabold text-text-primary mb-2">Welcome Back</h1>
               <p className="font-body-md text-base text-on-surface-variant">Log in and share your voice</p>
             </div>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6 relative z-10" onSubmit={handleSubmit}>
               {/* Email Field */}
               <div className="space-y-2">
-                <label className="font-label-md text-base text-on-surface flex items-center gap-2" htmlFor="email">
-                  <span className="material-symbols-outlined text-[18px]">mail</span>
+                <label className="flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-on-surface-variant" htmlFor="email">
+                  <svg className="w-4 h-4 text-on-surface-variant/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002 2H5a2 2 0 00-2-2zm0 0V6a2 2 0 012-2h10a2 2 0 012 2v13H5z" />
+                  </svg>
                   Email Address
                 </label>
                 <div className="relative group">
                   <input
-                    className="w-full bg-surface-container-lowest border border-surface-variant rounded-lg px-4 py-3.5 text-on-surface text-base placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all"
+                    className="w-full px-4 py-3 bg-surface-container/40 rounded-xl border border-outline-variant text-text-primary placeholder:text-on-surface-variant/40 outline-none transition-all duration-200 focus:border-primary focus:ring-4 focus:ring-primary/10"
                     id="email"
                     placeholder="name@company.com"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
               </div>
@@ -85,33 +90,58 @@ export const LoginPage = () => {
               {/* Password Field */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label className="font-label-md text-base text-on-surface flex items-center gap-2" htmlFor="password">
-                    <span className="material-symbols-outlined text-[18px]">lock</span>
+                  <label className="flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-on-surface-variant" htmlFor="password">
+                    <svg className="w-4 h-4 text-on-surface-variant/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
                     Password
                   </label>
                 </div>
                 <div className="relative group">
                   <input
-                    className="w-full bg-surface-container-lowest border border-surface-variant rounded-lg px-4 py-3.5 text-on-surface text-base placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all"
+                    className="w-full pl-4 pr-12 py-3 bg-surface-container/40 rounded-xl border border-outline-variant text-text-primary placeholder:text-on-surface-variant/40 outline-none transition-all duration-200 focus:border-primary focus:ring-4 focus:ring-primary/10"
                     id="password"
                     placeholder="••••••••"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    required
                   />
                   <button
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface bg-transparent border-none cursor-pointer flex items-center justify-center"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-on-surface-variant/60 hover:text-text-primary rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     <span className="material-symbols-outlined text-[20px]">
-                      {showPassword ? 'visibility_off' : 'visibility'}
+                      {!showPassword ? 'visibility_off' : 'visibility'}
                     </span>
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between text-sm py-1">
+                <label className="flex items-center gap-2.5 cursor-pointer group select-none text-on-surface-variant hover:text-text-primary transition-colors">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-outline-variant bg-surface-container/40 text-primary focus:ring-primary/20 focus:ring-offset-0 accent-primary"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  Remember me
+                </label>
+                <a href="#forgot" className="font-medium text-primary hover:text-primary-hover hover:underline transition-colors focus:outline-none focus:underline"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // Create a new navigate function that ignores the first argument
+                    const newNavigate = (...args) => navigate(...args.slice(1));
+                    newNavigate(1, { replace: true });
+                  }}
+                >
+                  Forgot password?
+                </a>
+              </div>
+
+              <div className="flex items-center justify-between" hidden>
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className="relative flex items-center">
                     <input
@@ -125,12 +155,19 @@ export const LoginPage = () => {
                   </div>
                   <span className="font-label-sm text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Remember me</span>
                 </label>
-                <a className="font-label-sm text-sm text-primary hover:text-text-secondary transition-colors" href="#forgot" onClick={(e) => { e.preventDefault(); alert('Password recovery link sent.'); }}>Forgot your password?</a>
+                <a className="font-label-sm text-sm text-primary hover:text-text-secondary transition-colors" href="#forgot"
+                  onClick={(e) => { e.preventDefault(); alert('Password recovery link sent.'); }}>Forgot your password?
+                </a>
               </div>
 
-              <button className="w-full crimson-glow-button text-white font-label-md text-base font-bold py-4 rounded-lg flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer" type="submit">
+              <button
+                type="submit"
+                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-primary/20 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-primary/30"
+              >
                 Sign In
-                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                <svg className="w-5 h-5 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
               </button>
             </form>
 
@@ -143,7 +180,7 @@ export const LoginPage = () => {
           </div>
 
           {/* Aesthetic Credit */}
-          <div className="mt-8 flex items-center justify-center gap-4 opacity-40 hover:opacity-100 transition-opacity">
+          <div className="mt-8 flex items-center justify-center gap-4 opacity-40 hover:opacity-100 transition-opacity" hidden>
             <div className="w-12 h-12 flex items-center justify-center bg-surface-container rounded-full border border-white/10">
               <img alt="Identity" className="w-6 h-6 grayscale opacity-60" src="/K99.png" />
             </div>
@@ -160,7 +197,7 @@ export const LoginPage = () => {
         <div className="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop gap-4 w-full max-w-container-max mx-auto">
           <div className="flex items-center gap-4 font-label-sm text-sm text-on-surface-variant">
             <img alt="Logo" className="h-5 w-auto opacity-50" src="/K99.png" />
-            <span>© 2024 Vanguard. The Revolution is Digital.</span>
+            <span>© 2026 Kollective. The Revolution is Digital.</span>
           </div>
           <div className="flex gap-6">
             <a className="font-label-sm text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms</a>

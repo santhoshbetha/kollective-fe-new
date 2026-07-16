@@ -16,7 +16,7 @@ const ProfilePageDemo = () => {
             publication_count: 14,
             recent_publications: [
                 "Union Density and Automation Offsets in Heavy Manufacturing (2025)",
-                "Comparative Strike Tariffs: A Multi-district Longitudinal Survey (2024)"
+                "Comparative Strike Tariffs: A Multi-district Longitudinal Survey (2026)"
             ]
         }
     };
@@ -26,21 +26,19 @@ const ProfilePageDemo = () => {
             <div className="flex gap-4">
                 <button
                     onClick={() => setDisputeMode(false)}
-                    className={`px-4 py-2 text-xs font-mono font-bold transition-all border cursor-pointer ${
-                        !disputeMode
+                    className={`px-4 py-2 text-xs font-mono font-bold transition-all border cursor-pointer ${!disputeMode
                             ? "bg-emerald-600 text-white border-emerald-500"
                             : "bg-surface-container text-text-secondary border-white/5 hover:text-text-primary"
-                    }`}
+                        }`}
                 >
                     Verified Scholar View
                 </button>
                 <button
                     onClick={() => setDisputeMode(true)}
-                    className={`px-4 py-2 text-xs font-mono font-bold transition-all border cursor-pointer ${
-                        disputeMode
+                    className={`px-4 py-2 text-xs font-mono font-bold transition-all border cursor-pointer ${disputeMode
                             ? "bg-rose-600 text-white border-rose-500 animate-pulse"
                             : "bg-surface-container text-text-secondary border-white/5 hover:text-text-primary"
-                    }`}
+                        }`}
                 >
                     Disputed / Downgraded View
                 </button>

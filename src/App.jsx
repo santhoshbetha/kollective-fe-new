@@ -20,6 +20,7 @@ import { PollsPage } from './pages/PollsPage';
 import { CreatePollPage } from './pages/CreatePollPage';
 import { BusinessProposalDetailsPage } from './pages/BusinessProposalDetailsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SettingsPageO } from './pages/SettingsPageO';
 import { EditProfilePage } from './pages/EditProfilePage';
 import { BookmarksPage } from './pages/BookmarksPage';
 import { NotificationsPage } from './pages/NotificationsPage';
@@ -40,6 +41,8 @@ import ScholarDisputePage from './pages/ScholarDisputePage';
 // Guard & Layout Wrappers
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { MainLayout } from './components/MainLayout';
+import { ProfilePage } from './pages/ProfilePage';
+import { ProfileEditPage } from './pages/ProfileEditPage';
 
 
 const queryClient = new QueryClient({
@@ -70,11 +73,6 @@ export default function App() {
               <Route path="/explore" element={<ExplorePage />} />
               <Route path="/bookmarks" element={<BookmarksPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
-
-              {/* Organize Flow */}
-              <Route path="/organize" element={<OrganizePage />} />
-              <Route path="/organize/create" element={<CreateActionPage />} />
-              <Route path="/organize/:id" element={<ActionDetailsPage />} />
               <Route path="/post/:id" element={<PostDetailsPage />} />
 
               {/* Events Flow */}
@@ -93,11 +91,21 @@ export default function App() {
               <Route path="/polls" element={<PollsPage />} />
               <Route path="/polls/create" element={<CreatePollPage />} />
 
+              {/* Organize Flow */}
+              <Route path="/organize" element={<OrganizePage />} />
+              <Route path="/organize/create" element={<CreateActionPage />} />
+              <Route path="/organize/:id" element={<ActionDetailsPage />} />
+
+
               {/* Account Management */}
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settingso" element={<SettingsPageO />} />
               <Route path="/settings/profile" element={<EditProfilePage />} />
               <Route path="/profile/:username" element={<UserProfilePage />} />
               <Route path="/profile-demo" element={<ProfilePageDemo />} />
+
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/profile/edit" element={<ProfileEditPage />} />
 
               {/* Verification & Onboarding Flows */}
               <Route path="/verify" element={<UnifiedOnboardingOrchestrator />} />

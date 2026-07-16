@@ -13,7 +13,7 @@ export default {
         "on-tertiary": "#002681",
         "tertiary-fixed-dim": "#b7c4ff",
         "tertiary": "#b7c4ff",
-        "surface": "#141414", // Base background updated from #131313
+        "surface": "#141414",
         "surface-crimson-low": "#2D0A0A",
         "on-secondary": "#3e2e00",
         "tertiary-container": "#0052f9",
@@ -26,7 +26,7 @@ export default {
         "outline-variant": "#5e3f3a",
         "error": "#ffb4ab",
         "primary": "#ffb4a8",
-        "surface-dim": "#141414", // Dim surface updated from #131313
+        "surface-dim": "#141414",
         "secondary-fixed-dim": "#f2c025",
         "secondary-fixed": "#ffdf92",
         "on-secondary-fixed-variant": "#594400",
@@ -37,7 +37,7 @@ export default {
         "on-primary": "#690000",
         "tertiary-fixed": "#dce1ff",
         "surface-variant": "#353534",
-        "background": "#141414", // Background updated from #131313
+        "background": "#141414",
         "inverse-primary": "#c00000",
         "surface-container-low": "#1c1b1b",
         "text-secondary": "#A19B95",

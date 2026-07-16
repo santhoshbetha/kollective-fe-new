@@ -6,6 +6,7 @@ export function usePostsQuery() {
     const { data, isPending, error } = useQuery({
         queryKey: ['posts', 'stream'], // Isolated cache root key
         queryFn: api.getPosts,
+        // staleTime: Infinity,
     });
 
     return {
@@ -15,3 +16,4 @@ export function usePostsQuery() {
         postsError: error
     };
 }
+

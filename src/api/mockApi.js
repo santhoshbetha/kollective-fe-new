@@ -207,7 +207,22 @@ let posts = [
             },
             text: 'The infrastructure part is the bottleneck right now. Gas fees are the tax on the soul.',
             time: '12m ago',
-            likes: 8
+            likes: 8,
+            image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+            replies: [
+              {
+                id: 'r-1-1',
+                author: {
+                  name: 'Elena Thorne',
+                  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD85qQJcFfl7AKHAQa-8gW_JvuTeCwdJMhDpIVAfkFNS4zGYVyRKZvq3DtFN3KbBMYjRDxigr72I3k6XhmPKJV43OTdiomvzMT4-yPe9c7iNxKH03UG9wUQcJlxbZoxTOl_rwGcKMaBQ9urBL69DE1jFyMvVfE-qwxck8XYn-vlrUpIeBBON1KXUvELImyP48LH6O5oyltrkeJXG7-xIvsBCAwwQjyLgWVB_yIetyaHiZdNi1OQBk9dtLRaHM2U3JjLYQn3_2Waaew',
+                },
+                text: 'Agreed. L2 and L3 rollups are promising solutions, but UX is still lagging.',
+                time: '5m ago',
+                likes: 3,
+                image: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=800&q=80',
+                replies: []
+              }
+            ]
           }
         ]
       },
@@ -278,7 +293,7 @@ let organizeActions = [
     title: 'Clean Energy Jobs March',
     time: 'Sunday, Oct 29 • 1:00 PM',
     location: 'Lincoln Park Amphitheater',
-    organizer: 'Green Vanguard',
+    organizer: 'Green Kollective',
     rsvp: 'None',
     type: 'Rally'
   }
@@ -447,7 +462,7 @@ export const rsvpToAction = async (actionId, status) => {
   organizeActions = organizeActions.map(action => {
     if (action.id === actionId) {
       updatedAction = { ...action, rsvp: status };
-      
+
       // Update schedule state
       if (status === 'None' || status === '') {
         schedule = schedule.filter(s => s.title !== action.title);
@@ -719,7 +734,7 @@ export const createPoll = async (poll) => {
 
 export const voteInPoll = async (pollId, optionIndex) => {
   await delay(LATENCY);
-  polls = polls.map(p => {
+  polls = polls?.map(p => {
     if (p.id === pollId && !p.voted) {
       const updatedOptions = p.options.map((opt, idx) => {
         if (idx === optionIndex) {
@@ -737,7 +752,7 @@ export const voteInPoll = async (pollId, optionIndex) => {
     }
     return p;
   });
-  return polls.find(p => p.id === pollId);
+  return polls?.find(p => p.id === pollId);
 };
 
 export const updateUser = async (updatedData) => {
@@ -1016,3 +1031,203 @@ export const addEventComment = async (eventId, commentText) => {
   });
   return events.find(e => e.id === eventId);
 };
+
+
+//// new mock code from google AI
+
+
+// Add this helper module structure inside your frontend mock data file
+export const getMockPostContext = (currentPostId) => {
+  // Common mock author accounts
+  const authors = {
+    rootUser: {
+      name: "Sovereign Dev",
+      handle: "@sov_dev",
+      avatar: "https://unsplash.com",
+      verified: true,
+      role: "Core Archon"
+    },
+    middleUser: {
+      name: "Grid Operator",
+      handle: "@grid_op",
+      avatar: "https://unsplash.com",
+      verified: false,
+      role: "Node Tech"
+    },
+    focusUser: {
+      name: "Cyber Rebel",
+      handle: "@cy_rebel",
+      avatar: "https://unsplash.com",
+      verified: true,
+      role: "Kollective"
+    },
+    replyUserA: {
+      name: "Alice Node",
+      handle: "@alice",
+      avatar: "https://unsplash.com",
+      verified: false,
+      role: "Citizen"
+    },
+    replyUserB: {
+      name: "Bob Crypt",
+      handle: "@bob_crypto",
+      avatar: "https://unsplash.com",
+      verified: false,
+      role: "Validator"
+    }
+  };
+
+  return {
+    // 🔽 Ancestors Chain: Every post leading up to this one, sorted from top to bottom
+    ancestors: [
+      {
+        id: "post-root-100",
+        parentPostId: null,
+        author: authors.rootUser,
+        title: "The Sovereignty Manifesto Alpha",
+        text: "We are releasing the initial blueprint specifications for localized community grids today. Feedback on mesh topology routing profiles is welcome! #SovereignTech #Decentralize",
+        time: "2 hours ago",
+        likes: 342,
+        commentsCount: 18,
+        liked: true,
+        bookmarked: false
+      },
+      {
+        id: "post-reply-101",
+        parentPostId: "post-root-100",
+        author: authors.middleUser,
+        title: "", // Secondary replies usually drop the major title string feature
+        text: "@sov_dev Checked the parameters on District 9's allocation loop. If we run blind signature validations over low-bandwidth radios, won't validation frames drop?",
+        time: "1 hour ago",
+        likes: 54,
+        commentsCount: 4,
+        liked: false,
+        bookmarked: false
+      }
+    ],
+
+    // 🎯 The Focused Post Card: This directly matches the current URL route :id
+    focus: {
+      id: currentPostId, // Dynamically maps to whatever id was passed in the URL parameters
+      parentPostId: "post-reply-101",
+      author: authors.focusUser,
+      title: "",
+      text: "@grid_op @sov_dev We can mitigate validation drops completely by introducing cryptographic voting pipeline tokens! It sandboxes verification checks ahead of time, caching telemetry profiles locally.",
+      time: "45 mins ago",
+      likes: 89,
+      commentsCount: 2,
+      liked: false,
+      bookmarked: true
+    },
+
+    // 🔼 Descendants Tree: Sub-threads responding directly beneath the focused post
+    descendants: [
+      {
+        id: "post-child-201",
+        parentPostId: currentPostId,
+        author: authors.replyUserA,
+        title: "",
+        text: "@cy_rebel This is an elegant design pattern. Are those pipeline validation tickets single-use tokens, or do they refresh on epoch layout loops?",
+        time: "30 mins ago",
+        likes: 12,
+        commentsCount: 0,
+        liked: false,
+        bookmarked: false,
+        images: ["https://lh3.googleusercontent.com/aida-public/AB6AXuCYIcLHxbcrouUkl8jiAso6nVAcQtR8x3Oq9gyuXmoxZbjPuS6iM4Gz7INuNhk8zIk125rQjbBO2U5_KP-sfpRV05uaWtTAKUy0iOdZ9yPetghCRjvFz7luny9PzV_NWzWqRUZGQIN61LrzwL8ufhHdsg-1-cmyKYI21dj9Ad3EcRIo53jlaSq5mVOV1wpwSo-a-9RbjfVX81EkrIVoDemafpo_rYC1swAQHuGCfeO4HzUi6D_X33r_a6LjQZzLIcXhmECGbjCOnHI"]
+      },
+      {
+        id: "post-child-202",
+        parentPostId: currentPostId,
+        author: authors.replyUserB,
+        title: "",
+        text: "@cy_rebel Count me in to help audit the Elixir schema indices for this token table. We need quick indexes to block malicious double-tap attempts.",
+        time: "12 mins ago",
+        likes: 7,
+        commentsCount: 0,
+        liked: false,
+        bookmarked: false
+      }
+    ]
+  };
+};
+
+// src/api/mockApi.js
+
+// 🗄️ 1. Define a flat, single-source-of-truth post registry (Exactly like an Elixir DB table)
+const MOCK_POSTS_TABLE = [
+  {
+    id: "post-root-100",
+    parentPostId: null,
+    author: { name: "Sovereign Dev", handle: "@sov_dev", avatar: "https://unsplash.com", verified: true, role: "Core Archon" },
+    title: "The Sovereignty Manifesto Alpha",
+    text: "We are releasing the initial blueprint specifications for localized community grids today. Feedback on mesh topology routing profiles is welcome! #SovereignTech #Decentralize",
+    time: "2 hours ago", likes: 342, commentsCount: 18, liked: true, bookmarked: false
+  },
+  {
+    id: "post-reply-101",
+    parentPostId: "post-root-100",
+    author: { name: "Grid Operator", handle: "@grid_op", avatar: "https://unsplash.com", verified: false, role: "Node Tech" },
+    title: "",
+    text: "@sov_dev Checked the parameters on District 9's allocation loop. If we run blind signature validations over low-bandwidth radios, won't validation frames drop?",
+    time: "1 hour ago", likes: 54, commentsCount: 4, liked: false, bookmarked: false
+  },
+  {
+    id: "post-child-200", // This was currentPostId in the previous hardcoded state
+    parentPostId: "post-reply-101",
+    author: { name: "Cyber Rebel", handle: "@cy_rebel", avatar: "https://unsplash.com", verified: true, role: "Kollective" },
+    title: "",
+    text: "@grid_op @sov_dev We can mitigate validation drops completely by introducing cryptographic voting pipeline tokens! It sandboxes verification checks ahead of time, caching telemetry profiles locally.",
+    time: "45 mins ago", likes: 89, commentsCount: 2, liked: false, bookmarked: true
+  },
+  {
+    id: "post-child-201",
+    parentPostId: "post-child-200", // 🔗 Points to Cyber Rebel as its parent!
+    author: { name: "Alice Node", handle: "@alice", avatar: "https://unsplash.com", verified: false, role: "Citizen" },
+    title: "",
+    text: "@cy_rebel This is an elegant design pattern. Are those pipeline validation tickets single-use tokens, or do they refresh on epoch layout loops?",
+    time: "30 mins ago", likes: 12, commentsCount: 1, liked: false, bookmarked: false,
+    images: ["https://lh3.googleusercontent.com/aida-public/AB6AXuCYIcLHxbcrouUkl8jiAso6nVAcQtR8x3Oq9gyuXmoxZbjPuS6iM4Gz7INuNhk8zIk125rQjbBO2U5_KP-sfpRV05uaWtTAKUy0iOdZ9yPetghCRjvFz7luny9PzV_NWzWqRUZGQIN61LrzwL8ufhHdsg-1-cmyKYI21dj9Ad3EcRIo53jlaSq5mVOV1wpwSo-a-9RbjfVX81EkrIVoDemafpo_rYC1swAQHuGCfeO4HzUi6D_X33r_a6LjQZzLIcXhmECGbjCOnHI"]
+  },
+  {
+    id: "post-sub-child-301",
+    parentPostId: "post-child-201", // 🔗 Points to Alice Node as its parent!
+    author: { name: "Bob Crypt", handle: "@bob_crypto", avatar: "https://unsplash.com", verified: false, role: "Validator" },
+    title: "",
+    text: "@alice Personally, I think single-use tokens are best for blocking malicious double-tap attempts.",
+    time: "5 mins ago", likes: 3, commentsCount: 0, liked: false, bookmarked: false,
+    images: ["https://lh3.googleusercontent.com/aida-public/AB6AXuCYIcLHxbcrouUkl8jiAso6nVAcQtR8x3Oq9gyuXmoxZbjPuS6iM4Gz7INuNhk8zIk125rQjbBO2U5_KP-sfpRV05uaWtTAKUy0iOdZ9yPetghCRjvFz7luny9PzV_NWzWqRUZGQIN61LrzwL8ufhHdsg-1-cmyKYI21dj9Ad3EcRIo53jlaSq5mVOV1wpwSo-a-9RbjfVX81EkrIVoDemafpo_rYC1swAQHuGCfeO4HzUi6D_X33r_a6LjQZzLIcXhmECGbjCOnHI"]
+  }
+];
+
+// 🧠 2. The Dynamic Context Resolver Engine
+export const getMockPostContext2 = (targetId) => {
+  console.log("targetId", targetId);
+  const focusPost = MOCK_POSTS_TABLE.find(p => p.id === targetId);
+
+  // Guard clause: Return empty template if target isn't found
+  if (!focusPost) return { ancestors: [], focus: null, descendants: [] };
+
+  // 🔽 Build Ancestor Chain (Traverse backwards using parentPostId strings)
+  const ancestors = [];
+  let currentParentId = focusPost.parentPostId;
+
+  while (currentParentId) {
+    const parentNode = MOCK_POSTS_TABLE.find(p => p.id === currentParentId);
+    if (parentNode) {
+      ancestors.unshift(parentNode); // Prepend to maintain top-to-bottom chronological order
+      currentParentId = parentNode.parentPostId;
+    } else {
+      currentParentId = null;
+    }
+  }
+
+  // 🔼 Build Descendants List (Find all entries pointing directly to the target)
+  const descendants = MOCK_POSTS_TABLE.filter(p => p.parentPostId === targetId);
+
+  return {
+    ancestors,
+    focus: focusPost,
+    descendants
+  };
+};
+

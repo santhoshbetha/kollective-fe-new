@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useVoteInPoll } from './usePollsFeature';
+import { useVoteInPoll, useCryptographicVote } from './usePollsFeature';
 
 export const PollCard = ({ poll }) => {
     const [selectedOptions, setSelectedOptions] = useState({}); // Mapping of pollId -> selectedOptionIndex
     const [votingStates, setVotingStates] = useState({}); // Tracking loading status of votes per pollId
-    const { mutateAsync: voteInPoll } = useVoteInPoll();
+    const voteInPollMutation = useVoteInPoll();
+
+    const cryptoVoteMutation = useCryptographicVote();
 
     const handleSelectOption = (pollId, optionIndex) => {
         setSelectedOptions((prev) => ({
@@ -22,7 +24,7 @@ export const PollCard = ({ poll }) => {
 
         setVotingStates((prev) => ({ ...prev, [pollId]: true }));
 
-        voteInPoll(pollId, optionIndex, {
+        voteInPollMutation.mutate(pollId, optionIndex, {
             onSuccess: () => {
                 setVotingStates((prev) => ({ ...prev, [pollId]: false }));
             },

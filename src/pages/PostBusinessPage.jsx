@@ -318,7 +318,7 @@ export const PostBusinessPage = () => {
                   value={formData.established}
                   onChange={handleInputChange}
                   className="w-full bg-surface-ink border border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all text-lg placeholder:text-text-secondary/30"
-                  placeholder="2024"
+                  placeholder="2026"
                   type="number"
                 />
               </div>

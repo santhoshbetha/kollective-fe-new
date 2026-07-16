@@ -50,7 +50,7 @@ export const LandingPage = () => {
               Kollective
             </span>
             <img src="/K99.png" alt="Kollective Logo" className="h-14 w-16" />
-            <span className="text-xl font-bold sm:inline-block bg-[#E2023F] bg-clip-text text-transparent"
+            <span className="text-xl font-bold sm:inline-block  bg-[#CC033B] bg-clip-text text-transparent"
               style={{ fontSize: "36px", fontFamily: "Protest Riot, sans-serif" }}>
               Kollective
             </span>
@@ -311,7 +311,7 @@ export const LandingPage = () => {
           </div>
           <div className="pt-8 border-t dark:border-white/5 border-black/5 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-on-surface-variant font-label-md text-sm">
-              © 2024 Kollective. Built for the Sovereign Voice.
+              © 2026 Kollective. Built for the Sovereign Voice.
             </div>
             <div className="flex items-center gap-6">
               <a className="text-on-surface-variant dark:hover:text-white hover:text-primary transition-colors" href="#">

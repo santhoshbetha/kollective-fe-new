@@ -1,52 +1,60 @@
 // src/features/businesses/LocalBusinessesFeed.jsx
 import React from 'react';
 import { useBusinessesQuery } from './useBusinessesFeature';
+import { BusinessCard } from './BusinessCard';
 
-export function LocalBusinessesFeed() {
-    const { businesses, businessesLoading, businessesError } = useBusinessesQuery();
+export function LocalBusinessesFeed({ searchQuery, activeCategory, renderPagination, itemsPerPage, currentPage, onPageChange }) {
+    const { businesses = [], businessesLoading } = useBusinessesQuery();
+
+    const filteredBusinesses = businesses.filter(biz => {
+        const matchesCategory = activeCategory === 'All' || biz.category === activeCategory;
+        const matchesSearch = biz.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            biz.description.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+    });
+
+    const totalPages = Math.ceil(filteredBusinesses.length / itemsPerPage);
+    const paginatedBusinesses = filteredBusinesses.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    const BusinessSkeleton = () => (
+        <div className="glass-card rounded-[24px] overflow-hidden flex flex-col lg:flex-row border border-white/5 animate-pulse">
+            <div className="lg:w-[420px] h-[300px] lg:h-auto bg-surface-container-highest/20"></div>
+            <div className="flex-1 p-8 space-y-4">
+                <div className="h-6 bg-surface-container-highest/20 rounded w-1/3"></div>
+                <div className="h-4 bg-surface-container-highest/10 rounded w-full"></div>
+                <div className="h-4 bg-surface-container-highest/10 rounded w-5/6"></div>
+            </div>
+        </div>
+    );
 
     if (businessesLoading) {
-        return <div className="text-center py-12 text-text-secondary font-medium">Syncing directory registries...</div>;
+        return (
+            <div className="space-y-8 pb-20">
+                <BusinessSkeleton />
+                <BusinessSkeleton />
+            </div>
+        );
     }
 
-    if (businessesError) {
-        return <div className="text-center py-12 text-rose-500 font-medium">Failed to retrieve business registry.</div>;
+    if (filteredBusinesses.length === 0) {
+        return (
+            <div className="glass-card rounded-[24px] p-12 text-center border border-white/5 bg-[#141414]">
+                <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">storefront</span>
+                <h3 className="font-bold text-text-primary mb-2 text-lg">No businesses found</h3>
+                <p className="text-text-secondary text-base">Be the first to list a local business in this category!</p>
+            </div>
+        );
     }
 
     return (
-        <div className="w-full flex flex-col gap-4">
-            {businesses.length === 0 ? (
-                <div className="py-16 text-center text-text-secondary/60 bg-surface-container-low border border-white/5 rounded-2xl p-8">
-                    <span className="material-symbols-outlined text-[48px] opacity-40 mb-2">storefront</span>
-                    <p className="font-medium">No businesses registered in this area yet.</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {businesses.map((biz) => (
-                        <article
-                            key={biz.id}
-                            className="group bg-surface-container-low border border-white/5 p-6 rounded-2xl shadow-sm transition-all duration-200 hover:bg-surface-container-high/40 hover:border-white/10 flex flex-col gap-3"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-primary-container/10 border border-primary-container/20 text-primary-container flex items-center justify-center font-bold">
-                                    <span className="material-symbols-outlined text-[20px]">storefront</span>
-                                </div>
-                                <div>
-                                    <h3 className="font-title-md text-text-primary group-hover:text-primary-container transition-colors font-extrabold">
-                                        {biz.name}
-                                    </h3>
-                                    <span className="inline-block bg-white/5 border border-white/5 text-text-secondary text-[11px] font-bold px-2.5 py-0.5 rounded-full mt-0.5 uppercase tracking-wider">
-                                        {biz.category || 'Local Partner'}
-                                    </span>
-                                </div>
-                            </div>
-                            <p className="text-text-secondary text-body-md leading-relaxed line-clamp-2 mt-1">
-                                {biz.description}
-                            </p>
-                        </article>
-                    ))}
-                </div>
-            )}
+        <div className="space-y-8 pb-20">
+            {paginatedBusinesses.map((biz) => (
+                <BusinessCard key={biz.id} biz={biz} />
+            ))}
+            {renderPagination(currentPage, totalPages, onPageChange)}
         </div>
     );
 }

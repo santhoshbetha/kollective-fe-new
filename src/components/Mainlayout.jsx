@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/auth/useAuthStore';
 import { useStore } from '../store/useStore';
 //import { useTimelineSocket } from '../hooks/useTimelineSocket';
 import { CreatePostModal } from './CreatePostModal';
+import { useNotificationListener } from '../features/notifications/useNotificationListener';
 
 export const MainLayout = () => {
     const location = useLocation();
@@ -25,6 +26,7 @@ export const MainLayout = () => {
 
     // 📡 Real-time persistent Elixir channel push listener connection
     //useTimelineSocket();
+    useNotificationListener();
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -62,18 +64,17 @@ export const MainLayout = () => {
         navigate('/');
     };
 
-    // components/MainLayout.jsx (Part 2 of 3)
     return (
         <div className={`${theme === 'dark' ? 'dark' : ''} bg-surface text-text-primary min-h-screen custom-scrollbar flex flex-col`}>
 
             {/* 🖥️ Side Navigation Shell - Desktop */}
-            <aside className="fixed left-0 top-0 h-screen w-64 bg-surface-container-lowest border-r border-white/5 hidden md:flex flex-col z-50">
+            <aside className="fixed left-0 top-0 h-screen w-64 bg-surface-container-lowestX bg-transparent border-r border-white/5 hidden md:flex flex-col z-50">
                 <div className="flex flex-col gap-2 p-6 h-full">
                     {/* Logo */}
                     <div onClick={() => navigate('/')} className="mb-8 px-2 flex items-center gap-0 cursor-pointer hover:opacity-90">
                         <img src="/K99.png" alt="Kollective Logo" className="h-12 w-auto" />
                         <div>
-                            <span className="text-xl font-bold sm:inline-block bg-[#E2023F] bg-clip-text text-transparent"
+                            <span className="text-xl font-bold sm:inline-block bg-[#CC033B] bg-clip-text text-transparent"
                                 style={{ fontSize: "28px", fontFamily: "Protest Riot, sans-serif" }}>
                                 Kollective
                             </span>
@@ -214,7 +215,7 @@ export const MainLayout = () => {
                                 search
                             </span>
                             <input
-                                className="w-full bg-surface-container-lowest border border-white/10 rounded-full py-3 pl-12 pr-5 text-body-md font-label-md focus:outline-none focus:border-primary-container transition-colors placeholder-text-text-secondary/50 text-text-primary"
+                                className="w-full bg-surface-container-lowest/40 border border-white/10 rounded-full py-3 pl-12 pr-5 text-body-md font-label-md focus:outline-none focus:border-primary-container transition-colors placeholder-text-text-secondary/50 text-text-primary"
                                 placeholder="Search the Kollective..."
                                 type="text"
                             />

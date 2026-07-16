@@ -1,95 +1,76 @@
 // src/features/polls/PollsFeed.jsx
 import React from 'react';
-import { usePollsQuery } from './usePollsQuery';
-import { useVoteInPoll } from './useVoteInPoll';
-import { useIntersectionObserver } from '../../hooks/useIntersectionObserver';
+import { usePollsQuery } from './usePollsFeature'; // Hook A pulling data
+import { PollCard } from './PollCard';
 
-export function PollsFeed() {
-    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = usePollsQuery();
-    const voteMutation = useVoteInPoll();
+export function PollsFeed({ searchQuery, filterTab, endedPollsCallback }) {
+    const { polls, pollsLoading } = usePollsQuery();
 
-    const sentinelRef = useIntersectionObserver({
-        onIntersect: fetchNextPage,
-        enabled: hasNextPage && !isFetchingNextPage,
+    // Filter Logic Matrix
+    const filteredPolls = polls?.filter((poll) => {
+        const matchesSearch =
+            poll?.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            poll?.category.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesFilter =
+            filterTab === 'All' ||
+            (filterTab === 'Active' && poll?.active) ||
+            (filterTab === 'Ended' && !poll?.active);
+
+        return matchesSearch && matchesFilter;
     });
 
-    if (status === 'pending') return <div className="py-12 text-center text-text-secondary font-medium">Synchronizing consensus polls...</div>;
-    if (status === 'error') return <div className="py-12 text-center text-rose-500 font-medium">Failed to retrieve polls stream.</div>;
+    // Pull out closed entries cleanly to share up with the sidebar widgets layout
+    const endedPolls = polls?.filter((p) => !p.active) || [];
 
-    const polls = data?.pages.flatMap((page) => page.polls || []) || [];
+    // Safe lifecycle sync callback to pipeline variables out without causing loop re-renders
+    React.useEffect(() => {
+        if (endedPollsCallback && !pollsLoading) {
+            endedPollsCallback(endedPolls, pollsLoading);
+        }
+    }, [polls, pollsLoading]);
+
+    // 💀 Your Custom Pulse Skeleton Loader
+    const PollSkeleton = () => (
+        <div className="glass-panel p-6 rounded-2xl border border-white/5 animate-pulse space-y-6 bg-surface-container-low">
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-surface-container-highest/20 rounded-full"></div>
+                    <div className="space-y-2">
+                        <div className="h-4 bg-surface-container-highest/20 rounded w-24"></div>
+                        <div className="h-3 bg-surface-container-highest/10 rounded w-16"></div>
+                    </div>
+                </div>
+                <div className="h-6 bg-surface-container-highest/20 rounded w-16"></div>
+            </div>
+            <div className="h-6 bg-surface-container-highest/20 rounded w-5/6"></div>
+            <div className="space-y-3 pt-4">
+                <div className="h-12 bg-surface-container-highest/10 rounded-xl w-full"></div>
+                <div className="h-12 bg-surface-container-highest/10 rounded-xl w-full"></div>
+            </div>
+        </div>
+    );
 
     return (
-        <div className="polls-feed w-full flex flex-col gap-6">
-            {polls.length === 0 ? (
-                <div className="py-16 text-center text-text-secondary/60 bg-surface-container-low border border-white/5 rounded-2xl p-8">
-                    <span className="material-symbols-outlined text-[48px] opacity-40 mb-2">poll</span>
-                    <p className="font-medium">No active polls inside your collective.</p>
+        <div className="space-y-6 w-full">
+            {pollsLoading ? (
+                <>
+                    <PollSkeleton />
+                    <PollSkeleton />
+                </>
+            ) : filteredPolls?.length === 0 ? (
+                /* 🌌 Empty State Panel Container */
+                <div className="glass-card rounded-2xl p-12 text-center border border-white/5 bg-[#141414]">
+                    <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">poll</span>
+                    <h3 className="font-bold text-text-primary mb-2 text-lg">No polls found</h3>
+                    <p className="text-text-secondary text-base">Be the first to introduce a consensus poll to the collective!</p>
                 </div>
             ) : (
-                <div className="flex flex-col gap-4">
-                    {polls.map((poll) => (
-                        <article key={poll?.id} className="bg-surface-container-low border border-white/5 p-6 rounded-2xl shadow-sm flex flex-col gap-4">
-                            <div>
-                                <h3 className="text-xl font-extrabold text-text-primary tracking-tight">{poll?.question}</h3>
-                                <p className="text-xs text-text-secondary mt-1">{poll?.totalVotes} collective votes cast</p>
-                            </div>
-
-                            {/* Poll Options Interactive List */}
-                            <div className="flex flex-col gap-2">
-                                {poll?.options.map((option) => {
-                                    // Calculate dynamic mathematical percentages safely
-                                    const pct = poll?.totalVotes > 0 ? Math.round((option.votesCount / poll?.totalVotes) * 100) : 0;
-                                    const isSelected = poll?.userSelectedOptionId === option.id;
-
-                                    return (
-                                        <div key={option.id} className="relative w-full">
-                                            {poll?.voted ? (
-                                                /* 📊 Display Results Mode */
-                                                <div className="relative overflow-hidden w-full bg-surface-container-lowest border border-white/5 p-4 rounded-xl flex justify-between items-center z-10">
-                                                    {/* Progress Bar Background fill overlay */}
-                                                    <div
-                                                        className={`absolute left-0 top-0 h-full transition-all duration-500 ease-out z-0 ${isSelected ? 'bg-primary-container/20 border-r-2 border-primary-container' : 'bg-white/5'
-                                                            }`}
-                                                        style={{ width: `${pct}%` }}
-                                                    />
-                                                    <span className={`text-body-md relative z-10 font-medium ${isSelected ? 'text-primary-container font-bold' : 'text-text-primary'}`}>
-                                                        {option.text} {isSelected && '✓'}
-                                                    </span>
-                                                    <span className="text-label-md font-bold text-text-secondary relative z-10">{pct}%</span>
-                                                </div>
-                                            ) : (
-                                                /* 🗳️ Display Active Voting Interactive Mode */
-                                                <button
-                                                    onClick={() => voteMutation.mutate({ pollId: poll?.id, optionId: option.id })}
-                                                    disabled={voteMutation.isPending}
-                                                    className="w-full text-left bg-surface-container-lowest hover:bg-surface-container-high/60 border border-white/10 hover:border-primary-container/40 p-4 rounded-xl text-body-md text-text-primary transition-all font-semibold active:scale-[0.99] cursor-pointer disabled:pointer-events-none"
-                                                >
-                                                    {option.text}
-                                                </button>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </article>
-                    ))}
-                </div>
+                /* 🗳️ Poll Loop Mapping Block */
+                filteredPolls?.map((poll) => (
+                    <PollCard key={poll?.id} poll={poll} />
+                ))
             )}
-
-            {/* 🛑 INFINITE SCROLL TARGET SENTINEL ELEMENT */}
-            <div ref={sentinelRef} className="infinite-scroll-sentinel py-8 flex items-center justify-center w-full">
-                {isFetchingNextPage && (
-                    <p className="loading-more-text text-text-secondary text-sm font-medium flex items-center gap-2">
-                        <span className="animate-spin inline-block w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full"></span>
-                        Syncing additional voting archives...
-                    </p>
-                )}
-                {!hasNextPage && polls.length > 0 && (
-                    <p className="end-of-feed-text text-text-secondary/50 text-sm font-medium">
-                        You have reviewed all collective polls.
-                    </p>
-                )}
-            </div>
         </div>
     );
 }

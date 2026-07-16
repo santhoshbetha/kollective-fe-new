@@ -29,3 +29,31 @@ export function useVoteInPoll() {
         },
     });
 }
+
+export function useCryptographicVote() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ pollId, optionId }) => {
+            // 🎟️ STEP 1: Fetch a single-use blind token from the Auth pipeline
+            const { votingToken } = await apiFetch(`/polls/${pollId}/request-token`, {
+                method: 'POST'
+            });
+
+            // 🗳️ STEP 2: Deliver ONLY the option and token to the Ballot pipeline
+            return apiFetch(`/polls/${pollId}/cast-vote`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    option_id: optionId,
+                    proof_token: votingToken // 🔒 Zero account tracking markers sent here!
+                }),
+            });
+        },
+        onSuccess: () => {
+            // Invalidate the active stream immediately to update percentages
+            queryClient.invalidateQueries({ queryKey: ['polls', 'stream'] });
+        },
+    });
+}
+
+

@@ -24,3 +24,26 @@ export async function apiFetch(endpoint, options = {}, queryClient) {
 
     return response.json();
 }
+
+// src/api/apiClient.js
+import { getMockPostContext } from './mockApi';
+
+export async function apiFetchPosts(url, options = {}) {
+    // Intercept the post context pattern matching path strings
+    if (url.includes('/posts/') && url.includes('/context')) {
+        // Extract the id variable token out of the string split array indices
+        const segments = url.split('/');
+        const postId = segments[segments.length - 2];
+
+        // Simulate async network latency promise timers safely
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve(getMockPostContext(postId));
+            }, 400); // 400ms simulation time window
+        });
+    }
+
+    // Fallback to standard fetch processing blocks when production endpoints go live
+    // return fetch(url, options).then(res => res.json());
+}
+

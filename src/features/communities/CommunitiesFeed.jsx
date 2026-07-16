@@ -1,154 +1,175 @@
-// src/pages/CommunitiesPage.jsx (Part 1 of 2)
-import React from 'react';
+// src/features/communities/CommunitiesFeed.jsx
+import React, { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCommunitiesFeed } from './useCommunitiesFeed';
-import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
-import { useStore } from '@/store/useStore';
+import { Virtuoso } from 'react-virtuoso';
+import PullToRefresh from 'react-simple-pull-to-refresh';
+import { useStore } from '../../store/useStore';
+import { useCommunitiesFeed } from './useCommunitiesFeed'; // Assuming your custom geo hook path
+import { PostCard } from '../timeline/PostCard';
+import { useHomeTimeline } from '../timeline/useHomeTimeline';
 
 export function CommunitiesFeed() {
     const queryClient = useQueryClient();
-
-    // 🎛️ Pull geo-scope variables and action setters from your original useStore
     const activeTab = useStore((state) => state.communitiesTab);
-    const setCommunitiesTab = useStore((state) => state.setCommunitiesTab);
 
-    // 🔄 Fetch paginated circles matching this specific active scope
+    // 🔄 TanStack Infinite Query Pull mapped strictly by geographic scope key
     const {
         data,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-        status
+        status,
+        refetch
     } = useCommunitiesFeed();
 
-    // 🔔 Read the real-time push buffer linked specifically to this geo-scope
-    const { data: bufferedCircles = [] } = useQuery({
+    // 📡 Real-time Push Staging Buffer Query
+    const { data: bufferedPosts = [] } = useQuery({
         queryKey: ['communities', 'feed', activeTab, 'buffer'],
         queryFn: () => [],
         staleTime: Infinity,
     });
 
-    const unreadCount = bufferedCircles.length;
+    const unreadCount = bufferedPosts.length;
+    //const allPosts = data?.pages.flatMap((page) => page.posts || []) || [];//TODO -- original: open this later
 
-    // 🚀 Attach our non-blocking infinite scroll node
-    const sentinelRef = useIntersectionObserver({
-        onIntersect: fetchNextPage,
-        enabled: hasNextPage && !isFetchingNextPage,
-    });
+    //const { posts, isLoading: postsLoading } = usePostsQuery();
 
-    const tabOptions = ['Local', 'State', 'Country', 'World'];
+    const {
+        data2,
+        fetchNextPage2,
+        hasNextPage2,
+        isFetchingNextPage2,
+        status2
+    } = useHomeTimeline();
 
-    // 🔄 Flush buffered items directly into page 0 of the active geo-scope cache
+    console.log("Communities data2", data2);
+
+    const getPostGeoScope = (post) => {
+        // Map specific posts to scopes for realistic demo data
+        if (post?.id === 'strike-post-1') return 'Country';
+        if (post?.id === 'carousel-post-1') return 'Local';
+        if (post?.id === 'renaissance-post') return 'World';
+        if (post?.id === 'system-post-1') return 'Local';
+        // Fallbacks
+        if (post?.isVoice) return 'State';
+        return 'Local';
+    };
+
+    const allPosts = data2?.pages?.[0]?.filter(post => getPostGeoScope(post) === activeTab);
+    //const allPosts = data2?.pages.flatMap((page) => page.posts || []) || [];//posts?.filter(post => getPostGeoScope(post) === activeTab);
+    console.log("Communities allPosts", data2?.pages?.[0], activeTab);
+
+    const handleRefreshGesture = async () => {
+        // 🧼 Clear out any hidden background buffer counts during a hard pull action
+        queryClient.setQueryData(['communities', 'feed', activeTab, 'buffer'], []);
+
+        // 🔄 Fire a hard refetch loop down the network pipe to fetch fresh data
+        await refetch();
+        return true;
+    };
+
     const handleFlushBuffer = () => {
         if (unreadCount === 0) return;
-
-        queryClient.setQueryData(['communities', 'feed', activeTab], (oldData) => {
-            if (!oldData) return oldData;
-
+        queryClient.setQueryData(['communities', 'feed', activeTab], (old) => {
+            if (!old) return old;
             return {
-                ...oldData,
-                pages: oldData.pages.map((page, index) =>
-                    index === 0
-                        ? { ...page, items: [...bufferedCircles, ...page.items] }
-                        : page
+                ...old,
+                pages: old.pages.map((p, idx) =>
+                    idx === 0 ? { ...p, posts: [...bufferedPosts, ...p.posts] } : p
                 ),
             };
         });
-
-        // 🧼 Zero out just this tab's dynamic buffer cache key
         queryClient.setQueryData(['communities', 'feed', activeTab, 'buffer'], []);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    return (
-        <div className="communities-container w-full max-w-5xl mx-auto flex flex-col gap-6">
-
-            {/* 🧭 Sub-Navigation Scope Header */}
-            <div className="flex flex-col gap-4 border-b border-white/5 pb-2">
-                <div>
-                    <h2 className="text-headline-md font-extrabold text-text-primary tracking-tight">Circles</h2>
-                    <p className="text-text-secondary text-body-sm">Explore and coordinate across geometric geographic scales.</p>
-                </div>
-
-                {/* Tab Controls */}
-                <div className="flex gap-2 bg-surface-container-lowest p-1.5 rounded-xl border border-white/5 w-fit">
-                    {tabOptions.map((tab) => {
-                        const isSelected = activeTab === tab;
-                        return (
-                            <button
-                                key={tab}
-                                onClick={() => setCommunitiesTab(tab)}
-                                className={`px-5 py-2.5 rounded-lg text-label-md font-bold transition-all duration-200 active:scale-95 cursor-pointer ${isSelected
-                                    ? 'bg-primary-container text-white shadow-md shadow-primary-container/20'
-                                    : 'text-text-secondary hover:text-text-primary hover:bg-surface-container-high/40'
-                                    }`}
-                            >
-                                {tab}
-                            </button>
-                        );
-                    })}
+    // 💀 Preserved pulse animation skeleton component
+    const PostSkeleton = () => (
+        <div className="glass-card rounded-[16px] p-6 border border-white/5 animate-pulse flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-surface-container-highest/20"></div>
+                <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-surface-container-highest/20 rounded w-1/4"></div>
+                    <div className="h-3 bg-surface-container-highest/10 rounded w-1/6"></div>
                 </div>
             </div>
-
-            {/* 🔔 Real-time Contextual Scope Update Banner */}
-            {unreadCount > 0 && (
-                <button
-                    onClick={handleFlushBuffer}
-                    className="unread-banner w-full bg-primary-container text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-[0.99] shadow-md shadow-primary-container/10 animate-in fade-in slide-in-from-top duration-200"
-                >
-                    <span className="material-symbols-outlined text-[18px]">update</span>
-                    See {unreadCount} new {unreadCount === 1 ? 'circle' : 'circles'} in {activeTab}
-                </button>
-            )}
-
-            {/* 🚨 API Connection Query Status Guards */}
-            {status === 'pending' && (
-                <div className="py-12 text-center text-text-secondary font-medium">Loading {activeTab} circles...</div>
-            )}
-
-            {status === 'error' && (
-                <div className="py-12 text-center text-rose-500 font-medium">Failed to synchronize communities.</div>
-            )}
-
-            {/* 🏙️ Main Community Grid/List Stream */}
-            {status === 'success' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {data?.pages.flatMap((page) => page.items || []).map((circle) => (
-                        <article
-                            key={circle.id}
-                            className="group bg-surface-container-low border border-white/5 p-6 rounded-2xl shadow-sm transition-all duration-200 hover:bg-surface-container-high/40 hover:border-white/10 cursor-pointer flex flex-col gap-3"
-                        >
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-xl bg-surface-container-highest border border-white/5 flex items-center justify-center text-primary-container text-xl font-bold group-hover:scale-105 transition-transform">
-                                        {circle.name.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-title-md text-text-primary group-hover:text-primary-container transition-colors font-extrabold">{circle.name}</h3>
-                                        <p className="text-text-secondary text-label-sm">{circle.membersCount} members</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <p className="text-text-secondary text-body-md line-clamp-2 leading-relaxed">{circle.description}</p>
-                        </article>
-                    ))}
-                </div>
-            )}
-
-            {/* 🛑 THE INFINITE SCROLL SENTINEL NODE */}
-            <div ref={sentinelRef} className="infinite-scroll-sentinel py-8 flex items-center justify-center w-full">
-                {isFetchingNextPage && (
-                    <p className="loading-more-text text-text-secondary text-sm font-medium flex items-center gap-2">
-                        <span className="animate-spin inline-block w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full"></span>
-                        Discovering more areas...
-                    </p>
-                )}
-                {!hasNextPage && data?.pages?.[0]?.items?.length > 0 && (
-                    <p className="end-of-feed-text text-text-secondary/50 text-sm font-medium">
-                        You have discovered all circles mapped to {activeTab}.
-                    </p>
-                )}
+            <div className="space-y-2 mt-2">
+                <div className="h-4 bg-surface-container-highest/20 rounded w-full"></div>
+                <div className="h-4 bg-surface-container-highest/20 rounded w-5/6"></div>
             </div>
+            <div className="h-48 bg-surface-container-highest/10 rounded-xl mt-2"></div>
         </div>
+    );
+
+    if (status === 'pending') {
+        return (
+            <div className="flex flex-col gap-6">
+                <PostSkeleton />
+                <PostSkeleton />
+            </div>
+        );
+    }
+
+    //if (status === 'error') { //TODO -- original: open this later
+    //     return <div className="text-center py-12 text-rose-500 font-bold border border-white/5 rounded-2xl">Failed to synchronize geographic pulses.</div>;
+    // }
+
+    return (
+        <PullToRefresh
+            onRefresh={handleRefreshGesture}
+            pullingContent="" // Disables default plain text headers to preserve clean UI
+            backgroundColor="transparent"
+            maxPullDownDistance={90}
+        >
+            <div className="w-full flex flex-col">
+
+                {/* 🔔 Dynamic scope-bound staging update banner */}
+                {unreadCount > 0 && (
+                    <button
+                        className="unread-banner w-full bg-primary-container text-white border border-primary-container crimson-glow font-bold py-3.5 px-4 rounded-xl mb-6 transition-all hover:brightness-110 flex items-center justify-center gap-2 shadow-md animate-in fade-in slide-in-from-top duration-200 cursor-pointer"
+                        onClick={handleFlushBuffer}
+                    >
+                        <span className="material-symbols-outlined text-[18px]">distance</span>
+                        View {unreadCount} new issues inside {activeTab}
+                    </button>
+                )}
+
+                {allPosts?.length === 0 ? (
+                    /* 🌌 Empty State Panel Container */
+                    <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-[#141414]">
+                        <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">distance</span>
+                        <h3 className="font-bold text-text-primary mb-2 text-lg">No geographic updates</h3>
+                        <p className="text-text-secondary text-sm">
+                            No active concerning issues reported for the "{activeTab}" level yet.
+                        </p>
+                    </div>
+                ) : (
+                    /* 🏆 Custom List Border Wrapping Shell */
+                    <div className="flex flex-col border border-[#262626] bg-[#141414] rounded-[16px] overflow-hidden shadow-2xl">
+                        <Virtuoso
+                            useWindowScroll
+                            data={allPosts}
+                            endReached={() => {
+                                if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+                            }}
+                            overscan={400}
+                            itemContent={(index, post) => (
+                                <PostCard key={index} post={post} isLast={index === allPosts.length - 1} />
+                            )}
+                            components={{
+                                Footer: () => isFetchingNextPage && (
+                                    <div className="py-12 flex flex-col items-center gap-4 border-t border-white/5 bg-[#141414]">
+                                        <div className="w-8 h-8 rounded-full border-2 border-t-primary-container border-white/10 animate-spin"></div>
+                                        <p className="text-text-secondary text-sm font-bold uppercase tracking-widest">
+                                            Loading older geographic pulses
+                                        </p>
+                                    </div>
+                                )
+                            }}
+                        />
+                    </div>
+                )}
+            </div>
+        </PullToRefresh>
     );
 }
