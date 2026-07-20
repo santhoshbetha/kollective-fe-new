@@ -1,155 +1,134 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { VerificationBadge } from './VerificationBadge';
+import { Link } from 'lucide-react';
+import { cn } from "@/lib/utils";
+// Import your design system's Radix portal primitives
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 export const UserHoverCard = ({ author, children }) => {
-  const navigate = useNavigate();
-  const [visible, setVisible] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const timeoutRef = useRef(null);
+    const navigate = useNavigate();
+    const [isFollowing, setIsFollowing] = useState(false);
 
-  // Mock profile data based on name to match attached design
-  const getProfileData = (name) => {
-    switch (name) {
-      case 'Marcus Vane':
-        return {
-          bio: 'Chief Coordinator. Building frontline local resilience protocols. Backing sovereign digital networks.',
-          followers: '14.2K',
-          website: 'marcusvane.org'
-        };
-      case 'Elena Thorne':
-        return {
-          bio: 'Cooperative researcher and digital autonomy advocate. Investigating decentralized alternative wealth models.',
-          followers: '8.6K',
-          website: 'elenathorne.net'
-        };
-      case 'Ars Technica':
-        return {
-          bio: 'Original news, reviews, analysis of tech trends, and expert advice on the most...',
-          followers: '226K',
-          website: 'arstechnica.com'
-        };
-      default:
-        return {
-          bio: 'Active contributor to the decentralized community feed. Building sovereign local structures.',
-          followers: '2.5K',
-          website: 'kollective.org'
-        };
-    }
-  };
+    const getProfileData = (name) => {
+        switch (name) {
+            case 'Marcus Vane':
+                return {
+                    bio: 'Chief Coordinator. Building frontline local resilience protocols. Backing sovereign digital networks.',
+                    followers: '14.2K',
+                    website: 'marcusvane.org'
+                };
+            default:
+                return {
+                    bio: 'Active contributor to the decentralized community feed. Building sovereign local structures.',
+                    followers: '2.5K',
+                    website: 'kollective.social'
+                };
+        }
+    };
 
-  const profile = getProfileData(author.name);
+    const profile = getProfileData(author.name);
 
-  const handleMouseEnter = () => {
-    console.log('HoverCard: Mouse Enter on', author.name);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      console.log('HoverCard: Setting visible to true for', author.name);
-      setVisible(true);
-    }, 250);
-  };
+    const handleNavigation = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const username = (author.handle || author.name.toLowerCase().replace(/\s+/g, '_')).replace('@', '');
+        navigate(`/profile/${username}`, { state: { fromCard: true } });
+    };
 
-  const handleMouseLeave = () => {
-    console.log('HoverCard: Mouse Leave from', author.name);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      console.log('HoverCard: Setting visible to false for', author.name);
-      setVisible(false);
-    }, 300);
-  };
+    return (
+        <HoverCard openDelay={200} closeDelay={250}>
+            {/* Trigger element wraps your child avatar/username safely */}
+            <HoverCardTrigger asChild>
+                <span className="cursor-pointer inline-flex items-center" onClick={handleNavigation}>
+                    {children}
+                </span>
+            </HoverCardTrigger>
 
-  return (
-    <div
-      className="relative inline-block"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Trigger element (avatar or username wrapper) */}
-      <span
-        className="cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation();
-          const username = (author.handle || author.name.toLowerCase().replace(/\s+/g, '_')).replace('@', '');
-          navigate(`/profile/${username}`, { state: { fromCard: true } });
-        }}
-      >
-        {children}
-      </span>
-
-      {/* Hover Card Popover */}
-      {visible && (
-        <div
-          onClick={(e) => e.stopPropagation()} // Prevents navigating to post details page
-          className="absolute left-0 mt-2 w-72 bg-surface-container-lowest border border-white/10 rounded-xl p-4 shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-200"
-        >
-          {/* Top Profile Summary */}
-          <div className="flex gap-3 items-start mb-3">
-            {author.avatar ? (
-              <img
-                alt={author.name}
-                className="w-12 h-12 rounded-xl object-cover border border-white/10 flex-shrink-0"
-                src={author.avatar}
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center font-bold text-sm text-white uppercase flex-shrink-0">
-                {author.name[0]}
-              </div>
-            )}
-
-            <div className="overflow-hidden">
-              <h4 className="font-bold text-text-primary text-sm truncate flex items-center gap-1">
-                {author.name}
-                {author.verified && (
-                  <VerificationBadge type="journalist" size="md" />
-                )}
-              </h4>
-
-              <p className="text-[15px] text-text-secondary truncate">
-                {author.handle || `@${author.name.toLowerCase().replace(' ', '_')}`}@kollective.social
-              </p>
-            </div>
-          </div>
-
-          {/* Bio text */}
-          <p className="text-sm text-text-secondary leading-relaxed mb-4">
-            {profile.bio}
-          </p>
-
-          {/* Metadata row */}
-          <div className="flex items-center justify-between text-[15px] text-text-secondary mb-4 border-t border-white/5 pt-3">
-            <span className="font-semibold">{author.role || 'Citizen'}</span>
-            <a
-              href={`https://${profile.website}`}
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-green-400 hover:underline flex items-center gap-0.5 font-bold"
+            {/* HoverCardContent uses a Portal under the hood, completely safe from overlap */}
+            <HoverCardContent
+                onClick={(e) => e.stopPropagation()}
+                align="start"
+                side="bottom"
+                sideOffset={8}
+                className="w-72 bg-[var(--surface-container)]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[999]"
             >
-              ✓ {profile.website}
-            </a>
-          </div>
+                {/* Summary Block */}
+                <div className="flex gap-3 items-start mb-3">
+                    {author.avatar ? (
+                        <img
+                            alt={author.name}
+                            className="w-11 h-11 rounded-xl object-cover border border-border/20 shrink-0 opacity-90"
+                            src={author.avatar}
+                        />
+                    ) : (
+                        <div className="w-11 h-11 rounded-xl bg-primary/5 flex items-center justify-center font-bold text-sm text-primary/70 uppercase shrink-0">
+                            {author.name[0]}
+                        </div>
+                    )}
 
-          {/* Stats count */}
-          <p className="text-sm text-text-primary mb-4">
-            <strong className="font-extrabold">{profile.followers}</strong> <span className="text-text-secondary">followers</span>
-          </p>
+                    <div className="min-w-0 flex-1">
+                        <h4
+                            onClick={handleNavigation}
+                            className="font-semibold text-foreground/90 text-sm truncate flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
+                        >
+                            {author.name}
+                            {author.verified && <VerificationBadge type="journalist" size="md" className="opacity-80" />}
+                        </h4>
 
-          {/* Follow Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              setIsFollowing(!isFollowing);
-            }}
-            className={`w-full py-2.5 rounded-lg font-bold text-sm uppercase tracking-wider transition-all active:scale-98 cursor-pointer ${isFollowing
-              ? 'bg-surface-container-high border border-white/10 text-text-secondary'
-              : 'bg-primary-container text-white crimson-glow hover:brightness-110'
-              }`}
-          >
-            {isFollowing ? 'Following ✓' : 'Follow'}
-          </button>
-        </div>
-      )}
-    </div>
-  );
+                        <p className="text-xs text-muted-foreground/60 truncate font-medium mt-0.5">
+                            {author.handle || `@${author.name.toLowerCase().replace(/\s+/g, '_')}`}@kollective.social
+                        </p>
+                    </div>
+                </div>
+
+                {/* Bio Node */}
+                <p className="text-xs text-muted-foreground/80 leading-relaxed mb-3 line-clamp-3 font-normal">
+                    {profile.bio}
+                </p>
+
+                {/* Metadata Row */}
+                <div className="flex items-center justify-between text-xs mb-3 border-t border-border/20 pt-2.5">
+                    <span className="font-medium text-muted-foreground/70">{author.role || 'Citizen'}</span>
+                    <a
+                        href={`https://${profile.website}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[#c2185b]/80 hover:text-[#c2185b] font-semibold inline-flex items-center gap-1 transition-colors"
+                    >
+                        <Link className="w-3 h-3 opacity-60" />
+                        {profile.website}
+                    </a>
+                </div>
+
+                {/* Followers Count */}
+                <p className="text-xs text-muted-foreground/70 mb-4">
+                    <strong className="font-semibold text-foreground/80 mr-0.5">{profile.followers}</strong> followers
+                </p>
+
+                {/* Follow CTA Button */}
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setIsFollowing(!isFollowing);
+                    }}
+                    className={cn(
+                        "w-full py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer shadow-xs",
+                        isFollowing
+                            ? "bg-[var(--surface-container)]/50 border border-border/30 text-muted-foreground/80 hover:text-foreground"
+                            : "bg-[#c2185b]/80 hover:bg-[#c2185b] text-white/90 hover:text-white"
+                    )}
+                >
+                    {isFollowing ? 'Following ✓' : 'Follow'}
+                </button>
+            </HoverCardContent>
+        </HoverCard>
+    );
 };

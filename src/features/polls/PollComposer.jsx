@@ -87,9 +87,10 @@ export function PollComposer({ options, setOptions, expiresValue, setExpiresValu
                         onChange={(e) => setExpiresValue(e.target.value)}
                         className="bg-[#111111] border border-white/10 text-xs font-bold rounded-lg px-2 py-1 text-text-primary focus:outline-none cursor-pointer"
                     >
-                        <option value="300">5 Minutes</option>
-                        <option value="86400">1 Day</option>
-                        <option value="604800">1 Week</option>
+                        <option value="86400">24 hours</option>
+                        <option value="259200">3 days</option>
+                        <option value="604800">1 week</option>
+                        <option value="1209600">2 weeks</option>
                     </select>
                 </div>
             </div>

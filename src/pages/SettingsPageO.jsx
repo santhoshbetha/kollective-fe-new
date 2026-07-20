@@ -71,7 +71,7 @@ export const SettingsPageO = () => {
             <img
               alt="User avatar"
               className="w-full h-full rounded-full object-cover"
-              src={user?.avatar}
+              src={user?.avatar || null}
             />
           </div>
           <div>

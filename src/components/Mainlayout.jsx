@@ -37,7 +37,7 @@ export const MainLayout = () => {
 
     const navItems = [
         { name: 'Home', path: '/home', icon: 'home' },
-        { name: 'Communities', path: '/communities', icon: 'groups' },
+        { name: 'Communities', path: '/communities', icon: 'communities' },
         { name: 'Events', path: '/events', icon: 'calendar_today' },
         { name: 'Polls', path: '/polls', icon: 'poll' },
         { name: 'Explore', path: '/explore', icon: 'explore' },
@@ -45,6 +45,7 @@ export const MainLayout = () => {
         { name: 'Organize', path: '/organize', icon: 'campaign' },
         { name: 'Local Businesses', path: '/businesses', icon: 'storefront' },
         { name: 'Notifications', path: '/notifications', icon: 'notifications' },
+        { name: 'Civic Assembly', path: '/campaigns/local', icon: 'groups' },
         { name: 'Settings', path: '/settings', icon: 'settings' },
     ];
 
@@ -72,9 +73,9 @@ export const MainLayout = () => {
                 <div className="flex flex-col gap-2 p-6 h-full">
                     {/* Logo */}
                     <div onClick={() => navigate('/')} className="mb-8 px-2 flex items-center gap-0 cursor-pointer hover:opacity-90">
-                        <img src="/K99.png" alt="Kollective Logo" className="h-12 w-auto" />
+                        <img src="/KThunder.png" alt="Kollective Logo" className="h-8 w-auto" />
                         <div>
-                            <span className="text-xl font-bold sm:inline-block bg-[#CC033B] bg-clip-text text-transparent"
+                            <span className="text-xl font-bold sm:inline-block bg-[#CC033B] bg-clip-text text-transparent ml-1"
                                 style={{ fontSize: "28px", fontFamily: "Protest Riot, sans-serif" }}>
                                 Kollective
                             </span>

@@ -128,7 +128,7 @@ const profilesData = {
     followingCount: '45',
     followersCount: '1.2K',
     metadata: [
-      { key: 'Website', value: 'kollective.org', verified: true, url: 'https://kollective.org' },
+      { key: 'Website', value: 'kollective.social', verified: true, url: 'https://kollective.social' },
       { key: 'Location', value: 'California', verified: false }
     ],
     posts: []
@@ -277,7 +277,7 @@ export const UserProfilePage = () => {
       followingCount: '98',
       followersCount: '2.5K',
       metadata: [
-        { key: 'Website', value: 'kollective.org', verified: false, url: 'https://kollective.org' },
+        { key: 'Website', value: 'kollective.social', verified: false, url: 'https://kollective.social' },
         { key: 'Joined', value: 'Jun 2026', verified: false }
       ],
       posts: []

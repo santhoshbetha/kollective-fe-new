@@ -2,16 +2,132 @@
 
 export const LOCAL_OFFICES_REGISTRY = {
     'US': [
-        { id: 'school_board', category: 'Education', label: 'School Board Member', scope: 'county', desc: 'Oversees school district policies, budgets, and curriculum frameworks.' },
-        { id: 'sheriff', category: 'Criminal Justice', label: 'County Sheriff', scope: 'county', desc: 'Manages local jails, sets arrest priorities, and guides county law enforcement.' },
-        { id: 'prosecutor', category: 'Criminal Justice', label: 'District Attorney / Prosecutor', scope: 'county', desc: 'Wields broad discretion over charges, bail terms, and sentencing recommendations.' },
-        { id: 'coroner', category: 'Criminal Justice', label: 'County Coroner', scope: 'county', desc: 'Oversees localized forensic death investigations and autopsy audits.' },
-        { id: 'trial_judge', category: 'Judiciary', label: 'Local Trial Court Judge', scope: 'county', desc: 'Presides over civil, criminal, family, or landlord-tenant case dockets.' },
-        { id: 'city_council', category: 'Governance', label: 'City Council Member', scope: 'city', desc: 'Approves municipal budgets, passes local ordinances, and regulates zoning laws.' },
-        { id: 'mayor', category: 'Governance', label: 'Mayor (Executive)', scope: 'city', desc: 'Appoints department heads (police, sanitation) and manages daily city operations.' },
-        { id: 'county_supervisor', category: 'Governance', label: 'County Board Supervisor / Commissioner', scope: 'county', desc: 'Levies county taxes, issues service contracts, and administers elections.' },
-        { id: 'public_works', category: 'Infrastructure', label: 'Public Works / Water Commissioner', scope: 'city', desc: 'Manages utility rates, water supply, sewage, and public environmental infrastructure.' },
-        { id: 'comptroller', category: 'Finance', label: 'City Comptroller', scope: 'city', desc: 'Chief financial officer auditing local agencies, contracts, and municipal pensions.' }
+        {
+            id: 'school_board',
+            category: 'Education',
+            label: 'School Board Member',
+            scope: 'county',
+            desc: 'Oversees school district policies, budgets, and curriculum frameworks.'
+        },
+        {
+            id: 'sheriff',
+            category: 'Criminal Justice',
+            label: 'County Sheriff',
+            scope: 'county',
+            desc: 'Manages local jails, sets arrest priorities, and guides county law enforcement.'
+        },
+        {
+            id: 'prosecutor',
+            category: 'Criminal Justice',
+            label: 'District Attorney / Prosecutor',
+            scope: 'county',
+            desc: 'Wields broad discretion over charges, bail terms, and sentencing recommendations.'
+        },
+        {
+            id: 'coroner',
+            category: 'Criminal Justice',
+            label: 'County Coroner',
+            scope: 'county',
+            desc: 'Oversees localized forensic death investigations and autopsy audits.'
+        },
+        {
+            id: 'trial_judge',
+            category: 'Judiciary',
+            label: 'Local Trial Court Judge',
+            scope: 'county',
+            desc: 'Presides over civil, criminal, family, or landlord-tenant case dockets.'
+        },
+        {
+            id: 'city_council',
+            category: 'Governance',
+            label: 'City Council Member',
+            scope: 'city',
+            desc: 'Approves municipal budgets, passes local ordinances, and regulates zoning laws.'
+        },
+        {
+            id: 'mayor',
+            category: 'Governance',
+            label: 'Mayor (Executive)',
+            scope: 'city',
+            desc: 'Appoints department heads (police, sanitation) and manages daily city operations.'
+        },
+        {
+            id: 'county_supervisor',
+            category: 'Governance',
+            label: 'County Board Supervisor / Commissioner',
+            scope: 'county',
+            desc: 'Levies county taxes, issues service contracts, and administers elections.'
+        },
+        {
+            id: 'public_works',
+            category: 'Infrastructure',
+            label: 'Public Works / Water Commissioner',
+            scope: 'city',
+            desc: 'Manages utility rates, water supply, sewage, and public environmental infrastructure.'
+        },
+        {
+            id: 'comptroller',
+            category: 'Finance',
+            label: 'City Comptroller',
+            scope: 'city',
+            desc: 'Chief financial officer auditing local agencies, contracts, and municipal pensions.'
+        }
+    ],
+    'IN': [
+        // --- Rural (Panchayati Raj) ---
+        {
+            id: 'gram_panchayat_member',
+            category: 'Rural Governance',
+            label: 'Gram Panchayat Member (Panch)',
+            scope: 'village',
+            desc: 'Directly elected representative of a village ward. Votes on local development plans and beneficiary selection for welfare schemes.'
+        },
+        {
+            id: 'sarpanch',
+            category: 'Rural Governance',
+            label: 'Sarpanch / Pradhan / Mukhiya',
+            scope: 'village',
+            desc: 'Directly elected village head in most states (e.g., UP, Bihar, AP, Rajasthan, MP, Haryana). Note: Elected indirectly by members in Karnataka, Kerala, and West Bengal.'
+        },
+        {
+            id: 'panchayat_samiti_member',
+            category: 'Rural Governance',
+            label: 'Panchayat Samiti Member (Block Councillor)',
+            scope: 'block',
+            desc: 'Directly elected representative for the intermediate block-level council (Mandal Parishad/Janpad Panchayat). Coordinates funding across multiple villages.'
+        },
+        {
+            id: 'zila_parishad_member',
+            category: 'Rural Governance',
+            label: 'Zila Parishad Member (District Councillor)',
+            scope: 'district',
+            desc: 'Directly elected representative for the district-level council. Oversees large-scale infrastructure and manages devolved state funds.'
+        },
+
+        // --- Urban (Municipalities) ---
+        {
+            id: 'municipal_councillor',
+            category: 'Urban Governance',
+            label: 'Ward Councillor / Corporator',
+            scope: 'city/town',
+            desc: 'Directly elected representative of an urban ward in Municipal Corporations or Councils. Responsible for civic utilities, sanitation, and local zoning.'
+        },
+        {
+            id: 'mayor_direct',
+            category: 'Urban Governance',
+            label: 'Mayor / Chairperson (Directly Elected)',
+            scope: 'city',
+            desc: 'Executive head elected directly by citizens in Uttar Pradesh, Haryana, Madhya Pradesh, Bihar, Jharkhand, Odisha, and Uttarakhand. (In states like Maharashtra, Karnataka, and West Bengal, this role is indirectly elected).'
+        },
+
+        // --- Specialized / Tribal ---
+        {
+            id: 'adc_member',
+            category: 'Tribal Governance',
+            label: 'Autonomous District Council Member',
+            scope: 'district',
+            desc: 'Directly elected in Sixth Schedule tribal areas (Assam, Meghalaya, Mizoram, Tripura) to legislate on land, customs, and forests.'
+        }
     ],
 
     // 🇨🇦 CANADA EXTENSION: Automatic data-driven layout swap
@@ -98,62 +214,6 @@ export const LOCAL_OFFICES_REGISTRY = {
             desc: 'Elected in specialized tribal zones under the 6th Schedule to legislate on land, custom, and local culture.'
         }
     ],
-    'IN': [
-        // --- Rural (Panchayati Raj) ---
-        {
-            id: 'gram_panchayat_member',
-            category: 'Rural Governance',
-            label: 'Gram Panchayat Member (Panch)',
-            scope: 'village',
-            desc: 'Directly elected representative of a village ward. Votes on local development plans and beneficiary selection for welfare schemes.'
-        },
-        {
-            id: 'sarpanch',
-            category: 'Rural Governance',
-            label: 'Sarpanch / Pradhan / Mukhiya',
-            scope: 'village',
-            desc: 'Directly elected village head in most states (e.g., UP, Bihar, AP, Rajasthan, MP, Haryana). Note: Elected indirectly by members in Karnataka, Kerala, and West Bengal.'
-        },
-        {
-            id: 'panchayat_samiti_member',
-            category: 'Rural Governance',
-            label: 'Panchayat Samiti Member (Block Councillor)',
-            scope: 'block',
-            desc: 'Directly elected representative for the intermediate block-level council (Mandal Parishad/Janpad Panchayat). Coordinates funding across multiple villages.'
-        },
-        {
-            id: 'zila_parishad_member',
-            category: 'Rural Governance',
-            label: 'Zila Parishad Member (District Councillor)',
-            scope: 'district',
-            desc: 'Directly elected representative for the district-level council. Oversees large-scale infrastructure and manages devolved state funds.'
-        },
-
-        // --- Urban (Municipalities) ---
-        {
-            id: 'municipal_councillor',
-            category: 'Urban Governance',
-            label: 'Ward Councillor / Corporator',
-            scope: 'city/town',
-            desc: 'Directly elected representative of an urban ward in Municipal Corporations or Councils. Responsible for civic utilities, sanitation, and local zoning.'
-        },
-        {
-            id: 'mayor_direct',
-            category: 'Urban Governance',
-            label: 'Mayor / Chairperson (Directly Elected)',
-            scope: 'city',
-            desc: 'Executive head elected directly by citizens in Uttar Pradesh, Haryana, Madhya Pradesh, Bihar, Jharkhand, Odisha, and Uttarakhand. (In states like Maharashtra, Karnataka, and West Bengal, this role is indirectly elected).'
-        },
-
-        // --- Specialized / Tribal ---
-        {
-            id: 'adc_member',
-            category: 'Tribal Governance',
-            label: 'Autonomous District Council Member',
-            scope: 'district',
-            desc: 'Directly elected in Sixth Schedule tribal areas (Assam, Meghalaya, Mizoram, Tripura) to legislate on land, customs, and forests.'
-        }
-    ]
 };
 
 export function useLocalOffices(countryCode, userCity, userState) {

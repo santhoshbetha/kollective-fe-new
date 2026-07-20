@@ -502,7 +502,7 @@ export const EventDetailsPage = () => {
 
       {/* Footer */}
       <footer className="mt-16 text-center text-text-secondary/30 text-sm pb-12">
-        © 2026 Kollective. Built for revolutionary community leadership. All Rights Reserved.
+        © {new Date().getFullYear()} Kollective. Built for revolutionary community leadership. All Rights Reserved.
       </footer>
 
     </div>

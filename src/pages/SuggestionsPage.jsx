@@ -42,7 +42,7 @@ export const SuggestionsPage = () => {
                             <div key={account.id} className="p-5 bg-[#141414] border border-[#262626] rounded-2xl flex items-center justify-between gap-4 hover:border-white/10 transition-colors">
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-[#1A1616]">
-                                        <img src={account.avatar} alt="" className="w-full h-full object-cover" />
+                                        <img src={account.avatar || null} alt="" className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex flex-col min-w-0">
                                         <span className="font-bold text-text-primary text-sm truncate">{account.name || account.username}</span>

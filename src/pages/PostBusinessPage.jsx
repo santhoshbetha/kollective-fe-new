@@ -73,7 +73,7 @@ export const PostBusinessPage = () => {
       zip: formData.zip,
       email: formData.email,
       phone: formData.phone,
-      website: formData.website || 'kollective.org',
+      website: formData.website || 'kollective.social',
       established: parseInt(formData.established, 10) || new Date().getFullYear(),
       employees: formData.employees,
       hours: formData.hours,

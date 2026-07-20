@@ -4,6 +4,15 @@ import { useEventsQuery, useToggleEventInterest } from './useEventsFeature';
 import { useStore } from '../../store/useStore';
 import { EventCard } from './EventCard';
 import { EventDateBadge, AttendeeStack } from './EventComponents';
+import {
+    Filter,
+    ChevronDown,
+    Search,
+    MapPin,
+    Calendar,
+    X
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Assuming you have an EventCard presentation sub-component imported or defined
 function EventCardX({ event, onInterestToggle, isPending }) {
@@ -249,7 +258,9 @@ export function EventsFeed({
         <div className="">
             {/* 🥞 Toast Notice Banner Indicator Popup Overlay */}
             {toastMessage && (
-                <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-surface-container-high border border-primary-container text-text-primary px-6 py-3.5 rounded-xl font-bold text-label-md shadow-2xl animate-in fade-in slide-in-from-bottom duration-200 z-[9999] crimson-glow">
+                <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-surface-container-high 
+                  border border-primary-container text-text-primary px-6 py-3.5 rounded-xl font-bold text-label-md 
+                  shadow-2xl animate-in fade-in slide-in-from-bottom duration-200 z-[9999] crimson-glow">
                     {toastMessage}
                 </div>
             )}
@@ -308,107 +319,157 @@ export function EventsFeed({
             </div>
 
             {/* Collapsible Search/Filter Card */}
-            <section className="mb-12 bg-[#141414] border border-[#262626] rounded-[8px] shadow-2xl">
+            <section className="mb-12 bg-surface-container border border-outline-variant rounded-card shadow-2xl overflow-hidden font-sans transition-all">
+                {/* Accordion Trigger Header */}
                 <button
+                    type="button"
                     onClick={() => setIsSearchExpanded(!isSearchExpanded)}
-                    className="w-full flex items-center justify-between px-6 py-4 focus:outline-none bg-transparent border-none text-left cursor-pointer"
+                    className="w-full flex items-center justify-between px-6 py-4 focus:outline-none bg-transparent border-none text-left cursor-pointer hover:bg-surface-container-high/50 transition-colors"
                 >
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-zinc-900 rounded-[8px] flex items-center justify-center border border-zinc-800">
-                            <span className="material-symbols-outlined text-[#a10836] text-xl">filter_list</span>
+                        <div className="w-10 h-10 bg-surface-container-low rounded-card flex items-center justify-center border border-outline-variant/60 shrink-0">
+                            <Filter className="w-5 h-5 text-primary" />
                         </div>
-                        <span className="text-lg font-bold text-white">Find Your Local Events</span>
+                        <span className="text-lg font-bold text-text-primary">Find Your Local Events</span>
                     </div>
-                    <span
-                        className={`material-symbols-outlined text-gray-500 transition-transform duration-300 ${isSearchExpanded ? 'rotate-180' : ''
-                            }`}
-                    >
-                        expand_more
-                    </span>
+                    <ChevronDown
+                        className={cn(
+                            "w-5 h-5 text-text-secondary transition-transform duration-300",
+                            isSearchExpanded && "rotate-180"
+                        )}
+                    />
                 </button>
 
-                <div className={`transition-all duration-300 ease-out overflow-hidden px-6 ${isSearchExpanded ? 'max-h-[2000px] opacity-100 pb-8 border-t border-[#262626]/50 pt-6' : 'max-h-0 opacity-0'
-                    }`}>
+                {/* Expandable Filter Panel */}
+                <div
+                    className={cn(
+                        "transition-all duration-300 ease-out overflow-hidden px-6",
+                        isSearchExpanded
+                            ? "max-h-[2000px] opacity-100 pb-8 border-t border-outline-variant/40 pt-6"
+                            : "max-h-0 opacity-0 py-0 border-t-0"
+                    )}
+                >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                         {/* Search Input */}
                         <div className="space-y-2 flex flex-col">
-                            <label className="text-xs font-bold text-[#A19B95] uppercase tracking-widest">Search Events</label>
-                            <div className="relative">
+                            <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">
+                                Search Events
+                            </label>
+                            <div className="relative group">
+                                <Search className="w-4 h-4 text-text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors group-focus-within:text-primary" />
                                 <input
-                                    className="w-full bg-[#0a0a0a] border border-[#262626] focus:border-[#a10836] focus:ring-1 focus:ring-[#a10836] text-sm rounded-[8px] pl-10 py-3 text-white placeholder:text-gray-600 outline-none"
+                                    className="w-full bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 text-xs sm:text-sm rounded-card pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/40 outline-none transition-all"
                                     placeholder="Find parties, meetups, conferences..."
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
-                                <span className="material-symbols-outlined text-gray-500 absolute left-3 top-3 text-[20px]">search</span>
+                                {searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary p-0.5 rounded-md bg-transparent border-none cursor-pointer"
+                                        aria-label="Clear event search text"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
-                            <p className="text-[11px] text-[#A19B95] italic">Search across event titles, descriptions, locations, and organizer names</p>
+                            <p className="text-[11px] text-text-secondary/60 italic">
+                                Search across event titles, descriptions, locations, and organizer names
+                            </p>
                         </div>
 
                         {/* Location Input */}
                         <div className="space-y-2 flex flex-col">
-                            <label className="text-xs font-bold text-[#A19B95] uppercase tracking-widest">Filter by Location</label>
-                            <div className="relative">
+                            <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">
+                                Filter by Location
+                            </label>
+                            <div className="relative group">
+                                <MapPin className="w-4 h-4 text-text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors group-focus-within:text-primary" />
                                 <input
-                                    className="w-full bg-[#0a0a0a] border border-[#262626] focus:border-[#a10836] focus:ring-1 focus:ring-[#a10836] text-sm rounded-[8px] pl-10 py-3 text-white placeholder:text-gray-600 outline-none"
+                                    className="w-full bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 text-xs sm:text-sm rounded-card pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/40 outline-none transition-all"
                                     placeholder="Search for a location..."
                                     type="text"
                                     value={locationQuery}
                                     onChange={(e) => setLocationQuery(e.target.value)}
                                 />
-                                <span className="material-symbols-outlined text-gray-500 absolute left-3 top-3 text-[20px]">location_on</span>
+                                {locationQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setLocationQuery('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary p-0.5 rounded-md bg-transparent border-none cursor-pointer"
+                                        aria-label="Clear location text"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Event Categories Tags */}
+                    {/* Event Categories Tag Bar */}
                     <div className="mt-8">
-                        <label className="text-xs font-bold text-[#A19B95] uppercase tracking-widest block mb-4">Event Categories</label>
-                        <div className="flex flex-wrap gap-2">
+                        <label className="text-xs font-bold text-text-secondary uppercase tracking-widest block mb-4">
+                            Event Categories
+                        </label>
+                        <div className="flex flex-wrap items-center gap-2 w-full">
                             {categories.map((cat) => {
                                 const isActive = categoryFilter === cat;
                                 return (
-                                    <span
+                                    <button
+                                        type="button"
                                         key={cat}
                                         onClick={() => setCategoryFilter(cat)}
-                                        className={`category-tag px-4 py-2 border rounded-full text-xs font-bold cursor-pointer transition-all ${isActive
-                                            ? 'bg-[#a10836] border-[#a10836] text-white'
-                                            : 'bg-[#0a0a0a] border-[#262626] text-[#A19B95] hover:border-[#a10836] hover:bg-zinc-900'
-                                            }`}
+                                        className={cn(
+                                            "px-4 py-2 border rounded-full text-xs font-bold cursor-pointer transition-all shrink-0",
+                                            isActive
+                                                ? "bg-primary border-primary text-on-primary shadow-xs"
+                                                : "bg-surface-container-low border-outline-variant text-text-secondary hover:border-primary hover:bg-surface-container-high hover:text-text-primary"
+                                        )}
                                     >
                                         {cat}
-                                    </span>
+                                    </button>
                                 );
                             })}
                         </div>
                     </div>
 
-                    <div className="mt-8 flex flex-wrap items-center justify-between gap-6">
+                    {/* Bottom Options Row */}
+                    <div className="mt-8 flex flex-wrap items-center justify-between gap-6 pt-4 border-t border-outline-variant/30">
+
+                        {/* Date Picker Button */}
                         <div className="flex items-center gap-6">
                             <button
+                                type="button"
                                 onClick={() => showToast('Date picker is coming soon!')}
-                                className="bg-[#0a0a0a] border border-[#262626] px-4 py-2 rounded-[8px] text-xs flex items-center gap-2 hover:bg-zinc-900 transition-colors text-white cursor-pointer"
+                                className="bg-surface-container-low border border-outline-variant px-4 py-2 rounded-card text-xs font-bold flex items-center gap-2 hover:bg-surface-container-high transition-colors text-text-primary cursor-pointer"
                             >
-                                <span className="material-symbols-outlined text-[16px] text-gray-500">calendar_today</span>
-                                Pick dates
+                                <Calendar className="w-4 h-4 text-text-secondary" />
+                                <span>Pick dates</span>
                             </button>
                         </div>
 
-                        {/* Event Format */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-[10px] font-bold text-[#A19B95] uppercase tracking-widest">Event Type</label>
-                            <div className="flex bg-[#0a0a0a] p-1 rounded-[8px] border border-[#262626]">
+                        {/* Event Format Selection Capsule */}
+                        <div className="flex flex-col gap-2 w-full sm:w-auto">
+                            <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
+                                Event Type
+                            </label>
+                            <div className="flex bg-surface-container-low p-1 rounded-card border border-outline-variant">
                                 {['All Events', 'Online', 'In-Person'].map((opt) => {
                                     const isChecked = formatFilter === opt;
                                     return (
                                         <button
+                                            type="button"
                                             key={opt}
                                             onClick={() => setFormatFilter(opt)}
-                                            className={`px-4 py-1.5 text-xs font-bold rounded-[8px] transition-all cursor-pointer border-none ${isChecked
-                                                ? 'bg-zinc-800 text-white'
-                                                : 'text-[#A19B95] hover:text-white bg-transparent'
-                                                }`}
+                                            className={cn(
+                                                "flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-card transition-all cursor-pointer border-none",
+                                                isChecked
+                                                    ? "bg-surface-container-high text-text-primary shadow-xs"
+                                                    : "text-text-secondary hover:text-text-primary bg-transparent"
+                                            )}
                                         >
                                             {opt}
                                         </button>
@@ -416,6 +477,7 @@ export function EventsFeed({
                                 })}
                             </div>
                         </div>
+
                     </div>
                 </div>
             </section>

@@ -20,7 +20,7 @@ export function CreatePollPage() {
 
     // Dynamic Array Modifier: Add an additional blank input choice field
     const addOptionField = () => {
-        if (options.length >= 6) return; // Defensive constraint: Maximum 6 options per poll
+        if (options.length >= 4) return; // Defensive constraint: Maximum 6 options per poll
         setOptions([...options, '']);
     };
 

@@ -1,125 +1,139 @@
 @import "tailwindcss";
+@import "react-day-picker/dist/style.css";
 
-/* Tells Tailwind v4 to trigger dark: utilities when .dark is present */
+/* Tells Tailwind v4 to trigger dark: utilities when .dark class is present on document element */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Light Mode values (Clean premium modern layout: solid white panels, slate-50 backgrounds, slate-200 borders, soft shadows) */
-  --secondary-container: #e6c300;
-  --primary-container: #a10836;
-  --on-tertiary: #ffffff;
-  --tertiary-fixed-dim: #b7c4ff;
-  --tertiary: #0052f9;
-  --surface: #ffffff;
-  --surface-crimson-low: #fce8e6;
-  --on-secondary: #ffffff;
-  --tertiary-container: #dce1ff;
-  --error-container: #fce8e6;
-  --surface-ink: #ffffff;
-  --on-tertiary-fixed-variant: #0039b4;
-  --surface-container-lowest: #ffffff;
-  --on-primary-container: #ffffff;
-  --on-secondary-fixed: #241a00;
-  --outline-variant: #e2e8f0;
-  --error: #a10836;
+  /* --- Brand Primary Palette & Base Tokens (Light Mode) --- */
   --primary: #a10836;
-  --surface-dim: #e2e8f0;
-  --secondary-fixed-dim: #f2c025;
-  --secondary-fixed: #ffdf92;
-  --on-secondary-fixed-variant: #594400;
-  --outline: #94a3b8;
-  --gold-muted: #d4a017;
-  --on-tertiary-fixed: #001551;
-  --inverse-surface: #141414;
-  --on-primary: #ffffff;
-  --tertiary-fixed: #dce1ff;
-  --surface-variant: #f1f5f9;
-  --background: #f8fafc;
-  --inverse-primary: #ffb4a8;
-  --surface-container-low: #ffffff;
-  --text-secondary: #475569;
-  --surface-container-highest: #cbd5e1;
-  --primary-fixed-dim: #ffb4a8;
-  --surface-bright: #ffffff;
-  --on-tertiary-container: #001551;
-  --text-primary: #0f172a;
-  --on-error-container: #690005;
-  --on-background: #0f172a;
-  --on-secondary-container: #554100;
-  --surface-container-high: #f1f5f9;
-  --surface-tint: #a10836;
-  --on-primary-fixed: #410000;
-  --on-error: #ffffff;
-  --on-surface: #0f172a;
-  --inverse-on-surface: #e5e2e1;
-  --surface-container: #ffffff;
+  --primary-container: #a10836;
   --primary-fixed: #ffdad4;
+  --primary-fixed-dim: #ffb4a8;
+  --on-primary: #ffffff;
+  --on-primary-container: #ffffff;
+  --on-primary-fixed: #410000;
   --on-primary-fixed-variant: #930000;
-  --on-surface-variant: #475569;
+  --inverse-primary: #ffb4a8;
+
+  /* --- Secondary Accents & Muted Gold Tokens --- */
   --secondary: #f8c62c;
+  --secondary-container: #e6c300;
+  --secondary-fixed: #ffdf92;
+  --secondary-fixed-dim: #f2c025;
+  --on-secondary: #ffffff;
+  --on-secondary-container: #554100;
+  --on-secondary-fixed: #241a00;
+  --on-secondary-fixed-variant: #594400;
+  --gold-muted: #d4a017;
+
+  /* --- Tertiary Digital Accent Tokens --- */
+  --tertiary: #0052f9;
+  --tertiary-container: #dce1ff;
+  --tertiary-fixed: #dce1ff;
+  --tertiary-fixed-dim: #b7c4ff;
+  --on-tertiary: #ffffff;
+  --on-tertiary-container: #001551;
+  --on-tertiary-fixed: #001551;
+  --on-tertiary-fixed-variant: #0039b4;
+
+  /* --- Error Framework --- */
+  --error: #a10836;
+  --error-container: #fce8e6;
+  --on-error: #ffffff;
+  --on-error-container: #690005;
+
+  /* --- Semantic Interface Layers --- */
+  --background: #f8fafc;
+  --on-background: #0f172a;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --outline: #94a3b8;
+  --outline-variant: #e2e8f0;
+
+  /* --- Surface Structure Levels --- */
+  --surface: #ffffff;
+  --surface-dim: #e2e8f0;
+  --surface-bright: #ffffff;
+  --surface-variant: #f1f5f9;
+  --surface-ink: #ffffff;
+  --surface-tint: #a10836;
+  --surface-crimson-low: #fce8e6;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #ffffff;
+  --surface-container: #ffffff;
+  --surface-container-high: #f1f5f9;
+  --surface-container-highest: #cbd5e1;
+  --inverse-surface: #141414;
+  --inverse-on-surface: #e5e2e1;
 }
 
 .dark {
-  /* Plektos-inspired Midnight Galaxy Theme with Red primary */
-  --secondary-container: #d9aa00;
-  --primary-container: #a10836;
-  --on-tertiary: #002681;
-  --tertiary-fixed-dim: #b7c4ff;
-  --tertiary: #b7c4ff;
-  --surface: #0f1423;
-  /* HSL 228 40% 10% */
-  --surface-crimson-low: #2b0d0d;
-  --on-secondary: #3e2e00;
-  --tertiary-container: #0052f9;
-  --error-container: #93000a;
-  --surface-ink: #0b0f19;
-  --on-tertiary-fixed-variant: #0039b4;
-  --surface-container-lowest: #060810;
-  --on-primary-container: #ffdad4;
-  --on-secondary-fixed: #241a00;
-  --outline-variant: rgba(255, 255, 255, 0.08);
-  --error: #ffb4ab;
+  /* --- Brand Primary Palette & Base Tokens (Midnight Crimson) --- */
   --primary: #a10836;
-  --surface-dim: #0b0f19;
-  --secondary-fixed-dim: #f2c025;
-  --secondary-fixed: #ffdf92;
-  --on-secondary-fixed-variant: #594400;
-  --outline: rgba(255, 255, 255, 0.2);
-  --gold-muted: #D4A017;
-  --on-tertiary-fixed: #001551;
-  --inverse-surface: #ebedf5;
-  --on-primary: #690000;
-  --tertiary-fixed: #dce1ff;
-  --surface-variant: #1a2037;
-  --background: #0b0f19;
-  /* HSL 228 40% 8% */
-  --inverse-primary: #c00000;
-  --surface-container-low: #0c0f1d;
-  --text-secondary: #929cb5;
-  /* Muted blue-gray text */
-  --surface-container-highest: #282d4f;
-  --primary-fixed-dim: #ffb4a8;
-  --surface-bright: #1e223c;
-  --on-tertiary-container: #dce1ff;
-  --text-primary: #f0f2fa;
-  /* Bright off-white/ice-blue text */
-  --on-error-container: #ffdad6;
-  --on-background: #ebedf5;
-  --on-secondary-container: #554100;
-  --surface-container-high: #16192e;
-  --surface-tint: #ffb4a8;
-  --on-primary-fixed: #410000;
-  --on-error: #690005;
-  --on-surface: #ebedf5;
-  --inverse-on-surface: #1e1e2d;
-  --surface-container: #121526;
+  --primary-container: #a10836;
   --primary-fixed: #ffdad4;
+  --primary-fixed-dim: #ffb4a8;
+  --on-primary: #690000;
+  --on-primary-container: #ffdad4;
+  --on-primary-fixed: #410000;
   --on-primary-fixed-variant: #930000;
-  --on-surface-variant: #e8bdb6;
+  --inverse-primary: #c00000;
+
+  /* --- Secondary Accents & Muted Gold Tokens --- */
   --secondary: #f8c62c;
+  --secondary-container: #d9aa00;
+  --secondary-fixed: #ffdf92;
+  --secondary-fixed-dim: #f2c025;
+  --on-secondary: #3e2e00;
+  --on-secondary-container: #554100;
+  --on-secondary-fixed: #241a00;
+  --on-secondary-fixed-variant: #594400;
+  --gold-muted: #d4a017;
+
+  /* --- Tertiary Digital Accent Tokens --- */
+  --tertiary: #b7c4ff;
+  --tertiary-container: #0052f9;
+  --tertiary-fixed: #dce1ff;
+  --tertiary-fixed-dim: #b7c4ff;
+  --on-tertiary: #002681;
+  --on-tertiary-container: #dce1ff;
+  --on-tertiary-fixed: #001551;
+  --on-tertiary-fixed-variant: #0039b4;
+
+  /* --- Error Framework --- */
+  --error: #ffb4ab;
+  --error-container: #93000a;
+  --on-error: #690005;
+  --on-error-container: #ffdad6;
+
+  /* --- Semantic Interface Layers --- */
+  --background: #0b0f19;
+  --on-background: #ebedf5;
+  --text-primary: #f0f2fa;
+  --text-secondary: #929cb5;
+  --outline: rgba(255, 255, 255, 0.2);
+  --outline-variant: rgba(255, 255, 255, 0.08);
+
+  /* --- Surface Structure Levels --- */
+  --surface: #0f1423;
+  --surface-dim: #0b0f19;
+  --surface-bright: #1e223c;
+  --surface-variant: #1a2037;
+  --surface-ink: #0b0f19;
+  --surface-tint: #ffb4a8;
+  --surface-crimson-low: #2b0d0d;
+  --surface-container-lowest: #060810;
+  --surface-container-low: #0c0f1d;
+  --surface-container: #121526;
+  --surface-container-high: #16192e;
+  --surface-container-highest: #282d4f;
+  --inverse-surface: #ebedf5;
+  --inverse-on-surface: #1e1e2d;
 }
 
 @theme {
+  /* System Brand Mappings */
   --color-secondary-container: var(--secondary-container);
   --color-primary-container: var(--primary-container);
   --color-on-tertiary: var(--on-tertiary);
@@ -132,7 +146,10 @@
   --color-error-container: var(--error-container);
   --color-surface-ink: var(--surface-ink);
   --color-on-tertiary-fixed-variant: var(--on-tertiary-fixed-variant);
+
+  /* CRITICAL BUG FIX: Swapped broken var(--r-lowest) configuration path target to valid pointer value */
   --color-surface-container-lowest: var(--surface-container-lowest);
+
   --color-on-primary-container: var(--on-primary-container);
   --color-on-secondary-fixed: var(--on-secondary-fixed);
   --color-outline-variant: var(--outline-variant);
@@ -173,49 +190,46 @@
   --color-on-surface-variant: var(--on-surface-variant);
   --color-secondary: var(--secondary);
 
-  --radius-card: 0px;
+  /* Radius Framework Overrides */
+  --radius-card: 16px;
+  --radius-pill: 9999px;
 
+  /* Desktop Lay-Out Dimensions */
   --spacing-container-max: 1280px;
   --spacing-margin-desktop: 64px;
   --spacing-base: 8px;
   --spacing-gutter: 24px;
   --spacing-margin-mobile: 20px;
 
-  --font-label-sm: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-headline-md: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-display-lg: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-body-md: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-headline-lg-mobile: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-headline-lg: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-body-lg: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-label-md: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Typography Matrix Configurations */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  --font-size-label-sm: 15px;
-  --font-size-label-sm--line-height: 22px;
-  --font-size-headline-md: 24px;
-  --font-size-headline-md--line-height: 32px;
-  --font-size-display-lg: 48px;
-  --font-size-display-lg--line-height: 56px;
-  --font-size-body-md: 18px;
-  --font-size-body-md--line-height: 26px;
-  --font-size-headline-lg-mobile: 28px;
-  --font-size-headline-lg-mobile--line-height: 36px;
-  --font-size-headline-lg: 32px;
-  --font-size-headline-lg--line-height: 40px;
-  --font-size-body-lg: 20px;
-  --font-size-body-lg--line-height: 30px;
-  --font-size-label-md: 18px;
-  --font-size-label-md--line-height: 26px;
+  --font-size-xs: 13px;
+  --font-size-xs--line-height: 18px;
+  --font-size-sm: 15px;
+  --font-size-sm--line-height: 22px;
+  --font-size-base: 16px;
+  --font-size-base--line-height: 24px;
+  --font-size-lg: 18px;
+  --font-size-lg--line-height: 26px;
+  --font-size-xl: 20px;
+  --font-size-xl--line-height: 30px;
+  --font-size-2xl: 24px;
+  --font-size-2xl--line-height: 32px;
+  --font-size-3xl: 32px;
+  --font-size-3xl--line-height: 40px;
+  --font-size-4xl: 48px;
+  --font-size-4xl--line-height: 56px;
+}
 
-  /* Global scaling overrides for default Tailwind sizing */
-  --font-size-xs: 15px;
-  --font-size-xs--line-height: 22px;
-  --font-size-sm: 18px;
-  --font-size-sm--line-height: 26px;
-  --font-size-base: 18px;
-  --font-size-base--line-height: 26px;
-  --font-size-lg: 20px;
-  --font-size-lg--line-height: 30px;
+/* Custom global utility scrollbar modifiers */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @layer base {
@@ -225,6 +239,12 @@
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
   }
+}
+
+.protest-strike-regular {
+  font-family: "Protest Strike", sans-serif;
+  font-weight: 400;
+  font-style: normal;
 }
 
 .material-symbols-outlined {
@@ -479,4 +499,22 @@ div.rounded-full.bg-surface-container-high.flex.items-center.justify-center {
 
 .text-\[\#F4F4F4\] {
   color: var(--text-primary) !important;
+}
+
+/* Invert the browser's native calendar picker icons for dark mode panels */
+.custom-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  /* Flips the hidden icon from black to pure white */
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.custom-date-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Optional: Fixes color mapping for clear buttons inside native date fields */
+.custom-date-input::-webkit-clear-button {
+  filter: invert(1);
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreatePoll } from '../features/polls/useCreatePoll';
+import { Alert, AlertTitle, AlertDescription } from '../components/ui/Alert';
 
 export const CreatePollPage = () => {
   const navigate = useNavigate();
@@ -8,23 +9,26 @@ export const CreatePollPage = () => {
 
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']); // Initial 2 choices
-  const [category, setCategory] = useState('Community Infrastructure');
+  const [audience, setAudience] = useState('World');
   const [duration, setDuration] = useState('7 Days');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
-  const maxOptions = 6;
+  const maxOptions = 4;
 
   const handleAddOption = () => {
     if (options.length < maxOptions) {
       setOptions((prev) => [...prev, '']);
+      setError(null);
     } else {
-      alert('Maximum of 6 options reached.');
+      setError(`Maximum of ${maxOptions} options reached.`);
     }
   };
 
   const handleRemoveOption = (indexToRemove) => {
     if (options.length > 2) {
       setOptions((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+      setError(null);
     }
   };
 
@@ -38,15 +42,16 @@ export const CreatePollPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError(null);
 
     if (!question.trim()) {
-      alert('Please enter a poll question.');
+      setError('Please enter a poll question.');
       return;
     }
 
     const filteredOptions = options.map((opt) => opt.trim()).filter(Boolean);
     if (filteredOptions.length < 2) {
-      alert('Please fill out at least two options.');
+      setError('Please fill out at least two options.');
       return;
     }
 
@@ -55,8 +60,8 @@ export const CreatePollPage = () => {
     const pollData = {
       question: question.trim(),
       options: filteredOptions,
-      category: category,
-      timeLeft: `${duration} left`,
+      audience: audience,
+      duration: duration,
     };
 
     createPollMutation.mutateAsync(pollData, {
@@ -67,13 +72,13 @@ export const CreatePollPage = () => {
       onError: (err) => {
         setIsSubmitting(false);
         console.error('Error creating poll:', err);
-        alert('Failed to create the poll?. Please try again.');
+        setError('Failed to create the poll. Please try again.');
       }
     });
   };
 
   return (
-    <div className="max-w-[800px] mx-auto pb-20">
+    <div className="max-w-[800px] pb-20 mx-autoX">
       {/* Back Link */}
       <button
         onClick={() => navigate('/polls')}
@@ -98,6 +103,13 @@ export const CreatePollPage = () => {
           Engage the collective voice to drive democratic decision making within your local community and organizing committees.
         </p>
       </header>
+      {error && (
+        <Alert variant="destructive" className="mb-8" onClose={() => setError(null)}>
+          <span className="material-symbols-outlined">error</span>
+          <AlertTitle>Validation Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Form Container */}
       <form onSubmit={handleSubmit} className="space-y-8">
@@ -113,7 +125,7 @@ export const CreatePollPage = () => {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               className="w-full bg-surface-ink border border-white/10 rounded-xl p-4 font-body-md text-sm text-text-primary min-h-[100px] resize-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all placeholder:text-text-secondary/30"
-              placeholder="What would you like to ask the collective?"
+              placeholder="What would you like to ask the kollective?"
               required
             ></textarea>
             <p className="text-md text-text-secondary/70 italic leading-snug">
@@ -158,17 +170,19 @@ export const CreatePollPage = () => {
             ))}
           </div>
 
-          <button
-            onClick={handleAddOption}
-            type="button"
-            className="mt-6 flex items-center gap-2 text-primary-container font-bold text-sm hover:bg-primary-container/10 px-4 py-2 rounded-lg border border-primary-container/20 transition-all active:scale-95 bg-transparent"
-          >
-            <span className="material-symbols-outlined text-[16px]">add_circle</span>
-            Add Option
-          </button>
+          {maxOptions > options.length && (
+            <button
+              onClick={handleAddOption}
+              type="button"
+              className="mt-6 flex items-center gap-2 text-primary-container font-bold text-sm hover:bg-primary-container/10 px-4 py-2 rounded-lg border border-primary-container/20 transition-all active:scale-95 bg-transparent"
+            >
+              <span className="material-symbols-outlined text-[16px]">add_circle</span>
+              Add Option
+            </button>
+          )}
 
           <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-4">
-            <p className="text-md text-text-secondary/80">Minimum 2 options, maximum 6 options</p>
+            <p className="text-md text-text-secondary/80">Minimum 2 options, maximum 4 options</p>
             <span className="text-md font-bold text-primary-container">
               {options.length}/{maxOptions} options
             </span>
@@ -203,24 +217,21 @@ export const CreatePollPage = () => {
 
             <div className="space-y-4">
               <label className="flex items-center gap-2 text-sm font-bold text-text-secondary uppercase tracking-wider block">
-                <span className="material-symbols-outlined text-[16px]">category</span>
-                Category *
+                <span className="material-symbols-outlined text-[16px]">target</span>
+                Target *
               </label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={audience}
+                onChange={(e) => setAudience(e.target.value)}
                 className="w-full bg-surface-ink border border-white/10 rounded-xl px-4 py-3 font-body-md text-sm text-text-primary focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all appearance-none cursor-pointer"
               >
-                <option>Labor Rights</option>
-                <option>Community Infrastructure</option>
-                <option>Resource Allocation</option>
-                <option>Policy Amendment</option>
-                <option>Event Planning</option>
-                <option>Technology</option>
-                <option>Business</option>
-                <option>Science</option>
+                <option>World</option>
+                <option>Local</option>
+                <option>State</option>
+                <option>Country</option>
+                <option>Followers Only</option>
               </select>
-              <p className="text-md text-text-secondary/60 font-medium">Categorization routes this poll to relevant committee feeds.</p>
+              <p className="text-md text-text-secondary/60 font-medium">Target Audience for this Poll</p>
             </div>
           </div>
         </section>

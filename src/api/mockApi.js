@@ -10,10 +10,10 @@ const user = {
   name: 'Julian Thorne',
   handle: '@j_thorne',
   avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c',
-  email: 'j_thorne@kollective.org',
+  email: 'j_thorne@kollective.social',
   bio: 'Architect of the Red Shift. Building frontline local resilience protocols.',
   location: 'California',
-  website: 'kollective.org',
+  website: 'kollective.social',
   role: 'root_admin',
 };
 
@@ -146,7 +146,7 @@ let posts = [
   {
     id: 'carousel-post-1',
     title: 'City Planning Garden District',
-    text: 'The proposed vertical garden district for Sector 7 is now open for community feedback. This design incorporates modular living units and 100% solar capture.',
+    text: 'The proposed vertical garden district for Sector 7 is now open for community feedback. This deLog Incorporates modular living units and 100% solar capture.',
     author: {
       name: 'City Planning Circle',
       role: 'Official Hub',

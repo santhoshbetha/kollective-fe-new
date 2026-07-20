@@ -2,7 +2,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Virtuoso } from 'react-virtuoso';
-import { useHashtagTimelineQuery, useFollowTagMutation } from '../features/timelines/useHashtagTimeline';
+import { useHashtagTimelineQuery, useFollowTagMutation } from '../features/timeline/useHashtagTimeline';
 import { PostCard } from '../features/timeline/PostCard';
 
 export const HashtagTimelinePage = () => {
@@ -38,8 +38,8 @@ export const HashtagTimelinePage = () => {
                         disabled={followMutation.isPending}
                         onClick={() => followMutation.mutate({ isFollowing: isFollowingTag })}
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${isFollowingTag
-                                ? 'bg-surface-container-high border-white/5 text-text-secondary'
-                                : 'bg-primary-container text-white border-primary-container crimson-glow font-black'
+                            ? 'bg-surface-container-high border-white/5 text-text-secondary'
+                            : 'bg-primary-container text-white border-primary-container crimson-glow font-black'
                             }`}
                     >
                         {isFollowingTag ? 'Pinned ✓' : 'Pin Tag'}

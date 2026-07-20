@@ -20,7 +20,7 @@ export const PollsPage = () => {
     };
 
     return (
-        <div className="max-w-[1280px] mx-auto flex flex-col lg:flex-row gap-12 pb-20 text-scale-large">
+        <div className="max-w-[1280px] mx-autoX flex flex-col lg:flex-row gap-12 pb-20 text-scale-large">
 
             {/* 📋 Left Column: Main content feed layout frame */}
             <div className="flex-1 flex flex-col gap-6 max-w-3xl">

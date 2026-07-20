@@ -39,7 +39,7 @@ export function PostContent({ post, isFocus }) {
             {/* 📝 Core Text & Truncation Segment Section */}
             <div
                 ref={textRef}
-                className={`text-white/80 leading-relaxed transition-all relative ${isTruncated && !isExpanded ? 'max-h-[240px] overflow-hidden' : 'max-h-none'
+                className={`text-text-primary/90 leading-relaxed transition-all relative ${isTruncated && !isExpanded ? 'max-h-[240px] overflow-hidden' : 'max-h-none'
                     }`}
             >
                 <p className={isFocus ? 'text-lg text-text-primary' : 'text-md'}>

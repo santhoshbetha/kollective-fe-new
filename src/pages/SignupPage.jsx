@@ -1,507 +1,490 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useStore } from '../store/useStore';
+import { Alert, AlertTitle, AlertDescription } from '../components/ui/Alert';
+import { DatePicker } from '../components/ui/date-picker';
+
+const DEMOCRATIC_COUNTRIES = [
+    "Albania", "Argentina", "Australia", "Austria", "Belgium", "Botswana", "Brazil", 
+    "Bulgaria", "Canada", "Cape Verde", "Chile", "Colombia", "Costa Rica", "Croatia", 
+    "Cyprus", "Czechia", "Denmark", "Dominican Republic", "Ecuador", "Estonia", 
+    "Finland", "France", "Georgia", "Germany", "Ghana", "Greece", "Guyana", 
+    "Honduras", "Iceland", "India", "Indonesia", "Ireland", "Israel", "Italy", 
+    "Jamaica", "Japan", "Latvia", "Lithuania", "Luxembourg", "Malaysia", "Malta", 
+    "Mauritius", "Moldova", "Mongolia", "Montenegro", "Namibia", "Netherlands", 
+    "New Zealand", "North Macedonia", "Norway", "Panama", "Paraguay", "Peru", 
+    "Philippines", "Poland", "Portugal", "Romania", "Senegal", "Serbia", "Singapore", 
+    "Slovakia", "Slovenia", "South Africa", "South Korea", "Spain", "Sri Lanka", 
+    "Suriname", "Sweden", "Switzerland", "Taiwan", "Thailand", "Trinidad and Tobago", 
+    "United Kingdom", "United States", "Uruguay"
+];
 
 export const SignupPage = () => {
-  const navigate = useNavigate();
-  const theme = useStore((state) => state.theme);
-  const toggleTheme = useStore((state) => state.toggleTheme);
+    const navigate = useNavigate();
+    const [currentStep, setCurrentStep] = useState(1); // 1: Welcome, 2: Details, 3: Verify
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState(null);
 
-  // Signup steps: 1 = Welcome/Guidelines, 2 = Details, 3 = Verification
-  const [step, setStep] = useState(1);
-  const [termsAgree, setTermsAgree] = useState(false);
-  const [animateShake, setAnimateShake] = useState(false);
+    // Fully loaded data state
+    const [formData, setFormData] = useState({
+        accountType: 'personal', // 'personal' or 'organization'
+        username: '',
+        email: '',
+        password: '',
+        fullName: '',
+        dob: '',
+        country: '',
+        organizationName: '',
+        agreeToGuidelines: false
+    });
 
-  // Step 2 Form States
-  const [accountType, setAccountType] = useState('personal');
-  const [fullname, setFullname] = useState('');
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [birthday, setBirthday] = useState('');
-  const [stateVal, setStateVal] = useState('');
-  const [cityVal, setCityVal] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [resendStatus, setResendStatus] = useState('normal'); // 'normal', 'sending', 'sent'
+    const handleInputChange = (e) => {
+        const { id, value, type, checked } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [id]: type === 'checkbox' ? checked : value
+        }));
+        setError(null);
+    };
 
-  const handleStep1Submit = (e) => {
-    e.preventDefault();
-    if (!termsAgree) {
-      setAnimateShake(true);
-      setTimeout(() => setAnimateShake(false), 500);
-      return;
-    }
-    setStep(2);
-  };
+    const handleNext = (e) => {
+        e.preventDefault();
+        setError(null);
+        if (currentStep === 1 && !formData.agreeToGuidelines) {
+            setError("Please agree to the community guidelines to proceed.");
+            return;
+        }
+        if (currentStep < 3) {
+            setCurrentStep((prev) => prev + 1);
+        }
+    };
 
-  const handleStep2Submit = (e) => {
-    e.preventDefault();
-    if (!fullname.trim() || !username.trim() || !email.trim() || !password.trim()) {
-      alert('Please fill in all required fields.');
-      return;
-    }
-    setStep(3);
-  };
+    const handleBack = () => {
+        setError(null);
+        if (currentStep > 1) {
+            setCurrentStep((prev) => prev - 1);
+        }
+    };
 
-  const handleResendEmail = (e) => {
-    e.preventDefault();
-    if (resendStatus !== 'normal') return;
-    setResendStatus('sending');
-    setTimeout(() => {
-      setResendStatus('sent');
-      setTimeout(() => {
-        setResendStatus('normal');
-      }, 4000);
-    }, 1800);
-  };
+    return (
+        <div className="min-h-screen flex flex-col justify-center items-center bg-background text-on-surface p-4 sm:p-6 isolate selection:bg-primary/30">
 
-  return (
-    <div className="min-h-screen flex flex-col justify-between bg-background text-on-surface overflow-x-hidden">
-      {/* TopNavBar */}
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-6 bg-transparent border-b border-white/5 backdrop-blur-sm">
-        <div className="flex items-center gap-0 cursor-pointer" onClick={() => navigate('/')}>
-          <img
-            alt="Kollective Logo"
-            className="h-14 w-auto"
-            src="/K99.png"
-          />
-          <span className="font-headline-md text-xl font-bold text-[#CC033B] tracking-tight hidden sm:block"
-            style={{ fontSize: "36px", fontFamily: "Protest Riot, sans-serif" }}>
-            Kollective
-          </span>
-        </div>
-        <nav className="flex items-center gap-8" hidden>
-          <Link to="/" className="font-label-md text-sm text-on-surface-variant hover:text-primary transition-colors">Manifesto</Link>
-          <button onClick={toggleTheme} className="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center bg-transparent border-none cursor-pointer">
-            <span className="material-symbols-outlined">
-              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
-            </span>
-          </button>
-        </nav>
-      </header>
-
-      {/* Main Content Canvas */}
-      <main className="flex-grow flex items-center justify-center w-full px-margin-mobile py-24 mt-8">
-        {/* Background Asset (Atmospheric) */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 opacity-30">
-          <div className="absolute -top-1/4 -right-1/4 w-[600px] h-[600px] bg-primary-container/10 rounded-full blur-[120px]"></div>
-          <div className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] bg-surface-crimson-low/50 rounded-full blur-[100px]"></div>
-        </div>
-
-        <div className="w-full max-w-2xl flex flex-col gap-10">
-          {/* Stepper Progress */}
-          <div className="w-full max-w-md mx-auto">
-            <div className="flex items-center relative">
-              <div className="flex-1 flex flex-col items-center gap-2">
-                <div className={`w-3 h-3 rounded-full transition-all ${step >= 1 ? 'bg-primary ring-4 ring-primary-container/30' : 'bg-surface-variant'
-                  }`}></div>
-                <span className={`font-label-sm text-sm ${step >= 1 ? 'text-primary font-bold' : 'text-on-surface-variant opacity-40'}`}>Welcome</span>
-              </div>
-              <div className="w-full absolute top-[5px] -z-10 h-px bg-surface-variant"></div>
-              <div className="flex-1 flex flex-col items-center gap-2">
-                <div className={`w-3 h-3 rounded-full transition-all ${step >= 2 ? 'bg-primary ring-4 ring-primary-container/30' : 'bg-surface-variant'
-                  }`}></div>
-                <span className={`font-label-sm text-sm ${step >= 2 ? 'text-primary font-bold' : 'text-on-surface-variant opacity-40'}`}>Details</span>
-              </div>
-              <div className="flex-1 flex flex-col items-center gap-2">
-                <div className={`w-3 h-3 rounded-full transition-all ${step >= 3 ? 'bg-primary ring-4 ring-primary-container/30' : 'bg-surface-variant'
-                  }`}></div>
-                <span className={`font-label-sm text-sm ${step >= 3 ? 'text-primary font-bold' : 'text-on-surface-variant opacity-40'}`}>Verify</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 1: Guidelines */}
-          {step === 1 && (
-            <div className={`glass-card crimson-gradient-glow rounded-xl p-8 md:p-12 relative overflow-hidden shadow-2xl border border-white/5 transition-transform duration-300 ${animateShake ? 'animate-shake' : ''
-              }`}>
-              {/* Content Header */}
-              <div className="text-center mb-10">
-                <h1 className="font-display-lg text-3xl md:text-4xl font-extrabold text-text-primary leading-tight mb-3">Welcome to the Kollective.</h1>
-                <p className="font-body-md text-base text-text-secondary max-w-lg mx-auto">Before joining the revolution, please review our community code of conduct.</p>
-              </div>
-
-              {/* Guidelines Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                {/* Be Kind */}
-                <div className="p-5 rounded-lg bg-surface-container/40 border border-white/5 hover:border-primary/20 transition-all group">
-                  <div className="flex items-start gap-4">
-                    <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">favorite</span>
-                    <div>
-                      <h3 className="font-label-md text-base text-text-primary mb-1">Be Kind &amp; Respectful</h3>
-                      <p className="font-label-sm text-sm text-on-surface-variant leading-relaxed">Empathy is our baseline. Treat all members with dignity.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Keep it Real */}
-                <div className="p-5 rounded-lg bg-surface-container/40 border border-white/5 hover:border-primary/20 transition-all group">
-                  <div className="flex items-start gap-4">
-                    <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">verified</span>
-                    <div>
-                      <h3 className="font-label-md text-base text-text-primary mb-1">Keep it Real</h3>
-                      <p className="font-label-sm text-sm text-on-surface-variant leading-relaxed">Authenticity matters. No bots, just genuine human collaboration.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Protect Privacy */}
-                <div className="p-5 rounded-lg bg-surface-container/40 border border-white/5 hover:border-primary/20 transition-all group">
-                  <div className="flex items-start gap-4">
-                    <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">shield</span>
-                    <div>
-                      <h3 className="font-label-md text-base text-text-primary mb-1">Protect Privacy</h3>
-                      <p className="font-label-sm text-sm text-on-surface-variant leading-relaxed">Your data is yours. Respect the confidentiality of peer projects.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stay Informed */}
-                <div className="p-5 rounded-lg bg-surface-container/40 border border-white/5 hover:border-primary/20 transition-all group">
-                  <div className="flex items-start gap-4">
-                    <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">auto_stories</span>
-                    <div>
-                      <h3 className="font-label-md text-base text-text-primary mb-1">Stay Informed</h3>
-                      <p className="font-label-sm text-sm text-on-surface-variant leading-relaxed">The ecosystem evolves fast. Engage with weekly manifesto updates.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Terms & Buttons */}
-              <div className="flex flex-col gap-8">
-                <label className="flex items-center gap-2.5 cursor-pointer group select-none text-on-surface-variant hover:text-text-primary transition-colors">
-                  <input
-                    type="checkbox"
-                    id="terms-agree"
-                    className="w-4 h-4 rounded border-outline-variant bg-surface-container/40 text-primary focus:ring-primary/20 focus:ring-offset-0 accent-primary"
-                    checked={termsAgree}
-                    onChange={(e) => setTermsAgree(e.target.checked)}
-                  />
-                  I agree to follow these community guidelines
-                </label>
-
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button
-                    className="flex-[2] px-8 py-4 bg-primary-container text-white font-label-md text-base font-bold rounded-lg primary-button-glow hover:bg-inverse-primary active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-2 group cursor-pointer border-none"
-                    onClick={handleStep1Submit}
-                  >
-                    <span>Let's get started!</span>
-                    <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                  </button>
-                  <button
-                    onClick={() => navigate('/')}
-                    className="flex-1 px-8 py-4 bg-transparent border border-outline-variant text-text-secondary font-label-md text-base font-bold rounded-lg hover:bg-white/5 hover:text-text-primary active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer"
-                  >
-                    Not ready yet
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-8 pt-8 border-t border-white/5 text-center">
-                <p className="font-body-md text-base text-on-surface-variant">
-                  Already have an account?
-                  <Link className="text-text-secondary font-bold hover:underline underline-offset-4 ml-1 text-base" to="/login">Sign In</Link>
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Account Details */}
-          {step === 2 && (
-            <div className="w-full glass-panel rounded-lg p-8 md:p-12 shadow-2xl border border-white/10 relative">
-              <h1 className="font-display-lg text-3xl md:text-4xl font-extrabold text-text-primary mb-2">Build your profile</h1>
-              <p className="font-body-md text-base text-text-secondary mb-10">Tell us a bit more about how you intend to use the Kollective platform.</p>
-
-              <form className="space-y-10" onSubmit={handleStep2Submit}>
-                {/* Account Type Selection */}
-                <div className="space-y-4">
-                  <label className="font-label-md text-base text-text-secondary block mb-4">Select Account Type</label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Personal Card */}
-                    <label className="relative cursor-pointer group">
-                      <input
-                        checked={accountType === 'personal'}
-                        onChange={() => setAccountType('personal')}
-                        className="peer sr-only"
-                        name="account_type"
-                        type="radio"
-                        value="personal"
-                      />
-                      <div className="p-6 rounded-lg bg-surface-container border border-white/5 peer-checked:border-primary-container peer-checked:bg-surface-crimson-low transition-all duration-300 h-full flex flex-col items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-surface-variant flex items-center justify-center group-hover:scale-105 transition-transform duration-300 peer-checked:bg-primary-container">
-                          <span className="material-symbols-outlined text-text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
-                        </div>
+            {/* Top Navigation Bar */}
+            <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-12 py-4 bg-transparent border-b border-white/5 backdrop-blur-sm">
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+                    <div onClick={() => navigate('/')} className="mb-8 px-2 flex items-center gap-0 cursor-pointer hover:opacity-90">
+                        <img src="/K99.png" alt="Kollective Logo" className="h-12 w-auto" />
                         <div>
-                          <h3 className="font-label-md text-base text-text-primary group-hover:text-primary-container transition-colors font-bold">Personal Account</h3>
-                          <p className="text-sm text-text-secondary mt-1 leading-relaxed">For individual builders, creators, and visionaries.</p>
+                            <span className="text-xl font-bold sm:inline-block bg-[#CC033B] bg-clip-text text-transparent"
+                                style={{ fontSize: "28px", fontFamily: "Protest Riot, sans-serif" }}>
+                                Kollective
+                            </span>
                         </div>
-                        <div className="absolute top-4 right-4 opacity-0 peer-checked:opacity-100 transition-opacity">
-                          <span className="material-symbols-outlined text-primary-container text-[20px]">check_circle</span>
-                        </div>
-                      </div>
-                    </label>
-
-                    {/* Organization Card */}
-                    <label className="relative cursor-pointer group">
-                      <input
-                        checked={accountType === 'organization'}
-                        onChange={() => setAccountType('organization')}
-                        className="peer sr-only"
-                        name="account_type"
-                        type="radio"
-                        value="organization"
-                      />
-                      <div className="p-6 rounded-lg bg-surface-container border border-white/5 peer-checked:border-primary-container peer-checked:bg-surface-crimson-low transition-all duration-300 h-full flex flex-col items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-surface-variant flex items-center justify-center group-hover:scale-105 transition-transform duration-300 peer-checked:bg-primary-container">
-                          <span className="material-symbols-outlined text-text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>corporate_fare</span>
-                        </div>
-                        <div>
-                          <h3 className="font-label-md text-base text-text-primary group-hover:text-primary-container transition-colors font-bold">Organization</h3>
-                          <p className="text-sm text-text-secondary mt-1 leading-relaxed">Manage teams, departments, or high-growth collectives.</p>
-                        </div>
-                        <div className="absolute top-4 right-4 opacity-0 peer-checked:opacity-100 transition-opacity">
-                          <span className="material-symbols-outlined text-primary-container text-[20px]">check_circle</span>
-                        </div>
-                      </div>
-                    </label>
-                  </div>
+                    </div>
                 </div>
+            </header>
 
-                {/* Form Fields Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                  {/* Full Name */}
-                  <div className="space-y-2">
-                    <label className="font-label-sm text-sm text-text-secondary" htmlFor="fullname">Full Name *</label>
-                    <input
-                      required
-                      className="w-full bg-surface-container-lowest border border-white/10 rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container input-glow transition-all font-body-md text-base"
-                      id="fullname"
-                      placeholder="Alexander Kollective"
-                      type="text"
-                      value={fullname}
-                      onChange={(e) => setFullname(e.target.value)}
-                    />
-                  </div>
+            {/* --- Stepper Progress Bar (Matched to Screenshot #1) --- */}
+            <div className="flex items-center gap-8 mb-8 relative z-10">
+                <div className="flex flex-col items-center">
+                    <div className={`w-3.5 h-3.5 rounded-full border-4 transition-all duration-300 ${currentStep >= 1 ? 'bg-[#c2185b] border-[#c2185b]/30 shadow-[0_0_8px_#c2185b]' : 'bg-[#1e293b] border-transparent'
+                        }`} />
+                    <span className={`text-xs mt-2 font-bold tracking-wide ${currentStep === 1 ? 'text-[#c2185b]' : 'text-zinc-100 dark:text-zinc-50/60'}`}>Welcome</span>
+                </div>
+                <div className="h-0.5 w-12 bg-outline-variant/30 -mt-5" />
+                <div className="flex flex-col items-center">
+                    <div className={`w-3.5 h-3.5 rounded-full border-4 transition-all duration-300 ${currentStep >= 2 ? 'bg-[#c2185b] border-[#c2185b]/30 shadow-[0_0_8px_#c2185b]' : 'bg-[#1e293b] border-transparent'
+                        }`} />
+                    <span className={`text-xs mt-2 font-bold tracking-wide ${currentStep === 2 ? 'text-[#c2185b]' : 'text-zinc-100 dark:text-zinc-50/60'}`}>Details</span>
+                </div>
+                <div className="h-0.5 w-12 bg-outline-variant/30 -mt-5" />
+                <div className="flex flex-col items-center">
+                    <div className={`w-3.5 h-3.5 rounded-full border-4 transition-all duration-300 ${currentStep === 3 ? 'bg-[#c2185b] border-[#c2185b]/30 shadow-[0_0_8px_#c2185b]' : 'bg-[#1e293b] border-transparent'
+                        }`} />
+                    <span className={`text-xs mt-2 font-bold tracking-wide ${currentStep === 3 ? 'text-[#c2185b]' : 'text-zinc-100 dark:text-zinc-50/60'}`}>Verify</span>
+                </div>
+            </div>
 
-                  {/* Username */}
-                  <div className="space-y-2">
-                    <label className="font-label-sm text-sm text-text-secondary" htmlFor="username">Username *</label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-container font-bold text-base">@</span>
-                      <input
-                        required
-                        className="w-full bg-surface-container-lowest border border-white/10 rounded-lg pl-9 pr-4 py-3 text-text-primary focus:outline-none focus:border-primary-container input-glow transition-all font-body-md text-base"
-                        id="username"
-                        placeholder="alex_v"
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                      />
-                    </div>
-                  </div>
+            {/* Main Container Card using our premium glass utility */}
+            <div className="glass-panel w-full max-w-xl rounded-2xl p-8 md:p-10 relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5">
 
-                  {/* Email */}
-                  <div className="space-y-2">
-                    <label className="font-label-sm text-sm text-text-secondary" htmlFor="email">Email Address *</label>
-                    <input
-                      required
-                      className="w-full bg-surface-container-lowest border border-white/10 rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container input-glow transition-all font-body-md text-base"
-                      id="email"
-                      placeholder="alex@kollective.social"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
+                {/* Glow Effects */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-[#c2185b]/10 to-transparent pointer-events-none blur-xl"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-indigo-500/5 to-transparent pointer-events-none blur-xl"></div>
 
-                  {/* Birthday */}
-                  <div className="space-y-2">
-                    <label className="font-label-sm text-sm text-text-secondary" htmlFor="birthday">Birthday</label>
-                    <div className="relative">
-                      <input
-                        className="w-full bg-surface-container-lowest border border-white/10 rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container input-glow transition-all font-body-md text-base appearance-none"
-                        id="birthday"
-                        type="date"
-                        value={birthday}
-                        onChange={(e) => setBirthday(e.target.value)}
-                      />
-                      <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">calendar_month</span>
-                    </div>
-                  </div>
-
-                  {/* Location Selection */}
-                  <div className="space-y-2">
-                    <label className="font-label-sm text-sm text-text-secondary" htmlFor="state">State</label>
-                    <select
-                      className="w-full bg-surface-container-lowest border border-white/10 rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container input-glow transition-all font-body-md text-base appearance-none"
-                      id="state"
-                      value={stateVal}
-                      onChange={(e) => setStateVal(e.target.value)}
+                {error && (
+                    <Alert variant="destructive"
+                        className="mb-6 z-10 relative"
+                        onClose={() => setError(null)}
                     >
-                      <option value="">Select State</option>
-                      <option value="NY">New York</option>
-                      <option value="CA">California</option>
-                      <option value="TX">Texas</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="font-label-sm text-sm text-text-secondary" htmlFor="city">City</label>
-                    <select
-                      className="w-full bg-surface-container-lowest border border-white/10 rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container input-glow transition-all font-body-md text-base appearance-none"
-                      id="city"
-                      value={cityVal}
-                      onChange={(e) => setCityVal(e.target.value)}
-                    >
-                      <option value="">Select City</option>
-                      <option value="NYC">New York City</option>
-                      <option value="LA">Los Angeles</option>
-                      <option value="SF">San Francisco</option>
-                    </select>
-                  </div>
+                        <span className="material-symbols-outlined">error</span>
+                        <AlertTitle>Validation Error</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
 
-                  {/* Password (Span 2) */}
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="font-label-sm text-sm text-text-secondary" htmlFor="password">Create Password *</label>
-                    <div className="relative">
-                      <input
-                        required
-                        className="w-full bg-surface-container-lowest border border-white/10 rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container input-glow transition-all font-body-md text-base"
-                        id="password"
-                        placeholder="••••••••••••"
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                      <button
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary bg-transparent border-none cursor-pointer flex items-center justify-center"
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        <span className="material-symbols-outlined">
-                          {showPassword ? 'visibility_off' : 'visibility'}
-                        </span>
-                      </button>
+                {/* ================= STEP 1: WELCOME & GUIDELINES ================= */}
+                {currentStep === 1 && (
+                    <div className="relative z-10 animate-fadeIn space-y-8">
+                        <div className="text-center">
+                            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text-primary mb-3">
+                                Welcome to the Kollective.
+                            </h1>
+                            <p className="text-sm text-zinc-100 dark:text-zinc-50 max-w-sm mx-auto leading-relaxed">
+                                Before joining the revolution, please review our community code of conduct.
+                            </p>
+                        </div>
+
+                        {/* Grid of Guideline Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Card 1 - Be Kind & Respectful */}
+                            <div className="p-5 rounded-xl border border-outline-variant/40 bg-[var(--surface-container)]/20 hover:bg-[var(--surface-container)]/40 transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <svg className="w-5 h-5 text-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                    <div>
+                                        <h3 className="font-bold text-text-primary text-sm">Be Kind & Respectful</h3>
+                                        <p className="text-sm text-slate-400 dark:text-zinc-400 mt-1 leading-relaxed">
+                                            Empathy is our baseline. Treat every member with baseline human dignity. Debate ideas fiercely, but never attack the individual.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card 2 - Keep it Real */}
+                            <div className="p-5 rounded-xl border border-outline-variant/40 bg-[var(--surface-container)]/20 hover:bg-[var(--surface-container)]/40 transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <svg className="w-5 h-5 text-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                                    </svg>
+                                    <div>
+                                        <h3 className="font-bold text-text-primary text-sm">Keep it Real</h3>
+                                        <p className="text-sm text-slate-400 dark:text-zinc-400 mt-1 leading-relaxed">
+                                            Authenticity matters. No bots, fake accounts, spam, or algorithmic manipulation—just genuine human collaboration.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card 3 - Zero Tolerance Policy */}
+                            <div className="p-5 rounded-xl border border-outline-variant/40 bg-[var(--surface-container)]/20 hover:bg-[var(--surface-container)]/40 transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <svg className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    </svg>
+                                    <div>
+                                        <h3 className="font-bold text-red-500 dark:text-red-400 text-sm">Zero Tolerance Policy</h3>
+                                        <p className="text-sm text-slate-400 dark:text-zinc-400 mt-1 leading-relaxed">
+                                            No racism, hate speech, religious attacks, or harassment. This is a safe space for global collaboration.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card 4 - Protect Privacy */}
+                            <div className="p-5 rounded-xl border border-outline-variant/40 bg-[var(--surface-container)]/20 hover:bg-[var(--surface-container)]/40 transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <svg className="w-5 h-5 text-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                    </svg>
+                                    <div>
+                                        <h3 className="font-bold text-text-primary text-sm">Protect Privacy</h3>
+                                        <p className="text-sm text-slate-400 dark:text-zinc-400 mt-1 leading-relaxed">
+                                            Your data is yours. Respect the safety, identity, and confidentiality of your peers.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Checkbox agreement */}
+                        <div className="flex items-center gap-3 pt-4">
+                            <input
+                                id="agreeToGuidelines"
+                                type="checkbox"
+                                checked={formData.agreeToGuidelines}
+                                onChange={handleInputChange}
+                                className="w-4 h-4 rounded border-outline-variant bg-[var(--surface-container)]/40 text-[#c2185b] focus:ring-0 accent-[#c2185b]"
+                            />
+                            <label htmlFor="agreeToGuidelines" className="text-sm font-semibold text-zinc-100 dark:text-zinc-50 hover:text-text-primary cursor-pointer transition-colors">
+                                I agree to follow these community guidelines
+                            </label>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
+                            <button
+                                type="button"
+                                onClick={handleNext}
+                                disabled={!formData.agreeToGuidelines}
+                                className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 bg-[#c2185b] hover:bg-[#a2123c] disabled:opacity-50 text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none"
+                            >
+                                Let's get started!
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/')}
+                                className="w-full sm:w-auto flex-1 border border-outline-variant/40 hover:bg-[var(--surface-container)]/30 font-bold py-3.5 px-6 rounded-xl transition-colors focus:outline-none"
+                            >
+                                Not ready yet
+                            </button>
+                        </div>
+
+                        <div className="text-center text-sm text-zinc-100 dark:text-zinc-50 pt-2 border-t border-outline-variant/20">
+                            Already have an account?{' '}
+                            <Link to="/login" className="font-bold text-[#c2185b] hover:underline transition-colors">Log In</Link>
+                        </div>
                     </div>
-                    <div className="flex gap-1.5 mt-2">
-                      <div className="h-1 flex-1 bg-primary-container rounded-full"></div>
-                      <div className="h-1 flex-1 bg-primary-container rounded-full"></div>
-                      <div className="h-1 flex-1 bg-primary-container rounded-full"></div>
-                      <div className="h-1 flex-1 bg-surface-variant rounded-full"></div>
+                )}
+
+                {/* ================= STEP 2: CREDENTIALS & DETAILS ================= */}
+                {currentStep === 2 && (
+                    <form onSubmit={handleNext} className="relative z-10 animate-fadeIn space-y-6">
+                        <div className="text-center mb-4">
+                            <h1 className="text-2xl font-black text-white">Set Up Your Profile</h1>
+                            <p className="text-xs text-slate-400 dark:text-zinc-400">Fill in the details to establish your node on the network.</p>
+                        </div>
+
+                        {/* Account Type Selector */}
+                        <div className="space-y-2">
+                            <label className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 dark:text-zinc-400">Account Type</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(p => ({ ...p, accountType: 'personal' }))}
+                                    className={`p-3 rounded-lg border text-sm font-semibold transition-all text-left ${formData.accountType === 'personal'
+                                        ? 'border-secondary bg-secondary/10 text-white'
+                                        : 'border-outline-variant/40 bg-[var(--surface-container)]/10 text-slate-400 hover:bg-[var(--surface-container)]/20'
+                                        }`}
+                                >
+                                    <span className={formData.accountType === 'personal' ? 'text-secondary' : 'text-white'}>Personal</span>
+                                    <p className="text-xs text-slate-400 dark:text-zinc-400 mt-1 font-normal normal-case leading-relaxed">
+                                        For citizens, workers, independent journalists, activists, and independent voices.
+                                    </p>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(p => ({ ...p, accountType: 'organization' }))}
+                                    className={`p-3 rounded-lg border text-sm font-semibold transition-all text-left ${formData.accountType === 'organization'
+                                        ? 'border-secondary bg-secondary/10 text-white'
+                                        : 'border-outline-variant/40 bg-[var(--surface-container)]/10 text-slate-400 hover:bg-[var(--surface-container)]/20'
+                                        }`}
+                                >
+                                    <span className={formData.accountType === 'organization' ? 'text-secondary' : 'text-white'}>Organization</span>
+                                    <p className="text-xs text-slate-400 dark:text-zinc-400 mt-1 font-normal normal-case leading-relaxed">
+                                        For News Orgs, YouTube channels, independent groups, and local communities.
+                                    </p>
+                                </button>
+                            </div>
+                        </div>
+
+
+                        {/* Grid Layout for compact data inputs */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {formData.accountType === 'organization' && (
+                                <div className="sm:col-span-2 space-y-1">
+                                    <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="organizationName">Org Name</label>
+                                    <input
+                                        id="organizationName"
+                                        type="text"
+                                        required
+                                        value={formData.organizationName}
+                                        onChange={handleInputChange}
+                                        placeholder="Kollective LLC"
+                                        className="w-full px-4 py-2.5 bg-[var(--surface-container)]/40 rounded-xl border border-outline-variant text-sm text-text-primary outline-none focus:border-[#c2185b] focus:ring-2 focus:ring-[#c2185b]/20 transition-all"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="username">Username</label>
+                                <input
+                                    id="username"
+                                    type="text"
+                                    required
+                                    value={formData.username}
+                                    onChange={handleInputChange}
+                                    placeholder="@username"
+                                    className="w-full px-4 py-2.5 bg-[var(--surface-container)]/40 rounded-xl border border-outline-variant text-sm text-text-primary outline-none focus:border-[#c2185b] focus:ring-2 focus:ring-[#c2185b]/20 transition-all"
+                                />
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="fullName">
+                                    {formData.accountType === 'organization' ? 'Representative Name' : 'Full Name'}
+                                </label>
+                                <input
+                                    id="fullName"
+                                    type="text"
+                                    required
+                                    value={formData.fullName}
+                                    onChange={handleInputChange}
+                                    placeholder="John Doe"
+                                    className="w-full px-4 py-2.5 bg-[var(--surface-container)]/40 rounded-xl border border-outline-variant text-sm text-text-primary outline-none focus:border-[#c2185b] focus:ring-2 focus:ring-[#c2185b]/20 transition-all"
+                                />
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="email">Email</label>
+                                <input
+                                    id="email"
+                                    type="email"
+                                    required
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    placeholder="name@email.com"
+                                    className="w-full px-4 py-2.5 bg-[var(--surface-container)]/40 rounded-xl border border-outline-variant text-sm text-text-primary outline-none focus:border-[#c2185b] focus:ring-2 focus:ring-[#c2185b]/20 transition-all"
+                                />
+                            </div>
+
+                            {formData.accountType === 'personal' && (
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-400 dark:text-zinc-400" htmlFor="dob">
+                                        Date of Birth
+                                    </label>
+                                    <input
+                                        id="dob"
+                                        type="date"
+                                        required
+                                        value={formData.dob}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2.5 bg-[var(--surface-container)]/40 rounded-xl 
+                                            border border-outline-variant text-sm text-text-primary dark:text-zinc-100 outline-none 
+                                            focus:border-[#c2185b] focus:ring-2 focus:ring-[#c2185b]/20 transition-all custom-date-input"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="space-y-1 sm:col-span-2">
+                                <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="country">Country</label>
+                                <select
+                                    id="country"
+                                    required
+                                    value={formData.country}
+                                    onChange={handleInputChange}
+                                    className="w-full px-4 py-2.5 bg-[var(--surface-container)]/40 rounded-xl border border-outline-variant text-sm text-text-primary outline-none focus:border-[#c2185b] focus:ring-2 focus:ring-[#c2185b]/20 transition-all cursor-pointer bg-[#0b0f19]"
+                                >
+                                    <option value="" disabled className="text-slate-500">Select your country</option>
+                                    {DEMOCRATIC_COUNTRIES.map((country) => (
+                                        <option key={country} value={country} className="bg-[#0b0f19] text-white">
+                                            {country}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="sm:col-span-2 space-y-1">
+                                <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="password">Password</label>
+                                <div className="relative">
+                                    <input
+                                        id="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        required
+                                        value={formData.password}
+                                        onChange={handleInputChange}
+                                        placeholder="••••••••"
+                                        className="w-full pl-4 pr-12 py-2.5 bg-[var(--surface-container)]/40 rounded-xl border border-outline-variant text-sm text-text-primary outline-none focus:border-[#c2185b] focus:ring-2 focus:ring-[#c2185b]/20 transition-all"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-100 dark:text-zinc-400 hover:text-text-primary"
+                                    >
+                                        {showPassword ? 'Hide' : 'Show'}
+                                    </button>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Stepper Wizard Navigation Controls */}
+                        <div className="flex items-center gap-4 pt-4 border-t border-outline-variant/20">
+                            <button
+                                type="button"
+                                onClick={handleBack}
+                                className="flex-1 py-3 border border-outline-variant/40 rounded-xl text-sm font-bold hover:bg-[var(--surface-container)]/30 transition-colors"
+                            >
+                                Back
+                            </button>
+                            <button
+                                type="submit"
+                                className="flex-1 py-3 bg-[#c2185b] hover:bg-[#a2123c] text-white font-bold rounded-xl text-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
+                            >
+                                Continue Setup
+                            </button>
+                        </div>
+                    </form>
+                )}
+
+                {/* ================= STEP 3: VERIFICATION (Matched to Screenshot #2) ================= */}
+                {currentStep === 3 && (
+                    <div className="relative z-10 animate-fadeIn space-y-8 flex flex-col items-center py-4">
+
+                        {/* Status Badge Pill */}
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#c2185b]/10 border border-[#c2185b]/20">
+                            <svg className="w-4 h-4 text-[#c2185b]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 19v-8.93a2 2 0 01.89-1.664l8-4A2 2 0 0113.11 4H20a2 2 0 012 2v10a2 2 0 01-2 2H5.26a2 2 0 01-1.22-.42L3 19z" />
+                            </svg>
+                            <span className="text-[10px] tracking-wider uppercase font-extrabold text-[#c2185b]">Verification email sent</span>
+                        </div>
+
+                        {/* Central Mail Icon Box */}
+                        <div className="w-24 h-24 rounded-2xl bg-[#1a1f30] border border-outline-variant/20 flex items-center justify-center shadow-lg shadow-black/40">
+                            <svg className="w-10 h-10 text-[#c2185b]" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                            </svg>
+                        </div>
+
+                        {/* Informational Text */}
+                        <div className="text-center space-y-3">
+                            <h1 className="text-3xl font-extrabold text-text-primary tracking-tight">Almost there!</h1>
+                            <p className="text-sm text-zinc-100 dark:text-zinc-50 max-w-sm leading-relaxed">
+                                A confirmation link has been sent to{' '}
+                                <span className="font-bold text-[#c2185b]">{formData.email || 'santhosh.betha@gmail.com'}</span>.
+                                Please check your inbox and click the link to activate your account.
+                            </p>
+                        </div>
+
+                        {/* Primary Action Button */}
+                        <button
+                            type="button"
+                            className="w-full bg-[#c2185b] hover:bg-[#a2123c] text-white font-extrabold py-3.5 px-6 rounded-xl transition-all hover:scale-[1.01] shadow-lg shadow-[#c2185b]/10"
+                        >
+                            Open Mail App
+                        </button>
+
+                        {/* Resend and Correction Options */}
+                        <div className="space-y-4 pt-2 text-center">
+                            <button
+                                type="button"
+                                className="flex items-center justify-center gap-2 text-xs font-bold text-zinc-100 dark:text-zinc-50 hover:text-text-primary transition-colors mx-auto"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 15.29M21 12H16" />
+                                </svg>
+                                Didn't receive the email? Send it again
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleBack}
+                                className="flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-100 dark:text-zinc-50/70 hover:text-text-primary transition-colors mx-auto"
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                                </svg>
+                                Wrong email address? Go back
+                            </button>
+                        </div>
+
                     </div>
-                    <p className="text-sm text-text-secondary">Strong: Use 12+ characters, including symbols and numbers.</p>
-                  </div>
-                </div>
+                )}
 
-                {/* Actions */}
-                <div className="flex flex-col md:flex-row gap-4 pt-8">
-                  <button
-                    className="order-2 md:order-1 flex-1 py-4 rounded-lg border border-white/10 text-text-primary font-label-md text-base font-bold hover:bg-white/5 transition-colors flex items-center justify-center gap-2 group cursor-pointer"
-                    type="button"
-                    onClick={() => setStep(1)}
-                  >
-                    <span className="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
-                    Back
-                  </button>
-                  <button
-                    className="order-1 md:order-2 flex-[2] py-4 rounded-lg bg-primary-container text-white font-label-md text-base font-bold hover:brightness-110 shadow-lg shadow-primary-container/20 transition-all flex items-center justify-center gap-2 cursor-pointer border-none group"
-                    type="submit"
-                  >
-                    Continue to Verification
-                    <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-                  </button>
-                </div>
-              </form>
             </div>
-          )}
-
-          {/* Step 3: Verification */}
-          {step === 3 && (
-            <div className="bg-surface-container-lowest rounded-xl p-8 md:p-12 glass-panel crimson-glow flex flex-col items-center text-center gap-8 border border-white/5 relative overflow-hidden">
-              {/* Subtle Gradient Accent */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-container/5 to-transparent"></div>
-
-              {/* Status Banner */}
-              <div className="bg-primary-container/15 text-primary px-4 py-2 rounded-full font-label-md text-base flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">outgoing_mail</span>
-                Verification email sent
-              </div>
-
-              {/* Large Success Icon */}
-              <div className="relative animate-float my-4">
-                <div className="absolute inset-0 bg-primary-container/20 blur-[30px] rounded-full scale-125"></div>
-                <div className="w-32 h-32 bg-surface-container-high rounded-2xl flex items-center justify-center relative z-10 shadow-2xl border border-white/10">
-                  <span className="material-symbols-outlined text-[64px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>mark_email_unread</span>
-                </div>
-              </div>
-
-              {/* Messaging */}
-              <div className="flex flex-col gap-4">
-                <h1 className="font-headline-lg text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight">Almost there!</h1>
-                <p className="font-body-md text-base text-on-surface-variant max-w-[340px] mx-auto leading-relaxed">
-                  A confirmation link has been sent to <span className="text-text-secondary font-semibold">{email || 'kollective.user@example.com'}</span>. Please check your inbox and click the link to activate your account.
-                </p>
-              </div>
-
-              {/* Actions */}
-              <div className="w-full flex flex-col gap-6 mt-2">
-                <button
-                  onClick={() => navigate('/home')}
-                  className="w-full py-4 bg-primary-container text-white font-label-md text-base font-bold rounded-lg hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-xl shadow-primary-container/20 border-t border-white/10 cursor-pointer border-none"
-                >
-                  Open Mail App
-                </button>
-                <div className="flex flex-col gap-4">
-                  <a
-                    className="text-label-md font-label-md text-base text-on-surface-variant hover:text-text-secondary transition-colors inline-flex items-center justify-center gap-2 group"
-                    href="#resend"
-                    onClick={handleResendEmail}
-                  >
-                    <span className={`material-symbols-outlined text-[18px] ${resendStatus === 'sending' ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`}>
-                      {resendStatus === 'sent' ? 'check_circle' : 'refresh'}
-                    </span>
-                    {resendStatus === 'normal' && "Didn't receive the email? Send it again"}
-                    {resendStatus === 'sending' && "Sending link..."}
-                    {resendStatus === 'sent' && "New link sent!"}
-                  </a>
-                  <a
-                    className="text-label-sm text-sm text-on-surface-variant/50 hover:text-on-surface transition-colors inline-flex items-center justify-center gap-2"
-                    href="#back"
-                    onClick={(e) => { e.preventDefault(); setStep(2); }}
-                  >
-                    <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                    Wrong email address? Go back
-                  </a>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <p className="text-label-sm text-sm text-text-secondary text-center opacity-60">
-            Securely processed by Kollective Identity Labs. <br className="md:hidden" />
-            <a className="text-primary-container hover:underline underline-offset-4" href="#legal" onClick={(e) => e.preventDefault()}>Legal Compliance</a> &amp; <a className="text-primary-container hover:underline underline-offset-4" href="#terms" onClick={(e) => e.preventDefault()}>Terms of Use</a>.
-          </p>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="w-full py-8 border-t border-white/5 mt-auto bg-surface-container-lowest/50 backdrop-blur-sm">
-        <div className="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop gap-6 w-full max-w-container-max mx-auto">
-          <div className="flex flex-col items-center md:items-start gap-1">
-            <div className="flex items-center gap-2">
-              <img alt="Kollective" className="w-5 h-5 opacity-80" src="/K99.png" />
-              <span className="font-label-md font-bold text-text-primary text-sm">Kollective</span>
-            </div>
-            <span className="font-label-sm text-sm text-on-surface-variant opacity-60">© 2026 Kollective. The Revolution is Digital.</span>
-          </div>
-          <div className="flex gap-8">
-            <a className="font-label-sm text-sm text-on-surface-variant hover:text-primary transition-colors" href="#terms" onClick={(e) => e.preventDefault()}>Terms</a>
-            <a className="font-label-sm text-sm text-on-surface-variant hover:text-primary transition-colors" href="#privacy" onClick={(e) => e.preventDefault()}>Privacy</a>
-            <a className="font-label-sm text-sm text-on-surface-variant hover:text-primary transition-colors" href="#manifesto" onClick={(e) => e.preventDefault()}>Manifesto</a>
-            <a className="font-label-sm text-sm text-on-surface-variant hover:text-primary transition-colors" href="#contact" onClick={(e) => e.preventDefault()}>Contact</a>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-};
+    );
+}

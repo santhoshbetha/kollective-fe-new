@@ -11,106 +11,142 @@ import { ImageLightbox } from './ImageLightbox';
 import { usePostActions } from './usePostActions';
 import { useRsvpToAction } from '../../features/organize/useOrganizeFeature';
 
+import {
+    ExternalLink,
+    Link as LinkIcon,
+    Copy,
+    AtSign,
+    Mail,
+    VolumeX,
+    ShieldBan,
+    Filter,
+    Flag,
+    GlobeLock
+} from 'lucide-react';
+
 const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate) => {
     if (!showMenu) return null;
+
     return (
         <div
-            className="absolute right-0 top-8 z-50 w-72 bg-[#1a1822] border border-white/10 rounded-lg shadow-2xl overflow-hidden py-1.5 animate-in fade-in slide-in-from-top-2 duration-150"
+            className="absolute right-0 top-8 z-[100] w-72 bg-surface-container border border-outline-variant rounded-card shadow-2xl overflow-hidden py-1.5 animate-in fade-in slide-in-from-top-2 duration-150 font-sans"
             onClick={(e) => e.stopPropagation()}
         >
+            {/* Standard Navigation Actions */}
             <button
+                type="button"
                 onClick={() => { setShowMenu(false); navigate(`/post/${post?.id}`); }}
-                className="w-full text-left px-5 py-2.5 text-sm font-semibold text-[#e0deeb] hover:bg-[#2b2640] transition-colors flex items-center gap-3 cursor-pointer border-none"
+                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
-                <span className="material-symbols-outlined text-[18px]">open_in_new</span>
-                Expand this post
+                <ExternalLink className="w-4 h-4 text-text-secondary shrink-0" />
+                <span>Expand this post</span>
             </button>
+
             <button
+                type="button"
                 onClick={() => { setShowMenu(false); alert("Opening original post page..."); }}
-                className="w-full text-left px-5 py-2.5 text-sm font-semibold text-[#e0deeb] hover:bg-[#2b2640] transition-colors flex items-center gap-3 cursor-pointer border-none"
+                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
-                <span className="material-symbols-outlined text-[18px]">link</span>
-                Open original page
+                <LinkIcon className="w-4 h-4 text-text-secondary shrink-0" />
+                <span>Open original page</span>
             </button>
+
             <button
+                type="button"
                 onClick={() => {
                     setShowMenu(false);
                     const linkText = `${window.location.origin}/post/${post?.id}`;
                     navigator.clipboard.writeText(linkText);
                     alert("Link copied to clipboard!");
                 }}
-                className="w-full text-left px-5 py-2.5 text-sm font-semibold text-[#e0deeb] hover:bg-[#2b2640] transition-colors flex items-center gap-3 cursor-pointer border-none"
+                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
-                <span className="material-symbols-outlined text-[18px]">content_copy</span>
-                Copy link to post
+                <Copy className="w-4 h-4 text-text-secondary shrink-0" />
+                <span>Copy link to post</span>
             </button>
 
-            <div className="border-t border-white/5 my-1" />
+            <div className="border-t border-outline-variant/60 my-1" />
 
+            {/* Social Interaction Actions */}
             <button
+                type="button"
                 onClick={() => { setShowMenu(false); alert(`Drafting a mention to ${authorHandle}...`); }}
-                className="w-full text-left px-5 py-2.5 text-sm font-semibold text-[#e0deeb] hover:bg-[#2b2640] transition-colors flex items-center gap-3 cursor-pointer border-none"
+                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
-                <span className="material-symbols-outlined text-[18px]">alternate_email</span>
-                Mention {authorHandle}
+                <AtSign className="w-4 h-4 text-text-secondary shrink-0" />
+                <span className="break-all line-clamp-2 flex-1">Mention {authorHandle}</span>
             </button>
+
             <button
+                type="button"
                 onClick={() => { setShowMenu(false); alert(`Drafting a private mention to ${authorHandle}...`); }}
-                className="w-full text-left px-5 py-2.5 text-sm font-semibold text-[#e0deeb] hover:bg-[#2b2640] transition-colors flex items-center gap-3 cursor-pointer border-none"
+                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
-                <span className="material-symbols-outlined text-[18px]">mail</span>
-                Privately mention {authorHandle}
+                <Mail className="w-4 h-4 text-text-secondary shrink-0" />
+                <span className="break-all line-clamp-2 flex-1">Privately mention {authorHandle}</span>
             </button>
 
-            <div className="border-t border-white/5 my-1" />
+            <div className="border-t border-outline-variant/60 my-1" />
 
+            {/* Destructive / Moderation Actions */}
             <button
+                type="button"
                 onClick={() => { setShowMenu(false); alert(`You have muted ${authorHandle}.`); }}
-                className="w-full text-left px-5 py-2.5 text-sm font-semibold text-[#ff7f6f] hover:bg-[#3d1c1c]/50 transition-colors flex items-center gap-3 cursor-pointer border-none"
+                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none min-w-0"
             >
-                <span className="material-symbols-outlined text-[18px]">volume_off</span>
-                Mute {authorHandle}
+                <VolumeX className="w-4 h-4 text-error shrink-0" />
+                <span className="break-all line-clamp-2 flex-1">Mute {authorHandle}</span>
             </button>
+
             <button
+                type="button"
                 onClick={() => { setShowMenu(false); alert(`You have blocked ${authorHandle}.`); }}
-                className="w-full text-left px-5 py-2.5 text-sm font-semibold text-[#ff7f6f] hover:bg-[#3d1c1c]/50 transition-colors flex items-center gap-3 cursor-pointer border-none"
+                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
-                <span className="material-symbols-outlined text-[18px]">block</span>
-                Block {authorHandle}
+                <ShieldBan className="w-4 h-4 text-error shrink-0" />
+                <span className="break-all line-clamp-2 flex-1">Block {authorHandle}</span>
             </button>
 
-            <div className="border-t border-white/5 my-1" />
+            <div className="border-t border-outline-variant/60 my-1" />
 
             <button
+                type="button"
                 onClick={() => { setShowMenu(false); alert("This post has been filtered from your timeline."); }}
-                className="w-full text-left px-5 py-2.5 text-sm font-semibold text-[#ff7f6f] hover:bg-[#3d1c1c]/50 transition-colors flex items-center gap-3 cursor-pointer border-none"
+                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
-                <span className="material-symbols-outlined text-[18px]">filter_list</span>
-                Filter this post
+                <Filter className="w-4 h-4 text-error shrink-0" />
+                <span className="break-all line-clamp-2 flex-1">Filter this post</span>
             </button>
 
-            <div className="border-t border-white/5 my-1" />
+            <div className="border-t border-outline-variant/60 my-1" />
 
             <button
+                type="button"
                 onClick={() => { setShowMenu(false); alert(`Report submitted for ${authorHandle}.`); }}
-                className="w-full text-left px-5 py-2.5 text-sm font-semibold text-[#ff7f6f] hover:bg-[#3d1c1c]/50 transition-colors flex items-center gap-3 cursor-pointer border-none"
+                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
-                <span className="material-symbols-outlined text-[18px]">flag</span>
-                Report {authorHandle}
+                <Flag className="w-4 h-4 text-error shrink-0" />
+                <span className="break-all line-clamp-2 flex-1">Report {authorHandle}</span>
             </button>
 
-            <div className="border-t border-white/5 my-1" />
+            <div className="border-t border-outline-variant/60 my-1" />
 
             <button
+                type="button"
                 onClick={() => { setShowMenu(false); alert(`Domain ${domain} has been blocked.`); }}
-                className="w-full text-left px-5 py-2.5 text-sm font-semibold text-[#ff7f6f] hover:bg-[#3d1c1c]/50 transition-colors flex items-center gap-3 cursor-pointer border-none"
+                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
-                <span className="material-symbols-outlined text-[18px]">domain_disabled</span>
-                Block domain {domain}
+                <GlobeLock className="w-4 h-4 text-error shrink-0" />
+                <span>Block domain {domain}</span>
             </button>
         </div>
     );
 };
+
+// Module-level global state tracking which menu is currently open in the feed
+let activeMenuPostId = null;
+let activeMenuSetShowMenu = null;
+
 export function PostCard({ post, isLast = false, standalone = false }) {
     const postActions = usePostActions();
     const rsvpMutation = useRsvpToAction();
@@ -123,6 +159,55 @@ export function PostCard({ post, isLast = false, standalone = false }) {
     const likeMutation = useLikePost();
     const bookmarkMutation = useBookmarkPost();
     const allImages = post?.images || (post?.image ? [post.image] : []);
+
+    React.useEffect(() => {
+        if (!showMenu) return;
+
+        const handleOutsideClick = (e) => {
+            if (!e.target.closest('.menu-container-relative')) {
+                setShowMenu(false);
+                if (activeMenuPostId === post?.id) {
+                    activeMenuPostId = null;
+                    activeMenuSetShowMenu = null;
+                }
+            }
+        };
+
+        const timeoutId = setTimeout(() => {
+            document.addEventListener('click', handleOutsideClick);
+        }, 0);
+
+        return () => {
+            clearTimeout(timeoutId);
+            document.removeEventListener('click', handleOutsideClick);
+        };
+    }, [showMenu, post?.id]);
+
+    React.useEffect(() => {
+        return () => {
+            if (activeMenuPostId === post?.id) {
+                activeMenuPostId = null;
+                activeMenuSetShowMenu = null;
+            }
+        };
+    }, [post?.id]);
+
+    const handleToggleMenu = () => {
+        if (showMenu) {
+            setShowMenu(false);
+            if (activeMenuPostId === post?.id) {
+                activeMenuPostId = null;
+                activeMenuSetShowMenu = null;
+            }
+        } else {
+            if (activeMenuPostId !== null && activeMenuPostId !== post?.id && activeMenuSetShowMenu !== null) {
+                activeMenuSetShowMenu(false);
+            }
+            activeMenuPostId = post?.id;
+            activeMenuSetShowMenu = setShowMenu;
+            setShowMenu(true);
+        }
+    };
 
     const handleLikeClick = (e) => {
         e.stopPropagation();
@@ -140,6 +225,22 @@ export function PostCard({ post, isLast = false, standalone = false }) {
     const handleCardClick = (e) => {
         // Avoid navigating if clicking interactive buttons/links
         if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) {
+            return;
+        }
+        if (showMenu) {
+            setShowMenu(false);
+            if (activeMenuPostId === post?.id) {
+                activeMenuPostId = null;
+                activeMenuSetShowMenu = null;
+            }
+            return;
+        }
+        if (activeMenuPostId !== null) {
+            if (activeMenuSetShowMenu) {
+                activeMenuSetShowMenu(false);
+            }
+            activeMenuPostId = null;
+            activeMenuSetShowMenu = null;
             return;
         }
         navigate(`/post/${post?.id}`);
@@ -219,11 +320,11 @@ export function PostCard({ post, isLast = false, standalone = false }) {
                             </span>
                         </button>
 
-                        <div className="relative">
+                        <div className="relative menu-container-relative">
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    setShowMenu(!showMenu);
+                                    handleToggleMenu();
                                 }}
                                 className="p-2 rounded-full backdrop-blur-md text-text-secondary hover:text-white focus:outline-none transition-all cursor-pointer flex items-center justify-center"
                                 title="More actions"
@@ -239,7 +340,7 @@ export function PostCard({ post, isLast = false, standalone = false }) {
                             <UserHoverCard author={post?.author}>
                                 <div className="flex items-center gap-4 hover:opacity-85 transition-opacity">
                                     <div className="w-12 h-12 rounded-full border-2 border-primary-container p-0.5">
-                                        <img alt="Author" className="w-full h-full rounded-full object-cover" src={post?.author.avatar} />
+                                        <img alt="Author" className="w-full h-full rounded-full object-cover" src={post?.author?.avatar || null} />
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
@@ -266,7 +367,7 @@ export function PostCard({ post, isLast = false, standalone = false }) {
                                         }}
                                         className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1.5"
                                     >
-                                        <img src={post?.author.avatar} className="w-5 h-5 rounded-full object-cover" alt="" />
+                                        <img src={post?.author?.avatar || null} className="w-5 h-5 rounded-full object-cover" alt="" />
                                         {post?.author.name}
                                     </span>
                                 </div>
@@ -422,13 +523,13 @@ export function PostCard({ post, isLast = false, standalone = false }) {
                                         <span
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                const username = post?.author.handle.replace('@', '');
+                                                const username = post?.author?.handle?.replace('@', '');
                                                 navigate(`/profile/${username}`, { state: { fromCard: true } });
                                             }}
                                             className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1"
                                         >
-                                            <img src={post?.author.avatar} className="w-4 h-4 rounded-full object-cover" alt="" />
-                                            {post?.author.name}
+                                            <img src={post?.author?.avatar || null} className="w-4 h-4 rounded-full object-cover" alt="" />
+                                            {post?.author?.name}
                                         </span>
                                     </div>
                                 )}
@@ -447,11 +548,11 @@ export function PostCard({ post, isLast = false, standalone = false }) {
                                     </span>
                                 </button>
 
-                                <div className="relative">
+                                <div className="relative menu-container-relative">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            setShowMenu(!showMenu);
+                                            handleToggleMenu();
                                         }}
                                         className="p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer flex items-center justify-center"
                                         title="More actions"

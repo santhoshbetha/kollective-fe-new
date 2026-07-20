@@ -76,7 +76,7 @@ export const TrendingWidget = () => {
         <a className="text-[15px] text-text-secondary hover:text-white transition-colors" href="#">Terms of Service</a>
         <a className="text-[15px] text-text-secondary hover:text-white transition-colors" href="#">Cookies</a>
         <a className="text-[15px] text-text-secondary hover:text-white transition-colors" href="#">More...</a>
-        <p className="text-[15px] text-text-secondary w-full mt-2">© 2027 Kollective</p>
+        <p className="text-[15px] text-text-secondary w-full mt-2">© {new Date().getFullYear()} Kollective</p>
       </div>
     </aside>
   );

@@ -1,20 +1,38 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import VerificationBadge from '../components/VerificationBadge';
 import JournalistOnboardingForm from '../components/JournalistOnboardingForm';
 import ScholarOnboardingForm from '../components/ScholarOnboardingForm';
 import { useUpdateUser } from '../features/profile/useProfileFeature';
+import { ArrowLeft, ChevronRight } from 'lucide-react';
+import { cn } from "@/lib/utils";
+
+// Shared container layout wrapper for sub-flow views
+const FlowLayout = ({ onBack, backLabel = "Back to Role Selection", children, maxWidth = "max-w-md" }) => (
+    <div className="flex flex-col justify-center items-center min-h-[70vh] p-4 gap-4 font-sans">
+        <div className={cn("w-full flex justify-start", maxWidth)}>
+            <button
+                type="button"
+                onClick={onBack}
+                className="flex items-center gap-2 text-lg font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-none outline-none"
+            >
+                <ArrowLeft className="w-4 h-4 shrink-0" />
+                <span>{backLabel}</span>
+            </button>
+        </div>
+        {children}
+    </div>
+);
 
 const UnifiedOnboardingOrchestrator = ({ authToken: propAuthToken, onFlowComplete }) => {
     const navigate = useNavigate();
     const updateUserMutation = useUpdateUser();
     const authToken = propAuthToken || 'mock-user-jwt';
 
-    // States: 'SELECTION', 'JOURNALIST_FLOW', 'SCHOLAR_FLOW', 'ACTIVIST_INFO', 'ORG_INFO'
+    // Available steps: 'SELECTION' | 'JOURNALIST_FLOW' | 'SCHOLAR_FLOW' | 'ACTIVIST_INFO' | 'ORG_INFO'
     const [currentStep, setCurrentStep] = useState('SELECTION');
 
     const handleVerificationComplete = (finalBadgeType) => {
-        // Map final badge type to badge_type schema keys
         const mappedBadge = finalBadgeType === 'ProfessionalTeal' ? 'journalist' : finalBadgeType.toLowerCase();
         updateUserMutation.mutate({ badge_type: mappedBadge });
         if (onFlowComplete) onFlowComplete(mappedBadge);
@@ -27,204 +45,174 @@ const UnifiedOnboardingOrchestrator = ({ authToken: propAuthToken, onFlowComplet
         navigate(-1);
     };
 
+    // --- SUB-FLOW: JOURNALIST ---
     if (currentStep === 'JOURNALIST_FLOW') {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[70vh] p-4 gap-4">
-                <div className="w-full max-w-md flex justify-start">
-                    <button
-                        onClick={() => setCurrentStep('SELECTION')}
-                        className="flex items-center gap-2 text-xs font-mono text-text-secondary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-none focus:outline-none"
-                    >
-                        <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                        Back to Role Selection
-                    </button>
-                </div>
+            <FlowLayout onBack={() => setCurrentStep('SELECTION')}>
                 <JournalistOnboardingForm
                     authToken={authToken}
                     onVerificationComplete={handleVerificationComplete}
                     onSkip={handleSkip}
                 />
-            </div>
+            </FlowLayout>
         );
     }
 
+    // --- SUB-FLOW: SCHOLAR ---
     if (currentStep === 'SCHOLAR_FLOW') {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[70vh] p-4 gap-4">
-                <div className="w-full max-w-md flex justify-start">
-                    <button
-                        onClick={() => setCurrentStep('SELECTION')}
-                        className="flex items-center gap-2 text-xs font-mono text-text-secondary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-none focus:outline-none"
-                    >
-                        <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                        Back to Role Selection
-                    </button>
-                </div>
+            <FlowLayout onBack={() => setCurrentStep('SELECTION')}>
                 <ScholarOnboardingForm
                     authToken={authToken}
                     onVerificationComplete={handleVerificationComplete}
                     onSkip={handleSkip}
                 />
-            </div>
+            </FlowLayout>
         );
     }
 
+    // --- SUB-FLOW: ACTIVIST ---
     if (currentStep === 'ACTIVIST_INFO') {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[70vh] p-4 gap-4">
-                <div className="w-full max-w-md flex justify-start">
-                    <button
-                        onClick={() => setCurrentStep('SELECTION')}
-                        className="flex items-center gap-2 text-xs font-mono text-text-secondary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-none focus:outline-none"
-                    >
-                        <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                        Back to Role Selection
-                    </button>
-                </div>
-                <div className="w-full max-w-md border border-rose-500/30 bg-surface-container p-8 font-mono text-text-primary glass-card">
-                    <div className="text-rose-500 text-md font-bold tracking-wider mb-2">🔴 GRASSROOTS REBEL ACTION</div>
-                    <h2 className="text-2xl font-black mb-4 uppercase text-text-primary">Frontline Verification</h2>
-                    <p className="text-lg text-text-secondary leading-relaxed mb-6 font-sans">
+            <FlowLayout onBack={() => setCurrentStep('SELECTION')}>
+                <div className="w-full max-w-md border border-error/40 bg-surface-container p-6 sm:p-8 rounded-card shadow-2xl font-sans text-text-primary">
+                    <div className="text-error text-lg font-bold tracking-wider uppercase mb-2">
+                        🔴 Grassroots Rebel Action
+                    </div>
+                    <h2 className="text-xl font-black mb-3 uppercase tracking-tight text-text-primary">
+                        Frontline Verification
+                    </h2>
+                    <p className="text-lg text-text-secondary leading-relaxed mb-6">
                         Frontline badges cannot be bought or auto-verified via institutional logins.
                         To earn your red shield, you must submit proof of action inside the app dashboard
                         to be evaluated by a randomized, blind community jury of 12 peers.
                     </p>
                     <button
+                        type="button"
                         onClick={() => {
-                            updateUser({ badge_type: 'activist' });
+                            updateUserMutation.mutate({ badge_type: 'activist' });
+                            if (onFlowComplete) onFlowComplete('activist');
                             navigate(-1);
                         }}
-                        className="w-full p-3 font-bold text-sm bg-rose-600 hover:bg-rose-500 text-white uppercase tracking-wider cursor-pointer"
+                        className="w-full p-3 font-bold text-lg bg-error hover:brightness-110 text-on-error uppercase tracking-wider rounded-card cursor-pointer transition-all active:scale-98 border-none"
                     >
                         Request Activist Status & Return
                     </button>
                 </div>
-            </div>
+            </FlowLayout>
         );
     }
 
+    // --- SUB-FLOW: ORGANIZATION ---
     if (currentStep === 'ORG_INFO') {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[70vh] p-4 gap-4">
-                <div className="w-full max-w-md flex justify-start">
-                    <button
-                        onClick={() => setCurrentStep('SELECTION')}
-                        className="flex items-center gap-2 text-md font-mono text-text-secondary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-none focus:outline-none"
-                    >
-                        <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                        Back to Role Selection
-                    </button>
-                </div>
-                <div className="w-full max-w-md border border-amber-500/30 bg-surface-container p-8 font-mono text-text-primary glass-card">
-                    <div className="text-amber-500 textmd font-bold tracking-wider mb-2">🏢 INSTITUTIONAL PRESS</div>
-                    <h2 className="text-2xl font-black mb-4 uppercase text-text-primary">News Outlets</h2>
-                    <p className="text-lg text-text-secondary leading-relaxed mb-6 font-sans">
+            <FlowLayout onBack={() => setCurrentStep('SELECTION')}>
+                <div className="w-full max-w-md border border-secondary/40 bg-surface-container p-6 sm:p-8 rounded-card shadow-2xl font-sans text-text-primary">
+                    <div className="text-secondary text-lg font-bold tracking-wider uppercase mb-2">
+                        🏢 Institutional Press
+                    </div>
+                    <h2 className="text-xl font-black mb-3 uppercase tracking-tight text-text-primary">
+                        News Outlets
+                    </h2>
+                    <p className="text-lg text-text-secondary leading-relaxed mb-6">
                         Premium Gold badges are strictly reserved for verified public newsrooms, worker-led presses, and media houses.
                         Verification requires compliance tracking logs and direct coordination with our Legal Operations team.
                     </p>
                     <button
+                        type="button"
                         onClick={() => {
-                            updateUser({ badge_type: 'organization' });
+                            updateUserMutation.mutate({ badge_type: 'organization' });
+                            if (onFlowComplete) onFlowComplete('organization');
                             navigate(-1);
                         }}
-                        className="w-full p-3 font-bold text-md bg-amber-600 hover:bg-amber-500 text-black uppercase tracking-wider cursor-pointer"
+                        className="w-full p-3 font-bold text-lg bg-secondary hover:brightness-110 text-on-secondary-fixed uppercase tracking-wider rounded-card cursor-pointer transition-all active:scale-98 border-none"
                     >
-                        Mock Verify Organization & Return
+                        Verify Organization & Return
                     </button>
                 </div>
-            </div>
+            </FlowLayout>
         );
     }
 
+    // --- MAIN STEP: ROLE SELECTION ---
+    const roles = [
+        {
+            id: 'CITIZEN',
+            title: 'Citizen / Worker',
+            type: 'citizen',
+            description: 'Standard profile for everyday feed reading and community participation.',
+            hoverBorder: 'hover:border-primary',
+            onClick: handleSkip
+        },
+        {
+            id: 'JOURNALIST',
+            title: 'Independent Journalist',
+            type: 'journalist',
+            description: 'Field correspondents, independent reporters, and camera crews.',
+            hoverBorder: 'hover:border-tertiary',
+            onClick: () => setCurrentStep('JOURNALIST_FLOW')
+        },
+        {
+            id: 'SCHOLAR',
+            title: 'Scholar / Researcher',
+            type: 'scholar',
+            description: 'Professors, researchers, data analysts, and economists.',
+            hoverBorder: 'hover:border-emerald-500',
+            onClick: () => setCurrentStep('SCHOLAR_FLOW')
+        },
+        {
+            id: 'ACTIVIST',
+            title: 'Frontline Activist',
+            type: 'activist',
+            description: 'Union coordinators, strike leads, and grassroots organizers.',
+            hoverBorder: 'hover:border-error',
+            onClick: () => setCurrentStep('ACTIVIST_INFO')
+        },
+        {
+            id: 'ORGANIZATION',
+            title: 'News Organization',
+            type: 'organization',
+            description: 'Official institutional accounts for newsrooms and publishing collectives.',
+            hoverBorder: 'hover:border-secondary',
+            onClick: () => setCurrentStep('ORG_INFO')
+        }
+    ];
+
     return (
-        <div className="flex flex-col justify-center items-center min-h-[80vh] p-4 gap-4">
-            <div className="w-full max-w-lg flex justify-start">
-                <button
-                    onClick={() => navigate('/settings')}
-                    className="flex items-center gap-2 text-xs font-mono text-text-secondary hover:text-text-primary transition-colors cursor-pointer bg-transparent border-none focus:outline-none"
-                >
-                    <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                    Back to Settings
-                </button>
-            </div>
+        <FlowLayout onBack={() => navigate('/settings')} backLabel="Back to Settings" maxWidth="max-w-lg">
+            <div className="w-full max-w-lg border border-outline-variant bg-surface-container p-6 sm:p-8 rounded-card shadow-2xl font-sans text-text-primary">
+                <div className="text-text-secondary text-lg font-bold tracking-wider uppercase mb-1">
+                    Account Classification
+                </div>
+                <h2 className="text-2xl font-black mb-6 uppercase tracking-tight text-text-primary">
+                    Choose Your Role
+                </h2>
 
-            <div className="w-full max-w-lg border border-white/10 bg-surface-container p-8 font-mono text-text-primary glass-card">
-                <div className="text-text-secondary text-md font-bold tracking-wider mb-2">ACCOUNT CLASSIFICATION</div>
-                <h2 className="text-2xl font-black mb-6 uppercase text-text-primary">Choose Your Role</h2>
-
-                <div className="flex flex-col gap-4">
-                    {/* Choice 1: Standard Worker / Citizen */}
-                    <div
-                        onClick={handleSkip}
-                        className="border border-white/5 bg-surface-container-low p-4 flex items-center justify-between cursor-pointer hover:border-blue-500 transition-colors"
-                    >
-                        <div>
-                            <div className="text-lg font-bold flex items-center gap-2 text-text-primary">
-                                Citizen / Worker <VerificationBadge type="citizen" />
+                <div className="flex flex-col gap-3">
+                    {roles.map((role) => (
+                        <div
+                            key={role.id}
+                            onClick={role.onClick}
+                            className={cn(
+                                "border border-outline-variant/60 bg-surface-container-low p-4 rounded-card flex items-center justify-between cursor-pointer transition-all hover:bg-surface-container-high group",
+                                role.hoverBorder
+                            )}
+                        >
+                            <div className="space-y-1 min-w-0 pr-2">
+                                <div className="text-lg sm:text-base font-bold flex items-center gap-2 text-text-primary">
+                                    <span>{role.title}</span>
+                                    <VerificationBadge type={role.type} />
+                                </div>
+                                <p className="text-lg text-text-secondary leading-relaxed">
+                                    {role.description}
+                                </p>
                             </div>
-                            <p className="text-[16px] text-text-secondary mt-1 font-sans">Standard profile for everyday feed reading and community participation.</p>
+                            <ChevronRight className="w-4 h-4 text-text-secondary group-hover:text-text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
                         </div>
-                        <span className="text-text-secondary text-sm">➔</span>
-                    </div>
-
-                    {/* Choice 2: Field Journalist */}
-                    <div
-                        onClick={() => setCurrentStep('JOURNALIST_FLOW')}
-                        className="border border-white/5 bg-surface-container-low p-4 flex items-center justify-between cursor-pointer hover:border-teal-500 transition-colors"
-                    >
-                        <div>
-                            <div className="text-lg font-bold flex items-center gap-2 text-text-primary">
-                                Independent Journalist <VerificationBadge type="journalist" />
-                            </div>
-                            <p className="text-[16px] text-text-secondary mt-1 font-sans">Field correspondents, independent reporters, and camera crews.</p>
-                        </div>
-                        <span className="text-text-secondary text-sm">➔</span>
-                    </div>
-
-                    {/* Choice 3: Academic Scholar */}
-                    <div
-                        onClick={() => setCurrentStep('SCHOLAR_FLOW')}
-                        className="border border-white/5 bg-surface-container-low p-4 flex items-center justify-between cursor-pointer hover:border-emerald-500 transition-colors"
-                    >
-                        <div>
-                            <div className="text-lg font-bold flex items-center gap-2 text-text-primary">
-                                Scholar / Researcher <VerificationBadge type="scholar" />
-                            </div>
-                            <p className="text-[16px] text-text-secondary mt-1 font-sans">Professors, researchers, data analysts, and economists.</p>
-                        </div>
-                        <span className="text-text-secondary text-sm">➔</span>
-                    </div>
-
-                    {/* Choice 4: Frontline Activist */}
-                    <div
-                        onClick={() => setCurrentStep('ACTIVIST_INFO')}
-                        className="border border-white/5 bg-surface-container-low p-4 flex items-center justify-between cursor-pointer hover:border-rose-500 transition-colors"
-                    >
-                        <div>
-                            <div className="text-lg font-bold flex items-center gap-2 text-text-primary">
-                                Frontline Activist <VerificationBadge type="activist" />
-                            </div>
-                            <p className="text-[16px] text-text-secondary mt-1 font-sans">Union coordinators, strike leads, and grassroots organizers.</p>
-                        </div>
-                        <span className="text-text-secondary text-sm">➔</span>
-                    </div>
-
-                    {/* Choice 5: News Organization */}
-                    <div
-                        onClick={() => setCurrentStep('ORG_INFO')}
-                        className="border border-white/5 bg-surface-container-low p-4 flex items-center justify-between cursor-pointer hover:border-amber-500 transition-colors"
-                    >
-                        <div>
-                            <div className="text-lg font-bold flex items-center gap-2 text-text-primary">
-                                News Organization <VerificationBadge type="organization" />
-                            </div>
-                            <p className="text-[16px] text-text-secondary mt-1 font-sans">Official institutional accounts for newsrooms and media houses.</p>
-                        </div>
-                        <span className="text-text-secondary text-sm">➔</span>
-                    </div>
+                    ))}
                 </div>
             </div>
-        </div>
+        </FlowLayout>
     );
 };
 

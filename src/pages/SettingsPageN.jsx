@@ -94,7 +94,7 @@ export const SettingsPageN = () => {
                         {/* Quick Presentational Identity Summary Row Block */}
                         <div className="p-4 bg-surface-container-lowest/50 border border-white/5 rounded-xl flex items-center gap-4 select-none">
                             <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-[#1A1616]">
-                                <img src={currentUser?.avatar} alt="" className="w-full h-full object-cover" />
+                                <img src={currentUser?.avatar || null} alt="" className="w-full h-full object-cover" />
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-extrabold text-md text-text-primary">{currentUser?.name}</span>

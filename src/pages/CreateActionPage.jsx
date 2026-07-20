@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateAction } from '../features/organize/useOrganizeFeature';
+import { DatePicker } from '../components/ui/date-picker';
 
 export const CreateActionPage = () => {
   const navigate = useNavigate();
@@ -350,12 +351,11 @@ export const CreateActionPage = () => {
                       <label className="block font-bold text-sm md:text-sm text-text-secondary uppercase tracking-wider mb-2">
                         Date
                       </label>
-                      <input
-                        className={`w-full bg-surface-ink border rounded-xl px-4 py-3.5 text-text-primary focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/40 transition-all font-body-md text-sm md:text-base ${errors.date ? 'border-error' : 'border-white/10'
-                          }`}
-                        type="date"
+                      <DatePicker
                         value={formData.date}
-                        onChange={(e) => handleInputChange('date', e.target.value)}
+                        onChange={(val) => handleInputChange('date', val)}
+                        className={errors.date ? 'border-error' : 'border-white/10'}
+                        placeholder="Select date"
                       />
                       {errors.date && (
                         <p className="text-error text-sm md:text-sm mt-1">{errors.date}</p>

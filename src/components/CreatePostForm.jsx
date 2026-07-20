@@ -9,7 +9,9 @@ export function CreatePostForm({
     activeTab,
     queryClient,
     setCreatePostOpen,
-    onOpenChange
+    onOpenChange,
+    showPollComposer,
+    setShowPollComposer
 }) {
     const [audience, setAudience] = useState('World');
     const [postIdentity, setPostIdentity] = useState('personal'); // 'personal' | 'organization'
@@ -31,7 +33,7 @@ export function CreatePostForm({
     const [protocolSigned, setProtocolSigned] = useState(true);
 
     // 🎛️ local controlled states for poll configurations
-    const [showPollComposer, setShowPollComposer] = useState(false);
+    // const [showPollComposer, setShowPollComposer] = useState(false);
     const [pollOptions, setPollOptions] = useState(['', '']);
     const [pollExpires, setPollExpires] = useState('86400');
 
@@ -136,6 +138,31 @@ export function CreatePostForm({
         });
     };
 
+    React.useEffect(() => {
+        if (!showIdentityDropdown && !showAudienceDropdown && !showEmojiDropdown) return;
+
+        const handleOutsideClick = (e) => {
+            if (showIdentityDropdown && !e.target.closest('.identity-dropdown-container')) {
+                setShowIdentityDropdown(false);
+            }
+            if (showAudienceDropdown && !e.target.closest('.audience-dropdown-container')) {
+                setShowAudienceDropdown(false);
+            }
+            if (showEmojiDropdown && !e.target.closest('.emoji-dropdown-container') && !e.target.closest('.emoji-trigger-btn')) {
+                setShowEmojiDropdown(false);
+            }
+        };
+
+        const timeoutId = setTimeout(() => {
+            document.addEventListener('click', handleOutsideClick);
+        }, 0);
+
+        return () => {
+            clearTimeout(timeoutId);
+            document.removeEventListener('click', handleOutsideClick);
+        };
+    }, [showIdentityDropdown, showAudienceDropdown, showEmojiDropdown]);
+
     const renderImageGrid = () => {
         if (images.length === 0) return null;
         return (
@@ -155,7 +182,7 @@ export function CreatePostForm({
     return (
         <form onSubmit={handleSubmit} className="p-6 space-y-5 relative flex flex-col">
             <div className="flex gap-2 items-center flex-wrap z-30">
-                <div className="relative">
+                <div className="relative identity-dropdown-container">
                     <button type="button" onClick={() => setShowIdentityDropdown(!showIdentityDropdown)} className="flex items-center gap-2 px-3 py-1.5 bg-surface-container border border-white/10 rounded-full text-text-primary hover:bg-surface-container-high text-xs font-bold cursor-pointer">
                         <span>{postIdentity === 'personal' ? 'Post as Self' : 'Post as NYMag'}</span>
                     </button>
@@ -167,7 +194,7 @@ export function CreatePostForm({
                     )}
                 </div>
 
-                <div className="relative">
+                <div className="relative audience-dropdown-container">
                     <button type="button" onClick={() => setShowAudienceDropdown(!showAudienceDropdown)} className="flex items-center gap-2 px-3 py-1.5 bg-surface-container border border-white/10 rounded-full text-text-primary text-xs font-bold cursor-pointer">
                         <span>{audience}</span>
                     </button>
@@ -180,19 +207,26 @@ export function CreatePostForm({
                     )}
                 </div>
 
-                <button type="button" onClick={() => setContentType(contentType === 'post' ? 'voice' : 'post')} className="flex items-center gap-2 px-3 py-1.5 bg-surface-container border border-white/10 rounded-full text-text-primary text-xs font-bold cursor-pointer">
-                    <span className="capitalize">{contentType}</span>
-                </button>
+                {!showPollComposer && (
+                    <button
+                        type="button"
+                        onClick={() => setContentType(contentType === 'post' ? 'voice' : 'post')}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-surface-container border border-white/10 rounded-full text-text-primary text-xs 
+                                    font-bold cursor-pointer">
+                        <span className="capitalize">{contentType}</span>
+                    </button>
+                )}
             </div>
 
             <div className="space-y-4 pt-1 flex flex-col">
                 {contentType === 'voice' && (
                     <input type="text" placeholder="Title (optional)" value={title} onChange={(e) => e.target.value.length <= 150 && setTitle(e.target.value)} className="w-full bg-[#111111] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-text-primary focus:outline-none" />
                 )}
-                <div className="relative w-full">
+                <div className="relative w-full emoji-dropdown-container">
                     <textarea
-                        placeholder="What's breaking across your local grid node?"
-                        rows="5" value={content}
+                        placeholder={showPollComposer ? 'What would you like to ask the kollective?' : 'What\'s breaking across your local grid node?'}
+                        rows={showPollComposer ? 2 : 5}
+                        value={content}
                         onChange={(e) => setContent(e.target.value)}
                         className="w-full bg-[#111111] border border-white/10 rounded-xl p-4 text-sm text-text-primary focus:outline-none resize-none leading-relaxed"
                     />
@@ -230,7 +264,7 @@ export function CreatePostForm({
                     <button
                         type="button"
                         onClick={() => setShowEmojiDropdown(!showEmojiDropdown)}
-                        className="p-2 bg-transparent text-text-secondary border-none cursor-pointer"><span className="material-symbols-outlined text-[20px]">sentiment_satisfied</span>
+                        className="p-2 bg-transparent text-text-secondary border-none cursor-pointer emoji-trigger-btn"><span className="material-symbols-outlined text-[20px]">sentiment_satisfied</span>
                     </button>
                     {/* 📊 Add custom icon to trigger Poll Composer Box options inline */}
                     <button

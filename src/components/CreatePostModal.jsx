@@ -1,5 +1,5 @@
 // src/components/CreatePostModal.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useStore } from '../store/useStore';
 import { useCreatePost } from '../features/timeline/useCreatePost';
@@ -18,6 +18,7 @@ export const CreatePostModal = ({ open, onOpenChange }) => {
     const user = useAuthStore((state) => state.user);
     const createPostMutation = useCreatePost();
     const queryClient = useQueryClient();
+    const [showPollComposer, setShowPollComposer] = useState(false);
 
     // Connect global state monitors
     const activeTab = useStore((state) => state.homeFeedTab);
@@ -30,7 +31,10 @@ export const CreatePostModal = ({ open, onOpenChange }) => {
                 {/* Header toolbar panel layout navigation */}
                 <DialogHeader className="border-b border-white/5 pb-4 p-6 flex flex-row justify-between items-center bg-surface-container-lowest/50 select-none">
                     <DialogTitle className="text-xl font-extrabold text-text-primary tracking-tight">
-                        Create post
+                        {showPollComposer
+                            ? 'Create Poll'
+                            : 'Create post'
+                        }
                     </DialogTitle>
                     <div className="flex items-center gap-2">
                         <button
@@ -52,6 +56,8 @@ export const CreatePostModal = ({ open, onOpenChange }) => {
                     queryClient={queryClient}
                     setCreatePostOpen={setCreatePostOpen}
                     onOpenChange={onOpenChange}
+                    showPollComposer={showPollComposer}
+                    setShowPollComposer={setShowPollComposer}
                 />
 
             </DialogContent>
