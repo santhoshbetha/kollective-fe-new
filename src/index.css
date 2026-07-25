@@ -234,7 +234,7 @@
 
 @layer base {
   body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Mona Sans", "Montserrat", sans-serif;
     background-color: var(--background);
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;

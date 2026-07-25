@@ -71,7 +71,7 @@ export const SettingsPage = () => {
                                     <span className="material-symbols-outlined text-[20px]">{menuItem.icon}</span>
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                    <span className="text-lg font-black tracking-tight text-white">{menuItem.label}</span>
+                                    <span className="text-lg font-black tracking-tight dark:text-white">{menuItem.label}</span>
                                     <span className="text-[14px] text-text-secondary/50 font-medium truncate mt-0.5">{menuItem.desc}</span>
                                 </div>
                             </button>

@@ -1,6 +1,4 @@
-// src/pages/campaigns/EndorsementHubPage.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { useConsensusNomineeQuery, useSignPetitionMutation } from '../../features/campaigns/useConsensusFeature';
 import {
@@ -9,122 +7,71 @@ import {
     Loader2,
     CheckCircle2,
     PenTool,
-    Tv,
-    ArrowLeft
+    Tv
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
-export const EndorsementHubPage = () => {
-    const navigate = useNavigate();
+export const EndorsementHubPageN1 = () => {
     const currentUser = useAuthStore((state) => state.user);
 
-    // Macro Scope Segment: 'higher' | 'local'
-    const [macroScope, setMacroScope] = useState('higher');
-
-    // Sub Tier Segment: 'congress' | 'state_senate' | 'state_rep' | 'municipal'
+    // Tab Switcher Level Trackers: 'congress' | 'state_senate' | 'state_rep'
     const [selectedTier, setSelectedTier] = useState('congress');
 
-    const handleScopeChange = (targetScope) => {
-        setMacroScope(targetScope);
-        setSelectedTier(targetScope === 'higher' ? 'congress' : 'municipal');
-    };
-
-    // Dual-Flow Target Assigner
+    // Dynamically extract user district code parameters from session profile
     const activeDistrictCode =
         selectedTier === 'congress' ? currentUser?.district_l1_code || 'TX-10' :
             selectedTier === 'state_senate' ? currentUser?.district_l2_code || 'SD-14' :
-                selectedTier === 'state_rep' ? currentUser?.district_l3_code || 'HD-46' :
-                    `${currentUser?.city_name || 'Austin'}_${currentUser?.state || 'TX'}`.toLowerCase().replace(/\s+/g, '_');
+                currentUser?.district_l3_code || 'HD-46';
 
-    // TanStack Pipelines
+    // TanStack Query Pipelines
     const { data: nominee, isPending, isError } = useConsensusNomineeQuery(selectedTier, activeDistrictCode);
     const signPetitionMutation = useSignPetitionMutation(selectedTier, activeDistrictCode);
+
+    // Layout formatting configuration maps
+    const tierLabels = {
+        congress: 'Federal Congressional Representative',
+        state_senate: 'State Senate Senator (Upper House)',
+        state_rep: 'State Assembly Representative (Lower House)'
+    };
 
     const currentSignatures = nominee?.petition_signatures_count || 0;
     const requiredSignatures = nominee?.signatures_required || 500;
     const progressPercentage = Math.min(100, Math.round((currentSignatures / requiredSignatures) * 100));
 
-    const tierLabels = {
-        congress: 'Federal Congressional Representative',
-        state_senate: 'State Senate Senator (Upper House)',
-        state_rep: 'State Assembly Representative (Lower House)',
-        municipal: `Municipal Vetted Nominee (${currentUser?.city_name || 'Local'} City Tier)`
-    };
-
     return (
-        <div className="max-w-3xl mx-auto flex flex-col gap-6 pb-20 w-full font-sans animate-in fade-in duration-200">
+        <div className="max-w-3xl mx-auto flex flex-col gap-8 pb-20 w-full font-sans animate-in fade-in duration-200">
 
-            {/* 🧭 Header */}
-            <div className="border-b border-outline-variant pb-5 select-none text-center flex flex-col items-center space-y-2">
-                <div className="self-start mb-1">
-                    <button
-                        type="button"
-                        onClick={() => navigate('/campaigns/local')}
-                        className="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors font-bold text-xs uppercase tracking-wider border-none bg-transparent cursor-pointer group"
-                    >
-                        <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                        <span>Back to Assembly Hub</span>
-                    </button>
-                </div>
+            {/* 🧭 Central Presentation Header */}
+            <div className="border-b border-outline-variant/40 pb-6 select-none text-center flex flex-col items-center space-y-3">
                 <div className="w-14 h-14 rounded-card bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-inner animate-pulse">
                     <Star className="w-7 h-7 fill-primary/20 text-primary" />
                 </div>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-text-primary tracking-tight">
                     Consensus Ballot Endorsements
                 </h1>
-                <p className="text-xs sm:text-sm font-medium text-text-secondary">
-                    Vetted independent choices who won community debates.
+                <p className="text-sm font-medium text-text-secondary max-w-lg leading-relaxed">
+                    Vetted, worker-class independent nominees who won community debates. Support their real-life ballot signature drives below.
                 </p>
             </div>
 
-            {/* 🏁 STEP 1: MACRO SCOPE SWITCHBOARD BAR */}
-            <div className="flex bg-surface-container-low border border-outline-variant p-1.5 rounded-card select-none shadow-inner w-full gap-1">
-                <button
-                    type="button"
-                    onClick={() => handleScopeChange('higher')}
-                    className={cn(
-                        "flex-1 py-3 rounded-card text-xs sm:text-sm font-bold transition-all border cursor-pointer",
-                        macroScope === 'higher'
-                            ? "bg-surface-container-high border-outline-variant/80 text-text-primary font-black shadow-xs"
-                            : "text-text-secondary border-transparent hover:text-text-primary bg-transparent"
-                    )}
-                >
-                    Higher Ballots
-                </button>
-                <button
-                    type="button"
-                    onClick={() => handleScopeChange('local')}
-                    className={cn(
-                        "flex-1 py-3 rounded-card text-xs sm:text-sm font-bold transition-all border cursor-pointer",
-                        macroScope === 'local'
-                            ? "bg-surface-container-high border-outline-variant/80 text-text-primary font-black shadow-xs"
-                            : "text-text-secondary border-transparent hover:text-text-primary bg-transparent"
-                    )}
-                >
-                    Local Ballots
-                </button>
+            {/* 📊 Symmetrical Legislative Chamber Tabs Selector */}
+            <div className="flex bg-surface-container-low p-1.5 rounded-card border border-outline-variant select-none gap-1">
+                {Object.keys(tierLabels).map((tierKey) => (
+                    <button
+                        key={tierKey}
+                        type="button"
+                        onClick={() => setSelectedTier(tierKey)}
+                        className={cn(
+                            "flex-1 py-3 rounded-card text-xs sm:text-sm font-bold transition-all cursor-pointer border border-transparent",
+                            selectedTier === tierKey
+                                ? "bg-surface-container-high text-text-primary font-black shadow-xs border-outline-variant/80"
+                                : "text-text-secondary hover:text-text-primary bg-transparent"
+                        )}
+                    >
+                        {tierKey === 'congress' ? 'Federal' : tierKey === 'state_senate' ? 'Upper House' : 'Lower House'}
+                    </button>
+                ))}
             </div>
-
-            {/* 💊 STEP 2: INNER SUB-TIER BUTTON ROW */}
-            {macroScope === 'higher' && (
-                <div className="flex bg-surface-container-low p-1.5 rounded-card select-none gap-1.5 border border-outline-variant">
-                    {['congress', 'state_senate', 'state_rep'].map((tierKey) => (
-                        <button
-                            key={tierKey}
-                            type="button"
-                            onClick={() => setSelectedTier(tierKey)}
-                            className={cn(
-                                "flex-1 py-2.5 rounded-card text-xs sm:text-sm font-bold transition-all border border-transparent cursor-pointer",
-                                selectedTier === tierKey
-                                    ? "bg-surface-container-high text-text-primary font-black border-outline-variant shadow-xs"
-                                    : "text-text-secondary hover:text-text-primary bg-transparent"
-                            )}
-                        >
-                            {tierKey === 'congress' ? 'Federal' : tierKey === 'state_senate' ? 'Upper' : 'Lower'}
-                        </button>
-                    ))}
-                </div>
-            )}
 
             {/* 🥞 NOMINEE DATA PRESENTATION CANVAS */}
             {isPending ? (
@@ -145,7 +92,7 @@ export const EndorsementHubPage = () => {
                     </p>
                 </div>
             ) : (
-                <div className="bg-surface-container border border-outline-variant p-6 sm:p-8 rounded-card shadow-2xl flex flex-col items-center text-center gap-6 relative overflow-hidden animate-in fade-in duration-300">
+                <div className="bg-surface-container border border-outline-variant/80 p-6 sm:p-8 rounded-card shadow-2xl flex flex-col items-center text-center gap-6 relative overflow-hidden animate-in fade-in duration-300">
 
                     {/* Office Badge Metadata Ribbon */}
                     <div className="text-xs font-mono font-bold uppercase text-primary bg-primary/10 px-3.5 py-1.5 rounded-full border border-primary/20 select-none">
@@ -171,7 +118,7 @@ export const EndorsementHubPage = () => {
                     </div>
 
                     {/* Campaign Manifesto Block */}
-                    <p className="text-sm sm:text-base text-text-primary leading-relaxed bg-surface-container-low p-5 rounded-card border border-outline-variant max-w-xl font-medium whitespace-pre-wrap text-left sm:text-center italic">
+                    <p className="text-sm sm:text-base text-text-primary leading-relaxed bg-surface-container-low p-5 rounded-card border border-outline-variant/60 max-w-xl font-medium whitespace-pre-wrap text-left sm:text-center italic">
                         "{nominee.title}: {nominee.user?.manifesto || 'Platform guidelines are being compiled across the localized district nodes.'}"
                     </p>
 
@@ -184,7 +131,7 @@ export const EndorsementHubPage = () => {
                             </span>
                         </div>
 
-                        <div className="w-full h-3 bg-surface-container-low rounded-full overflow-hidden border border-outline-variant">
+                        <div className="w-full h-3 bg-surface-container-low rounded-full overflow-hidden border border-outline-variant/60">
                             <div
                                 className="h-full bg-primary transition-all duration-500 rounded-full shadow-xs"
                                 style={{ width: `${progressPercentage}%` }}
@@ -234,6 +181,7 @@ export const EndorsementHubPage = () => {
 
                 </div>
             )}
+
         </div>
     );
 };

@@ -123,14 +123,14 @@ export function AppPreferencesForm() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div onClick={() => navigate('/verify')} className="p-4 bg-surface-container-low border border-white/10 hover:border-primary-container/40 rounded-xl cursor-pointer transition-all flex flex-col justify-between">
                         <div>
-                            <span className="text-lg font-bold text-white block mb-1">Choose Account Role</span>
+                            <span className="text-lg font-bold dark:text-white block mb-1">Choose Account Role</span>
                             <p className="text-lg text-text-secondary leading-relaxed">Select your category and authenticate credentials with peer review boards.</p>
                         </div>
                         <span className="text-primary-container font-mono font-bold text-[12px] uppercase mt-3 block">Start Onboarding ➔</span>
                     </div>
                     <div onClick={() => navigate('/verify/citizen')} className="p-4 bg-surface-container-low border border-white/10 hover:border-primary-container/40 rounded-xl cursor-pointer transition-all flex flex-col justify-between">
                         <div>
-                            <span className="text-lg font-bold text-white block mb-1">Peer-to-Peer Vouching</span>
+                            <span className="text-lg font-bold dark:text-white block mb-1">Peer-to-Peer Vouching</span>
                             <p className="text-lg text-text-secondary leading-relaxed">Verify other grassroots citizens in person or get vouched for by local trusted nodes.</p>
                         </div>
                         <span className="text-primary-container font-mono font-bold text-[12px] uppercase mt-3 block">Enter Vouching Desk ➔</span>
@@ -168,7 +168,7 @@ export function AppPreferencesForm() {
                     <div className="flex items-center gap-2 font-bold text-sm">
                         <span className="material-symbols-outlined text-[18px] text-primary-container">campaign</span>
                         <div className="flex flex-col">
-                            <span className="text-md font-bold text-white">Political &amp; Civic Governance Features</span>
+                            <span className="text-md font-bold dark:text-white">Political &amp; Civic Governance Features</span>
                             <span className="text-[14px] text-text-secondary">Opt in to civic action networks, governance campaign boards, or run for office platforms</span>
                         </div>
                     </div>
@@ -273,21 +273,21 @@ export function AppPreferencesForm() {
                 <div className="space-y-3 bg-[#111111] border border-white/5 p-4 rounded-xl">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col">
-                            <span className="text-md font-bold text-white">Push Notifications</span>
+                            <span className="text-md font-bold dark:text-white">Push Notifications</span>
                             <span className="text-[14px] text-text-secondary">Receive push tokens on your active device</span>
                         </div>
                         <Toggle checked={pushEnabled} onChange={() => setPushEnabled(!pushEnabled)} />
                     </div>
                     <div className="flex items-center justify-between border-t border-white/5 pt-3">
                         <div className="flex flex-col">
-                            <span className="text-md font-bold text-white">Email Notifications</span>
+                            <span className="text-md font-bold dark:text-white">Email Notifications</span>
                             <span className="text-[14px] text-text-secondary">Receive automated contact memos via email</span>
                         </div>
                         <Toggle checked={emailEnabled} onChange={() => setEmailEnabled(!emailEnabled)} />
                     </div>
                     <div className="flex items-center justify-between border-t border-white/5 pt-3">
                         <div className="flex flex-col">
-                            <span className="text-md font-bold text-white">Comment Replies</span>
+                            <span className="text-md font-bold dark:text-white">Comment Replies</span>
                             <span className="text-[14px] text-text-secondary">Get notified when someone responds to your pulses</span>
                         </div>
                         <Toggle checked={repliesEnabled} onChange={() => setRepliesEnabled(!repliesEnabled)} />
@@ -304,21 +304,21 @@ export function AppPreferencesForm() {
                 <div className="space-y-3 bg-[#111111] border border-white/5 p-4 rounded-xl">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col">
-                            <span className="text-md font-bold text-white">Private Profile</span>
+                            <span className="text-md font-bold dark:text-white">Private Profile</span>
                             <span className="text-[14px] text-text-secondary">Only approved followers can see your status logs</span>
                         </div>
                         <Toggle checked={privateProfile} onChange={() => setPrivateProfile(!privateProfile)} />
                     </div>
                     <div className="flex items-center justify-between border-t border-white/5 pt-3">
                         <div className="flex flex-col">
-                            <span className="text-md font-bold text-white">Two-Factor Authentication</span>
+                            <span className="text-md font-bold dark:text-white">Two-Factor Authentication</span>
                             <span className="text-[14px] text-text-secondary">Add a secondary verification code signature</span>
                         </div>
                         <Toggle checked={twoFactor} onChange={() => setTwoFactor(!twoFactor)} />
                     </div>
                     <div className="flex items-center justify-between border-t border-white/5 pt-3">
                         <div className="flex flex-col">
-                            <span className="text-md font-bold text-white">Show Handle on Organization Profile</span>
+                            <span className="text-md font-bold dark:text-white">Show Handle on Organization Profile</span>
                             <span className="text-[14px] text-text-secondary">Expose your personal handle link when publishing for a brand</span>
                         </div>
                         <Toggle checked={showPersonalHandle} onChange={() => setShowPersonalHandle(!showPersonalHandle)} />
@@ -335,7 +335,7 @@ export function AppPreferencesForm() {
                 <div className="space-y-3 bg-[#111111] border border-white/5 p-4 rounded-xl">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col">
-                            <span className="text-md font-bold text-white">Dark Mode</span>
+                            <span className="text-md font-bold dark:text-white">Dark Mode</span>
                             <span className="text-[14px] text-text-secondary">Use dark theme across the application context</span>
                         </div>
                         {/* Syncs your local visual selector options with the state handlers */}

@@ -15,14 +15,14 @@ import {
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
-export const AssemblyHallPage = () => {
+export const AssemblyHallPageOK = () => {
     const navigate = useNavigate();
     const currentUser = useAuthStore((state) => state.user);
 
-    // Scope Toggle State: 'higher' | 'local'
+    // 🎛️ Scope Toggle State: 'higher' | 'local'
     const [macroScope, setMacroScope] = useState('higher');
 
-    // Sub-Tier State: 'congress' | 'state_senate' | 'state_rep' | 'municipal'
+    // 💊 Sub-Tier State: 'congress' | 'state_senate' | 'state_rep' | 'municipal'
     const [subLevel, setSubLevel] = useState('congress');
 
     // Handle cross-over reset hooks to ensure user never gets stuck on an orphan tab
@@ -31,109 +31,67 @@ export const AssemblyHallPage = () => {
         setSubLevel(targetScope === 'higher' ? 'congress' : 'municipal');
     };
 
-    // Dual-Flow Target Assigner
+    // 🎯 THE DUAL-FLOW TARGET ASSIGNER
     const activeDistrictCode =
         subLevel === 'congress' ? currentUser?.district_l1_code || 'TX-10' :
             subLevel === 'state_senate' ? currentUser?.district_l2_code || 'SD-14' :
                 subLevel === 'state_rep' ? currentUser?.district_l3_code || 'HD-46' :
                     `${currentUser?.city_name || 'Austin'}_${currentUser?.state || 'TX'}`.toLowerCase().replace(/\s+/g, '_');
 
-    // TanStack Data Hooks Connection
+    // 📡 TanStack Data Hooks Connection
     const { data: events, isPending, isError } = useDebateEventsQuery(subLevel, activeDistrictCode);
     const claimShiftMutation = useClaimShiftMutation(subLevel, activeDistrictCode, currentUser);
 
     return (
-        <div className="max-w-5xl mx-auto flex flex-col gap-6 pb-20 w-full font-sans animate-in fade-in duration-200">
+        <div className="max-w-4xl mx-auto flex flex-col gap-6 pb-20 w-full animate-in fade-in duration-200">
 
             {/* 🧭 Header */}
-            <div className="border-b border-outline-variant/40 pb-5 select-none space-y-2">
+            <div className="border-b border-white/5 pb-4 select-none">
                 <button
-                    type="button"
                     onClick={() => navigate('/campaigns/local')}
-                    className="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors font-bold text-xs uppercase tracking-wider border-none bg-transparent cursor-pointer mb-2 group"
+                    className="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors font-bold text-[11px] uppercase tracking-wider border-none bg-transparent cursor-pointer mb-3"
                 >
-                    <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                    <span>Back to Assembly Hub</span>
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    Back to Assembly Hub
                 </button>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-text-primary tracking-tight">
+                <h1 className="text-2xl font-black text-text-primary tracking-tight">
                     Assembly Hall: Debates
                 </h1>
-                <p className="text-xs sm:text-sm font-medium text-text-secondary">
+                <p className="text-xs text-text-secondary mt-0.5">
                     Claim logistics tasks and volunteer shifts for neighborhood debates.
                 </p>
             </div>
 
             {/* 🏁 STEP 1: MACRO SCOPE SWITCHBOARD BAR */}
-            <div className="flex bg-surface-container-low border border-outline-variant p-1.5 rounded-card select-none shadow-inner w-full gap-1">
+            <div className="flex bg-surface-container-low border border-outline-variant/60 p-1 rounded-xl select-none shadow-inner w-full">
                 <button
                     type="button"
                     onClick={() => handleScopeChange('higher')}
-                    className={cn(
-                        "flex-1 py-3 rounded-card text-xs sm:text-sm font-bold transition-all border cursor-pointer",
-                        macroScope === 'higher'
-                            ? "bg-surface-container-high border-outline-variant/80 text-text-primary font-black shadow-xs"
-                            : "text-text-secondary border-transparent hover:text-text-primary bg-transparent"
-                    )}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer ${macroScope === 'higher' ? 'bg-surface-container-high border-outline-variant text-text-primary font-black shadow-md' : 'text-text-secondary border-transparent hover:text-text-primary bg-transparent'
+                        }`}
                 >
-                    Higher Offices (Federal & State)
+                    Higher Offices (Federal &amp; State)
                 </button>
                 <button
                     type="button"
                     onClick={() => handleScopeChange('local')}
-                    className={cn(
-                        "flex-1 py-3 rounded-card text-xs sm:text-sm font-bold transition-all border cursor-pointer",
-                        macroScope === 'local'
-                            ? "bg-surface-container-high border-outline-variant/80 text-text-primary font-black shadow-xs"
-                            : "text-text-secondary border-transparent hover:text-text-primary bg-transparent"
-                    )}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer ${macroScope === 'local' ? 'bg-surface-container-high border-outline-variant text-text-primary font-black shadow-md' : 'text-text-secondary border-transparent hover:text-text-primary bg-transparent'
+                        }`}
                 >
-                    Local Offices (Municipal & County)
+                    Local Offices (Municipal &amp; County)
                 </button>
             </div>
 
             {/* 💊 STEP 2: DYNAMIC INNER PILLS (Rendered contextually based on Macro Scope) */}
-            <div className="flex gap-2.5 flex-wrap select-none">
+            <div className="flex gap-2 select-none">
                 {macroScope === 'higher' ? (
                     <>
-                        <button
-                            type="button"
-                            onClick={() => setSubLevel('congress')}
-                            className={cn(
-                                "px-4 py-2 rounded-card text-xs sm:text-sm font-bold border transition-all cursor-pointer",
-                                subLevel === 'congress'
-                                    ? "bg-primary/10 border-primary/30 text-primary shadow-xs"
-                                    : "bg-surface-container border-outline-variant text-text-secondary hover:text-text-primary hover:border-outline"
-                            )}
-                        >
-                            Federal Congress
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setSubLevel('state_senate')}
-                            className={cn(
-                                "px-4 py-2 rounded-card text-xs sm:text-sm font-bold border transition-all cursor-pointer",
-                                subLevel === 'state_senate'
-                                    ? "bg-primary/10 border-primary/30 text-primary shadow-xs"
-                                    : "bg-surface-container border-outline-variant text-text-secondary hover:text-text-primary hover:border-outline"
-                            )}
-                        >
-                            State Senate
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setSubLevel('state_rep')}
-                            className={cn(
-                                "px-4 py-2 rounded-card text-xs sm:text-sm font-bold border transition-all cursor-pointer",
-                                subLevel === 'state_rep'
-                                    ? "bg-primary/10 border-primary/30 text-primary shadow-xs"
-                                    : "bg-surface-container border-outline-variant text-text-secondary hover:text-text-primary hover:border-outline"
-                            )}
-                        >
-                            State Assembly
-                        </button>
+                        <button type="button" onClick={() => setSubLevel('congress')} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${subLevel === 'congress' ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-transparent border-outline-variant/60 text-text-secondary hover:text-text-primary'}`}>Federal Congress</button>
+                        <button type="button" onClick={() => setSubLevel('state_senate')} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${subLevel === 'state_senate' ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-transparent border-outline-variant/60 text-text-secondary hover:text-text-primary'}`}>State Senate</button>
+                        <button type="button" onClick={() => setSubLevel('state_rep')} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${subLevel === 'state_rep' ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-transparent border-outline-variant/60 text-text-secondary hover:text-text-primary'}`}>State Assembly</button>
                     </>
                 ) : (
-                    <div className="text-xs font-mono font-bold uppercase text-primary bg-primary/10 border border-primary/20 px-4 py-2.5 rounded-card w-full text-center shadow-xs">
+                    <div className="text-[11px] font-mono font-black uppercase text-primary bg-primary/5 border border-primary/15 px-3 py-1.5 rounded-xl w-full text-center">
                         📍 Mapping Ballot System to: {currentUser?.city_name || 'Municipal'} District Node
                     </div>
                 )}
@@ -178,13 +136,13 @@ export const AssemblyHallPage = () => {
                                 </div>
 
                                 <div className="flex flex-col items-start md:items-end shrink-0 font-mono">
-                                    <span className="text-xs sm:text-sm font-bold text-primary uppercase tracking-wider bg-primary/10 px-3.5 py-1.5 rounded-card border border-primary/20 flex items-center gap-1.5">
+                                    <span className="text-xs sm:text-sm font-bold text-primary uppercase tracking-wider bg-primary/10 px-3 py-1.5 rounded-card border border-primary/20 flex items-center gap-1.5">
                                         <Calendar className="w-4 h-4" />
                                         <span>
                                             {new Date(event.date_time).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
                                         </span>
                                     </span>
-                                    <span className="text-xs text-text-secondary font-bold uppercase tracking-widest mt-1.5">
+                                    <span className="text-[11px] text-text-secondary font-bold uppercase tracking-widest mt-1.5">
                                         Jurisdiction: {event.district_code}
                                     </span>
                                 </div>
@@ -218,7 +176,7 @@ export const AssemblyHallPage = () => {
                                                     {/* Claimed User Identity Tokens */}
                                                     <div className="flex gap-2 flex-wrap select-none items-center">
                                                         {(!shift.volunteers || shift.volunteers.length === 0) ? (
-                                                            <span className="text-xs font-mono font-bold text-text-secondary/60 italic">
+                                                            <span className="text-xs font-mono font-bold text-text-secondary/50 italic">
                                                                 Vacant slot — Needs assignment
                                                             </span>
                                                         ) : (
@@ -232,7 +190,7 @@ export const AssemblyHallPage = () => {
                                                                             : "bg-surface-container border-outline-variant text-text-secondary"
                                                                     )}
                                                                 >
-                                                                    {volunteer.id === currentUser?.id && <UserCheck className="w-3.5 h-3.5" />}
+                                                                    {volunteer.id === currentUser?.id && <UserCheck className="w-3 h-3" />}
                                                                     <span>@{volunteer.username}</span>
                                                                 </span>
                                                             ))

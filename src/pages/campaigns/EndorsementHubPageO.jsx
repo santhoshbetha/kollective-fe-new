@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export const EndorsementHubPageX = () => {
+export const EndorsementHubPageO = () => {
     const navigate = useNavigate();
 
     return (

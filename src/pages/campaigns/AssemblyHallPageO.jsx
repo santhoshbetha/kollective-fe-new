@@ -1,7 +1,7 @@
 // src/pages/campaigns/AssemblyHallPage.jsx
 import React, { useState } from 'react';
 
-export const AssemblyHallPageX = () => {
+export const AssemblyHallPageO = () => {
     const [shifts, setShifts] = useState([
         { id: '1', role: 'Venue Setup Coordinator', location: 'Central Public Library Aud.', volunteers: ['Sarah K.'], maxVolunteers: 3 },
         { id: '2', role: 'AV Stream Technician', location: 'Live Broadcast Node 1', volunteers: [], maxVolunteers: 2 },

@@ -145,6 +145,14 @@ const UnifiedOnboardingOrchestrator = ({ authToken: propAuthToken, onFlowComplet
             onClick: handleSkip
         },
         {
+            id: 'ORGANIZATION',
+            title: 'News Organization',
+            type: 'organization',
+            description: 'Official institutional accounts for newsrooms and publishing collectives.',
+            hoverBorder: 'hover:border-secondary',
+            onClick: () => setCurrentStep('ORG_INFO')
+        },
+        {
             id: 'JOURNALIST',
             title: 'Independent Journalist',
             type: 'journalist',
@@ -167,14 +175,6 @@ const UnifiedOnboardingOrchestrator = ({ authToken: propAuthToken, onFlowComplet
             description: 'Union coordinators, strike leads, and grassroots organizers.',
             hoverBorder: 'hover:border-error',
             onClick: () => setCurrentStep('ACTIVIST_INFO')
-        },
-        {
-            id: 'ORGANIZATION',
-            title: 'News Organization',
-            type: 'organization',
-            description: 'Official institutional accounts for newsrooms and publishing collectives.',
-            hoverBorder: 'hover:border-secondary',
-            onClick: () => setCurrentStep('ORG_INFO')
         }
     ];
 
