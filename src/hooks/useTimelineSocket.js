@@ -7,6 +7,7 @@ import { useTimelineBufferStore } from '../store/useTimelineBufferStore';
 import { usePresenceStore } from '../store/usePresenceStore';
 import { Presence } from 'phoenix';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAccountsStore } from '../store/useAccountsStore';
 
 export function useTimelineSocket() {
     const queryClient = useQueryClient();
@@ -44,6 +45,11 @@ export function useTimelineSocket() {
         // 📡 Handle new posts broadcasted by Elixir
         channel.on('new_post', (payload) => {
             const newPost = payload.post; // E.g., { id: 123, type: "voice", isFollowing: true, scope: "local" }
+
+            if (newPost?.author) {
+                // 🎟️ Seed the global look-up directory instantly on the socket tick
+                useAccountsStore.getState().importFetchedAccounts([newPost.author]);
+            }
 
             // 🔄 DYNAMIC EVALUATION: Evaluate if the post belongs to the tab the user is actively viewing
             let matchesCurrentTab = false;

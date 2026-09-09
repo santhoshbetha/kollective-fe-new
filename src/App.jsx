@@ -16,6 +16,7 @@ import { LocalBusinessesPage } from './pages/LocalBusinessesPage';
 import { BusinessDetailsPage } from './pages/BusinessDetailsPage';
 import { PostBusinessPage } from './pages/PostBusinessPage';
 import { PostBusinessProposalPage } from './pages/PostBusinessProposalPage';
+import { ClassifiedsDirectoryPage } from './pages/ClassifiedsDirectoryPage';
 import { PollsPage } from './pages/PollsPage';
 import { CreatePollPage } from './pages/CreatePollPage';
 import { BusinessProposalDetailsPage } from './pages/BusinessProposalDetailsPage';
@@ -70,6 +71,8 @@ import { ProfilePage } from './pages/ProfilePage';
 import { ProfileEditPage } from './pages/ProfileEditPage';
 import { AlertProvider } from './context/AlertContext';
 
+import { useAuthStore } from './store/auth/useAuthStore';
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,6 +84,26 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
+  // ⚡ ATOMIC OBSERVATION: Tracks initialization states cleanly
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const executeLogout = useAuthStore((state) => state.executeLogout);
+
+  // 🏗️ Atomic Render Gate: Only open doors after hydration truth
+  // Show a global splash screen while checking localStorage, preventing UI flashing
+  if (!isHydrated) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-green mx-auto mb-4"></div>
+            <p className="text-sm font-medium text-gray-700">Loading...</p>
+          </div>
+        </div>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <AlertProvider>
@@ -118,6 +141,7 @@ export default function App() {
                 <Route path="/businesses/propose" element={<PostBusinessProposalPage />} />
                 <Route path="/businesses/:id" element={<BusinessDetailsPage />} />
                 <Route path="/proposals/:id" element={<BusinessProposalDetailsPage />} />
+                <Route path="/classifieds" element={<ClassifiedsDirectoryPage />} />
 
                 {/* Polls Routes */}
                 <Route path="/polls" element={<PollsPage />} />
@@ -127,7 +151,6 @@ export default function App() {
                 <Route path="/organize" element={<OrganizePage />} />
                 <Route path="/organize/create" element={<CreateActionPage />} />
                 <Route path="/organize/:id" element={<ActionDetailsPage />} />
-
 
                 {/* Account Management */}
                 <Route path="/settings" element={<SettingsPage />} />
@@ -208,7 +231,7 @@ export default function App() {
             </Route>
 
             {/* 🛑 3. FALLBACK CATCH-ALL */}
-            <Route path="*" element={<Navigate to="/hoome" replace />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </BrowserRouter>
       </AlertProvider>

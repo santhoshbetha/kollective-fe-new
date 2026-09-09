@@ -41,11 +41,12 @@ export const MainLayout = () => {
         { name: 'Events', path: '/events', icon: 'calendar_today' },
         { name: 'Polls', path: '/polls', icon: 'poll' },
         { name: 'Explore', path: '/explore', icon: 'explore' },
-        { name: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' },
-        { name: 'Organize', path: '/organize', icon: 'campaign' },
         { name: 'Local Businesses', path: '/businesses', icon: 'storefront' },
-        { name: 'Notifications', path: '/notifications', icon: 'notifications' },
+        { name: 'Classifieds', path: '/classifieds', icon: 'newspaper' },
+        { name: 'Organize', path: '/organize', icon: 'campaign' },
         { name: 'Civic Assembly', path: '/campaigns/local', icon: 'groups' },
+        { name: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' },
+        { name: 'Notifications', path: '/notifications', icon: 'notifications' },
         { name: 'Settings', path: '/settings', icon: 'settings' },
     ];
 
@@ -69,7 +70,7 @@ export const MainLayout = () => {
         <div className={`${theme === 'dark' ? 'dark' : ''} bg-surface text-text-primary min-h-screen custom-scrollbar flex flex-col`}>
 
             {/* 🖥️ Side Navigation Shell - Desktop */}
-            <aside className="fixed left-0 top-0 h-screen w-64 bg-surface-container-lowestX bg-transparent border-r border-white/5 hidden md:flex flex-col z-50">
+            <aside className="fixed left-0 top-0 h-screen w-72 bg-surface-container-lowestX bg-transparent border-r border-white/5 hidden md:flex flex-col z-50">
                 <div className="flex flex-col gap-2 p-6 h-full">
                     {/* Logo */}
                     <div onClick={() => navigate('/')} className="mb-8 px-2 flex items-center gap-0 cursor-pointer hover:opacity-90">
@@ -88,7 +89,8 @@ export const MainLayout = () => {
                             const isActive = currentPath === item.path ||
                                 (item.path === '/home' && currentPath.startsWith('/post')) ||
                                 (item.path === '/settings' && currentPath.startsWith('/settings')) ||
-                                (item.path === '/events' && currentPath.startsWith('/events'));
+                                (item.path === '/events' && currentPath.startsWith('/events')) ||
+                                (item.path === '/classifieds' && currentPath.startsWith('/classifieds'));
                             return (
                                 <Link
                                     key={item.name}
@@ -150,7 +152,7 @@ export const MainLayout = () => {
             {mobileMenuOpen && (
                 <div className="fixed inset-0 z-50 flex md:hidden">
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-                    <aside className="relative flex flex-col w-64 max-w-xs bg-surface-container-lowest h-full p-6 text-text-primary border-r border-white/5 animate-in slide-in-from-left duration-300">
+                    <aside className="relative flex flex-col w-72 max-w-xs bg-surface-container-lowest h-full p-6 text-text-primary border-r border-white/5 animate-in slide-in-from-left duration-300">
                         <div className="mb-8 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 bg-primary-container rounded flex items-center justify-center text-white">
@@ -199,7 +201,7 @@ export const MainLayout = () => {
             )}
 
             {/* 🧭 Top Header Fixed Bar */}
-            <header className="fixed top-0 w-full z-40 bg-surface/95 backdrop-blur-xl border-b border-white/5 md:ml-64 md:w-[calc(100%-16rem)]">
+            <header className="fixed top-0 w-full z-40 bg-surface/95 backdrop-blur-xl border-b border-white/5 md:ml-72 md:w-[calc(100%-16rem)]">
                 <div className="flex justify-between items-center px-6 h-16 w-full max-w-7xl mx-auto">
                     <div className="flex items-center gap-4 md:hidden">
                         <button onClick={() => setMobileMenuOpen(true)} className="text-text-primary focus:outline-none">
@@ -247,7 +249,7 @@ export const MainLayout = () => {
             </header>
 
             {/* 🖼️ Main Content Viewport */}
-            <main className="md:ml-64 pt-20 pb-24 px-6 min-h-screen flex-1">
+            <main className="md:ml-72 pt-20 pb-24 px-6 min-h-screen flex-1">
                 {/* Render nested child view routes dynamically via React Router v7 */}
                 <Outlet />
             </main>

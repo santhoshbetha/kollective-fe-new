@@ -7,7 +7,7 @@ export function usePinnedPostsQuery(accountId) {
     return useQuery({
         queryKey: ['profile', accountId, 'pinned-posts'],
         queryFn: async () => {
-            return apiFetch(`/api/v1/accounts/${accountId}/statuses?pinned=true`); // Returns flat array of statuses
+            return apiFetch(`/api/v1/accounts/${accountId}/posts?pinned=true`); // Returns flat array of statuses
         },
         enabled: !!accountId,
     });
@@ -19,7 +19,7 @@ export function useUnpinPostMutation(accountId) {
 
     return useMutation({
         mutationFn: async (postId) => {
-            return apiFetch(`/api/v1/statuses/${postId}/unpin`, {
+            return apiFetch(`/api/v1/posts/${postId}/unpin`, {
                 method: 'POST',
             });
         },

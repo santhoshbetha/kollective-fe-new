@@ -4,17 +4,17 @@ import { Alert, AlertTitle, AlertDescription } from '../components/ui/Alert';
 import { DatePicker } from '../components/ui/date-picker';
 
 const DEMOCRATIC_COUNTRIES = [
-    "Albania", "Argentina", "Australia", "Austria", "Belgium", "Botswana", "Brazil", 
-    "Bulgaria", "Canada", "Cape Verde", "Chile", "Colombia", "Costa Rica", "Croatia", 
-    "Cyprus", "Czechia", "Denmark", "Dominican Republic", "Ecuador", "Estonia", 
-    "Finland", "France", "Georgia", "Germany", "Ghana", "Greece", "Guyana", 
-    "Honduras", "Iceland", "India", "Indonesia", "Ireland", "Israel", "Italy", 
-    "Jamaica", "Japan", "Latvia", "Lithuania", "Luxembourg", "Malaysia", "Malta", 
-    "Mauritius", "Moldova", "Mongolia", "Montenegro", "Namibia", "Netherlands", 
-    "New Zealand", "North Macedonia", "Norway", "Panama", "Paraguay", "Peru", 
-    "Philippines", "Poland", "Portugal", "Romania", "Senegal", "Serbia", "Singapore", 
-    "Slovakia", "Slovenia", "South Africa", "South Korea", "Spain", "Sri Lanka", 
-    "Suriname", "Sweden", "Switzerland", "Taiwan", "Thailand", "Trinidad and Tobago", 
+    "Albania", "Argentina", "Australia", "Austria", "Belgium", "Botswana", "Brazil",
+    "Bulgaria", "Canada", "Cape Verde", "Chile", "Colombia", "Costa Rica", "Croatia",
+    "Cyprus", "Czechia", "Denmark", "Dominican Republic", "Ecuador", "Estonia",
+    "Finland", "France", "Georgia", "Germany", "Ghana", "Greece", "Guyana",
+    "Honduras", "Iceland", "India", "Indonesia", "Ireland", "Italy",
+    "Jamaica", "Japan", "Latvia", "Lithuania", "Luxembourg", "Malaysia", "Malta",
+    "Mauritius", "Moldova", "Mongolia", "Montenegro", "Namibia", "Netherlands",
+    "New Zealand", "North Macedonia", "Norway", "Panama", "Paraguay", "Peru",
+    "Philippines", "Poland", "Portugal", "Romania", "Senegal", "Serbia", "Singapore",
+    "Slovakia", "Slovenia", "South Africa", "South Korea", "Spain", "Sri Lanka",
+    "Suriname", "Sweden", "Switzerland", "Taiwan", "Thailand", "Trinidad and Tobago",
     "United Kingdom", "United States", "Uruguay"
 ];
 
@@ -67,9 +67,8 @@ export const SignupPage = () => {
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center bg-background text-on-surface p-4 sm:p-6 isolate selection:bg-primary/30">
-
             {/* Top Navigation Bar */}
-            <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-12 py-4 bg-transparent border-b border-white/5 backdrop-blur-sm">
+            <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-12 pt-4 bg-transparent border-b border-white/5 backdrop-blur-sm">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
                     <div onClick={() => navigate('/')} className="mb-8 px-2 flex items-center gap-0 cursor-pointer hover:opacity-90">
                         <img src="/K99.png" alt="Kollective Logo" className="h-12 w-auto" />
@@ -84,23 +83,23 @@ export const SignupPage = () => {
             </header>
 
             {/* --- Stepper Progress Bar (Matched to Screenshot #1) --- */}
-            <div className="flex items-center gap-8 mb-8 relative z-10">
+            <div className="flex items-center gap-8 mb-8 relative z-10 mt-20">
                 <div className="flex flex-col items-center">
                     <div className={`w-3.5 h-3.5 rounded-full border-4 transition-all duration-300 ${currentStep >= 1 ? 'bg-[#c2185b] border-[#c2185b]/30 shadow-[0_0_8px_#c2185b]' : 'bg-[#1e293b] border-transparent'
                         }`} />
-                    <span className={`text-xs mt-2 font-bold tracking-wide ${currentStep === 1 ? 'text-[#c2185b]' : 'text-zinc-100 dark:text-zinc-50/60'}`}>Welcome</span>
+                    <span className={`text-xs mt-2 font-bold tracking-wide ${currentStep === 1 ? 'text-[#c2185b]' : 'text-text-secondary dark:text-zinc-50/60'}`}>Welcome</span>
                 </div>
                 <div className="h-0.5 w-12 bg-outline-variant/30 -mt-5" />
                 <div className="flex flex-col items-center">
                     <div className={`w-3.5 h-3.5 rounded-full border-4 transition-all duration-300 ${currentStep >= 2 ? 'bg-[#c2185b] border-[#c2185b]/30 shadow-[0_0_8px_#c2185b]' : 'bg-[#1e293b] border-transparent'
                         }`} />
-                    <span className={`text-xs mt-2 font-bold tracking-wide ${currentStep === 2 ? 'text-[#c2185b]' : 'text-zinc-100 dark:text-zinc-50/60'}`}>Details</span>
+                    <span className={`text-xs mt-2 font-bold tracking-wide ${currentStep === 2 ? 'text-[#c2185b]' : 'text-text-secondary dark:text-zinc-50/60'}`}>Details</span>
                 </div>
                 <div className="h-0.5 w-12 bg-outline-variant/30 -mt-5" />
                 <div className="flex flex-col items-center">
                     <div className={`w-3.5 h-3.5 rounded-full border-4 transition-all duration-300 ${currentStep === 3 ? 'bg-[#c2185b] border-[#c2185b]/30 shadow-[0_0_8px_#c2185b]' : 'bg-[#1e293b] border-transparent'
                         }`} />
-                    <span className={`text-xs mt-2 font-bold tracking-wide ${currentStep === 3 ? 'text-[#c2185b]' : 'text-zinc-100 dark:text-zinc-50/60'}`}>Verify</span>
+                    <span className={`text-xs mt-2 font-bold tracking-wide ${currentStep === 3 ? 'text-[#c2185b]' : 'text-text-secondary dark:text-zinc-50/60'}`}>Verify</span>
                 </div>
             </div>
 
@@ -129,7 +128,7 @@ export const SignupPage = () => {
                             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text-primary mb-3">
                                 Welcome to the Kollective.
                             </h1>
-                            <p className="text-sm text-zinc-100 dark:text-zinc-50 max-w-sm mx-auto leading-relaxed">
+                            <p className="text-sm text-text-secondary dark:text-zinc-50 max-w-sm mx-auto leading-relaxed">
                                 Before joining the revolution, please review our community code of conduct.
                             </p>
                         </div>
@@ -206,7 +205,7 @@ export const SignupPage = () => {
                                 onChange={handleInputChange}
                                 className="w-4 h-4 rounded border-outline-variant bg-[var(--surface-container)]/40 text-[#c2185b] focus:ring-0 accent-[#c2185b]"
                             />
-                            <label htmlFor="agreeToGuidelines" className="text-sm font-semibold text-zinc-100 dark:text-zinc-50 hover:text-text-primary cursor-pointer transition-colors">
+                            <label htmlFor="agreeToGuidelines" className="text-sm font-semibold text-text-secondary dark:text-zinc-50 hover:text-text-primary cursor-pointer transition-colors">
                                 I agree to follow these community guidelines
                             </label>
                         </div>
@@ -233,7 +232,7 @@ export const SignupPage = () => {
                             </button>
                         </div>
 
-                        <div className="text-center text-sm text-zinc-100 dark:text-zinc-50 pt-2 border-t border-outline-variant/20">
+                        <div className="text-center text-sm text-text-secondary dark:text-zinc-50 pt-2 border-t border-outline-variant/20">
                             Already have an account?{' '}
                             <Link to="/login" className="font-bold text-[#c2185b] hover:underline transition-colors">Log In</Link>
                         </div>
@@ -244,7 +243,7 @@ export const SignupPage = () => {
                 {currentStep === 2 && (
                     <form onSubmit={handleNext} className="relative z-10 animate-fadeIn space-y-6">
                         <div className="text-center mb-4">
-                            <h1 className="text-2xl font-black text-white">Set Up Your Profile</h1>
+                            <h1 className="text-2xl font-black text-dark dark:text-white">Set Up Your Profile</h1>
                             <p className="text-xs text-slate-400 dark:text-zinc-400">Fill in the details to establish your node on the network.</p>
                         </div>
 
@@ -260,7 +259,7 @@ export const SignupPage = () => {
                                         : 'border-outline-variant/40 bg-[var(--surface-container)]/10 text-slate-400 hover:bg-[var(--surface-container)]/20'
                                         }`}
                                 >
-                                    <span className={formData.accountType === 'personal' ? 'text-secondary' : 'text-white'}>Personal</span>
+                                    <span className={formData.accountType === 'personal' ? 'text-secondary' : 'text-dark dark:text-white'}>Personal</span>
                                     <p className="text-xs text-slate-400 dark:text-zinc-400 mt-1 font-normal normal-case leading-relaxed">
                                         For citizens, workers, independent journalists, activists, and independent voices.
                                     </p>
@@ -273,7 +272,7 @@ export const SignupPage = () => {
                                         : 'border-outline-variant/40 bg-[var(--surface-container)]/10 text-slate-400 hover:bg-[var(--surface-container)]/20'
                                         }`}
                                 >
-                                    <span className={formData.accountType === 'organization' ? 'text-secondary' : 'text-white'}>Organization</span>
+                                    <span className={formData.accountType === 'organization' ? 'text-secondary' : 'text-dark dark:text-white'}>Organization</span>
                                     <p className="text-xs text-slate-400 dark:text-zinc-400 mt-1 font-normal normal-case leading-relaxed">
                                         For News Orgs, YouTube channels, independent groups, and local communities.
                                     </p>
@@ -286,7 +285,7 @@ export const SignupPage = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {formData.accountType === 'organization' && (
                                 <div className="sm:col-span-2 space-y-1">
-                                    <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="organizationName">Org Name</label>
+                                    <label className="text-[10px] font-bold tracking-wider uppercase text-text-secondary dark:text-zinc-50" htmlFor="organizationName">Org Name</label>
                                     <input
                                         id="organizationName"
                                         type="text"
@@ -300,7 +299,7 @@ export const SignupPage = () => {
                             )}
 
                             <div className="space-y-1">
-                                <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="username">Username</label>
+                                <label className="text-[10px] font-bold tracking-wider uppercase text-text-secondary dark:text-zinc-50" htmlFor="username">Username</label>
                                 <input
                                     id="username"
                                     type="text"
@@ -313,7 +312,7 @@ export const SignupPage = () => {
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="fullName">
+                                <label className="text-[10px] font-bold tracking-wider uppercase text-text-secondary dark:text-zinc-50" htmlFor="fullName">
                                     {formData.accountType === 'organization' ? 'Representative Name' : 'Full Name'}
                                 </label>
                                 <input
@@ -328,7 +327,7 @@ export const SignupPage = () => {
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="email">Email</label>
+                                <label className="text-[10px] font-bold tracking-wider uppercase text-text-secondary dark:text-zinc-50" htmlFor="email">Email</label>
                                 <input
                                     id="email"
                                     type="email"
@@ -352,14 +351,14 @@ export const SignupPage = () => {
                                         value={formData.dob}
                                         onChange={handleInputChange}
                                         className="w-full px-4 py-2.5 bg-[var(--surface-container)]/40 rounded-xl 
-                                            border border-outline-variant text-sm text-text-primary dark:text-zinc-100 outline-none 
+                                            border border-outline-variant text-sm text-text-primary dark:text-text-secondary outline-none 
                                             focus:border-[#c2185b] focus:ring-2 focus:ring-[#c2185b]/20 transition-all custom-date-input"
                                     />
                                 </div>
                             )}
 
                             <div className="space-y-1 sm:col-span-2">
-                                <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="country">Country</label>
+                                <label className="text-[10px] font-bold tracking-wider uppercase text-text-secondary dark:text-zinc-50" htmlFor="country">Country</label>
                                 <select
                                     id="country"
                                     required
@@ -377,7 +376,7 @@ export const SignupPage = () => {
                             </div>
 
                             <div className="sm:col-span-2 space-y-1">
-                                <label className="text-[10px] font-bold tracking-wider uppercase text-zinc-100 dark:text-zinc-50" htmlFor="password">Password</label>
+                                <label className="text-[10px] font-bold tracking-wider uppercase text-text-secondary dark:text-zinc-50" htmlFor="password">Password</label>
                                 <div className="relative">
                                     <input
                                         id="password"
@@ -391,7 +390,7 @@ export const SignupPage = () => {
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-100 dark:text-zinc-400 hover:text-text-primary"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary dark:text-zinc-400 hover:text-text-primary"
                                     >
                                         {showPassword ? 'Hide' : 'Show'}
                                     </button>
@@ -442,7 +441,7 @@ export const SignupPage = () => {
                         {/* Informational Text */}
                         <div className="text-center space-y-3">
                             <h1 className="text-3xl font-extrabold text-text-primary tracking-tight">Almost there!</h1>
-                            <p className="text-sm text-zinc-100 dark:text-zinc-50 max-w-sm leading-relaxed">
+                            <p className="text-sm text-text-secondary dark:text-zinc-50 max-w-sm leading-relaxed">
                                 A confirmation link has been sent to{' '}
                                 <span className="font-bold text-[#c2185b]">{formData.email || 'santhosh.betha@gmail.com'}</span>.
                                 Please check your inbox and click the link to activate your account.
@@ -461,7 +460,7 @@ export const SignupPage = () => {
                         <div className="space-y-4 pt-2 text-center">
                             <button
                                 type="button"
-                                className="flex items-center justify-center gap-2 text-xs font-bold text-zinc-100 dark:text-zinc-50 hover:text-text-primary transition-colors mx-auto"
+                                className="flex items-center justify-center gap-2 text-xs font-bold text-text-secondary dark:text-zinc-50 hover:text-text-primary transition-colors mx-auto"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 15.29M21 12H16" />
@@ -472,7 +471,7 @@ export const SignupPage = () => {
                             <button
                                 type="button"
                                 onClick={handleBack}
-                                className="flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-100 dark:text-zinc-50/70 hover:text-text-primary transition-colors mx-auto"
+                                className="flex items-center justify-center gap-1.5 text-xs font-semibold text-text-secondary dark:text-zinc-50/70 hover:text-text-primary transition-colors mx-auto"
                             >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />

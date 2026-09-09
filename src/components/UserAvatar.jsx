@@ -1,5 +1,4 @@
 // src/components/UserAvatar.jsx
-import React from 'react';
 import { usePresenceStore } from '../store/usePresenceStore';
 
 export function UserAvatar({ user }) {

@@ -12,7 +12,7 @@ export const HashtagTimelinePage = () => {
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useHashtagTimelineQuery(tagId);
     const followMutation = useFollowTagMutation(tagId);
 
-    const posts = data?.pages.flatMap((page) => page.statuses || page || []) || [];
+    const posts = data?.pages.flatMap((page) => page.posts || page || []) || [];
 
     // Extract state properties directly from your first response page header metrics if available
     const isFollowingTag = data?.pages[0]?.following ?? false;

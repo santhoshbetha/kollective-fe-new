@@ -279,24 +279,52 @@ export const PostBusinessProposalPage = () => {
             </ul>
           </div>
 
+          {/* Priority Idea Suggestions Card */}
+          <div className="p-6 rounded-2xl bg-gradient-to-b from-amber-500/10 to-primary-container/10 border border-amber-500/30 space-y-3">
+            <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+              <span className="material-symbols-outlined text-base">rocket_launch</span>
+              <span>Priority Anti-Monopoly Ideas</span>
+            </div>
+            <h4 className="font-bold text-text-primary text-base">Needed Community Proposals</h4>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              We strongly encourage proposals that establish people-centered alternatives to corporate giants:
+            </p>
+            <ul className="space-y-2 text-xs text-text-secondary">
+              <li className="flex items-start gap-2 bg-surface-container-low p-2.5 rounded-xl border border-white/5">
+                <span className="material-symbols-outlined text-primary-container text-sm shrink-0 mt-0.5">local_cafe</span>
+                <div>
+                  <strong className="text-text-primary block font-bold">Coffee Shops & Restaurants</strong>
+                  Displace corporate chains like Starbucks, McDonald's & Wendy's with local co-ops & fair-wage diners.
+                </div>
+              </li>
+              <li className="flex items-start gap-2 bg-surface-container-low p-2.5 rounded-xl border border-white/5">
+                <span className="material-symbols-outlined text-emerald-400 text-sm shrink-0 mt-0.5">medical_services</span>
+                <div>
+                  <strong className="text-text-primary block font-bold">Low-Cost Medical & Clinics</strong>
+                  Create people-pro, low-margin health centers & pharmacies to beat monopolies like CVS & Walgreens.
+                </div>
+              </li>
+            </ul>
+          </div>
+
           {/* Proposal Guidelines Checklist */}
           <div className="glass-panel rounded-2xl p-6 border border-white/5 space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="text-lgfont-bold text-text-primary uppercase tracking-wider">Proposal Guidelines</h4>
+              <h4 className="text-lg font-bold text-text-primary uppercase tracking-wider">Proposal Guidelines</h4>
               <span className="material-symbols-outlined text-text-secondary text-[18px]">info</span>
             </div>
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-lg text-text-secondary">
+              <div className="flex items-center gap-2 text-sm text-text-secondary">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
                 Define target outcomes and timeline clearly.
               </div>
-              <div className="flex items-center gap-2 text-lg text-text-secondary">
+              <div className="flex items-center gap-2 text-sm text-text-secondary">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
                 Specify transparent return mechanics.
               </div>
-              <div className="flex items-center gap-2 text-lg text-text-secondary">
+              <div className="flex items-center gap-2 text-sm text-text-secondary">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
-                Highlight eco-social community value.
+                Highlight eco-social community value and people-first structure.
               </div>
             </div>
           </div>

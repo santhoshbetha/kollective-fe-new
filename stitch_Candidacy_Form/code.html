@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kollective | Candidacy Declaration Desk</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600&amp;family=Hanken+Grotesk:wght@600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface": "#e2e2ec",
+            "inverse-primary": "#bc004b",
+            "surface-container-high": "#282a31",
+            "secondary-container": "#434764",
+            "primary-container": "#ff4e7c",
+            "error": "#ffb4ab",
+            "tertiary-fixed": "#e1e1f1",
+            "surface-container": "#1d1f27",
+            "primary-fixed-dim": "#ffb2be",
+            "primary-fixed": "#ffd9de",
+            "secondary": "#c0c4e7",
+            "background": "#11131a",
+            "on-surface-variant": "#e4bdc2",
+            "tertiary-container": "#8f909e",
+            "inverse-surface": "#e2e2ec",
+            "secondary-fixed": "#dee1ff",
+            "on-tertiary-fixed": "#191b26",
+            "on-primary-fixed-variant": "#900038",
+            "surface-container-low": "#191b23",
+            "on-primary": "#660025",
+            "on-primary-fixed": "#400014",
+            "surface-bright": "#373941",
+            "outline-variant": "#5b3f43",
+            "surface-variant": "#33343c",
+            "surface": "#11131a",
+            "outline": "#ab888c",
+            "primary": "#ffb2be",
+            "on-background": "#e2e2ec"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "lg": "40px",
+            "base": "4px",
+            "xs": "8px",
+            "gutter": "24px",
+            "xl": "64px",
+            "sm": "16px",
+            "md": "24px",
+            "margin-edge": "32px"
+          },
+          "fontFamily": {
+            "label-caps": ["JetBrains Mono"],
+            "headline-lg": ["Hanken Grotesk"],
+            "body-lg": ["Inter"],
+            "label-sm": ["Inter"],
+            "headline-md": ["Hanken Grotesk"],
+            "body-md": ["Inter"],
+            "display-lg": ["Hanken Grotesk"]
+          },
+          "fontSize": {
+            "label-caps": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.1em", "fontWeight": "600"}],
+            "headline-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "1.4", "fontWeight": "500"}],
+            "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+            "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+            "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      background-color: #0B0D14;
+      color: #e2e2ec;
+      -webkit-font-smoothing: antialiased;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #11131a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #33343c;
+      border-radius: 10px;
+    }
+    .ghost-glow:focus-within {
+      box-shadow: 0 0 12px rgba(255, 178, 190, 0.2);
+    }
+    .sidebar-indicator {
+      display: none;
+    }
+    .active-nav .sidebar-indicator {
+      display: block;
+    }
+    /* Material-like Card Tonal Elevation */
+    .card-elevation-1 {
+      background-color: #10121D;
+      border: 1px solid #1E293B;
+    }
+  </style>
+</head>
+<body class="font-body-md text-on-surface selection:bg-primary/30">
+<div class="flex h-screen overflow-hidden">
+<!-- Navigation Drawer (Sidebar) -->
+<aside class="hidden md:flex flex-col w-72 h-full bg-surface-container-low border-r border-outline-variant transition-all duration-300 z-50">
+<div class="p-margin-edge">
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Kollective</h1>
+</div>
+<nav class="flex-1 overflow-y-auto custom-scrollbar py-xs">
+<div class="space-y-1">
+<!-- Home -->
+<a class="flex items-center px-6 py-3 text-on-surface-variant hover:bg-surface-container-highest transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined mr-4 group-hover:text-primary">home</span>
+<span class="font-body-md text-body-md">Home</span>
+</a>
+<!-- Communities -->
+<a class="flex items-center px-6 py-3 text-on-surface-variant hover:bg-surface-container-highest transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined mr-4 group-hover:text-primary">groups</span>
+<span class="font-body-md text-body-md">Communities</span>
+</a>
+<!-- Events -->
+<a class="flex items-center px-6 py-3 text-on-surface-variant hover:bg-surface-container-highest transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined mr-4 group-hover:text-primary">event</span>
+<span class="font-body-md text-body-md">Events</span>
+</a>
+<!-- Polls -->
+<a class="flex items-center px-6 py-3 text-on-surface-variant hover:bg-surface-container-highest transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined mr-4 group-hover:text-primary">ballot</span>
+<span class="font-body-md text-body-md">Polls</span>
+</a>
+<!-- Explore -->
+<a class="flex items-center px-6 py-3 text-on-surface-variant hover:bg-surface-container-highest transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined mr-4 group-hover:text-primary">explore</span>
+<span class="font-body-md text-body-md">Explore</span>
+</a>
+<!-- Assembly (Active) -->
+<a class="flex items-center px-6 py-3 bg-surface-variant border-l-4 border-primary text-primary font-bold transition-colors duration-150 active-nav" href="#">
+<span class="material-symbols-outlined mr-4">how_to_vote</span>
+<span class="font-body-md text-body-md">Assembly</span>
+</a>
+<!-- Settings -->
+<div class="pt-xl border-t border-outline-variant/30 mt-gutter">
+<a class="flex items-center px-6 py-3 text-on-surface-variant hover:bg-surface-container-highest transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined mr-4 group-hover:text-primary">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</div>
+</div>
+</nav>
+<div class="p-6">
+<button class="w-full bg-primary text-on-primary font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+          Voice In
+        </button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-full bg-surface relative overflow-hidden">
+<!-- Top App Bar -->
+<header class="flex justify-between items-center w-full px-margin-edge h-16 bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<button class="md:hidden material-symbols-outlined text-primary">menu</button>
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="bg-surface-container-low border border-outline-variant rounded-full pl-10 pr-4 py-1.5 text-body-md focus:outline-none focus:border-primary w-64 transition-all" placeholder="Search the Kollective..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">wb_sunny</button>
+<div class="relative">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full"></span>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">settings</button>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 overflow-y-auto custom-scrollbar pb-xl">
+<div class="max-w-4xl mx-auto px-margin-edge pt-lg">
+<!-- Breadcrumb/Back -->
+<button class="group flex items-center gap-2 mb-xs text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+<span class="font-label-caps text-label-caps uppercase">Back to Assembly Hub</span>
+</button>
+<!-- Header Section -->
+<div class="mb-gutter">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Candidacy Declaration Desk</h2>
+<p class="font-body-md text-on-surface-variant max-w-xl">
+              Submit your onboarding file. Tiers lock automatically according to volunteer calendar ledger entries. 
+              Please ensure all documents are legible.
+            </p>
+</div>
+<!-- Form Card -->
+<div class="card-elevation-1 rounded-xl p-gutter md:p-lg shadow-2xl relative overflow-hidden">
+<!-- Decorative atmospheric glow -->
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+<form class="space-y-gutter relative z-10">
+<!-- Input: Target Seat -->
+<div class="space-y-xs">
+<label class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+                  Target Legislative / Local Seat <span class="text-primary">*</span>
+</label>
+<div class="relative ghost-glow">
+<select class="w-full bg-surface-container-low border border-outline-variant text-on-surface p-4 rounded-xl appearance-none focus:ring-0 focus:border-primary transition-all">
+<option disabled="" selected="" value="">Select an open ballot track...</option>
+<option value="district-4">District 4: Urban Planning Board</option>
+<option value="council-at-large">City Council at Large</option>
+<option value="treasury">Public Treasury Oversight</option>
+<option value="education">Board of Education Representative</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<!-- Input: Primary Profession -->
+<div class="space-y-xs">
+<label class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+                  Your Primary Worker Profession <span class="text-primary">*</span>
+</label>
+<div class="ghost-glow">
+<input class="w-full bg-surface-container-low border border-outline-variant text-on-surface p-4 rounded-xl focus:ring-0 focus:border-primary transition-all placeholder:text-on-tertiary-container/40" placeholder="e.g., Warehouse Logistics Clerk, Public Bus Operator, Registered Nurse" type="text"/>
+</div>
+</div>
+<!-- Input: LinkedIn (Optional) -->
+<div class="space-y-xs">
+<div class="flex justify-between items-center">
+<label class="font-label-caps text-label-caps text-on-surface-variant">LinkedIn Profile Link</label>
+<span class="font-label-caps text-[10px] bg-surface-variant px-2 py-0.5 rounded text-on-surface-variant">OPTIONAL</span>
+</div>
+<div class="ghost-glow">
+<input class="w-full bg-surface-container-low border border-outline-variant text-on-surface p-4 rounded-xl focus:ring-0 focus:border-primary transition-all placeholder:text-on-tertiary-container/40" placeholder="https://linkedin.com/in/yourprofile" type="url"/>
+</div>
+</div>
+<!-- Upload Area -->
+<div class="space-y-xs">
+<label class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+                  Employment Verification Document <span class="text-primary">*</span>
+</label>
+<div class="group cursor-pointer relative border-2 border-dashed border-outline-variant hover:border-primary rounded-xl bg-surface-container-low/50 hover:bg-surface-container-high transition-all p-xl flex flex-col items-center justify-center text-center">
+<input class="absolute inset-0 opacity-0 cursor-pointer" type="file"/>
+<div class="w-16 h-16 rounded-full bg-surface-variant flex items-center justify-center mb-md group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-primary text-3xl">cloud_upload</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface mb-2">Attach pay stub, union card, or public registration...</h4>
+<p class="font-body-md text-on-surface-variant">PDF or Image files accepted (Max 10MB)</p>
+</div>
+</div>
+<!-- Action Button -->
+<div class="pt-md flex justify-end">
+<button class="group bg-[#ff4e7c] hover:bg-[#bc004b] text-white font-bold py-4 px-10 rounded-xl flex items-center gap-3 shadow-[0_8px_20px_-6px_rgba(255,78,124,0.4)] active:scale-95 transition-all" type="submit">
+                  Submit Credentials
+                  <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">send</span>
+</button>
+</div>
+</form>
+</div>
+<!-- Helper Footer Links -->
+<div class="mt-xl flex flex-wrap gap-8 justify-center border-t border-outline-variant/20 pt-md">
+<div class="flex items-center gap-3 text-on-surface-variant/60">
+<span class="material-symbols-outlined text-sm">shield</span>
+<span class="font-label-caps text-[11px]">ENCRYPTED UPLOAD</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant/60">
+<span class="material-symbols-outlined text-sm">verified_user</span>
+<span class="font-label-caps text-[11px]">CIVIC COMPLIANCE GUARANTEED</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant/60">
+<span class="material-symbols-outlined text-sm">help</span>
+<span class="font-label-caps text-[11px]">REQUEST ONBOARDING SUPPORT</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Navigation Bar -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center py-xs px-base bg-surface-container border-t border-outline-variant rounded-t-xl shadow-lg">
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm mt-1">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-sm text-label-sm mt-1">Communities</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary font-bold transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">how_to_vote</span>
+<span class="font-label-sm text-label-sm mt-1">Assembly</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-sm text-label-sm mt-1">Events</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-sm text-label-sm mt-1">Settings</span>
+</button>
+</nav>
+<script>
+    // Micro-interactions for form focus
+    const inputs = document.querySelectorAll('input, select');
+    inputs.forEach(input => {
+      input.addEventListener('focus', () => {
+        input.parentElement.parentElement.classList.add('scale-[1.01]');
+      });
+      input.addEventListener('blur', () => {
+        input.parentElement.parentElement.classList.remove('scale-[1.01]');
+      });
+    });
+
+    // Form submission mock
+    document.querySelector('form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Validating...';
+      btn.classList.add('opacity-80', 'pointer-events-none');
+      
+      setTimeout(() => {
+        btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Application Received';
+        btn.classList.replace('bg-[#ff4e7c]', 'bg-emerald-500');
+        
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.classList.replace('bg-emerald-500', 'bg-[#ff4e7c]');
+          btn.classList.remove('opacity-80', 'pointer-events-none');
+        }, 3000);
+      }, 2000);
+    });
+  </script>
+</body></html>

@@ -71,177 +71,211 @@ export const CandidacyApplicationPage = () => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto flex flex-col gap-6 pb-20 w-full font-sans animate-in fade-in duration-200">
+        <div className="max-w-4xl mx-auto px-6 pt-10 pb-20 w-full font-sans animate-in fade-in duration-200">
 
-            {/* 🧭 Structural Header */}
-            <div className="border-b border-outline-variant/40 pb-5 select-none space-y-2">
-                <button
-                    type="button"
-                    onClick={() => navigate('/campaigns/local')}
-                    className="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors font-bold text-xs uppercase tracking-wider border-none bg-transparent cursor-pointer mb-2 group"
-                >
-                    <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                    <span>Back to Assembly Hub</span>
-                </button>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-text-primary tracking-tight">
-                    Candidacy Declaration Desk
-                </h1>
-                <p className="text-xs sm:text-sm font-medium text-text-secondary">
-                    Submit your onboarding file. Tiers lock automatically according to volunteer calendar ledger entries.
+            {/* 🧭 Back Navigation */}
+            <button
+                type="button"
+                onClick={() => navigate('/campaigns/local')}
+                className="group flex items-center gap-2 mb-4 text-on-surface-variant hover:text-primary transition-colors font-mono text-[10px] uppercase tracking-widest border-none bg-transparent cursor-pointer"
+            >
+                <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                <span>BACK TO ASSEMBLY HUB</span>
+            </button>
+
+            {/* Header Section */}
+            <div className="mb-8 select-none">
+                <h2 className="text-3xl font-bold text-on-surface mb-2 tracking-tight">Candidacy Declaration Desk</h2>
+                <p className="text-sm text-on-surface-variant max-w-xl">
+                    Submit your onboarding file. Tiers lock automatically according to volunteer calendar ledger entries. 
+                    Please ensure all documents are legible.
                 </p>
             </div>
 
             {openOffices.length === 0 ? (
-                /* EXVERSION BLOCK: If no calendar frames are active, block onboarding */
-                <div className="p-8 sm:p-12 border border-dashed border-error/30 bg-error/5 rounded-card text-center flex flex-col items-center gap-3 select-none">
-                    <Clock className="w-10 h-10 text-error shrink-0" />
-                    <h3 className="text-base sm:text-lg font-bold text-text-primary uppercase tracking-wider">
-                        Registration Windows Terminated
-                    </h3>
-                    <p className="text-xs sm:text-sm text-text-secondary leading-relaxed max-w-md">
-                        There are currently no active filing deadlines found for the state of <span className="text-text-primary font-mono font-bold">{userState}</span>. Please coordinate with local Vanguard operators to refresh calendar windows.
-                    </p>
+                /* EXVERSION BLOCK: If no active registration windows exist */
+                <div className="flex items-center justify-center py-10 w-full select-none animate-in zoom-in duration-200">
+                    <div className="w-full max-w-2xl p-8 sm:p-12 glass-panel border border-outline-variant bg-surface-container rounded-xl flex flex-col items-center text-center relative overflow-hidden shadow-2xl">
+                        {/* Decorative glow */}
+                        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
+                        {/* Status Icon */}
+                        <div className="w-20 h-20 rounded-full flex items-center justify-center bg-surface-container-highest/50 border border-outline-variant/30 mb-6 relative animate-pulse">
+                            <span className="material-symbols-outlined text-[48px] text-primary" style={{ fontVariationSettings: "'wght' 200" }}>schedule</span>
+                            <div className="absolute inset-0 rounded-full animate-ping bg-primary/10 opacity-20"></div>
+                        </div>
+                        {/* Content */}
+                        <h2 className="text-xl sm:text-2xl font-black text-on-surface mb-4 uppercase tracking-widest font-extrabold">
+                            REGISTRATION WINDOWS TERMINATED
+                        </h2>
+                        <div className="max-w-md">
+                            <p className="text-on-surface-variant text-sm sm:text-base leading-relaxed mb-6">
+                                There are currently no active filing deadlines found for the state of <span className="text-primary font-bold">{userState}</span>. Please coordinate with local Vanguard operators to refresh calendar windows.
+                            </p>
+                        </div>
+                        {/* Action Items */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-4">
+                            <button
+                                type="button"
+                                className="flex items-center justify-center py-3 border border-outline-variant hover:bg-surface-container-high text-on-surface font-semibold text-xs rounded-lg uppercase tracking-wider transition-all cursor-pointer bg-transparent"
+                                onClick={() => alert("Connecting with local Vanguard operators...")}
+                            >
+                                <span className="material-symbols-outlined mr-2 text-[18px]">contact_support</span>
+                                <span>CONTACT OPERATOR</span>
+                            </button>
+                            <button
+                                type="button"
+                                className="flex items-center justify-center py-3 border border-primary text-primary hover:bg-primary/10 transition-all rounded-lg font-semibold text-xs uppercase tracking-wider cursor-pointer bg-transparent"
+                                onClick={() => navigate('/events')}
+                            >
+                                <span className="material-symbols-outlined mr-2 text-[18px]">calendar_month</span>
+                                <span>VIEW CALENDAR</span>
+                            </button>
+                        </div>
+                        {/* Footer Detail */}
+                        <div className="mt-8 pt-4 border-t border-outline-variant/30 w-full flex justify-between items-center text-[10px] font-mono uppercase opacity-50 font-semibold">
+                            <span className="flex items-center"><span className="material-symbols-outlined text-[14px] mr-1">info</span> STATUS: INACTIVE</span>
+                            <span>REGION: {userState}_HQ</span>
+                        </div>
+                    </div>
                 </div>
             ) : (
                 /* FRESH ENTRY PORTFOLIO CONTAINER FORM */
-                <form onSubmit={handleFormSubmit} className="space-y-6 bg-surface-container border border-outline-variant p-6 sm:p-8 rounded-card shadow-2xl flex flex-col w-full">
-
-                    {/* Target Office Select */}
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-text-secondary uppercase tracking-wider select-none">
-                            Target Legislative / Local Seat <span className="text-primary">*</span>
-                        </label>
-                        <select
-                            required
-                            value={officeLevel}
-                            onChange={(e) => setOfficeLevel(e.target.value)}
-                            className="w-full bg-surface-container-low border border-outline-variant rounded-card px-4 py-3 text-xs sm:text-sm font-bold text-text-primary focus:outline-none cursor-pointer focus:border-primary transition-all appearance-none"
-                        >
-                            <option value="">Select an open ballot track...</option>
-                            {openOffices.map((office) => (
-                                <option key={office.id} value={office.office_level}>
-                                    {office.office_level.toUpperCase()} (Filing Deadline: {office.application_deadline})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Primary Worker Profession */}
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-text-secondary uppercase tracking-wider select-none">
-                            Your Primary Worker Profession <span className="text-primary">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            required
-                            placeholder="e.g., Warehouse Logistics Clerk, Public Bus Operator, Registered Nurse"
-                            value={profession}
-                            onChange={(e) => setProfession(e.target.value)}
-                            className="w-full bg-surface-container-low border border-outline-variant rounded-card px-4 py-3 text-xs sm:text-sm font-bold text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-primary transition-all"
-                        />
-                    </div>
-
-                    {/* LinkedIn Link (Optional) */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex justify-between items-center select-none">
-                            <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-                                LinkedIn Profile Link
+                <div className="card-elevation-1 rounded-xl p-6 sm:p-8 shadow-2xl relative overflow-hidden bg-surface-container border border-outline-variant">
+                    {/* Decorative atmospheric glow */}
+                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+                    <form onSubmit={handleFormSubmit} className="space-y-6 relative z-10">
+                        {/* Input: Target Seat */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold font-mono text-on-surface-variant flex items-center gap-1 uppercase tracking-wider select-none">
+                                Target Legislative / Local Seat <span className="text-primary">*</span>
                             </label>
-                            <span className="text-[10px] font-mono font-bold text-text-secondary uppercase tracking-widest bg-surface-container-low px-2 py-0.5 rounded-md border border-outline-variant">
-                                Optional
-                            </span>
+                            <div className="relative">
+                                <select
+                                    required
+                                    value={officeLevel}
+                                    onChange={(e) => setOfficeLevel(e.target.value)}
+                                    className="w-full bg-surface-container-low border border-outline-variant text-on-surface p-4 rounded-xl appearance-none focus:ring-0 focus:border-primary transition-all outline-none"
+                                >
+                                    <option value="" disabled>Select an open ballot track...</option>
+                                    {openOffices.map((office) => (
+                                        <option key={office.id} value={office.office_level}>
+                                            {office.office_level.toUpperCase()} (Filing Deadline: {office.application_deadline})
+                                        </option>
+                                    ))}
+                                </select>
+                                <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+                            </div>
                         </div>
-                        <input
-                            type="url"
-                            placeholder="https://linkedin.com/in/yourprofile"
-                            value={linkedinUrl}
-                            onChange={(e) => setLinkedinUrl(e.target.value)}
-                            className="w-full bg-surface-container-low border border-outline-variant rounded-card px-4 py-3 text-xs sm:text-sm font-bold text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-primary transition-all"
-                        />
-                    </div>
 
-                    {/* Employment Verification Document Upload Drag & Drop */}
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-text-secondary uppercase tracking-wider select-none">
-                            Employment Verification Document <span className="text-primary">*</span>
-                        </label>
-                        <div className={cn(
-                            "w-full min-h-[140px] border-2 border-dashed rounded-card flex flex-col items-center justify-center p-5 text-center cursor-pointer transition-all relative group",
-                            proofFile
-                                ? "border-emerald-500/50 bg-emerald-500/5"
-                                : "border-outline-variant hover:border-primary/50 bg-surface-container-low"
-                        )}>
-                            <input
-                                type="file"
-                                required
-                                accept="image/*,application/pdf"
-                                onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                            />
+                        {/* Input: Primary Profession */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold font-mono text-on-surface-variant flex items-center gap-1 uppercase tracking-wider select-none">
+                                Your Primary Worker Profession <span className="text-primary">*</span>
+                            </label>
+                            <div>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g., Warehouse Logistics Clerk, Public Bus Operator, Registered Nurse"
+                                    value={profession}
+                                    onChange={(e) => setProfession(e.target.value)}
+                                    className="w-full bg-surface-container-low border border-outline-variant text-on-surface p-4 rounded-xl focus:ring-0 focus:border-primary transition-all placeholder:text-on-tertiary-container/40 outline-none"
+                                />
+                            </div>
+                        </div>
 
-                            {proofFile ? (
-                                <div className="flex items-center gap-3 z-20">
-                                    <FileCheck className="w-6 h-6 text-emerald-500 shrink-0" />
-                                    <div className="text-left">
-                                        <p className="text-xs sm:text-sm font-bold text-text-primary truncate max-w-xs sm:max-w-md">
-                                            {proofFile.name}
-                                        </p>
-                                        <p className="text-[11px] font-mono text-text-secondary">
-                                            {(proofFile.size / (1024 * 1024)).toFixed(2)} MB · Verification attached
-                                        </p>
+                        {/* Input: LinkedIn (Optional) */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center select-none">
+                                <label className="text-xs font-bold font-mono text-on-surface-variant uppercase tracking-wider">LinkedIn Profile Link</label>
+                                <span className="text-[10px] font-mono font-bold bg-surface-variant px-2 py-0.5 rounded text-on-surface-variant">OPTIONAL</span>
+                            </div>
+                            <div>
+                                <input
+                                    type="url"
+                                    placeholder="https://linkedin.com/in/yourprofile"
+                                    value={linkedinUrl}
+                                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                                    className="w-full bg-surface-container-low border border-outline-variant text-on-surface p-4 rounded-xl focus:ring-0 focus:border-primary transition-all placeholder:text-on-tertiary-container/40 outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Upload Area */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold font-mono text-on-surface-variant flex items-center gap-1 uppercase tracking-wider select-none">
+                                Employment Verification Document <span className="text-primary">*</span>
+                            </label>
+                            <div className={cn(
+                                "group cursor-pointer relative border-2 border-dashed border-outline-variant hover:border-primary rounded-xl transition-all p-8 flex flex-col items-center justify-center text-center",
+                                proofFile ? "bg-emerald-500/5 border-emerald-500/50" : "bg-surface-container-low/50 hover:bg-surface-container-high"
+                            )}>
+                                <input
+                                    type="file"
+                                    required
+                                    accept="image/*,application/pdf"
+                                    onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                />
+                                {proofFile ? (
+                                    <div className="flex items-center gap-3 z-20">
+                                        <FileCheck className="w-10 h-10 text-emerald-500 shrink-0" />
+                                        <div className="text-left">
+                                            <p className="text-sm font-bold text-on-surface truncate max-w-xs sm:max-w-md">
+                                                {proofFile.name}
+                                            </p>
+                                            <p className="text-[11px] font-mono text-on-surface-variant">
+                                                {(proofFile.size / (1024 * 1024)).toFixed(2)} MB · Verification attached
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setProofFile(null);
+                                            }}
+                                            className="p-1 rounded-card hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface z-30 transition-colors border-none bg-transparent cursor-pointer ml-2 relative"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setProofFile(null);
-                                        }}
-                                        className="p-1 rounded-card hover:bg-surface-container-high text-text-secondary hover:text-text-primary z-30 transition-colors border-none bg-transparent cursor-pointer ml-2"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center gap-1.5 pointer-events-none select-none">
-                                    <UploadCloud className="w-8 h-8 text-text-secondary group-hover:text-primary transition-colors" />
-                                    <span className="text-xs sm:text-sm font-bold text-text-primary">
-                                        Attach pay stub, union card, or public registration...
-                                    </span>
-                                    <span className="text-[11px] text-text-secondary font-mono">
-                                        PDF or Image files accepted (Max 10MB)
-                                    </span>
-                                </div>
-                            )}
+                                ) : (
+                                    <div className="flex flex-col items-center pointer-events-none select-none">
+                                        <div className="w-16 h-16 rounded-full bg-surface-variant flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                            <span className="material-symbols-outlined text-primary text-3xl">cloud_upload</span>
+                                        </div>
+                                        <h4 className="text-base font-bold text-on-surface mb-2">Attach pay stub, union card, or public registration...</h4>
+                                        <p className="text-xs text-on-surface-variant">PDF or Image files accepted (Max 10MB)</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Submit Action Controls */}
-                    <div className="pt-2 flex justify-end">
-                        <button
-                            type="submit"
-                            disabled={submitMutation.isPending || !officeLevel || !profession.trim() || !proofFile}
-                            className={cn(
-                                "px-6 py-3.5 bg-primary hover:brightness-110 text-on-primary font-bold text-xs sm:text-sm rounded-card border-none cursor-pointer uppercase tracking-wider shadow-xs transition-all active:scale-98 flex items-center gap-2 select-none",
-                                (submitMutation.isPending || !officeLevel || !profession.trim() || !proofFile) && "opacity-40 cursor-not-allowed"
-                            )}
-                        >
-                            {submitMutation.isPending ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    <span>Ingesting File...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span>Submit Credentials</span>
-                                    <Send className="w-4 h-4" />
-                                </>
-                            )}
-                        </button>
-                    </div>
-
-                </form>
+                        {/* Action Button */}
+                        <div className="pt-4 flex justify-end">
+                            <button
+                                type="submit"
+                                disabled={submitMutation.isPending || !officeLevel || !profession.trim() || !proofFile}
+                                className={cn(
+                                    "group bg-primary hover:bg-primary-container text-white font-bold py-4 px-10 rounded-xl flex items-center gap-3 shadow-[0_8px_20px_-6px_rgba(255,78,124,0.4)] active:scale-95 transition-all cursor-pointer border-none outline-none disabled:opacity-40 disabled:cursor-not-allowed text-xs sm:text-sm uppercase tracking-wider"
+                                )}
+                            >
+                                {submitMutation.isPending ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>Ingesting File...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Submit Credentials</span>
+                                        <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">send</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             )}
-
         </div>
     );
 };

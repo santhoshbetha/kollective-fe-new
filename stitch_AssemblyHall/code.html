@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Assembly Hall: Debates | Kollective</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Hanken+Grotesk:wght@600;700;800&family=JetBrains+Mono:wght@600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(16, 18, 29, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid #1E293B;
+        }
+        .active-glow {
+            box-shadow: 0 0 15px -3px rgba(255, 78, 124, 0.3);
+        }
+        body {
+            background-color: #0B0D14;
+            color: #e2e2ec;
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#e2e2ec",
+                        "inverse-primary": "#bc004b",
+                        "surface-container-high": "#282a31",
+                        "secondary-container": "#434764",
+                        "primary-container": "#ff4e7c",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed": "#e1e1f1",
+                        "surface-container": "#1d1f27",
+                        "primary-fixed-dim": "#ffb2be",
+                        "primary-fixed": "#ffd9de",
+                        "secondary": "#c0c4e7",
+                        "background": "#11131a",
+                        "on-surface-variant": "#e4bdc2",
+                        "tertiary-container": "#8f909e",
+                        "inverse-surface": "#e2e2ec",
+                        "secondary-fixed": "#dee1ff",
+                        "on-tertiary-fixed": "#191b26",
+                        "on-primary-fixed-variant": "#900038",
+                        "surface-container-low": "#191b23",
+                        "on-secondary-container": "#b2b6d8",
+                        "tertiary": "#c5c5d5",
+                        "surface-container-highest": "#33343c",
+                        "on-error": "#690005",
+                        "on-primary-container": "#5a0020",
+                        "on-error-container": "#ffdad6",
+                        "outline-variant": "#5b3f43",
+                        "on-tertiary": "#2e303c",
+                        "on-secondary-fixed-variant": "#404561",
+                        "surface-bright": "#373941",
+                        "on-primary": "#660025",
+                        "on-primary-fixed": "#400014",
+                        "on-tertiary-fixed-variant": "#444653",
+                        "inverse-on-surface": "#2e3038",
+                        "error-container": "#93000a",
+                        "on-tertiary-container": "#272935",
+                        "on-secondary": "#2a2f4a",
+                        "tertiary-fixed-dim": "#c5c5d5",
+                        "secondary-fixed-dim": "#c0c4e7",
+                        "on-secondary-fixed": "#151a33",
+                        "surface-variant": "#33343c",
+                        "surface-tint": "#ffb2be",
+                        "surface": "#11131a",
+                        "outline": "#ab888c",
+                        "surface-dim": "#11131a",
+                        "surface-container-lowest": "#0c0e15",
+                        "primary": "#ffb2be",
+                        "on-background": "#e2e2ec"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "lg": "40px",
+                        "base": "4px",
+                        "xs": "8px",
+                        "gutter": "24px",
+                        "xl": "64px",
+                        "sm": "16px",
+                        "md": "24px",
+                        "margin-edge": "32px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="flex min-h-screen">
+<!-- Navigation Drawer (Shared Component) -->
+<aside class="hidden md:flex flex-col h-full w-72 left-0 top-0 fixed bg-surface-container-low border-r border-outline-variant z-40 overflow-y-auto">
+<div class="px-6 py-8">
+<span class="font-headline-lg text-headline-lg text-primary tracking-tighter">Kollective</span>
+</div>
+<nav class="flex flex-col gap-1 px-2">
+<!-- Navigation Items Mapping -->
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest rounded-lg" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body-md text-body-md">Home</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest rounded-lg" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-body-md text-body-md">Communities</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest rounded-lg" href="#">
+<span class="material-symbols-outlined">event</span>
+<span class="font-body-md text-body-md">Events</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest rounded-lg" href="#">
+<span class="material-symbols-outlined">ballot</span>
+<span class="font-body-md text-body-md">Polls</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest rounded-lg" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-body-md text-body-md">Explore</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest rounded-lg" href="#">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="font-body-md text-body-md">Bookmarks</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest rounded-lg" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-body-md text-body-md">Organize</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest rounded-lg" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span class="font-body-md text-body-md">Local Businesses</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest rounded-lg" href="#">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-body-md text-body-md">Notifications</span>
+</a>
+<a class="bg-surface-variant border-l-4 border-primary text-primary font-bold px-4 py-3 flex items-center gap-4 transition-colors duration-150 rounded-r-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">how_to_vote</span>
+<span class="font-body-md text-body-md">Civic Assembly</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest rounded-lg mt-auto mb-8" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</nav>
+<div class="p-4 mt-auto">
+<button class="w-full bg-[#ff4e7c] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined">add_circle</span>
+<span>Voice In</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<main class="flex-1 md:ml-72 flex flex-col min-h-screen">
+<!-- Top App Bar -->
+<header class="flex justify-between items-center w-full px-margin-edge h-16 bg-surface border-b border-outline-variant fixed top-0 right-0 left-0 md:left-72 z-30">
+<div class="flex items-center gap-4">
+<button class="md:hidden text-primary transition-all duration-200 active:scale-95">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-fixed-dim">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-on-surface font-body-md w-64" placeholder="Search the Kollective..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">light_mode</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary-container rounded-full"></span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Page Canvas -->
+<div class="pt-24 pb-xl px-margin-edge max-w-6xl w-full mx-auto">
+<!-- Breadcrumbs / Back Link -->
+<a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors mb-4 group" href="#">
+<span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+<span class="font-label-caps text-label-caps">BACK TO ASSEMBLY HUB</span>
+</a>
+<!-- Page Title Section -->
+<div class="mb-lg">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Assembly Hall: Debates</h1>
+<p class="font-body-md text-on-surface-variant">Claim logistics tasks and volunteer shifts for neighborhood debates.</p>
+</div>
+<!-- Primary Tabs (Higher vs Local) -->
+<div class="flex p-base bg-surface-container rounded-xl mb-lg w-full max-w-2xl border border-outline-variant">
+<button class="flex-1 py-3 px-6 rounded-lg bg-surface-container-highest text-primary font-bold active-glow transition-all duration-200">
+                    Higher Offices (Federal & State)
+                </button>
+<button class="flex-1 py-3 px-6 rounded-lg text-on-surface-variant hover:bg-surface-variant/30 transition-all duration-200">
+                    Local Offices (Municipal & County)
+                </button>
+</div>
+<!-- Sub-Tabs Section -->
+<div class="flex flex-wrap gap-4 mb-xl items-center border-b border-outline-variant pb-md">
+<button class="px-6 py-2 rounded-full border-2 border-primary-container bg-primary-container/10 text-primary-container font-bold transition-all hover:bg-primary-container/20">
+                    Federal Congress
+                </button>
+<button class="px-6 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-variant/30 transition-all">
+                    State Senate
+                </button>
+<button class="px-6 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-variant/30 transition-all">
+                    State Assembly
+                </button>
+</div>
+<!-- Main Content Area: Empty State -->
+<div class="glass-panel rounded-3xl p-xl flex flex-col items-center justify-center min-h-[400px] text-center border border-outline-variant relative overflow-hidden">
+<!-- Atmospheric Background Detail -->
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary-container/5 blur-[100px] rounded-full"></div>
+<div class="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary-container/10 blur-[100px] rounded-full"></div>
+<div class="relative z-10 flex flex-col items-center max-w-md">
+<!-- Icon with glow -->
+<div class="w-20 h-20 rounded-full bg-surface-container-highest flex items-center justify-center mb-8 border border-outline-variant relative">
+<div class="absolute inset-0 bg-primary-container/20 blur-xl rounded-full"></div>
+<span class="material-symbols-outlined text-4xl text-primary-container relative z-10">calendar_clock</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md">No debate town halls scheduled for TX-10 yet.</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed mb-lg">
+                        When local candidates pass the mandatory voting thresholds and consensus requirements, the Kollective town hall logistics engine initializes automatically to scout venues and assign moderators.
+                    </p>
+<button class="flex items-center gap-3 px-8 py-4 bg-transparent border border-primary-container text-primary-container font-bold rounded-xl hover:bg-primary-container/10 transition-all group">
+<span>Subscribe to Alerts</span>
+<span class="material-symbols-outlined group-hover:rotate-12 transition-transform">notifications_active</span>
+</button>
+</div>
+<!-- Subtle Grid Overlay -->
+<div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(#ff4e7c 1px, transparent 1px); background-size: 24px 24px;"></div>
+</div>
+<!-- Information Cards (Bento style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mt-lg">
+<div class="glass-panel p-md rounded-2xl flex flex-col gap-4">
+<span class="material-symbols-outlined text-primary">verified</span>
+<h4 class="font-headline-md text-headline-md">Eligibility</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Candidates must hold a minimum 15% sentiment rating within the district to trigger a mandatory Assembly debate session.</p>
+</div>
+<div class="glass-panel p-md rounded-2xl flex flex-col gap-4">
+<span class="material-symbols-outlined text-primary">volunteer_activism</span>
+<h4 class="font-headline-md text-headline-md">Logistics</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Logistics managers receive Action Credits for venue sourcing, safety coordination, and digital stream management.</p>
+</div>
+<div class="glass-panel p-md rounded-2xl flex flex-col gap-4">
+<span class="material-symbols-outlined text-primary">gavel</span>
+<h4 class="font-headline-md text-headline-md">Ruleset</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">All debates follow the Civic Commons Protocol (CCP), ensuring neutral moderation and verified fact-checking in real-time.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Nav for Mobile -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center py-xs px-base bg-surface-container border-t border-outline-variant shadow-lg rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-primary font-bold transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-sm text-label-sm">Groups</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-sm text-label-sm">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined">account_balance</span>
+<span class="font-label-sm text-label-sm">Assembly</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</a>
+</nav>
+<!-- Interactive Layer: Vanilla JS for hover effects and micro-interactions -->
+<script>
+        document.querySelectorAll('button, a').forEach(elem => {
+            elem.addEventListener('mousedown', () => {
+                elem.classList.add('scale-95');
+            });
+            elem.addEventListener('mouseup', () => {
+                elem.classList.remove('scale-95');
+            });
+            elem.addEventListener('mouseleave', () => {
+                elem.classList.remove('scale-95');
+            });
+        });
+
+        // Simple tab switching logic simulation
+        const subTabs = document.querySelectorAll('.flex.flex-wrap button');
+        subTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                subTabs.forEach(t => {
+                    t.className = 'px-6 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-variant/30 transition-all';
+                });
+                tab.className = 'px-6 py-2 rounded-full border-2 border-primary-container bg-primary-container/10 text-primary-container font-bold transition-all hover:bg-primary-container/20 active-glow';
+            });
+        });
+    </script>
+</body></html>

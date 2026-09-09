@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Consensus Ballot Endorsements | Kollective</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700;800&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@600&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#e2e2ec",
+                        "inverse-primary": "#bc004b",
+                        "surface-container-high": "#282a31",
+                        "secondary-container": "#434764",
+                        "primary-container": "#ff4e7c",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed": "#e1e1f1",
+                        "surface-container": "#1d1f27",
+                        "primary-fixed-dim": "#ffb2be",
+                        "primary-fixed": "#ffd9de",
+                        "secondary": "#c0c4e7",
+                        "background": "#0B0D14",
+                        "on-surface-variant": "#e4bdc2",
+                        "tertiary-container": "#8f909e",
+                        "inverse-surface": "#e2e2ec",
+                        "secondary-fixed": "#dee1ff",
+                        "on-tertiary-fixed": "#191b26",
+                        "on-primary-fixed-variant": "#900038",
+                        "surface-container-low": "#10121D",
+                        "on-primary-container": "#5a0020",
+                        "on-error-container": "#ffdad6",
+                        "outline-variant": "#1E293B",
+                        "on-tertiary": "#2e303c",
+                        "on-secondary-fixed-variant": "#404561",
+                        "surface-bright": "#373941",
+                        "on-primary": "#660025",
+                        "on-primary-fixed": "#400014",
+                        "on-tertiary-fixed-variant": "#444653",
+                        "inverse-on-surface": "#2e3038",
+                        "error-container": "#93000a",
+                        "on-tertiary-container": "#272935",
+                        "on-secondary": "#2a2f4a",
+                        "tertiary-fixed-dim": "#c5c5d5",
+                        "secondary-fixed-dim": "#c0c4e7",
+                        "on-secondary-fixed": "#151a33",
+                        "surface-variant": "#33343c",
+                        "surface-tint": "#ffb2be",
+                        "surface": "#0B0D14",
+                        "outline": "#334155",
+                        "surface-dim": "#11131a",
+                        "surface-container-lowest": "#0c0e15",
+                        "primary": "#ff4e7c",
+                        "on-background": "#e2e2ec"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "lg": "40px",
+                        "base": "4px",
+                        "xs": "8px",
+                        "gutter": "24px",
+                        "xl": "64px",
+                        "sm": "16px",
+                        "md": "24px",
+                        "margin-edge": "32px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0B0D14;
+            color: #e2e2ec;
+        }
+        .active-tab-glow {
+            box-shadow: 0 0 12px rgba(255, 78, 124, 0.2);
+        }
+        .glass-panel {
+            background: rgba(16, 18, 29, 0.7);
+            backdrop-filter: blur(12px);
+        }
+        [data-tab-content] {
+            display: none;
+        }
+        [data-tab-content].active {
+            display: flex;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-primary/30">
+<div class="flex h-screen overflow-hidden">
+<!-- Navigation Drawer (Shared Component) -->
+<aside class="hidden md:flex flex-col h-full w-72 left-0 top-0 bg-surface-container-low border-r border-outline-variant shadow-xl z-30 transition-all duration-300">
+<div class="p-margin-edge h-16 flex items-center mb-xs">
+<span class="font-headline-lg text-headline-lg text-primary">Kollective</span>
+</div>
+<nav class="flex flex-col h-full overflow-y-auto space-y-1 py-xs">
+<a class="flex items-center text-on-surface-variant px-4 py-3 hover:bg-surface-container-highest transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-4">home</span>
+<span class="font-body-md text-body-md">Home</span>
+</a>
+<a class="flex items-center text-on-surface-variant px-4 py-3 hover:bg-surface-container-highest transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-4">groups</span>
+<span class="font-body-md text-body-md">Communities</span>
+</a>
+<a class="flex items-center text-on-surface-variant px-4 py-3 hover:bg-surface-container-highest transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-4">event</span>
+<span class="font-body-md text-body-md">Events</span>
+</a>
+<a class="flex items-center text-on-surface-variant px-4 py-3 hover:bg-surface-container-highest transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-4">ballot</span>
+<span class="font-body-md text-body-md">Polls</span>
+</a>
+<a class="flex items-center text-on-surface-variant px-4 py-3 hover:bg-surface-container-highest transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-4">explore</span>
+<span class="font-body-md text-body-md">Explore</span>
+</a>
+<a class="flex items-center bg-surface-variant border-l-4 border-primary text-primary font-bold px-4 py-3 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-4">how_to_vote</span>
+<span class="font-body-md text-body-md">Civic Assembly</span>
+</a>
+<div class="pt-sm mt-sm border-t border-outline-variant/30"></div>
+<a class="flex items-center text-on-surface-variant px-4 py-3 hover:bg-surface-container-highest transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-4">notifications</span>
+<span class="font-body-md text-body-md">Notifications</span>
+</a>
+<a class="flex items-center text-on-surface-variant px-4 py-3 hover:bg-surface-container-highest transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-4">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto p-4">
+<button class="w-full bg-primary hover:bg-primary-container text-white py-3 rounded-lg font-bold flex items-center justify-center gap-xs transition-transform active:scale-95 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+<span class="">Voice In</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto flex flex-col relative">
+<!-- Top App Bar (Shared Component) -->
+<header class="flex justify-between items-center w-full px-margin-edge h-16 bg-surface border-b border-outline-variant z-20 sticky top-0">
+<div class="flex items-center gap-sm">
+<button class="md:hidden material-symbols-outlined text-on-surface-variant hover:bg-surface-variant/50 p-base rounded-full transition-all">menu</button>
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-primary transition-colors group">
+<span class="material-symbols-outlined">arrow_back</span>
+<span class="font-label-caps text-label-caps uppercase tracking-widest">Back to Assembly Hub</span>
+</button>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden lg:flex items-center bg-surface-container px-sm py-xs border border-outline-variant rounded-full w-96">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder-on-surface-variant/50" placeholder="Search the Kollective..." type="text"/>
+</div>
+<div class="flex items-center gap-sm">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-variant/50 p-base rounded-full transition-all">light_mode</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-variant/50 p-base rounded-full transition-all relative">
+                            notifications
+                            <span class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
+</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-variant/50 p-base rounded-full transition-all">settings</button>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="flex-1 p-gutter lg:p-xl max-w-7xl mx-auto w-full space-y-lg">
+<!-- Header Section -->
+<div class="flex flex-col items-center text-center space-y-md">
+<div class="w-16 h-16 rounded-full border border-primary/40 flex items-center justify-center bg-primary/5 active-tab-glow">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<div>
+<h1 class="font-display-lg text-display-lg text-on-surface mb-xs tracking-tight">Consensus Ballot Endorsements</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl mx-auto">
+                            Vetted independent choices who won community debates. Our decentralized voting engine confirms these candidates through multi-round deliberation.
+                        </p>
+</div>
+</div>
+<!-- Navigation Tabs (Interactive) -->
+<div class="grid grid-cols-1 gap-gutter">
+<!-- Primary Level Tabs -->
+<div class="flex justify-center">
+<div class="inline-flex p-1 bg-surface-container-low border border-outline-variant rounded-xl w-full max-w-md" id="primary-tabs">
+<button class="flex-1 py-xs rounded-lg font-label-caps text-label-caps transition-all bg-primary text-on-primary shadow-sm shadow-primary/20" data-tab-id="higher">HIGHER BALLOTS</button>
+<button class="flex-1 py-xs rounded-lg font-label-caps text-label-caps transition-all text-on-surface-variant hover:text-on-surface" data-tab-id="local">LOCAL BALLOTS</button>
+</div>
+</div>
+<!-- Sub Level Tabs Container -->
+<div class="flex justify-center">
+<!-- Higher Ballots Sub-tabs -->
+<div class="active inline-flex p-1 bg-surface-container border border-outline-variant rounded-full" data-tab-content="" id="higher-subtabs">
+<button class="px-md py-base rounded-full font-label-caps text-[10px] text-primary border border-primary/20 bg-primary/10 transition-all subtab-btn">FEDERAL</button>
+<button class="px-md py-base rounded-full font-label-caps text-[10px] text-on-surface-variant hover:text-on-surface transition-all subtab-btn">UPPER</button>
+<button class="px-md py-base rounded-full font-label-caps text-[10px] text-on-surface-variant hover:text-on-surface transition-all subtab-btn">LOWER</button>
+</div>
+<!-- Local Ballots Sub-tabs -->
+<div class="inline-flex p-1 bg-surface-container border border-outline-variant rounded-full" data-tab-content="" id="local-subtabs">
+<button class="px-md py-base rounded-full font-label-caps text-[10px] text-primary border border-primary/20 bg-primary/10 transition-all subtab-btn">MUNICIPAL</button>
+<button class="px-md py-base rounded-full font-label-caps text-[10px] text-on-surface-variant hover:text-on-surface transition-all subtab-btn">COUNTY</button>
+<button class="px-md py-base rounded-full font-label-caps text-[10px] text-on-surface-variant hover:text-on-surface transition-all subtab-btn">INFRASTRUCTURE</button>
+<button class="px-md py-base rounded-full font-label-caps text-[10px] text-on-surface-variant hover:text-on-surface transition-all subtab-btn">EDUCATION</button>
+</div>
+</div>
+</div>
+<!-- Empty State Canvas -->
+<div class="relative group">
+<div class="absolute inset-0 bg-primary/5 blur-3xl rounded-full opacity-30 pointer-events-none group-hover:opacity-50 transition-opacity duration-700"></div>
+<div class="relative glass-panel border border-outline-variant rounded-xl min-h-[400px] flex flex-col items-center justify-center p-xl text-center space-y-md border-dashed border-2">
+<div class="w-20 h-20 rounded-full bg-surface-container-highest/30 flex items-center justify-center mb-xs animate-pulse">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant/40" style="font-variation-settings: 'FILL' 0;">gavel</span>
+</div>
+<div class="space-y-xs max-w-lg">
+<h3 class="font-headline-md text-headline-md text-on-surface" id="empty-state-title">No consensus nominee confirmed for TX-10 yet.</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                                Debate town halls are currently coordinating. The candidate who wins the final local voter vote will automatically fill this spot through our cryptographically verified consensus protocol.
+                            </p>
+</div>
+<div class="flex gap-md pt-md">
+<button class="px-sm py-xs border border-outline-variant text-on-surface-variant font-label-caps text-label-caps rounded-lg hover:border-primary/50 hover:text-primary transition-all">
+                                VIEW DEBATE SCHEDULE
+                            </button>
+<button class="px-sm py-xs text-primary font-label-caps text-label-caps rounded-lg hover:bg-primary/10 transition-all">
+                                VOLUNTEER AS VETTER
+                            </button>
+</div>
+</div>
+</div>
+<!-- Footer / Statistics Bar -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-gutter pt-lg">
+<div class="p-md bg-surface-container-low border border-outline-variant rounded-xl flex flex-col gap-xs">
+<span class="font-label-caps text-[10px] text-on-surface-variant">CURRENT PHASE</span>
+<span class="font-headline-md text-headline-md text-on-surface">Deliberation</span>
+</div>
+<div class="p-md bg-surface-container-low border border-outline-variant rounded-xl flex flex-col gap-xs">
+<span class="font-label-caps text-[10px] text-on-surface-variant">VERIFIED VOTERS</span>
+<span class="font-headline-md text-headline-md text-on-surface">12,482</span>
+</div>
+<div class="p-md bg-surface-container-low border border-outline-variant rounded-xl flex flex-col gap-xs">
+<span class="font-label-caps text-[10px] text-on-surface-variant">DEBATE ROUNDS</span>
+<span class="font-headline-md text-headline-md text-on-surface">3 of 5</span>
+</div>
+<div class="p-md bg-surface-container-low border border-outline-variant rounded-xl flex flex-col gap-xs">
+<span class="font-label-caps text-[10px] text-on-surface-variant">SYSTEM STATUS</span>
+<div class="flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+<span class="font-headline-md text-headline-md text-on-surface">Secure</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Mobile Bottom Bar (Shared Component) -->
+<footer class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center py-xs px-base bg-surface-container border-t border-outline-variant shadow-lg rounded-t-xl">
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary-fixed-dim transition-transform active:scale-90">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary-fixed-dim transition-transform active:scale-90">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-sm text-label-sm">Communities</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary-fixed-dim transition-transform active:scale-90">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-sm text-label-sm">Events</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary font-bold transition-transform active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">how_to_vote</span>
+<span class="font-label-sm text-label-sm">Assembly</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary-fixed-dim transition-transform active:scale-90">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</button>
+</footer>
+</main>
+</div>
+<script>
+        // Primary Tabs Logic
+        const primaryTabs = document.querySelectorAll('#primary-tabs button');
+        const higherContent = document.getElementById('higher-subtabs');
+        const localContent = document.getElementById('local-subtabs');
+        const emptyStateTitle = document.getElementById('empty-state-title');
+
+        primaryTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Update Primary Tab Styling
+                primaryTabs.forEach(t => {
+                    t.classList.remove('bg-primary', 'text-on-primary', 'shadow-sm', 'shadow-primary/20');
+                    t.classList.add('text-on-surface-variant');
+                });
+                tab.classList.add('bg-primary', 'text-on-primary', 'shadow-sm', 'shadow-primary/20');
+                tab.classList.remove('text-on-surface-variant');
+
+                // Toggle Visibility
+                const tabId = tab.getAttribute('data-tab-id');
+                if (tabId === 'higher') {
+                    higherContent.classList.add('active');
+                    localContent.classList.remove('active');
+                    emptyStateTitle.textContent = "No consensus nominee confirmed for federal ballots yet.";
+                } else {
+                    localContent.classList.add('active');
+                    higherContent.classList.remove('active');
+                    emptyStateTitle.textContent = "No consensus nominee confirmed for local municipal districts yet.";
+                }
+            });
+        });
+
+        // Sub-tabs Toggle Logic
+        const subtabs = document.querySelectorAll('.subtab-btn');
+        subtabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const parent = tab.parentElement;
+                parent.querySelectorAll('.subtab-btn').forEach(btn => {
+                    btn.classList.remove('text-primary', 'border', 'border-primary/20', 'bg-primary/10');
+                    btn.classList.add('text-on-surface-variant');
+                });
+                
+                tab.classList.add('text-primary', 'border', 'border-primary/20', 'bg-primary/10');
+                tab.classList.remove('text-on-surface-variant');
+            });
+        });
+
+        // Subtle Glow Follow
+        document.addEventListener('mousemove', (e) => {
+            const glow = document.querySelector('.absolute.inset-0.bg-primary\\/5');
+            if (glow) {
+                const rect = glow.parentElement.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                glow.style.transform = `translate(${x/30}px, ${y/30}px)`;
+            }
+        });
+    </script>
+</body></html>

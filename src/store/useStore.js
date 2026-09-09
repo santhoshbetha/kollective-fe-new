@@ -28,11 +28,8 @@ export const useStore = create(
     homeFeedTab: 'All Activity',
     communitiesTab: 'Local',
 
-
-
     // Volatile Modal & Scroll States
     activeSearchQuery: '',
-
 
     toggleTheme: () => set((state) => {
       const nextTheme = state.theme === 'dark' ? 'light' : 'dark';

@@ -13,8 +13,8 @@ export const AccountGalleryPage = () => {
     const [lightboxIndex, setLightboxIndex] = useState(0);
 
     // Extract all individual image links sequentially out of the timeline status nodes block array maps
-    const mediaStatuses = data?.pages.flatMap((page) => page.statuses || page || []) || [];
-    const allImages = mediaStatuses.flatMap((status) => status.images || (status.image ? [status.image] : []));
+    const mediaPosts = data?.pages.flatMap((page) => page.posts || page || []) || [];
+    const allImages = mediaPosts.flatMap((post) => post.images || (post.image ? [post.image] : []));
 
     if (status === 'pending') {
         return (

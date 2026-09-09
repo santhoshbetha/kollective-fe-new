@@ -23,7 +23,6 @@ export function CreatePostForm({
 
     const [images, setImages] = useState([]);
     const [imageAlts, setImageAlts] = useState([]);
-    const [tempImageUrl, setTempImageUrl] = useState('');
     const [linkUrl, setLinkUrl] = useState('');
 
     const [cwText, setCwText] = useState('');
@@ -230,7 +229,13 @@ export function CreatePostForm({
                         onChange={(e) => setContent(e.target.value)}
                         className="w-full bg-[#111111] border border-white/10 rounded-xl p-4 text-sm text-text-primary focus:outline-none resize-none leading-relaxed"
                     />
-                    {showEmojiDropdown && <EmojiSelector onSelect={(emoji) => setContent(prev => prev + emoji)} onClose={() => setShowEmojiDropdown(false)} className="bottom-16 left-2" />}
+                    {showEmojiDropdown &&
+                        <EmojiSelector
+                            onSelect={(emoji) => setContent(prev => prev + emoji)}
+                            onClose={() => setShowEmojiDropdown(false)}
+                            className="bottom-16 left-2"
+                        />
+                    }
                 </div>
                 {postTab === 'image' && images.length > 0 && <div className="pt-1">{renderImageGrid()}</div>}
 
@@ -279,7 +284,13 @@ export function CreatePostForm({
                 </div>
                 <div className="flex items-center gap-4">
                     <span className={`text-xs font-mono ${charsLeft < 0 ? 'text-rose-500 font-bold' : 'text-text-secondary/40'}`}>{charsLeft}</span>
-                    <button type="submit" disabled={isSubmitDisabled || mutation.isPending} className="px-5 py-2 bg-primary-container text-white font-bold text-xs rounded-xl hover:brightness-110 cursor-pointer border-none uppercase disabled:opacity-40">{mutation.isPending ? 'Broadcasting...' : 'Broadcast'}</button>
+                    <button
+                        type="submit"
+                        disabled={isSubmitDisabled || mutation.isPending}
+                        className="px-5 py-2 bg-primary-container text-white font-bold text-xs rounded-xl hover:brightness-110 cursor-pointer border-none uppercase disabled:opacity-40"
+                    >
+                        {mutation.isPending ? 'Broadcasting...' : 'Broadcast'}
+                    </button>
                 </div>
             </div>
 

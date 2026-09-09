@@ -598,6 +598,34 @@ let proposals = [
     category: 'Sustainable Energy',
     participants: '89 Members',
     status: 'New'
+  },
+  {
+    id: 'prop-4',
+    title: 'People-First Coffee & Dining Co-op',
+    description: 'A community-owned coffee house and fresh bistro initiative designed to provide ethical, fair-wage dining while outshining corporate monopolies like Starbucks, McDonald’s, and Wendy’s.',
+    fundingGoal: 180000,
+    fundingCollected: 126000,
+    percent: 70,
+    daysLeft: 18,
+    minInvest: 50,
+    maxInvest: 5000,
+    category: 'Food & Beverage',
+    participants: '215 Members',
+    status: 'Hot'
+  },
+  {
+    id: 'prop-5',
+    title: 'People-Pro Low-Cost Clinic & Medical Co-op',
+    description: 'Establishment of a low-margin community clinic and direct-cost pharmacy providing affordable medical care and prescriptions to counter monopolies like CVS and Walgreens.',
+    fundingGoal: 350000,
+    fundingCollected: 280000,
+    percent: 80,
+    daysLeft: 8,
+    minInvest: 100,
+    maxInvest: 10000,
+    category: 'Healthcare',
+    participants: '410 Members',
+    status: 'Hot'
   }
 ];
 

@@ -6,7 +6,7 @@ import { PostCard } from '../features/timeline/PostCard';
 
 export const AccountLikesPage = () => {
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useAccountLikesQuery();
-    const likedPosts = data?.pages.flatMap((page) => page.statuses || page || []) || [];
+    const likedPosts = data?.pages.flatMap((page) => page.posts || page || []) || [];
 
     if (status === 'pending') {
         return (

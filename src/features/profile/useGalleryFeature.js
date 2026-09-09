@@ -9,7 +9,7 @@ export function useAccountGalleryQuery(username) {
         queryFn: async ({ pageParam = null }) => {
             const maxIdParam = pageParam ? `&max_id=${pageParam}` : '';
             // Fetches account posts filtered explicitly down to attachments content parameters
-            return apiFetch(`/api/v1/accounts/${username}/statuses?only_media=true${maxIdParam}`);
+            return apiFetch(`/api/v1/accounts/${username}/posts?only_media=true${maxIdParam}`);
         },
         getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
         initialPageParam: null,

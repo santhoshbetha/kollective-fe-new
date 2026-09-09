@@ -45,34 +45,32 @@ export const AssemblyHallPage = () => {
     return (
         <div className="max-w-5xl mx-auto flex flex-col gap-6 pb-20 w-full font-sans animate-in fade-in duration-200">
 
-            {/* 🧭 Header */}
-            <div className="border-b border-outline-variant/40 pb-5 select-none space-y-2">
+            {/* 🧭 Header & Back Navigation */}
+            <div>
                 <button
                     type="button"
                     onClick={() => navigate('/campaigns/local')}
-                    className="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors font-bold text-xs uppercase tracking-wider border-none bg-transparent cursor-pointer mb-2 group"
+                    className="group flex items-center gap-2 mb-4 text-on-surface-variant hover:text-primary transition-colors font-mono text-[10px] uppercase tracking-widest border-none bg-transparent cursor-pointer"
                 >
-                    <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                    <span>Back to Assembly Hub</span>
+                    <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                    <span>BACK TO ASSEMBLY HUB</span>
                 </button>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-text-primary tracking-tight">
-                    Assembly Hall: Debates
-                </h1>
-                <p className="text-xs sm:text-sm font-medium text-text-secondary">
-                    Claim logistics tasks and volunteer shifts for neighborhood debates.
-                </p>
+                <div className="mb-6">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-on-surface mb-1">Assembly Hall: Debates</h1>
+                    <p className="text-sm text-on-surface-variant">Claim logistics tasks and volunteer shifts for neighborhood debates.</p>
+                </div>
             </div>
 
             {/* 🏁 STEP 1: MACRO SCOPE SWITCHBOARD BAR */}
-            <div className="flex bg-surface-container-low border border-outline-variant p-1.5 rounded-card select-none shadow-inner w-full gap-1">
+            <div className="flex p-1 bg-surface-container rounded-xl mb-6 w-full max-w-2xl border border-outline-variant">
                 <button
                     type="button"
                     onClick={() => handleScopeChange('higher')}
                     className={cn(
-                        "flex-1 py-3 rounded-card text-xs sm:text-sm font-bold transition-all border cursor-pointer",
+                        "flex-1 py-3 px-6 rounded-lg font-bold transition-all duration-200 cursor-pointer border-none",
                         macroScope === 'higher'
-                            ? "bg-surface-container-high border-outline-variant/80 text-text-primary font-black shadow-xs"
-                            : "text-text-secondary border-transparent hover:text-text-primary bg-transparent"
+                            ? "bg-surface-container-highest text-primary active-glow"
+                            : "text-on-surface-variant hover:bg-surface-variant/30 bg-transparent"
                     )}
                 >
                     Higher Offices (Federal & State)
@@ -81,65 +79,44 @@ export const AssemblyHallPage = () => {
                     type="button"
                     onClick={() => handleScopeChange('local')}
                     className={cn(
-                        "flex-1 py-3 rounded-card text-xs sm:text-sm font-bold transition-all border cursor-pointer",
+                        "flex-1 py-3 px-6 rounded-lg font-bold transition-all duration-200 cursor-pointer border-none",
                         macroScope === 'local'
-                            ? "bg-surface-container-high border-outline-variant/80 text-text-primary font-black shadow-xs"
-                            : "text-text-secondary border-transparent hover:text-text-primary bg-transparent"
+                            ? "bg-surface-container-highest text-primary active-glow"
+                            : "text-on-surface-variant hover:bg-surface-variant/30 bg-transparent"
                     )}
                 >
                     Local Offices (Municipal & County)
                 </button>
             </div>
 
-            {/* 💊 STEP 2: DYNAMIC INNER PILLS (Rendered contextually based on Macro Scope) */}
-            <div className="flex gap-2.5 flex-wrap select-none">
-                {macroScope === 'higher' ? (
-                    <>
+            {/* 💊 STEP 2: SUB-TABS FILTER ROW */}
+            {macroScope === 'higher' ? (
+                <div className="flex flex-wrap gap-4 mb-6 items-center border-b border-outline-variant pb-4 select-none">
+                    {['congress', 'state_senate', 'state_rep'].map((tierKey) => (
                         <button
+                            key={tierKey}
                             type="button"
-                            onClick={() => setSubLevel('congress')}
+                            onClick={() => setSubLevel(tierKey)}
                             className={cn(
-                                "px-4 py-2 rounded-card text-xs sm:text-sm font-bold border transition-all cursor-pointer",
-                                subLevel === 'congress'
-                                    ? "bg-primary/10 border-primary/30 text-primary shadow-xs"
-                                    : "bg-surface-container border-outline-variant text-text-secondary hover:text-text-primary hover:border-outline"
+                                "px-6 py-2 rounded-full font-bold transition-all cursor-pointer text-xs",
+                                subLevel === tierKey
+                                    ? "border-2 border-primary-container bg-primary-container/10 text-primary font-bold shadow-sm"
+                                    : "border border-outline-variant text-on-surface-variant hover:bg-surface-variant/30 bg-transparent"
                             )}
                         >
-                            Federal Congress
+                            {tierKey === 'congress' ? 'Federal Congress' : tierKey === 'state_senate' ? 'State Senate' : 'State Assembly'}
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setSubLevel('state_senate')}
-                            className={cn(
-                                "px-4 py-2 rounded-card text-xs sm:text-sm font-bold border transition-all cursor-pointer",
-                                subLevel === 'state_senate'
-                                    ? "bg-primary/10 border-primary/30 text-primary shadow-xs"
-                                    : "bg-surface-container border-outline-variant text-text-secondary hover:text-text-primary hover:border-outline"
-                            )}
-                        >
-                            State Senate
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setSubLevel('state_rep')}
-                            className={cn(
-                                "px-4 py-2 rounded-card text-xs sm:text-sm font-bold border transition-all cursor-pointer",
-                                subLevel === 'state_rep'
-                                    ? "bg-primary/10 border-primary/30 text-primary shadow-xs"
-                                    : "bg-surface-container border-outline-variant text-text-secondary hover:text-text-primary hover:border-outline"
-                            )}
-                        >
-                            State Assembly
-                        </button>
-                    </>
-                ) : (
-                    <div className="text-xs font-mono font-bold uppercase text-primary bg-primary/10 border border-primary/20 px-4 py-2.5 rounded-card w-full text-center shadow-xs">
+                    ))}
+                </div>
+            ) : (
+                <div className="flex flex-wrap gap-4 mb-6 items-center border-b border-outline-variant pb-4">
+                    <div className="text-xs font-mono font-bold uppercase text-primary bg-primary/10 border border-primary/20 px-4 py-2.5 rounded-full w-full text-center shadow-xs">
                         📍 Mapping Ballot System to: {currentUser?.city_name || 'Municipal'} District Node
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
-            {/* 🥞 CORE EVENTS GRID STACK CANVAS AREA */}
+            {/* 🥞 CORE CONTENT CANVAS */}
             {isPending ? (
                 <div className="py-24 text-center flex flex-col items-center justify-center gap-3 bg-surface-container/20 border border-outline-variant/40 rounded-card">
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -148,21 +125,38 @@ export const AssemblyHallPage = () => {
                     </span>
                 </div>
             ) : isError || !events || events.length === 0 ? (
-                <div className="p-16 text-center border border-dashed border-outline-variant bg-surface-container/40 rounded-card flex flex-col items-center justify-center space-y-2">
-                    <CalendarX className="w-10 h-10 text-text-secondary/30 mb-1" />
-                    <p className="text-base font-bold text-text-primary">
-                        No debate town halls scheduled for {activeDistrictCode} yet.
-                    </p>
-                    <p className="text-xs sm:text-sm text-text-secondary max-w-sm mx-auto leading-relaxed">
-                        When local candidates pass the voting thresholds, the town hall logistics engine initializes automatically.
-                    </p>
+                <div className="glass-panel rounded-3xl p-12 flex flex-col items-center justify-center min-h-[400px] text-center border border-outline-variant bg-surface-container/60 relative overflow-hidden shadow-2xl">
+                    {/* Atmospheric Background Detail */}
+                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary-container/5 blur-[100px] rounded-full"></div>
+                    <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary-container/10 blur-[100px] rounded-full"></div>
+                    <div className="relative z-10 flex flex-col items-center max-w-md">
+                        {/* Icon with glow */}
+                        <div className="w-20 h-20 rounded-full bg-surface-container-highest flex items-center justify-center mb-8 border border-outline-variant relative">
+                            <div className="absolute inset-0 bg-primary-container/20 blur-xl rounded-full"></div>
+                            <span className="material-symbols-outlined text-4xl text-primary-container relative z-10">calendar_clock</span>
+                        </div>
+                        <h3 className="text-xl sm:text-2xl font-bold text-on-surface mb-4">No debate town halls scheduled for {activeDistrictCode} yet.</h3>
+                        <p className="text-sm text-on-surface-variant leading-relaxed mb-6">
+                            When local candidates pass the mandatory voting thresholds and consensus requirements, the Kollective town hall logistics engine initializes automatically to scout venues and assign moderators.
+                        </p>
+                        <button
+                            type="button"
+                            className="flex items-center justify-center gap-3 px-8 py-4 bg-transparent border border-primary-container text-primary-container font-bold rounded-xl hover:bg-primary-container/10 transition-all cursor-pointer group"
+                            onClick={() => alert("Subscribed to alerts for " + activeDistrictCode)}
+                        >
+                            <span>Subscribe to Alerts</span>
+                            <span className="material-symbols-outlined group-hover:rotate-12 transition-transform">notifications_active</span>
+                        </button>
+                    </div>
+                    {/* Subtle Grid Overlay */}
+                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(#ff4e7c 1px, transparent 1px)", backgroundSize: "24px 24px" }}></div>
                 </div>
             ) : (
                 <div className="space-y-8 flex flex-col w-full">
                     {events.map((event) => (
                         <div
                             key={event.id}
-                            className="bg-surface-container border border-outline-variant/80 rounded-card p-6 sm:p-8 shadow-2xl space-y-6 animate-in fade-in duration-300"
+                            className="bg-surface-container border border-outline-variant rounded-card p-6 sm:p-8 shadow-2xl space-y-6 animate-in fade-in duration-300"
                         >
 
                             {/* Event Metadata Banner Layout Header Row */}
@@ -199,7 +193,7 @@ export const AssemblyHallPage = () => {
                                     </h3>
                                 </div>
 
-                                <div className="flex flex-col border border-outline-variant/80 bg-surface-container-low rounded-card overflow-hidden divide-y divide-outline-variant/40">
+                                <div className="flex flex-col border border-outline-variant bg-surface-container-low rounded-card overflow-hidden divide-y divide-outline-variant/40">
                                     {event.shifts?.map((shift) => {
                                         const isUserVolunteered = shift.volunteers?.some(v => v.id === currentUser?.id);
                                         const isFull = (shift.volunteers?.length || 0) >= shift.max_volunteers;
@@ -280,6 +274,25 @@ export const AssemblyHallPage = () => {
                     ))}
                 </div>
             )}
+
+            {/* Information Cards (Bento style) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                <div className="glass-panel p-5 bg-surface-container/60 border border-outline-variant rounded-2xl flex flex-col gap-4">
+                    <span className="material-symbols-outlined text-primary">verified</span>
+                    <h4 className="font-bold text-lg text-on-surface">Eligibility</h4>
+                    <p className="text-xs text-on-surface-variant leading-relaxed">Candidates must hold a minimum 15% sentiment rating within the district to trigger a mandatory Assembly debate session.</p>
+                </div>
+                <div className="glass-panel p-5 bg-surface-container/60 border border-outline-variant rounded-2xl flex flex-col gap-4">
+                    <span className="material-symbols-outlined text-primary">volunteer_activism</span>
+                    <h4 className="font-bold text-lg text-on-surface">Logistics</h4>
+                    <p className="text-xs text-on-surface-variant leading-relaxed">Logistics managers receive Action Credits for venue sourcing, safety coordination, and digital stream management.</p>
+                </div>
+                <div className="glass-panel p-5 bg-surface-container/60 border border-outline-variant rounded-2xl flex flex-col gap-4">
+                    <span className="material-symbols-outlined text-primary">gavel</span>
+                    <h4 className="font-bold text-lg text-on-surface">Ruleset</h4>
+                    <p className="text-xs text-on-surface-variant leading-relaxed">All debates follow the Civic Commons Protocol (CCP), ensuring neutral moderation and verified fact-checking in real-time.</p>
+                </div>
+            </div>
         </div>
     );
 };

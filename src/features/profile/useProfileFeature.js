@@ -21,8 +21,8 @@ export function useProfilePostsQuery(username) {
         queryKey: ['profile', username, 'posts'],
         queryFn: async ({ pageParam = null }) => {
             const url = pageParam
-                ? `/api/v1/accounts/${username}/statuses?max_id=${pageParam}`
-                : `/api/v1/accounts/${username}/statuses`;
+                ? `/api/v1/accounts/${username}/posts?max_id=${pageParam}`
+                : `/api/v1/accounts/${username}/posts`;
             return apiFetch(url);
         },
         getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
@@ -88,7 +88,7 @@ export function useProfileTimelineQuery(username, currentMode) {
             // Enforce the Fediverse pattern: with_replies toggles the exclude_replies backend flag!
             const excludeRepliesFlag = currentMode === 'root_only' ? '&exclude_replies=true' : '';
 
-            return apiFetch(`/api/v1/accounts/${username}/statuses?limit=20${excludeRepliesFlag}${maxIdParam}`);
+            return apiFetch(`/api/v1/accounts/${username}/posts?limit=20${excludeRepliesFlag}${maxIdParam}`);
         },
         getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
         initialPageParam: null,

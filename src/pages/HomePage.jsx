@@ -26,8 +26,8 @@ export const HomePage = () => {
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`px-6 py-2 rounded-full font-bold text-label-md transition-all duration-200 whitespace-nowrap border ${isActive
-                                        ? 'bg-primary-container text-white border-primary-container crimson-glow'
-                                        : 'bg-surface-container-high text-text-secondary hover:text-text-primary border-white/5 hover:border-white/10'
+                                    ? 'bg-primary-container text-white border-primary-container crimson-glow'
+                                    : 'bg-surface-container-high text-text-secondary hover:text-text-primary border-white/5 hover:border-white/10'
                                     }`}
                             >
                                 {tab}
@@ -38,7 +38,7 @@ export const HomePage = () => {
 
                 {/* ⚡ VIRTUALIZED TIMELINE FEED CONTAINER INJECTION */}
                 {/* All pagination loaders, mock queries, unread banner flushes, 
-            and skeleton parameters are encapsulated cleanly right here! */}
+                and skeleton parameters are encapsulated cleanly right here! */}
                 <TimelineFeed />
 
             </div>

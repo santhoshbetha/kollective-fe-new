@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Civic Assembly Dashboard | Kollective</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#8f909e",
+                        "surface": "#11131a",
+                        "on-background": "#e2e2ec",
+                        "on-tertiary": "#2e303c",
+                        "on-surface-variant": "#e4bdc2",
+                        "surface-container-lowest": "#0c0e15",
+                        "outline": "#ab888c",
+                        "surface-container-low": "#191b23",
+                        "error-container": "#93000a",
+                        "on-error": "#690005",
+                        "secondary-container": "#434764",
+                        "surface-dim": "#11131a",
+                        "on-surface": "#e2e2ec",
+                        "on-secondary": "#2a2f4a",
+                        "on-primary-fixed": "#400014",
+                        "inverse-on-surface": "#2e3038",
+                        "primary-fixed-dim": "#ffb2be",
+                        "on-tertiary-fixed": "#191b26",
+                        "inverse-primary": "#bc004b",
+                        "error": "#ffb4ab",
+                        "tertiary": "#c5c5d5",
+                        "on-secondary-fixed-variant": "#404561",
+                        "on-secondary-fixed": "#151a33",
+                        "inverse-surface": "#e2e2ec",
+                        "background": "#11131a",
+                        "surface-container-highest": "#33343c",
+                        "on-secondary-container": "#b2b6d8",
+                        "surface-container-high": "#282a31",
+                        "surface-container": "#1d1f27",
+                        "surface-tint": "#ffb2be",
+                        "surface-bright": "#373941",
+                        "on-primary": "#660025",
+                        "outline-variant": "#5b3f43",
+                        "primary-container": "#ff4e7c",
+                        "surface-variant": "#33343c",
+                        "primary-fixed": "#ffd9de",
+                        "on-primary-container": "#5a0020",
+                        "primary": "#ffb2be",
+                        "tertiary-fixed": "#e1e1f1",
+                        "secondary": "#c0c4e7",
+                        "on-primary-fixed-variant": "#900038",
+                        "secondary-fixed-dim": "#c0c4e7",
+                        "tertiary-fixed-dim": "#c5c5d5",
+                        "secondary-fixed": "#dee1ff",
+                        "on-tertiary-fixed-variant": "#444653",
+                        "on-tertiary-container": "#272935"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "md": "24px",
+                        "lg": "40px",
+                        "gutter": "24px",
+                        "xs": "8px",
+                        "sm": "16px",
+                        "xl": "64px",
+                        "margin-edge": "32px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["JetBrains Mono"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-pill {
+            box-shadow: 0 0 12px 2px rgba(255, 178, 190, 0.2);
+        }
+        .glass-panel {
+            background: rgba(16, 18, 29, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid #1E293B;
+        }
+        .dashed-border {
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%231E293B' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+        }
+        body {
+            background-color: #0B0D14;
+            color: #e2e2ec;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+<!-- NavigationDrawer (Shared Component) -->
+<aside class="hidden md:flex flex-col h-full w-72 bg-surface-container-low border-r border-outline-variant shadow-xl shrink-0">
+<div class="px-margin-edge py-lg">
+<h1 class="font-headline-lg text-headline-lg text-primary font-black tracking-tight">Kollective</h1>
+</div>
+<nav class="flex-1 overflow-y-auto py-xs">
+<!-- Home -->
+<a class="text-on-surface-variant px-margin-edge py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body-md text-body-md">Home</span>
+</a>
+<!-- Communities -->
+<a class="text-on-surface-variant px-margin-edge py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-body-md text-body-md">Communities</span>
+</a>
+<!-- Events -->
+<a class="text-on-surface-variant px-margin-edge py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest" href="#">
+<span class="material-symbols-outlined">event</span>
+<span class="font-body-md text-body-md">Events</span>
+</a>
+<!-- Polls -->
+<a class="text-on-surface-variant px-margin-edge py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest" href="#">
+<span class="material-symbols-outlined">ballot</span>
+<span class="font-body-md text-body-md">Polls</span>
+</a>
+<!-- Explore -->
+<a class="text-on-surface-variant px-margin-edge py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-body-md text-body-md">Explore</span>
+</a>
+<!-- Bookmarks -->
+<a class="text-on-surface-variant px-margin-edge py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest" href="#">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="font-body-md text-body-md">Bookmarks</span>
+</a>
+<!-- Organize -->
+<a class="text-on-surface-variant px-margin-edge py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-body-md text-body-md">Organize</span>
+</a>
+<!-- Local Businesses -->
+<a class="text-on-surface-variant px-margin-edge py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span class="font-body-md text-body-md">Local Businesses</span>
+</a>
+<!-- Notifications -->
+<a class="text-on-surface-variant px-margin-edge py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest" href="#">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-body-md text-body-md">Notifications</span>
+</a>
+<!-- Civic Assembly (ACTIVE) -->
+<a class="bg-surface-variant border-l-4 border-primary text-primary font-bold px-margin-edge py-3 flex items-center gap-4 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">how_to_vote</span>
+<span class="font-body-md text-body-md">Civic Assembly</span>
+</a>
+<!-- Settings -->
+<a class="text-on-surface-variant px-margin-edge py-3 flex items-center gap-4 transition-colors duration-150 hover:bg-surface-container-highest" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</nav>
+<div class="p-margin-edge mt-auto">
+<button class="w-full bg-primary-container text-on-primary-container font-headline-md text-headline-md px-md py-sm rounded-lg flex items-center justify-center gap-3 transition-all duration-200 active:scale-95">
+<span class="material-symbols-outlined">add_circle</span>
+<span>Voice In</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-surface overflow-hidden relative">
+<!-- Background Ambient Glow -->
+<div class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+<!-- TopAppBar (Shared Component) -->
+<header class="flex justify-between items-center w-full px-margin-edge h-16 bg-surface border-b border-outline-variant shrink-0 z-10">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer md:hidden">menu</span>
+<div class="flex items-center border border-outline-variant bg-surface-container-low px-sm py-xs rounded-lg min-w-[400px]">
+<span class="material-symbols-outlined text-on-surface-variant mr-xs">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-on-surface font-body-md w-full placeholder:text-on-tertiary-container" placeholder="Search the Kollective..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="p-xs hover:bg-surface-variant/50 rounded-full transition-all text-on-surface-variant">
+<span class="material-symbols-outlined">light_mode</span>
+</button>
+<button class="p-xs hover:bg-surface-variant/50 rounded-full transition-all text-on-surface-variant relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-primary-container rounded-full border border-surface"></span>
+</button>
+<button class="p-xs hover:bg-surface-variant/50 rounded-full transition-all text-on-surface-variant">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="ml-sm h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a diverse woman with a sharp, modern haircut, wearing structured navy professional attire, looking confident and approachable against a clean, architectural backdrop. The lighting is crisp and cool, maintaining the tech-forward professional aesthetic of the civic platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3QkLH1v7it0GpKIUCzRspf-5-fFqM0i4VzU9osukU5Vha45FBMyOYoHx4pRym9Nb8b2e7Zrqagu9HoWAUNlfL_vpZZixEX8UstB6p2a88_-Tu5RsXNRbjSoU2UeVyspCaBN_9UaxVKmkqcQ08eFedJD1ecVH7rJjZhQKQ8zxrzzAkbe8jBXC6_Qzs3y8D2cLKTeil9MFN7Y7I7wq5-tHJsKbVJKwZQ17m7kTMVXua5Nl5L-3JB8fxxaFNho7SWRzF1sy2Ude0DJU"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="flex-1 overflow-y-auto p-margin-edge space-y-lg custom-scrollbar">
+<!-- Precinct Node Header -->
+<section class="glass-panel p-md rounded-xl flex items-center justify-between border-primary/20">
+<div class="flex items-center gap-md">
+<div class="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/30">
+<span class="material-symbols-outlined text-primary text-4xl">account_balance</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Your Local Precinct Node: Austin, TX</h2>
+<span class="bg-primary/20 text-primary-fixed-dim text-[10px] px-2 py-0.5 rounded-full font-label-caps border border-primary/30">LIVE</span>
+</div>
+<p class="text-on-surface-variant font-body-md">Explore available ballots or monitor your grassroots validation parameters for the Travis County jurisdiction.</p>
+</div>
+</div>
+<div class="flex gap-sm">
+<button class="flex items-center gap-2 px-md py-xs border border-outline-variant hover:bg-surface-variant/50 rounded-lg text-on-surface font-label-caps transition-all active:scale-95">
+<span class="material-symbols-outlined text-sm">forum</span>
+                        Debates Hall
+                    </button>
+<button class="flex items-center gap-2 px-md py-xs border border-outline-variant hover:bg-surface-variant/50 rounded-lg text-on-surface font-label-caps transition-all active:scale-95">
+<span class="material-symbols-outlined text-sm">grade</span>
+                        Consensus Slate
+                    </button>
+<button class="flex items-center gap-2 px-md py-xs bg-primary-container/10 border border-primary-container text-primary font-label-caps hover:bg-primary-container/20 rounded-lg transition-all active:scale-95">
+<span class="material-symbols-outlined text-sm">person_add</span>
+                        RUN FOR OFFICE
+                    </button>
+</div>
+</section>
+<!-- Toggle Switcher -->
+<div class="grid grid-cols-2 gap-base bg-surface-container-low p-base rounded-xl border border-outline-variant max-w-4xl mx-auto">
+<button class="py-sm rounded-lg font-label-caps transition-all text-on-surface-variant hover:bg-surface-variant/30">
+                    Higher Chambers (Federal &amp; State Representatives)
+                </button>
+<button class="py-sm rounded-lg font-label-caps text-on-surface-variant hover:bg-surface-variant/30 transition-all active-pill bg-primary-container/20 border border-primary/30 text-on-primary-container">
+                    Local Ballots (Municipal &amp; County Infrastructure)
+                </button>
+</div>
+<!-- Bento Workspace -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Left Sidebar: Available Tiers -->
+<div class="col-span-12 lg:col-span-4 space-y-md"><div class="flex items-center justify-between"><h3 class="font-label-caps text-on-tertiary-container uppercase tracking-widest">Available Office Tiers</h3><span class="text-on-tertiary-container font-label-sm">10 Active</span></div><div class="p-md rounded-xl border-2 border-primary bg-surface-container-high relative overflow-hidden group cursor-pointer transition-all hover:bg-surface-container-highest"><div class="absolute top-0 right-0 w-1 h-full bg-primary"></div><div class="flex justify-between items-start mb-xs"><span class="bg-error-container text-on-error-container text-[10px] font-label-caps px-2 py-0.5 rounded">EDUCATION</span><span class="text-on-tertiary-container font-label-caps text-[10px]">CODE: TX_COUNTY_NODE</span></div><h4 class="font-headline-md text-headline-md text-on-surface">School Board Member</h4></div><div class="p-md rounded-xl border border-outline-variant bg-surface-container-low transition-all hover:border-on-surface-variant/50 cursor-pointer"><div class="flex justify-between items-start mb-xs"><span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-label-caps px-2 py-0.5 rounded">CRIMINAL JUSTICE</span><span class="text-on-tertiary-container font-label-caps text-[10px]">CODE: TX_COUNTY_NODE</span></div><h4 class="font-headline-md text-headline-md text-on-surface">County Sheriff</h4></div><div class="p-md rounded-xl border border-outline-variant bg-surface-container-low transition-all hover:border-on-surface-variant/50 cursor-pointer"><div class="flex justify-between items-start mb-xs"><span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-label-caps px-2 py-0.5 rounded">CRIMINAL JUSTICE</span><span class="text-on-tertiary-container font-label-caps text-[10px]">CODE: TX_COUNTY_NODE</span></div><h4 class="font-headline-md text-headline-md text-on-surface">District Attorney / Prosecutor</h4></div><div class="p-md rounded-xl border border-outline-variant bg-surface-container-low transition-all hover:border-on-surface-variant/50 cursor-pointer"><div class="flex justify-between items-start mb-xs"><span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-label-caps px-2 py-0.5 rounded">CRIMINAL JUSTICE</span><span class="text-on-tertiary-container font-label-caps text-[10px]">CODE: TX_COUNTY_NODE</span></div><h4 class="font-headline-md text-headline-md text-on-surface">County Coroner</h4></div><div class="p-md rounded-xl border border-outline-variant bg-surface-container-low transition-all hover:border-on-surface-variant/50 cursor-pointer"><div class="flex justify-between items-start mb-xs"><span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-label-caps px-2 py-0.5 rounded">JUDICIARY</span><span class="text-on-tertiary-container font-label-caps text-[10px]">CODE: TX_COUNTY_NODE</span></div><h4 class="font-headline-md text-headline-md text-on-surface">Local Trial Court Judge</h4></div><div class="p-md rounded-xl border border-outline-variant bg-surface-container-low transition-all hover:border-on-surface-variant/50 cursor-pointer"><div class="flex justify-between items-start mb-xs"><span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-label-caps px-2 py-0.5 rounded">GOVERNANCE</span><span class="text-on-tertiary-container font-label-caps text-[10px]">CODE: AUSTIN_TX</span></div><h4 class="font-headline-md text-headline-md text-on-surface">City Council Member</h4></div><div class="p-md rounded-xl border border-outline-variant bg-surface-container-low transition-all hover:border-on-surface-variant/50 cursor-pointer"><div class="flex justify-between items-start mb-xs"><span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-label-caps px-2 py-0.5 rounded">GOVERNANCE</span><span class="text-on-tertiary-container font-label-caps text-[10px]">CODE: AUSTIN_TX</span></div><h4 class="font-headline-md text-headline-md text-on-surface">Mayor (Executive)</h4></div><div class="p-md rounded-xl border border-outline-variant bg-surface-container-low transition-all hover:border-on-surface-variant/50 cursor-pointer"><div class="flex justify-between items-start mb-xs"><span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-label-caps px-2 py-0.5 rounded">GOVERNANCE</span><span class="text-on-tertiary-container font-label-caps text-[10px]">CODE: TX_COUNTY_NODE</span></div><h4 class="font-headline-md text-headline-md text-on-surface">County Board Supervisor / Commissioner</h4></div><div class="p-md rounded-xl border border-outline-variant bg-surface-container-low transition-all hover:border-on-surface-variant/50 cursor-pointer"><div class="flex justify-between items-start mb-xs"><span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-label-caps px-2 py-0.5 rounded">INFRASTRUCTURE</span><span class="text-on-tertiary-container font-label-caps text-[10px]">CODE: AUSTIN_TX</span></div><h4 class="font-headline-md text-headline-md text-on-surface">Public Works / Water Commissioner</h4></div><div class="p-md rounded-xl border border-outline-variant bg-surface-container-low transition-all hover:border-on-surface-variant/50 cursor-pointer"><div class="flex justify-between items-start mb-xs"><span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-label-caps px-2 py-0.5 rounded">FINANCE</span><span class="text-on-tertiary-container font-label-caps text-[10px]">CODE: AUSTIN_TX</span></div><h4 class="font-headline-md text-headline-md text-on-surface">City Comptroller</h4></div></div>
+<!-- Main Section: Details & Empty State -->
+<div class="col-span-12 lg:col-span-8 space-y-md">
+<!-- Definition Card -->
+<div class="p-md rounded-xl bg-surface-container-low border border-outline-variant"><div class="space-y-sm"><h5 class="text-primary font-label-caps text-[10px] uppercase tracking-wider">Functional Power Definition: School Board Member</h5><p class="text-on-surface font-body-lg italic leading-relaxed">"Oversees school district policies, budgets, and curriculum frameworks."</p></div></div>
+<!-- Candidate Area -->
+<div class="flex-1 flex flex-col space-y-sm min-h-[400px]"><h3 class="font-label-caps text-on-tertiary-container uppercase tracking-widest px-xs">Ranked Candidate Submissions (0)</h3><div class="flex-1 rounded-xl dashed-border flex flex-col items-center justify-center p-xl text-center space-y-md"><div class="w-20 h-20 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center"><span class="material-symbols-outlined text-on-tertiary-container text-4xl opacity-30">videocam_off</span></div><div class="max-w-md"><h4 class="text-headline-md font-headline-md text-on-surface mb-xs">No recorded declarations filed inside this boundary sector yet.</h4><p class="text-on-surface-variant font-body-md">Vetted candidates can use the studio dashboard to submit manifesto pitches for this tier.</p></div><button class="mt-md px-lg py-sm bg-surface-container-highest border border-outline-variant text-on-surface rounded-lg font-label-caps hover:bg-surface-bright transition-all active:scale-95">Refresh Validation Node</button></div></div>
+<!-- Footer Micro-stats -->
+<div class="flex justify-between items-center px-sm pt-md text-on-tertiary-container font-label-sm">
+<div class="flex items-center gap-md">
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span> 4,102 Precinct Observers</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Last Updated 2m ago</span>
+</div>
+<a class="text-primary hover:underline flex items-center gap-1 font-label-caps text-[10px]" href="#">
+                            VIEW RAW BLOCKCHAIN DATA <span class="material-symbols-outlined text-xs">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Micro-interaction Scripts -->
+<script>
+        document.querySelectorAll('nav a, .grid button').forEach(el => {
+            el.addEventListener('click', function(e) {
+                if(this.tagName === 'A' && !this.classList.contains('bg-surface-variant')) {
+                    // Logic to handle tab switching could go here
+                }
+            });
+        });
+
+        // Atmospheric shader effect simulation or micro-interactions
+        const mainCanvas = document.querySelector('main');
+        mainCanvas.addEventListener('mousemove', (e) => {
+            const glow = document.querySelector('.absolute.top-0.right-0');
+            const x = (e.clientX / window.innerWidth) * 100;
+            const y = (e.clientY / window.innerHeight) * 100;
+            // Subtle movement of background glow based on mouse
+            // glow.style.transform = `translate(${x/10}%, ${y/10}%)`;
+        });
+    </script>
+</body></html>

@@ -108,13 +108,21 @@ export const LandingPage = () => {
               If 'X', 'Threads' and 'Truth' feel like someone's private property and decentralized apps leave us disconnected, <strong className="font-extrabold text-white">Kollective</strong> is where we stand united to reclaim our <span className={`${isLight ? 'text-primary font-extrabold underline decoration-primary decoration-2 underline-offset-4' : 'text-secondary'}`} style={{ fontWeight: isLight ? 800 : 700 }}>"Voice"</span>—because we are <span className={`${isLight ? 'text-primary' : 'text-secondary'} font-bold`}>stronger together</span>.
             </p>
             <div className="mt-4 text-center">
-              <button
+              <button hidden
                 onClick={() => navigate('/create-account')}
                 className="px-8 py-4 !text-xl !bold !transition-all !duration-300 !transform !hover:scale-105 !shadow-lg !bg-secondary
                             dark:text-on-secondary !hover:bg-secondary/90 !dark:shadow-secondary/20 !cursor-pointer !rounded-full"
               >
                 Join the Kollective
               </button>
+
+              <button
+                onClick={() => navigate('/create-account')}
+                className="px-8 py-4 text-xl font-bold ! bg-[#FBBF24] hover:!bg-[#F59E0B] text-black !transition-colors !duration-200 !cursor-pointer !rounded-full"
+              >
+                Join the Kollective
+              </button>
+
             </div>
           </div>
         </section>
