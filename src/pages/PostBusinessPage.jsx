@@ -24,10 +24,23 @@ export const PostBusinessPage = () => {
     image: 'https://images.unsplash.com/photo-1542744094-3a31f103e35f?auto=format&fit=crop&w=600&q=80',
   });
 
-  const [selectedTags, setSelectedTags] = useState(['Unionized Shop']);
-  const [availableTags, setAvailableTags] = useState(['Local Sourcing', 'Eco-Friendly', 'Community Funded']);
+  const [selectedTags, setSelectedTags] = useState(['Worker-Owned', 'Unionized Shop']);
+  const [availableTags, setAvailableTags] = useState([
+    'Fair Wage Certified',
+    'Local Sourcing',
+    'Eco-Friendly',
+    'Community Funded',
+    'Democratic Governance',
+    'Open Book Management'
+  ]);
   const [customTag, setCustomTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const triggerToast = (msg, type = 'error') => {
+    setToastMessage({ msg, type });
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -54,8 +67,8 @@ export const PostBusinessPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.description) {
-      alert('Please fill out the business name and description.');
+    if (!formData.name.trim() || !formData.description.trim()) {
+      triggerToast('Please fill out the business name and description.', 'error');
       return;
     }
 
@@ -63,11 +76,13 @@ export const PostBusinessPage = () => {
 
     // Formatting business details for the database model
     const businessData = {
-      name: formData.name,
+      name: formData.name.trim(),
       category: formData.category,
       legalStructure: formData.legalStructure,
-      description: formData.description,
+      legal_structure: formData.legalStructure,
+      description: formData.description.trim(),
       address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip}`,
+      street: formData.address,
       city: formData.city,
       state: formData.state,
       zip: formData.zip,
@@ -75,10 +90,15 @@ export const PostBusinessPage = () => {
       phone: formData.phone,
       website: formData.website || 'kollective.social',
       established: parseInt(formData.established, 10) || new Date().getFullYear(),
+      year_established: parseInt(formData.established, 10) || new Date().getFullYear(),
       employees: formData.employees,
+      number_of_employees: parseInt(formData.employees, 10) || 5,
       hours: formData.hours,
+      business_hours: formData.hours,
       image: formData.image,
+      profile_image_url: formData.image,
       services: selectedTags,
+      tags: selectedTags,
       owner: 'julian_thorne',
       ownerAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c',
       rating: 5.0,
@@ -89,19 +109,39 @@ export const PostBusinessPage = () => {
 
     createBusinessMutation.mutate(businessData, {
       onSuccess: () => {
-        setIsSubmitting(false);
-        navigate('/businesses');
+        triggerToast('Enterprise successfully registered!', 'success');
+        setTimeout(() => {
+          setIsSubmitting(false);
+          navigate('/businesses');
+        }, 1200);
       },
       onError: (err) => {
         setIsSubmitting(false);
         console.error('Error listing business:', err);
-        alert('Failed to register business. Please try again.');
+        triggerToast(err?.message || 'Failed to register business. Please check details and try again.', 'error');
       }
     });
   };
 
   return (
-    <div className="max-w-[1280px] mx-auto">
+    <div className="max-w-[1280px] mx-auto relative">
+      {/* Embedded Floating Toast Notification */}
+      {toastMessage && (
+        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-fadeIn transition-all ${
+          toastMessage.type === 'success'
+            ? 'bg-green-600 text-white border border-green-500 shadow-green-900/30'
+            : 'bg-[#a10836] text-white border border-red-500 shadow-red-900/30'
+        }`}>
+          <span>{toastMessage.msg}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="bg-transparent border-none text-white cursor-pointer ml-2 hover:opacity-80"
+          >
+            <span className="material-symbols-outlined text-[14px]">close</span>
+          </button>
+        </div>
+      )}
       {/* Breadcrumb & Navigation */}
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
@@ -188,8 +228,11 @@ export const PostBusinessPage = () => {
                   className="w-full bg-surface-ink border border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all text-lg appearance-none cursor-pointer"
                 >
                   <option>Cooperative (Recommended)</option>
-                  <option>LLC</option>
+                  <option>Worker-Owned Co-op</option>
+                  <option>Community Land Trust</option>
                   <option>Non-Profit</option>
+                  <option>Mutual Aid</option>
+                  <option>LLC</option>
                   <option>Sole Proprietorship</option>
                 </select>
               </div>

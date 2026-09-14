@@ -17,6 +17,12 @@ export const PostBusinessProposalPage = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const triggerToast = (msg, type = 'error') => {
+    setToastMessage({ msg, type });
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -25,24 +31,34 @@ export const PostBusinessProposalPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.description || !formData.fundingGoal) {
-      alert('Please fill out the proposal title, description, and funding goal.');
+    if (!formData.title.trim() || !formData.description.trim() || !formData.fundingGoal) {
+      triggerToast('Please fill out the proposal title, description, and funding goal.', 'error');
       return;
     }
 
     setIsSubmitting(true);
 
+    const goal = parseInt(formData.fundingGoal, 10) || 50000;
+    const minInv = parseInt(formData.minInvest, 10) || 100;
+    const maxInv = parseInt(formData.maxInvest, 10) || 10000;
+
     const proposalData = {
-      title: formData.title,
-      description: formData.description,
+      name: formData.title.trim(),
+      title: formData.title.trim(),
+      description: formData.description.trim(),
       category: formData.category,
       location: formData.location || 'Local District',
-      fundingGoal: parseInt(formData.fundingGoal, 10) || 50000,
-      minInvest: parseInt(formData.minInvest, 10) || 100,
-      maxInvest: parseInt(formData.maxInvest, 10) || 10000,
+      address: formData.location || 'Local District',
+      fundingGoal: goal,
+      money_required: goal,
+      minInvest: minInv,
+      minimum_amount: minInv,
+      maxInvest: maxInv,
+      maximum_amount: maxInv,
+      funding_required: true,
       fundingCollected: 0,
       percent: 0,
-      daysLeft: 45, // Set to 45 instead of 30 to avoid any 13 issue and offer realistic timelines
+      daysLeft: 45,
       participants: '0 Members',
       status: 'New',
     };
@@ -50,21 +66,39 @@ export const PostBusinessProposalPage = () => {
     // Trigger proposal creation mutation
     createProposalMutation.mutate(proposalData, {
       onSuccess: () => {
-        setIsSubmitting(false);
-        // Navigate back to Businesses directory (specifically tab Proposals)
-        // Since LocalBusinessesPage triggers on query string or state, we just navigate to /businesses
-        navigate('/businesses');
+        triggerToast('Community business proposal successfully published!', 'success');
+        setTimeout(() => {
+          setIsSubmitting(false);
+          navigate('/businesses');
+        }, 1200);
       },
       onError: (err) => {
         setIsSubmitting(false);
         console.error('Error posting proposal:', err);
-        alert('Failed to post business proposal. Please check details and try again.');
+        triggerToast(err?.message || 'Failed to post business proposal. Please check details and try again.', 'error');
       }
     });
   };
 
   return (
-    <div className="max-w-[1280px] mx-auto">
+    <div className="max-w-[1280px] mx-auto relative">
+      {/* Embedded Floating Toast Notification */}
+      {toastMessage && (
+        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-fadeIn transition-all ${
+          toastMessage.type === 'success'
+            ? 'bg-green-600 text-white border border-green-500 shadow-green-900/30'
+            : 'bg-[#a10836] text-white border border-red-500 shadow-red-900/30'
+        }`}>
+          <span>{toastMessage.msg}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="bg-transparent border-none text-white cursor-pointer ml-2 hover:opacity-80"
+          >
+            <span className="material-symbols-outlined text-[14px]">close</span>
+          </button>
+        </div>
+      )}
       {/* Breadcrumb & Navigation */}
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
