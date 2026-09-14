@@ -1,6 +1,7 @@
 // src/features/campaigns/useCandidacyApplication.js
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
+import { useAuthStore } from '../../store/auth/useAuthStore';
 
 /**
  * 📡 QUERY: Fetches the current user's running validation application status
@@ -27,10 +28,12 @@ export function useSubmitCandidacyApplicationMutation() {
             formData.append('candidate_application[declared_profession]', profession);
             formData.append('proof', proofFile); // Raw document asset attachment chunk
 
+            const token = useAuthStore.getState().token || localStorage.getItem('jwt_auth_token');
+
             return fetch('/api/v1/campaigns/apply', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('jwt_auth_token')}`
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 body: formData
             }).then(res => {

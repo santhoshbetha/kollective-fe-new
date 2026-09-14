@@ -9,7 +9,11 @@ export function useElectionDeadlinesQuery(stateCode, officeLevel, districtCode) 
     return useQuery({
         queryKey: ['campaigns', 'deadlines', stateCode, officeLevel, districtCode],
         queryFn: async () => {
-            const endpoint = `/api/v1/campaigns/deadlines?state=${stateCode}&level=${officeLevel}&code=${encodeURIComponent(districtCode)}`;
+            const params = new URLSearchParams();
+            if (stateCode) params.append('state', stateCode);
+            if (officeLevel) params.append('level', officeLevel);
+            if (districtCode) params.append('code', districtCode);
+            const endpoint = `/api/v1/campaigns/deadlines?${params.toString()}`;
             return apiFetch(endpoint); // Potentially returns flat array of deadline dates
         },
         enabled: !!stateCode,
@@ -31,6 +35,11 @@ export function useLogDeadlineMutation(stateCode, officeLevel, districtCode) {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['campaigns', 'deadlines'] });
+            if (stateCode) {
+                queryClient.invalidateQueries({
+                    queryKey: ['campaigns', 'deadlines', stateCode, officeLevel, districtCode].filter(Boolean),
+                });
+            }
         },
     });
 }

@@ -1,33 +1,55 @@
 // src/pages/SettingsPage.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useTranslation } from '../components/locales';
 import { AppPreferencesForm } from '../features/preferences/AppPreferencesForm';
 import { EmailSettingsForm, PasswordSettingsForm, DangerZoneSettingsForm } from '../features/settings/SettingsSubForms';
+import InvitationsList from './InvitationsList';
+import SettingsDashboard from '../features/settings/SettingsDashboard';
 
 export const SettingsPage = () => {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const currentUser = useAuthStore((state) => state.user);
 
     // 🗺️ Connect active language variables straight to translation dictionaries
     const currentLanguage = useStore((state) => state.appLanguage);
     const t = useTranslation(currentLanguage);
 
-    // Switchboard tab state tracker: 'index' | 'email' | 'password' | 'account'
-    const [activeSettingsTab, setActiveSettingsTab] = useState('index');
+    const initialTab = searchParams.get('tab') || 'index';
+    const [activeSettingsTab, setActiveSettingsTab] = useState(initialTab);
+
+    // Sync tab when url changes
+    useEffect(() => {
+        const tabParam = searchParams.get('tab');
+        if (tabParam && tabParam !== activeSettingsTab) {
+            setActiveSettingsTab(tabParam);
+        }
+    }, [searchParams]);
 
     const settingsMenu = [
         { id: 'index', label: t('pref_heading'), icon: 'settings_accessibility', desc: t('pref_desc') },
+        { id: 'invitations', label: 'Organization Invitations', icon: 'mail_lock', desc: 'Pending team invites and access grants' },
+        { id: 'org_workspace', label: 'Workspace & Team', icon: 'corporate_fare', desc: 'Manage org roster, invite contributors & audit logs' },
         { id: 'email', label: 'Email Configuration', icon: 'mail', desc: 'Manage your contact address links' },
         { id: 'password', label: 'Security & Keys', icon: 'lock', desc: 'Modify entry passwords and authorization keys' },
         { id: 'account', label: 'Danger Zone', icon: 'gavel', desc: 'Permanent account destruction matrices' }
     ];
 
+    const handleTabChange = (tabId) => {
+        setActiveSettingsTab(tabId);
+        if (tabId === 'index') {
+            setSearchParams({});
+        } else {
+            setSearchParams({ tab: tabId });
+        }
+    };
+
     const handleReturnClick = () => {
         if (activeSettingsTab !== 'index') {
-            setActiveSettingsTab('index');
+            handleTabChange('index');
         } else {
             navigate('/home');
         }
@@ -60,7 +82,7 @@ export const SettingsPage = () => {
                             <button
                                 key={menuItem.id}
                                 type="button"
-                                onClick={() => setActiveSettingsTab(menuItem.id)}
+                                onClick={() => handleTabChange(menuItem.id)}
                                 className={`flex items-center gap-4 w-full p-4 text-left rounded-xl transition-all border border-transparent cursor-pointer bg-transparent group ${isTabActive
                                     ? 'bg-surface-container-high border-white/5 text-text-primary shadow-md'
                                     : 'text-text-secondary hover:bg-white/[0.015] hover:text-text-primary'
@@ -71,8 +93,8 @@ export const SettingsPage = () => {
                                     <span className="material-symbols-outlined text-[20px]">{menuItem.icon}</span>
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                    <span className="text-lg font-black tracking-tight dark:text-white">{menuItem.label}</span>
-                                    <span className="text-[14px] text-text-secondary/50 font-medium truncate mt-0.5">{menuItem.desc}</span>
+                                    <span className="text-base font-bold tracking-tight dark:text-white">{menuItem.label}</span>
+                                    <span className="text-[13px] text-text-secondary/50 font-medium truncate mt-0.5">{menuItem.desc}</span>
                                 </div>
                             </button>
                         );
@@ -87,8 +109,8 @@ export const SettingsPage = () => {
                 {activeSettingsTab !== 'index' && (
                     <button
                         type="button"
-                        onClick={() => setActiveSettingsTab('index')}
-                        className="hidden lg:flex items-center gap-1.5 text-sm font-bold text-text-secondary hover:text-white transition-colors mb-4 bg-transparent border-none cursor-pointer p-0"
+                        onClick={() => handleTabChange('index')}
+                        className="hidden lg:flex items-center gap-1.5 text-sm font-bold text-text-secondary hover:text-white transition-colors mb-6 bg-transparent border-none cursor-pointer p-0"
                     >
                         <span className="material-symbols-outlined text-[16px]">arrow_back</span>
                         <span>Return to Preferences</span>
@@ -97,6 +119,8 @@ export const SettingsPage = () => {
 
                 {/* 🏆 SUB-FORM MATRIX SWITCHBOARD INJECTION */}
                 {activeSettingsTab === 'index' && <AppPreferencesForm />}
+                {activeSettingsTab === 'invitations' && <InvitationsList />}
+                {activeSettingsTab === 'org_workspace' && <SettingsDashboard />}
                 {activeSettingsTab === 'email' && <EmailSettingsForm />}
                 {activeSettingsTab === 'password' && <PasswordSettingsForm />}
                 {activeSettingsTab === 'account' && <DangerZoneSettingsForm />}
@@ -106,3 +130,4 @@ export const SettingsPage = () => {
         </div>
     );
 };
+

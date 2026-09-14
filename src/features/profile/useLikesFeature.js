@@ -10,7 +10,8 @@ export function useAccountLikesQuery() {
             const maxIdParam = pageParam ? `?max_id=${pageParam}` : '';
             return apiFetch(`/api/v1/favourites${maxIdParam}`); // Returns paginated statuses array
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: (lastPage) =>
+            lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
         initialPageParam: null,
     });
 }

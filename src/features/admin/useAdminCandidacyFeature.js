@@ -33,7 +33,10 @@ export function useProcessCandidacyMutation(filterStatus) {
         },
         onSuccess: () => {
             // Invalidate the admin query queues concurrently to sync the table feed at 60fps [A]
-            queryClient.invalidateQueries({ queryKey: ['admin', 'candidacy-applications', filterStatus] });
+            queryClient.invalidateQueries({ queryKey: ['admin', 'candidacy-applications'] });
+            if (filterStatus) {
+                queryClient.invalidateQueries({ queryKey: ['admin', 'candidacy-applications', filterStatus] });
+            }
             queryClient.invalidateQueries({ queryKey: ['campaigns', 'my-application'] });
         }
     });

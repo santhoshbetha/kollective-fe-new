@@ -6,11 +6,12 @@ export function usePollsQuery() {
     return useInfiniteQuery({
         queryKey: ['polls', 'stream'],
         queryFn: ({ pageParam }) => {
-            const baseUrl = '/polls';
+            const baseUrl = '/api/v1/polls';
             const path = pageParam ? `${baseUrl}?max_id=${pageParam}` : baseUrl;
             return apiFetch(path);
         },
         initialPageParam: null,
-        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+        getNextPageParam: (lastPage) =>
+            lastPage?.nextCursor ?? lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
     });
 }

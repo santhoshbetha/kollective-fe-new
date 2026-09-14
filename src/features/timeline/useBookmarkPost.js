@@ -10,7 +10,7 @@ export function useBookmarkPost() {
     return useMutation({
         // 1. Asynchronous network call to the Elixir backend endpoint
         mutationFn: async (postId) => {
-            return apiFetch(`/posts/${postId}/bookmark`, { method: 'POST' });
+            return apiFetch(`api/v1//posts/${postId}/bookmark`, { method: 'POST' });
         },
 
         // 2. The Optimistic UI Mutation Layer
@@ -27,21 +27,30 @@ export function useBookmarkPost() {
             queryClient.setQueryData(queryKey, (oldData) => {
                 if (!oldData) return oldData;
 
-                return {
-                    ...oldData,
-                    pages: oldData.pages.map((page) => ({
-                        ...page,
-                        posts: page.posts.map((post) => {
-                            if (post.id === postId) {
-                                return {
-                                    ...post,
-                                    bookmarked: !post.bookmarked, // Instantly toggle state
-                                };
-                            }
-                            return post;
+                const updatePost = (post) => (
+                    post.id === postId ? { ...post, bookmarked: !post.bookmarked } : post
+                );
+
+                if (oldData.pages) {
+                    return {
+                        ...oldData,
+                        pages: oldData.pages.map((page) => {
+                            const postsList = Array.isArray(page) ? page : (page?.posts || []);
+                            const updatedPosts = postsList.map(updatePost);
+                            return Array.isArray(page) ? updatedPosts : { ...page, posts: updatedPosts };
                         }),
-                    })),
-                };
+                    };
+                }
+
+                if (Array.isArray(oldData)) {
+                    return oldData.map(updatePost);
+                }
+
+                if (oldData.posts) {
+                    return { ...oldData, posts: oldData.posts.map(updatePost) };
+                }
+
+                return oldData;
             });
 
             // Return the rollback snapshot context object
@@ -58,7 +67,10 @@ export function useBookmarkPost() {
 
         // 4. Sync Guard: Refetch in the background to guarantee data alignment
         onSettled: (data, error, postId, context) => {
-            queryClient.invalidateQueries({ queryKey: context.queryKey });
+            if (context?.queryKey) {
+                queryClient.invalidateQueries({ queryKey: context.queryKey });
+            }
+            queryClient.invalidateQueries({ queryKey: ['timeline', 'bookmarks'] });
         },
     });
 }

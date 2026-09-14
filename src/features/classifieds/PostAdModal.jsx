@@ -43,7 +43,7 @@ export const PostAdModal = ({ isOpen, onClose, onAdCreated }) => {
         setIsSubmitting(true);
         try {
             // Elixir API endpoint route destination placeholder
-            const response = await fetch('/api/classifieds', {
+            const response = await fetch('/classifieds', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ classified: formData }),

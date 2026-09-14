@@ -42,14 +42,14 @@ export function useClaimShiftMutation(officeLevel, districtCode, currentUser) {
                 if (!oldEvents) return [];
                 return oldEvents.map((event) => ({
                     ...event,
-                    shifts: event.shifts.map((shift) => {
+                    shifts: (event.shifts || []).map((shift) => {
                         if (shift.id === shiftId) {
-                            const alreadyClaimed = shift.volunteers.some(v => v.id === currentUser?.id);
-                            if (alreadyClaimed || shift.volunteers.length >= shift.max_volunteers) return shift;
+                            const alreadyClaimed = shift.volunteers?.some(v => v.id === currentUser?.id);
+                            if (alreadyClaimed || (shift.volunteers?.length || 0) >= (shift.max_volunteers || 1)) return shift;
 
                             return {
                                 ...shift,
-                                volunteers: [...shift.volunteers, { id: currentUser?.id, username: currentUser?.username || 'You' }]
+                                volunteers: [...(shift.volunteers || []), { id: currentUser?.id, username: currentUser?.username || 'You' }]
                             };
                         }
                         return shift;
@@ -66,7 +66,9 @@ export function useClaimShiftMutation(officeLevel, districtCode, currentUser) {
             }
         },
         onSettled: (data, err, variables, context) => {
-            queryClient.invalidateQueries({ queryKey: context.cacheKey });
+            if (context?.cacheKey) {
+                queryClient.invalidateQueries({ queryKey: context.cacheKey });
+            }
         },
     });
 }

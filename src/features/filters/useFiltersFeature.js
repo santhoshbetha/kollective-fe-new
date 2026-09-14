@@ -7,7 +7,7 @@ export function useFiltersQuery() {
     return useQuery({
         queryKey: ['filters', 'list'],
         queryFn: async () => {
-            return apiFetch('/api/v2/filters'); // Returns an array of filter schema objects
+            return apiFetch('/api/v1/filters'); // Returns an array of filter schema objects
         },
     });
 }
@@ -18,7 +18,7 @@ export function useCreateFilterMutation() {
 
     return useMutation({
         mutationFn: async (newFilterPayload) => {
-            return apiFetch('/api/v2/filters', {
+            return apiFetch('/api/v1/filters', {
                 method: 'POST',
                 body: JSON.stringify(newFilterPayload),
             });
@@ -36,14 +36,14 @@ export function useDeleteFilterMutation() {
 
     return useMutation({
         mutationFn: async (filterId) => {
-            return apiFetch(`/api/v2/filters/${filterId}`, {
+            return apiFetch(`/api/v1/filters/${filterId}`, {
                 method: 'DELETE',
             });
         },
         onSuccess: (_, filterId) => {
             // Local optimistic cache ejection mapping routine
             queryClient.setQueryData(['filters', 'list'], (oldData) => {
-                if (!oldData) return oldData;
+                if (!oldData || !Array.isArray(oldData)) return oldData;
                 return oldData.filter((item) => item.id !== filterId);
             });
             queryClient.invalidateQueries({ queryKey: ['filters', 'list'] });

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { EmojiSelector } from './EmojiSelector';
 import { PollComposer } from '../features/polls/PollComposer';
+import { useAuthStore } from '../store/auth/useAuthStore';
 
 export function CreatePostForm({
     user,
@@ -13,8 +14,12 @@ export function CreatePostForm({
     showPollComposer,
     setShowPollComposer
 }) {
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+    const currentOrg = (activeAccount?.type === 'organization') ? activeAccount : user?.memberships?.[0]?.organization;
+    const initialIdentity = (activeAccount && activeAccount.type === 'organization') ? 'organization' : 'personal';
+
     const [audience, setAudience] = useState('World');
-    const [postIdentity, setPostIdentity] = useState('personal'); // 'personal' | 'organization'
+    const [postIdentity, setPostIdentity] = useState(initialIdentity); // 'personal' | 'organization'
     const [showIdentityDropdown, setShowIdentityDropdown] = useState(false);
     const [contentType, setContentType] = useState('post'); // 'post' | 'voice'
     const [postTab, setPostTab] = useState('text'); // 'text', 'image', 'link'
@@ -87,12 +92,13 @@ export function CreatePostForm({
         // Baseline validation fallback check
         if (!finalTitle && !hasContent && !isPollActive) return;
 
+        const currentOrg = (activeAccount?.type === 'organization') ? activeAccount : user?.memberships?.[0]?.organization;
         const authorDetails = postIdentity === 'organization' ? {
-            name: 'New York Magazine',
-            handle: '@nymag@threads.net',
-            role: 'Publisher',
+            name: currentOrg?.name || 'Organization Node',
+            handle: currentOrg?.handle || (currentOrg?.username ? `@${currentOrg.username}` : '@org'),
+            role: currentOrg?.role || activeAccount?.role || 'Organization',
             verified: true,
-            avatar: 'https://unsplash.com',
+            avatar: currentOrg?.avatar || '/default-org.jpg',
             type: 'organization'
         } : undefined;
 
@@ -183,7 +189,7 @@ export function CreatePostForm({
             <div className="flex gap-2 items-center flex-wrap z-30">
                 <div className="relative identity-dropdown-container">
                     <button type="button" onClick={() => setShowIdentityDropdown(!showIdentityDropdown)} className="flex items-center gap-2 px-3 py-1.5 bg-surface-container border border-white/10 rounded-full text-text-primary hover:bg-surface-container-high text-xs font-bold cursor-pointer">
-                        <span>{postIdentity === 'personal' ? 'Post as Self' : 'Post as NYMag'}</span>
+                        <span>{postIdentity === 'personal' ? 'Post as Self' : `Post as ${currentOrg?.name || 'Organization'}`}</span>
                     </button>
                     {showIdentityDropdown && (
                         <div className="absolute left-0 mt-2 w-56 bg-[#111111] border border-white/10 rounded-xl py-1.5 shadow-2xl z-50">

@@ -11,7 +11,8 @@ export function useAccountGalleryQuery(username) {
             // Fetches account posts filtered explicitly down to attachments content parameters
             return apiFetch(`/api/v1/accounts/${username}/posts?only_media=true${maxIdParam}`);
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: (lastPage) =>
+            lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
         initialPageParam: null,
         enabled: !!username,
     });

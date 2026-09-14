@@ -3,6 +3,31 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStore } from '../../store/useStore';
 import * as api from '../../api/mockApi';
 
+function updatePostsInCache(oldData, updater) {
+    if (!oldData) return oldData;
+
+    if (oldData.pages) {
+        return {
+            ...oldData,
+            pages: oldData.pages.map((page) => {
+                const postsList = Array.isArray(page) ? page : (page?.posts || []);
+                const updatedPosts = postsList.map(updater);
+                return Array.isArray(page) ? updatedPosts : { ...page, posts: updatedPosts };
+            }),
+        };
+    }
+
+    if (Array.isArray(oldData)) {
+        return oldData.map(updater);
+    }
+
+    if (oldData.posts) {
+        return { ...oldData, posts: oldData.posts.map(updater) };
+    }
+
+    return oldData;
+}
+
 export function usePostActions() {
     const queryClient = useQueryClient();
     const activeTab = useStore((state) => state.homeFeedTab);
@@ -15,26 +40,21 @@ export function usePostActions() {
             await queryClient.cancelQueries({ queryKey });
             const previousTimeline = queryClient.getQueryData(queryKey);
 
-            queryClient.setQueryData(queryKey, (oldData) => {
-                if (!oldData) return oldData;
-                return {
-                    ...oldData,
-                    pages: oldData.pages.map((page) => ({
-                        ...page,
-                        posts: page.posts.map((post) => {
-                            if (post.id === postId) {
-                                const isLiked = !post.liked;
-                                return {
-                                    ...post,
-                                    liked: isLiked,
-                                    likesCount: isLiked ? (post.likesCount || 0) + 1 : (post.likesCount || 1) - 1,
-                                };
-                            }
-                            return post;
-                        }),
-                    })),
-                };
-            });
+            queryClient.setQueryData(queryKey, (oldData) =>
+                updatePostsInCache(oldData, (post) => {
+                    if (post.id === postId) {
+                        const isLiked = !post.liked;
+                        return {
+                            ...post,
+                            liked: isLiked,
+                            likesCount: isLiked
+                                ? (post.likesCount || 0) + 1
+                                : Math.max(0, (post.likesCount || 1) - 1),
+                        };
+                    }
+                    return post;
+                })
+            );
 
             return { previousTimeline };
         },
@@ -53,26 +73,21 @@ export function usePostActions() {
             await queryClient.cancelQueries({ queryKey });
             const previousTimeline = queryClient.getQueryData(queryKey);
 
-            queryClient.setQueryData(queryKey, (oldData) => {
-                if (!oldData) return oldData;
-                return {
-                    ...oldData,
-                    pages: oldData.pages.map((page) => ({
-                        ...page,
-                        posts: page.posts.map((post) => {
-                            if (post.id === postId) {
-                                const isReblogged = !post.reblogged;
-                                return {
-                                    ...post,
-                                    reblogged: isReblogged,
-                                    reblogsCount: isReblogged ? (post.reblogsCount || 0) + 1 : (post.reblogsCount || 1) - 1,
-                                };
-                            }
-                            return post;
-                        }),
-                    })),
-                };
-            });
+            queryClient.setQueryData(queryKey, (oldData) =>
+                updatePostsInCache(oldData, (post) => {
+                    if (post.id === postId) {
+                        const isReblogged = !post.reblogged;
+                        return {
+                            ...post,
+                            reblogged: isReblogged,
+                            reblogsCount: isReblogged
+                                ? (post.reblogsCount || 0) + 1
+                                : Math.max(0, (post.reblogsCount || 1) - 1),
+                        };
+                    }
+                    return post;
+                })
+            );
 
             return { previousTimeline };
         },
@@ -91,18 +106,11 @@ export function usePostActions() {
             await queryClient.cancelQueries({ queryKey });
             const previousTimeline = queryClient.getQueryData(queryKey);
 
-            queryClient.setQueryData(queryKey, (oldData) => {
-                if (!oldData) return oldData;
-                return {
-                    ...oldData,
-                    pages: oldData.pages.map((page) => ({
-                        ...page,
-                        posts: page.posts.map((post) => (
-                            post.id === postId ? { ...post, bookmarked: !post.bookmarked } : post
-                        )),
-                    })),
-                };
-            });
+            queryClient.setQueryData(queryKey, (oldData) =>
+                updatePostsInCache(oldData, (post) =>
+                    post.id === postId ? { ...post, bookmarked: !post.bookmarked } : post
+                )
+            );
 
             return { previousTimeline };
         },

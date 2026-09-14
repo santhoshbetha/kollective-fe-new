@@ -12,7 +12,8 @@ export function useBlocksQuery() {
                 : '/api/v1/blocks';
             return apiFetch(url); // Returns an array of account objects
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: (lastPage) =>
+            lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
         initialPageParam: null,
     });
 }
@@ -33,10 +34,15 @@ export function useUnblockMutation() {
                 if (!oldData) return oldData;
                 return {
                     ...oldData,
-                    pages: oldData.pages.map((page) => ({
-                        ...page,
-                        accounts: (page.accounts || page || []).filter((account) => account.id !== accountId),
-                    })),
+                    pages: oldData.pages.map((page) => {
+                        if (Array.isArray(page)) {
+                            return page.filter((account) => account.id !== accountId);
+                        }
+                        return {
+                            ...page,
+                            accounts: (page.accounts || []).filter((account) => account.id !== accountId),
+                        };
+                    }),
                 };
             });
             // Fallback query syncing

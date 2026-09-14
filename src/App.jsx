@@ -21,6 +21,8 @@ import { PollsPage } from './pages/PollsPage';
 import { CreatePollPage } from './pages/CreatePollPage';
 import { BusinessProposalDetailsPage } from './pages/BusinessProposalDetailsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import InvitationsList from './pages/InvitationsList';
+import SettingsDashboard from './features/settings/SettingsDashboard';
 import { MutesPage } from './pages/MutesPage';
 import { BlocksPage } from './pages/BlocksPage';
 import { FiltersPage } from './pages/FiltersPage';
@@ -155,6 +157,8 @@ export default function App() {
                 {/* Account Management */}
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/settingso" element={<SettingsPageO />} />
+                <Route path="/settings/invitations" element={<InvitationsList />} />
+                <Route path="/settings/organization" element={<SettingsDashboard />} />
                 <Route path="/settings/profile" element={<EditProfilePage />} />
                 <Route path="/settings/mutes" element={<MutesPage />} />
                 <Route path="/settings/blocks" element={<BlocksPage />} />

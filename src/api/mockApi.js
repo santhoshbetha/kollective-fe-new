@@ -7,7 +7,9 @@ const LATENCY = 600; // 600ms latency
 
 // In-memory Database
 const user = {
+  id: 'usr-1',
   name: 'Julian Thorne',
+  username: 'j_thorne',
   handle: '@j_thorne',
   avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c',
   email: 'j_thorne@kollective.social',
@@ -15,6 +17,35 @@ const user = {
   location: 'California',
   website: 'kollective.social',
   role: 'root_admin',
+  badge_type: 'citizen',
+  memberships: [
+    {
+      organization: {
+        id: 'org-metro-union',
+        name: 'Metro Tenant Union',
+        username: 'metro_tenants',
+        handle: '@metro_tenants',
+        avatar: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&w=120&q=80',
+        badge_type: 'organization',
+        bio: 'City-wide union coordinating grassroots housing action and tenant defense.'
+      },
+      role: 'Lead Organizer',
+      status: 'active'
+    },
+    {
+      organization: {
+        id: 'org-kollective-press',
+        name: 'Kollective Press Guild',
+        username: 'kollective_press',
+        handle: '@kollective_press',
+        avatar: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=120&q=80',
+        badge_type: 'organization',
+        bio: 'Decentralized federation of independent civic journalists and researchers.'
+      },
+      role: 'Editor',
+      status: 'active'
+    }
+  ]
 };
 
 let posts = [

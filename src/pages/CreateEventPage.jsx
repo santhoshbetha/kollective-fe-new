@@ -55,6 +55,12 @@ export const CreateEventPage = () => {
     const [coverImage, setCoverImage] = useState(PRESET_COVERS[0].url);
     const [showImagePicker, setShowImagePicker] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [toastMessage, setToastMessage] = useState(null);
+
+    const triggerToast = (msg, type = 'error') => {
+        setToastMessage({ msg, type });
+        setTimeout(() => setToastMessage(null), 3500);
+    };
 
     const handleCreate = (e) => {
         e.preventDefault();
@@ -90,29 +96,61 @@ export const CreateEventPage = () => {
             day: 'numeric',
         })} • ${startTime} ${endTime ? `- ${endTime}` : ''}`;
 
+        let start_time = null;
+        try {
+            if (startDate && startTime) {
+                start_time = new Date(`${startDate}T${startTime}`).toISOString();
+            }
+        } catch {
+            start_time = null;
+        }
+
+        let end_time = null;
+        try {
+            const finalEndDate = endDate || startDate;
+            if (finalEndDate && endTime) {
+                end_time = new Date(`${finalEndDate}T${endTime}`).toISOString();
+            }
+        } catch {
+            end_time = null;
+        }
+
+        const formatMapping = {
+            'In-Person': 'in_person',
+            'Online': 'online_virtual',
+            'Hybrid': 'hybrid',
+        };
+
         const newEvent = {
             title,
             description,
             format: formatType,
+            participation_format: formatMapping[formatType] || 'in_person',
             category,
+            start_time,
+            end_time,
             date: formattedDate,
             displayDate,
             time: `${startTime} ${endTime ? `- ${endTime}` : ''}`,
             location,
+            location_name: location,
+            street: location,
             capacity: capacity ? parseInt(capacity, 10) : null,
+            max_participants: capacity ? parseInt(capacity, 10) : null,
             image: coverImage,
+            banner_url: coverImage,
         };
 
         createEventMutation.mutate(newEvent, {
             onSuccess: () => {
-                toast.success('Event successfully launched!');
+                triggerToast('Event successfully launched!', 'success');
                 setTimeout(() => {
                     navigate('/events');
                 }, 1200);
             },
             onError: (err) => {
                 setIsSubmitting(false);
-                triggerToast(err?.message || 'Error occurred while creating event.');
+                triggerToast(err?.message || 'Error occurred while creating event.', 'error');
             }
         });
     };
@@ -120,6 +158,25 @@ export const CreateEventPage = () => {
     return (
         <div className="max-w-[var(--spacing-container-max)] mx-auto px-[var(--spacing-margin-mobile)] md:px-[var(--spacing-margin-desktop)] py-[var(--spacing-gutter)] relative space-y-8 isolate font-sans">
 
+            
+            {/* Embedded Floating Toast Notification */}
+            {toastMessage && (
+                <div className={cn(
+                    "fixed top-6 right-6 z-50 px-5 py-3 rounded-card shadow-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-fadeIn transition-all",
+                    toastMessage.type === 'success'
+                        ? "bg-green-600 text-white border border-green-500 shadow-green-900/30"
+                        : "bg-[#a10836] text-white border border-red-500 shadow-red-900/30"
+                )}>
+                    <span>{toastMessage.msg}</span>
+                    <button
+                        type="button"
+                        onClick={() => setToastMessage(null)}
+                        className="bg-transparent border-none text-white cursor-pointer ml-2 hover:opacity-80"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            )}
             {/* Dynamic Background Blurs */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-primary-container/5 blur-[120px] -z-10 rounded-full pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-80 h-80 bg-tertiary-container/5 blur-[100px] -z-10 rounded-full pointer-events-none" />

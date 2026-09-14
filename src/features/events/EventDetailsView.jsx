@@ -11,7 +11,7 @@ export function EventDetailsView() {
     // Fetch the detailed parameters and message logs for this unique entity
     const { data: event, status } = useQuery({
         queryKey: ['event', eventId, 'details'],
-        queryFn: () => apiFetch(`/events/${eventId}`),
+        queryFn: () => apiFetch(`/api/v1/events/${eventId}`),
     });
 
     if (status === 'pending') return <div className="py-12 text-center text-text-secondary">Loading details...</div>;

@@ -1,7 +1,6 @@
 // src/features/timeline/useCreatePost.js
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStore } from '../../store/useStore';
-import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
 export function useCreatePost() {
@@ -14,7 +13,7 @@ export function useCreatePost() {
         // 1. Submit the new post schema to your Elixir REST API
         mutationFn: async (postData) => {
             // postData is an object: { content: "..." }
-            //return apiFetch('/posts', {
+            //return apiFetch('/api/v1/posts', {
             //    method: 'POST',
             //    body: JSON.stringify(postData),
             //});

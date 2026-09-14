@@ -1,5 +1,6 @@
 // src/features/polls/usePollsFeature.js
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
 // Hook A: Replaces polls and pollsLoading

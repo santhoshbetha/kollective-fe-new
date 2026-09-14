@@ -184,14 +184,14 @@ export const PostDetailsPage = () => {
         queryKey: ['post', currentPostId, 'thread'],
         queryFn: async () => {
             // Expected backend layout array parameters: { ancestors: [...], focus: {...}, descendants: [...] }
-            return apiFetchPosts(`/posts/${currentPostId}/context`);
+            return apiFetchPosts(`/api/v1/posts/${currentPostId}/context`);
         },
     });
 
     // 🎯 SUBMISSION BALLOT MUTATION: Dispatches flat response elements natively near the view
     const replyMutation = useMutation({
         mutationFn: async (payload) => {
-            return apiFetchPosts(`/posts/${currentPostId}/reply`, {
+            return apiFetchPosts(`/api/v1/posts/${currentPostId}/reply`, {
                 method: 'POST',
                 body: JSON.stringify(payload),
             });

@@ -3,9 +3,14 @@ import { useAuthStore } from '../store/auth/useAuthStore';
 import { useTimelineBufferStore } from '../store/useTimelineBufferStore';
 
 export async function apiFetch(endpoint, options = {}, queryClient) {
-    const token = useAuthStore.getState().token;
-
-    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const { token, activeAccount } = useAuthStore.getState();
+    const headers = token ?
+        {
+            'Authorization': `Bearer ${token}`,
+            // 👈 This is the magic signal for Elixir to switch contexts
+            'X-Active-Account-Id': activeAccount?.id || ''
+        }
+        : {};
 
     const response = await fetch(`/api/v1${endpoint}`, { ...options, headers });
 

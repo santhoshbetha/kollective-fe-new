@@ -23,7 +23,7 @@ export function useSuggestionFollowMutation() {
         onSuccess: (_, accountId) => {
             // Optimistic cache cleanup: Remove the newly followed account from suggestions list instantly
             queryClient.setQueryData(['suggestions', 'list'], (oldData) => {
-                if (!oldData) return oldData;
+                if (!oldData || !Array.isArray(oldData)) return oldData;
                 return oldData.filter((item) => (item.id || item.account?.id) !== accountId);
             });
             queryClient.invalidateQueries({ queryKey: ['profile'] });

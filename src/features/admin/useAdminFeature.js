@@ -1,6 +1,10 @@
 // src/features/admin/useAdminFeature.js
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
+
+// Helper for extracting pagination cursor across array or object responses
+const getNextCursor = (lastPage) =>
+    lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined;
 
 // 📡 Infinite Query: Streams open registrations requiring moderator verification clearance
 export function useAdminApprovalQuery() {
@@ -10,7 +14,7 @@ export function useAdminApprovalQuery() {
             const maxIdParam = pageParam ? `?max_id=${pageParam}` : '';
             return apiFetch(`/api/v1/admin/accounts/approvals${maxIdParam}`);
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: getNextCursor,
         initialPageParam: null,
     });
 }
@@ -23,7 +27,7 @@ export function useAdminReportsQuery() {
             const maxIdParam = pageParam ? `?max_id=${pageParam}` : '';
             return apiFetch(`/api/v1/admin/reports${maxIdParam}`);
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: getNextCursor,
         initialPageParam: null,
     });
 }
@@ -36,7 +40,7 @@ export function useAdminLogQuery() {
             const maxIdParam = pageParam ? `?max_id=${pageParam}` : '';
             return apiFetch(`/api/v1/admin/action_logs${maxIdParam}`);
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: getNextCursor,
         initialPageParam: null,
     });
 }
@@ -50,19 +54,18 @@ export function useAdminUsersQuery(searchQuery = '') {
             const queryParam = searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : '';
             return apiFetch(`/api/v1/admin/accounts?limit=20${queryParam}${maxIdParam}`);
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: getNextCursor,
         initialPageParam: null,
     });
 }
 
-// 📡 Infinite Query: Streams the editable collective bylaws and server guidelines list
+// 📡 Query: Streams the editable collective bylaws and server guidelines list
 export function useAdminRulesQuery() {
-    return useInfiniteQuery({
+    return useQuery({
         queryKey: ['admin', 'rules'],
         queryFn: async () => {
             return apiFetch('/api/v1/admin/rules');
         },
-        initialPageParam: null,
     });
 }
 

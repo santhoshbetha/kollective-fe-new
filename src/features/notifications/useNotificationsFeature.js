@@ -1,6 +1,5 @@
 // src/features/notifications/useNotificationsFeature.js
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAccountsStore } from '../../store/useAccountsStore';
 import * as api from '../../api/mockApi';
 
 // Hook A: Replaces notifications and notificationsLoading

@@ -15,7 +15,8 @@ export function useNotificationListener() {
         if (!accountId) return;
 
         // 1. Initialize Phoenix socket client connections
-        const socket = new Socket('/socket', { params: { token: localStorage.getItem('jwt_auth_token') } });
+        const token = useAuthStore.getState().token || localStorage.getItem('jwt_auth_token');
+        const socket = new Socket('/socket', { params: { token } });
         socket.connect();
 
         // 2. Bind into the specific user notification room channel matrix
@@ -26,28 +27,44 @@ export function useNotificationListener() {
             .receive("error", resp => console.error("Unable to join notification matrix channel room", resp));
 
         // 3. 🎯 THE REAL-TIME CACHE INTERCEPT MATRIX:
-        // Captures incoming alerts and instantly injects them into the infinite data feed layer.
+        // Captures incoming alerts and instantly injects them into the data feed layer.
         channel.on("new_notification", (incomingNotification) => {
 
             // Update the TanStack query data cache key pool instantly
-            queryClient.setQueryData(['notifications', 'infinite'], (oldCacheData) => {
+            queryClient.setQueryData(['notifications', 'history'], (oldCacheData) => {
                 if (!oldCacheData) return oldCacheData;
 
-                // Clone the cache memory structure and prepend the fresh alert straight into page 1
-                return {
-                    ...oldCacheData,
-                    pages: oldCacheData.pages.map((page, index) => {
-                        if (index === 0) {
-                            return {
-                                ...page,
-                                notifications: [incomingNotification, ...(page.notifications || [])]
-                            };
-                        }
-                        return page;
-                    })
-                };
+                if (oldCacheData.pages) {
+                    // Infinite query cache structure
+                    return {
+                        ...oldCacheData,
+                        pages: oldCacheData.pages.map((page, index) => {
+                            if (index === 0) {
+                                return {
+                                    ...page,
+                                    notifications: [incomingNotification, ...(page.notifications || [])]
+                                };
+                            }
+                            return page;
+                        })
+                    };
+                }
+
+                if (Array.isArray(oldCacheData)) {
+                    return [incomingNotification, ...oldCacheData];
+                }
+
+                if (oldCacheData.notifications) {
+                    return {
+                        ...oldCacheData,
+                        notifications: [incomingNotification, ...(oldCacheData.notifications || [])]
+                    };
+                }
+
+                return oldCacheData;
             });
 
+            queryClient.invalidateQueries({ queryKey: ['notifications', 'history'] });
         });
 
         // 🧼 Clean up channel socket registrations cleanly when user logs out or shifts pages

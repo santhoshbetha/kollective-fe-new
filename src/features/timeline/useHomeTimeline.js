@@ -24,12 +24,13 @@ export function useHomeTimeline() {
             return api.getPosts({ tab: activeTab, max_id: pageParam });
         },
         initialPageParam: null,
-        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+        getNextPageParam: (lastPage) =>
+            lastPage?.nextCursor ?? lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
 
         // 🎯 THE HOOK INTERCEPT MATRIX:
         // This side-effect safely extracts profiles during query execution phases.
         select: (data) => {
-            const allPosts = data.pages.flatMap((page) => page.posts || []);
+            const allPosts = data.pages.flatMap((page) => (Array.isArray(page) ? page : page.posts || []));
             const authorsList = allPosts.map((post) => post.author).filter(Boolean);
 
             // Seed the global entities directory asynchronously

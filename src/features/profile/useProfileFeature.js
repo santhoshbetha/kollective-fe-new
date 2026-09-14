@@ -15,6 +15,9 @@ export function useProfileQuery(username) {
     });
 }
 
+const getNextCursor = (lastPage) =>
+    lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined;
+
 // 🗳️ Infinite Query: Pulls a flat, virtualized feed of posts created strictly by this profile
 export function useProfilePostsQuery(username) {
     return useInfiniteQuery({
@@ -25,7 +28,7 @@ export function useProfilePostsQuery(username) {
                 : `/api/v1/accounts/${username}/posts`;
             return apiFetch(url);
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: getNextCursor,
         initialPageParam: null,
         enabled: !!username,
     });
@@ -90,7 +93,7 @@ export function useProfileTimelineQuery(username, currentMode) {
 
             return apiFetch(`/api/v1/accounts/${username}/posts?limit=20${excludeRepliesFlag}${maxIdParam}`);
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: getNextCursor,
         initialPageParam: null,
         enabled: !!username,
     });

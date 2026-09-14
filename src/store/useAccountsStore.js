@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 
 export const useAccountsStore = create(
-    immer((set, get) => ({
+    immer((set) => ({
         // 🗄️ The centralized key-value repository lookup table
         entities: {},
 

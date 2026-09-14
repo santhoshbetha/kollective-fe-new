@@ -42,8 +42,8 @@ export function useVoteCandidateMutation(country, districtId) {
             queryClient.setQueryData(cacheKey, (oldList) => {
                 if (!oldList) return [];
                 return oldList
-                    .map((cand) => cand.id === candidateId ? { ...cand, votes_count: cand.votes_count + scoreDelta } : cand)
-                    .sort((a, b) => b.votes_count - a.votes_count); // Maintain deterministic sorting mechanics
+                    .map((cand) => cand.id === candidateId ? { ...cand, votes_count: (cand.votes_count || 0) + scoreDelta } : cand)
+                    .sort((a, b) => (b.votes_count || 0) - (a.votes_count || 0)); // Maintain deterministic sorting mechanics
             });
 
             return { previousSnapshot, cacheKey };
@@ -55,7 +55,9 @@ export function useVoteCandidateMutation(country, districtId) {
             }
         },
         onSettled: (data, err, variables, context) => {
-            queryClient.invalidateQueries({ queryKey: context.cacheKey });
+            if (context?.cacheKey) {
+                queryClient.invalidateQueries({ queryKey: context.cacheKey });
+            }
         },
     });
 }
@@ -84,8 +86,6 @@ export function useReportAbuseMutation() {
         },
     });
 }
-
-
 
 /**
  * 📡 1. QUERY: Streams video assets for a target district level
@@ -125,8 +125,8 @@ export function useVotePitchMutation(officeLevel, districtCode) {
             queryClient.setQueryData(cacheKey, (oldList) => {
                 if (!oldList) return [];
                 return oldList
-                    .map((v) => v.id === videoId ? { ...v, votes_count: v.votes_count + scoreDelta } : v)
-                    .sort((a, b) => b.votes_count - a.votes_count);
+                    .map((v) => v.id === videoId ? { ...v, votes_count: (v.votes_count || 0) + scoreDelta } : v)
+                    .sort((a, b) => (b.votes_count || 0) - (a.votes_count || 0));
             });
 
             return { previousSnapshot, cacheKey };
@@ -137,12 +137,12 @@ export function useVotePitchMutation(officeLevel, districtCode) {
             }
         },
         onSettled: (data, err, variables, context) => {
-            queryClient.invalidateQueries({ queryKey: context.cacheKey });
+            if (context?.cacheKey) {
+                queryClient.invalidateQueries({ queryKey: context.cacheKey });
+            }
         },
     });
 }
-
-// src/features/campaigns/useCampaignDataHooks.js
 
 export function useHyperLocalPitchesQuery(stage, userProfile) {
     return useQuery({
@@ -154,35 +154,31 @@ export function useHyperLocalPitchesQuery(stage, userProfile) {
             if (stage === 'booth') targetCode = userProfile?.polling_booth_id;
             if (stage === 'sub_district') targetCode = userProfile?.sub_district;
 
-            return apiFetch(`/api/v1/campaigns/pitches?stage=${stage}&code=${encodeURIComponent(targetCode)}`);
+            return apiFetch(`/api/v1/campaigns/pitches?stage=${stage}&code=${encodeURIComponent(targetCode || '')}`);
         },
         enabled: !!userProfile,
     });
 }
-
-// src/features/campaigns/useCampaignDataHooks.js
 
 /**
  * 📡 QUERY: Fetches local candidates filtered strictly by their current visibility tier
  * Targets: GET /api/v1/campaigns/pitches?level=municipal&code=austin_tx&stage=booth&booth_id=ward_4_b
  */
 export function useFilteredLocalPitchesQuery(officeLevel, districtCode, stage, userLocationProfile) {
+    let locationScopeCode = districtCode;
+    if (stage === 'booth') {
+        locationScopeCode = userLocationProfile?.polling_booth_id;
+    } else if (stage === 'ward') {
+        locationScopeCode = userLocationProfile?.sub_district;
+    }
+
     return useQuery({
-        queryKey: ['campaigns', 'pitches', officeLevel, districtCode, stage],
+        queryKey: ['campaigns', 'pitches', officeLevel, locationScopeCode || districtCode, stage],
         queryFn: async () => {
-            // 🎯 THE FILTRATION PASS: Adjust lookup scopes dynamically
-            let locationScopeCode = districtCode;
-
-            if (stage === 'booth') {
-                locationScopeCode = userLocationProfile?.polling_booth_id; // Restricts view to neighborhood blocks
-            } else if (stage === 'ward') {
-                locationScopeCode = userLocationProfile?.sub_district;     // Restricts view to local ward sections
-            }
-
-            const endpoint = `/api/v1/campaigns/pitches?level=${officeLevel}&code=${encodeURIComponent(locationScopeCode)}&stage=${stage}`;
+            const endpoint = `/api/v1/campaigns/pitches?level=${officeLevel}&code=${encodeURIComponent(locationScopeCode || '')}&stage=${stage}`;
             return apiFetch(endpoint); // Returns a manageable array of candidates
         },
-        enabled: !!officeLevel && !!districtCode && !!stage,
+        enabled: !!officeLevel && !!(locationScopeCode || districtCode) && !!stage,
     });
 }
 

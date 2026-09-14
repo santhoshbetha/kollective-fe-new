@@ -1,10 +1,10 @@
-// components/MainLayout.jsx (Part 1 of 3)
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useStore } from '../store/useStore';
 //import { useTimelineSocket } from '../hooks/useTimelineSocket';
 import { CreatePostModal } from './CreatePostModal';
+import AccountSwitcher from './AccountSwitcher';
 import { useNotificationListener } from '../features/notifications/useNotificationListener';
 
 export const MainLayout = () => {
@@ -14,6 +14,7 @@ export const MainLayout = () => {
 
     // 🔐 Auth Store Selectors (Zustand)
     const user = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
     const executeGlobalLogout = useAuthStore((state) => state.executeGlobalLogout);
 
     // 🎨 UI Store Selectors (Zustand + Immer)
@@ -125,15 +126,28 @@ export const MainLayout = () => {
                         {user && (
                             <div
                                 onClick={() => {
-                                    const username = user.handle ? user.handle.replace('@', '') : 'user';
+                                    const username = (activeAccount?.handle || user.handle || 'user').replace('@', '');
                                     navigate(`/profile/${username}`, { state: { fromCard: true } });
                                 }}
-                                className="mt-6 p-4 bg-surface-container-low rounded-xl border border-white/5 flex items-center gap-3 cursor-pointer hover:bg-surface-container-high/40 transition-colors"
+                                className="mt-6 p-3.5 bg-surface-container-low rounded-xl border border-white/5 flex items-center gap-3 cursor-pointer hover:bg-surface-container-high/40 transition-colors"
                             >
-                                <img alt="User avatar" className="w-10 h-10 rounded-full object-cover" src={user.avatar} />
-                                <div className="overflow-hidden">
-                                    <p className="font-label-md text-label-md truncate text-text-primary">{user.name}</p>
-                                    <p className="font-label-sm text-label-sm text-text-secondary truncate">{user.handle}</p>
+                                <div className="relative flex-shrink-0">
+                                    <img alt="User avatar" className="w-10 h-10 rounded-full object-cover border border-white/10" src={activeAccount?.avatar || user.avatar} />
+                                    <span
+                                        className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-surface ${
+                                            !activeAccount || activeAccount.type === 'personal' ? 'bg-primary-container' : 'bg-amber-400'
+                                        }`}
+                                    />
+                                </div>
+                                <div className="overflow-hidden min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5">
+                                        <p className="font-label-md text-label-md truncate text-text-primary">
+                                            {activeAccount?.name || user.name}
+                                        </p>
+                                    </div>
+                                    <p className="font-label-sm text-label-sm text-text-secondary truncate">
+                                        {activeAccount?.handle || user.handle}
+                                    </p>
                                 </div>
                                 <button
                                     onClick={handleLogoutClick}
@@ -182,17 +196,23 @@ export const MainLayout = () => {
                         </nav>
 
                         {user && (
-                            <div
-                                onClick={() => {
-                                    const username = user.handle ? user.handle.replace('@', '') : 'user';
-                                    navigate(`/profile/${username}`, { state: { fromCard: true } });
-                                }}
-                                className="mt-auto pt-6 border-t border-white/5 flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity"
-                            >
-                                <img alt="User avatar" className="w-10 h-10 rounded-full object-cover" src={user.avatar} />
-                                <div className="overflow-hidden">
-                                    <p className="font-bold text-sm truncate">{user.name}</p>
-                                    <p className="text-sm text-text-secondary truncate">{user.handle}</p>
+                            <div className="mt-auto pt-4 border-t border-white/5 flex flex-col gap-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[11px] uppercase font-bold tracking-wider text-text-secondary">Identity Context</span>
+                                    <AccountSwitcher compact />
+                                </div>
+                                <div
+                                    onClick={() => {
+                                        const username = (activeAccount?.handle || user.handle || 'user').replace('@', '');
+                                        navigate(`/profile/${username}`, { state: { fromCard: true } });
+                                    }}
+                                    className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity p-2 rounded-xl bg-surface-container-low"
+                                >
+                                    <img alt="User avatar" className="w-10 h-10 rounded-full object-cover border border-white/10" src={activeAccount?.avatar || user.avatar} />
+                                    <div className="overflow-hidden">
+                                        <p className="font-bold text-sm truncate text-text-primary">{activeAccount?.name || user.name}</p>
+                                        <p className="text-xs text-text-secondary truncate">{activeAccount?.handle || user.handle}</p>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -225,7 +245,10 @@ export const MainLayout = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        {/* 🔄 Interactive Account Switcher */}
+                        <AccountSwitcher />
+
                         <button
                             onClick={toggleTheme}
                             className="flex items-center gap-1 cursor-pointer text-text-secondary hover:text-text-primary transition-colors focus:outline-none bg-transparent border-none"

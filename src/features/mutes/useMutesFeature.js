@@ -12,7 +12,8 @@ export function useMutesQuery() {
                 : '/api/v1/mutes';
             return apiFetch(url); // Returns an array list of user profile nodes
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: (lastPage) =>
+            lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
         initialPageParam: null,
     });
 }
@@ -33,10 +34,15 @@ export function useUnmuteMutation() {
                 if (!oldData) return oldData;
                 return {
                     ...oldData,
-                    pages: oldData.pages.map((page) => ({
-                        ...page,
-                        accounts: (page.accounts || page || []).filter((account) => account.id !== accountId),
-                    })),
+                    pages: oldData.pages.map((page) => {
+                        if (Array.isArray(page)) {
+                            return page.filter((account) => account.id !== accountId);
+                        }
+                        return {
+                            ...page,
+                            accounts: (page.accounts || []).filter((account) => account.id !== accountId),
+                        };
+                    }),
                 };
             });
             // Cascade structural sync to enforce query consistency across alternative feeds

@@ -10,7 +10,7 @@ export function useLikePost() {
     return useMutation({
         // 1. The actual network call to the Elixir REST endpoint
         mutationFn: async (postId) => {
-            return apiFetch(`/posts/${postId}/like`, { method: 'POST' });
+            return apiFetch(`/api/v1/posts/${postId}/like`, { method: 'POST' });
         },
 
         // 2. The Optimistic UI Mutation Layer
@@ -27,24 +27,40 @@ export function useLikePost() {
             queryClient.setQueryData(queryKey, (oldData) => {
                 if (!oldData) return oldData;
 
-                return {
-                    ...oldData,
-                    pages: oldData.pages.map((page) => ({
-                        ...page,
-                        posts: page.posts.map((post) => {
-                            if (post.id === postId) {
-                                // If already liked, decrement. If not, increment.
-                                const isNowLiked = !post.liked;
-                                return {
-                                    ...post,
-                                    liked: isNowLiked,
-                                    likesCount: isNowLiked ? post.likesCount + 1 : post.likesCount - 1,
-                                };
-                            }
-                            return post;
-                        }),
-                    })),
+                const updatePost = (post) => {
+                    if (post.id === postId) {
+                        const isNowLiked = !post.liked;
+                        return {
+                            ...post,
+                            liked: isNowLiked,
+                            likesCount: isNowLiked
+                                ? (post.likesCount || 0) + 1
+                                : Math.max(0, (post.likesCount || 1) - 1),
+                        };
+                    }
+                    return post;
                 };
+
+                if (oldData.pages) {
+                    return {
+                        ...oldData,
+                        pages: oldData.pages.map((page) => {
+                            const postsList = Array.isArray(page) ? page : (page?.posts || []);
+                            const updatedPosts = postsList.map(updatePost);
+                            return Array.isArray(page) ? updatedPosts : { ...page, posts: updatedPosts };
+                        }),
+                    };
+                }
+
+                if (Array.isArray(oldData)) {
+                    return oldData.map(updatePost);
+                }
+
+                if (oldData.posts) {
+                    return { ...oldData, posts: oldData.posts.map(updatePost) };
+                }
+
+                return oldData;
             });
 
             // Return the rollback snapshot context object
@@ -61,7 +77,9 @@ export function useLikePost() {
 
         // 4. Sync Guard: Always refetch in the background to ensure data alignment
         onSettled: (data, error, postId, context) => {
-            queryClient.invalidateQueries({ queryKey: context.queryKey });
+            if (context?.queryKey) {
+                queryClient.invalidateQueries({ queryKey: context.queryKey });
+            }
         },
     });
 }

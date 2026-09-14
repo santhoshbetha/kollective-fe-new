@@ -6,11 +6,12 @@ export function useNotificationsQuery() {
     return useInfiniteQuery({
         queryKey: ['notifications', 'history'],
         queryFn: ({ pageParam }) => {
-            const baseUrl = '/notifications';
+            const baseUrl = '/api/v1/notifications';
             const path = pageParam ? `${baseUrl}?max_id=${pageParam}` : baseUrl;
             return apiFetch(path);
         },
         initialPageParam: null,
-        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+        getNextPageParam: (lastPage) =>
+            lastPage?.nextCursor ?? lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
     });
 }

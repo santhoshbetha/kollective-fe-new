@@ -1,6 +1,6 @@
 // src/features/campaigns/useDeclareCandidacy.js
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from '../../api/apiClient';
+import { useAuthStore } from '../../store/auth/useAuthStore';
 
 export function useDeclareCandidacyMutation() {
     const queryClient = useQueryClient();
@@ -14,13 +14,15 @@ export function useDeclareCandidacyMutation() {
             formData.append('candidate[account_id]', accountId);
             formData.append('video', videoFile); // Binds the raw binary video file stream chunk
 
+            const token = useAuthStore.getState().token || localStorage.getItem('jwt_auth_token');
+
             // 2. Transmit straight to your Phoenix Elixir router endpoint
             return fetch('/api/v1/campaigns/declare', {
                 method: 'POST',
                 headers: {
                     // Explicitly omit 'Content-Type' header; the browser will automatically 
                     // set it to multipart/form-data with the correct boundary token signature.
-                    'Authorization': `Bearer ${localStorage.getItem('jwt_auth_token')}`
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 body: formData
             }).then(res => {

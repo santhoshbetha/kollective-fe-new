@@ -11,11 +11,12 @@ export function useCommunitiesFeed() {
         // 🚀 Sandbox the cache keys cleanly by geo-scope
         queryKey: ['communities', 'feed', activeTab],
         queryFn: ({ pageParam }) => {
-            const baseUrl = `/communities?scope=${activeTab.toLowerCase()}`;
+            const baseUrl = `/api/v1/communities?scope=${activeTab.toLowerCase()}`;
             const path = pageParam ? `${baseUrl}&max_id=${pageParam}` : baseUrl;
             return apiFetch(path);
         },
         initialPageParam: null,
-        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+        getNextPageParam: (lastPage) =>
+            lastPage?.nextCursor ?? lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
     });
 }

@@ -1,6 +1,10 @@
 // src/features/relationships/useRelationshipsFeature.js
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
+import { useAccountsStore } from '../../store/useAccountsStore';
+
+const getNextCursor = (lastPage) =>
+    lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined;
 
 // 📡 Unified Infinite Queries for Relationship Data Streams
 export function useRelationshipsQuery({ id, type }) {
@@ -14,7 +18,7 @@ export function useRelationshipsQuery({ id, type }) {
                 : `/api/v1/accounts/${id}/${type}${maxIdParam}`;
             return apiFetch(endpoint);
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: getNextCursor,
         initialPageParam: null,
         enabled: !!id || type === 'requests',
     });
@@ -28,7 +32,7 @@ export function useFollowedTagsQuery() {
             const maxIdParam = pageParam ? `?max_id=${pageParam}` : '';
             return apiFetch(`/api/v1/followed_tags${maxIdParam}`);
         },
-        getNextPageParam: (lastPage) => lastPage.nextPageId ?? null,
+        getNextPageParam: getNextCursor,
         initialPageParam: null,
     });
 }
@@ -43,11 +47,54 @@ export function useRelationshipMutations(accountId) {
             const endpoint = matchActionEndpoint(id, action);
             return apiFetch(endpoint, { method: 'POST' });
         },
-        onSuccess: (_, variables) => {
+        onSuccess: (_data, variables) => {
             // Evict items from pending request caches or sync active lists instantly
             queryClient.invalidateQueries({ queryKey: ['profile'] });
+            if (accountId || variables?.id) {
+                queryClient.invalidateQueries({ queryKey: ['profile', accountId || variables.id] });
+            }
             queryClient.invalidateQueries({ queryKey: ['followed-tags'] });
         }
+    });
+}
+
+// 🤝 Optimistic follow toggle integrated with normalized Zustand entities
+export function useToggleFollowUser() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (targetUserId) => {
+            return apiFetch(`/api/v1/accounts/${targetUserId}/follow`, { method: 'POST' });
+        },
+        onMutate: async (targetUserId) => {
+            const previousAccount = useAccountsStore.getState().entities[targetUserId];
+            if (previousAccount) {
+                const isFollowing = !previousAccount.following;
+                useAccountsStore.getState().importFetchedAccounts([
+                    {
+                        ...previousAccount,
+                        following: isFollowing,
+                        followersCount: isFollowing
+                            ? (previousAccount.followersCount || 0) + 1
+                            : Math.max(0, (previousAccount.followersCount || 1) - 1),
+                    }
+                ]);
+            }
+            return { previousAccount, targetUserId };
+        },
+        onError: (err, targetUserId, context) => {
+            if (context?.previousAccount) {
+                useAccountsStore.getState().importFetchedAccounts([context.previousAccount]);
+            }
+        },
+        onSuccess: (data, targetUserId) => {
+            if (data) {
+                useAccountsStore.getState().importFetchedAccounts([data]);
+            }
+            queryClient.invalidateQueries({ queryKey: ['profile', targetUserId] });
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications', 'history'] });
+        },
     });
 }
 

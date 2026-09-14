@@ -120,6 +120,129 @@ if (!localStorage.getItem("mock_incidents")) {
   localStorage.setItem("mock_incidents", JSON.stringify(defaultIncidents));
 }
 
+const defaultInvitations = [
+  {
+    id: "inv-101",
+    role: "contributor",
+    status: "pending",
+    inserted_at: "2026-09-10T10:15:00Z",
+    organization: {
+      id: "org-clean-water",
+      name: "Clean Water Action Network",
+      username: "clean_water_action",
+      handle: "@clean_water_action",
+      avatar: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=120&q=80",
+      badge_type: "organization"
+    }
+  },
+  {
+    id: "inv-102",
+    role: "editor",
+    status: "pending",
+    inserted_at: "2026-09-12T14:30:00Z",
+    organization: {
+      id: "org-transit-coalition",
+      name: "Community Transit Coalition",
+      username: "transit_coalition",
+      handle: "@transit_coalition",
+      avatar: "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=120&q=80",
+      badge_type: "organization"
+    }
+  }
+];
+
+const defaultOrgMembers = [
+  {
+    id: "mem-1",
+    role: "owner",
+    joined_at: "2026-01-15T08:00:00Z",
+    user: {
+      id: "usr-1",
+      name: "Julian Thorne",
+      username: "j_thorne",
+      email: "julian@kollective.org",
+      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c"
+    }
+  },
+  {
+    id: "mem-2",
+    role: "admin",
+    joined_at: "2026-03-20T11:45:00Z",
+    user: {
+      id: "usr-2",
+      name: "Elena Thorne",
+      username: "elena_thorne",
+      email: "elena@metrotenants.org",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
+    }
+  },
+  {
+    id: "mem-3",
+    role: "contributor",
+    joined_at: "2026-05-10T16:20:00Z",
+    user: {
+      id: "usr-3",
+      name: "Marcus Vane",
+      username: "marcus_vane",
+      email: "marcus@communitynet.io",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80"
+    }
+  }
+];
+
+const defaultPendingOrgInvites = [
+  {
+    id: "inv-901",
+    email: "sarah.connor@ecoresist.net",
+    role: "contributor",
+    status: "pending",
+    inserted_at: "2026-09-11T09:00:00Z"
+  }
+];
+
+const defaultOrgAuditLogs = [
+  {
+    id: "log-1",
+    action: "INVITE_SENT",
+    performed_by: "Julian Thorne",
+    target_user: "sarah.connor@ecoresist.net",
+    details: "Sent invitation for role: contributor",
+    inserted_at: "2026-09-11 09:00:15",
+    metadata: { post_id: null }
+  },
+  {
+    id: "log-2",
+    action: "POST_DELETE_FORCE",
+    performed_by: "Elena Thorne",
+    target_user: "troll_account_99",
+    details: "Administrative deletion of spam campaign post",
+    inserted_at: "2026-09-12 14:15:22",
+    metadata: { post_id: "post-104", can_restore: true }
+  },
+  {
+    id: "log-3",
+    action: "ROLE_UPDATE",
+    performed_by: "Julian Thorne",
+    target_user: "Marcus Vane",
+    details: "Promoted to contributor",
+    inserted_at: "2026-09-08 11:30:00",
+    metadata: { post_id: null }
+  }
+];
+
+if (!localStorage.getItem("mock_invitations")) {
+  localStorage.setItem("mock_invitations", JSON.stringify(defaultInvitations));
+}
+if (!localStorage.getItem("mock_org_members")) {
+  localStorage.setItem("mock_org_members", JSON.stringify(defaultOrgMembers));
+}
+if (!localStorage.getItem("mock_pending_org_invites")) {
+  localStorage.setItem("mock_pending_org_invites", JSON.stringify(defaultPendingOrgInvites));
+}
+if (!localStorage.getItem("mock_org_audit_logs")) {
+  localStorage.setItem("mock_org_audit_logs", JSON.stringify(defaultOrgAuditLogs));
+}
+
 const getReports = () => JSON.parse(localStorage.getItem("mock_reports"));
 const saveReports = (reports) => localStorage.setItem("mock_reports", JSON.stringify(reports));
 
@@ -130,6 +253,18 @@ const getApplications = () => JSON.parse(localStorage.getItem("mock_applications
 
 const getIncidents = () => JSON.parse(localStorage.getItem("mock_incidents"));
 const saveIncidents = (incidents) => localStorage.setItem("mock_incidents", JSON.stringify(incidents));
+
+const getInvitations = () => JSON.parse(localStorage.getItem("mock_invitations") || "[]");
+const saveInvitations = (invs) => localStorage.setItem("mock_invitations", JSON.stringify(invs));
+
+const getOrgMembers = () => JSON.parse(localStorage.getItem("mock_org_members") || "[]");
+const saveOrgMembers = (mems) => localStorage.setItem("mock_org_members", JSON.stringify(mems));
+
+const getPendingOrgInvites = () => JSON.parse(localStorage.getItem("mock_pending_org_invites") || "[]");
+const savePendingOrgInvites = (invs) => localStorage.setItem("mock_pending_org_invites", JSON.stringify(invs));
+
+const getOrgAuditLogs = () => JSON.parse(localStorage.getItem("mock_org_audit_logs") || "[]");
+const saveOrgAuditLogs = (logs) => localStorage.setItem("mock_org_audit_logs", JSON.stringify(logs));
 
 const originalFetch = window.fetch;
 
@@ -397,6 +532,333 @@ window.fetch = async function (input, init) {
         headers: { "Content-Type": "application/json" }
       });
     }
+  }
+
+  // 17. POST /api/v1/sessions/switch_context
+  if (url.includes("/api/v1/sessions/switch_context") && method === "POST") {
+    await delay(300);
+    let body = {};
+    try {
+      body = JSON.parse(init.body || "{}");
+    } catch (e) {
+      body = {};
+    }
+    const accountId = body.account_id;
+
+    // Read current user from localStorage or fallback
+    let currentUser = null;
+    try {
+      const stored = localStorage.getItem('kollective-auth-secure-matrix') || localStorage.getItem('auth_user');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        currentUser = parsed.state?.user || parsed;
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    if (!currentUser) {
+      currentUser = {
+        id: 'usr-1',
+        name: 'Julian Thorne',
+        username: 'j_thorne',
+        handle: '@j_thorne',
+        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c',
+        role: 'root_admin',
+        badge_type: 'citizen',
+        memberships: [
+          {
+            organization: {
+              id: 'org-metro-union',
+              name: 'Metro Tenant Union',
+              username: 'metro_tenants',
+              handle: '@metro_tenants',
+              avatar: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&w=120&q=80',
+              badge_type: 'organization'
+            },
+            role: 'Lead Organizer',
+            status: 'active'
+          },
+          {
+            organization: {
+              id: 'org-kollective-press',
+              name: 'Kollective Press Guild',
+              username: 'kollective_press',
+              handle: '@kollective_press',
+              avatar: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=120&q=80',
+              badge_type: 'organization'
+            },
+            role: 'Editor',
+            status: 'active'
+          }
+        ]
+      };
+    }
+
+    const isPersonal = !accountId || accountId === 'personal' || accountId === currentUser.id;
+
+    if (isPersonal) {
+      return new Response(JSON.stringify({
+        status: "success",
+        token: `mock-jwt-personal-${Date.now()}`,
+        active_account: {
+          id: currentUser.id ? String(currentUser.id) : 'personal',
+          type: 'personal',
+          name: currentUser.name,
+          username: currentUser.username || (currentUser.handle ? currentUser.handle.replace('@', '') : 'user'),
+          handle: currentUser.handle || `@${currentUser.username}`,
+          avatar: currentUser.avatar || '/default-avatar.jpg',
+          role: currentUser.role || 'citizen',
+          badge_type: currentUser.badge_type || 'citizen'
+        },
+        permissions: ['read', 'post:create', 'vote', 'comment'],
+        profile: {
+          name: currentUser.name,
+          bio: currentUser.bio || '',
+          avatar: currentUser.avatar
+        }
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // Switch to organization account
+    const membership = currentUser.memberships?.find(m => m.organization?.id === accountId);
+    const org = membership?.organization || {
+      id: accountId,
+      name: 'Partner Organization',
+      username: 'partner_org',
+      handle: '@partner_org',
+      avatar: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&w=120&q=80',
+      badge_type: 'organization'
+    };
+
+    return new Response(JSON.stringify({
+      status: "success",
+      token: `mock-jwt-org-${accountId}-${Date.now()}`,
+      active_account: {
+        id: org.id,
+        type: 'organization',
+        name: org.name,
+        username: org.username || org.handle?.replace('@', '') || 'org',
+        handle: org.handle || `@${org.username || 'org'}`,
+        avatar: org.avatar || '/default-org.jpg',
+        role: membership?.role || 'Member',
+        badge_type: org.badge_type || 'organization'
+      },
+      permissions: ['read', 'post:create', 'org:manage', 'org:admin', 'vote'],
+      profile: {
+        name: org.name,
+        bio: org.bio || 'Verified Organization Node on the Kollective mesh.',
+        avatar: org.avatar
+      }
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 18. GET /invitations
+  if (url.includes("/invitations") && !url.includes("/accept") && !url.includes("/decline") && method === "GET") {
+    await delay(200);
+    return new Response(JSON.stringify({
+      data: getInvitations()
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 19. POST /invitations/:id/accept
+  if (url.includes("/invitations/") && url.includes("/accept") && method === "POST") {
+    await delay(300);
+    const inviteId = url.split("/invitations/")[1]?.split("/")[0]?.split("?")[0];
+    const invites = getInvitations();
+    const targetInvite = invites.find(i => String(i.id) === String(inviteId));
+    saveInvitations(invites.filter(i => String(i.id) !== String(inviteId)));
+
+    const newMembership = targetInvite ? {
+      organization: targetInvite.organization,
+      role: targetInvite.role,
+      status: "active"
+    } : null;
+
+    return new Response(JSON.stringify({
+      data: {
+        message: "Invitation accepted successfully",
+        membership: newMembership
+      }
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 20. POST /invitations/:id/decline
+  if (url.includes("/invitations/") && url.includes("/decline") && method === "POST") {
+    await delay(250);
+    const inviteId = url.split("/invitations/")[1]?.split("/")[0]?.split("?")[0];
+    const invites = getInvitations();
+    saveInvitations(invites.filter(i => String(i.id) !== String(inviteId)));
+
+    return new Response(JSON.stringify({
+      data: {
+        message: "Invitation declined successfully"
+      }
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 21. GET /org-settings/members
+  if (url.includes("/org-settings/members") && method === "GET") {
+    await delay(200);
+    return new Response(JSON.stringify({
+      data: getOrgMembers()
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 22. DELETE /org-settings/members/:id
+  if (url.includes("/org-settings/members/") && method === "DELETE") {
+    await delay(300);
+    const memberId = url.split("/org-settings/members/")[1]?.split("/")[0]?.split("?")[0];
+    const members = getOrgMembers();
+    const removedMember = members.find(m => String(m.user?.id || m.id) === String(memberId));
+    saveOrgMembers(members.filter(m => String(m.user?.id || m.id) !== String(memberId)));
+
+    // Record in org audit trail
+    const auditLogs = getOrgAuditLogs();
+    auditLogs.unshift({
+      id: `log-${Date.now()}`,
+      action: "MEMBER_REMOVED",
+      performed_by: "Active Admin",
+      target_user: removedMember?.user?.name || `User #${memberId}`,
+      details: "Organizational access revoked. Posts archived.",
+      inserted_at: new Date().toLocaleString(),
+      metadata: { user_id: memberId }
+    });
+    saveOrgAuditLogs(auditLogs);
+
+    return new Response(JSON.stringify({
+      status: "success",
+      message: "Access revoked. Historical posts have been locked to archive status."
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 23. GET /org-settings/pending-invites
+  if (url.includes("/org-settings/pending-invites") && method === "GET") {
+    await delay(200);
+    return new Response(JSON.stringify({
+      data: getPendingOrgInvites()
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 24. POST /org-admin/invite
+  if (url.includes("/org-admin/invite") && method === "POST") {
+    await delay(350);
+    let body = {};
+    try {
+      body = JSON.parse(init.body || "{}");
+    } catch (e) {
+      body = {};
+    }
+    const { email, role = "contributor" } = body;
+    const newInvite = {
+      id: `inv-${Date.now()}`,
+      email: email || "new_user@kollective.org",
+      role: role || "contributor",
+      status: "pending",
+      inserted_at: new Date().toISOString()
+    };
+    const currentPending = getPendingOrgInvites();
+    currentPending.unshift(newInvite);
+    savePendingOrgInvites(currentPending);
+
+    // Record in org audit trail
+    const auditLogs = getOrgAuditLogs();
+    auditLogs.unshift({
+      id: `log-${Date.now()}`,
+      action: "INVITE_SENT",
+      performed_by: "Active Admin",
+      target_user: email,
+      details: `Dispatched invitation with assigned role: ${role}`,
+      inserted_at: new Date().toLocaleString(),
+      metadata: { invite_id: newInvite.id, role }
+    });
+    saveOrgAuditLogs(auditLogs);
+
+    return new Response(JSON.stringify({
+      data: newInvite,
+      message: `Invitation successfully sent to ${email}`
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 25. GET /org-settings/audit-logs
+  if (url.includes("/org-settings/audit-logs") && method === "GET") {
+    await delay(200);
+    return new Response(JSON.stringify({
+      data: getOrgAuditLogs()
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 26. POST /posts/:id/restore
+  if (url.includes("/posts/") && url.includes("/restore") && method === "POST") {
+    await delay(300);
+    const postId = url.split("/posts/")[1]?.split("/")[0]?.split("?")[0];
+    const auditLogs = getOrgAuditLogs();
+    const updatedLogs = auditLogs.map(log => {
+      if (log.metadata?.post_id === postId) {
+        return {
+          ...log,
+          metadata: { ...log.metadata, can_restore: false, restored: true }
+        };
+      }
+      return log;
+    });
+    saveOrgAuditLogs(updatedLogs);
+
+    return new Response(JSON.stringify({
+      status: "success",
+      message: `Post ${postId} has been restored to the community feed.`
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 27. PUT /org-settings/profile
+  if (url.includes("/org-settings/profile") && method === "PUT") {
+    await delay(300);
+    let body = {};
+    try {
+      body = JSON.parse(init.body || "{}");
+    } catch (e) {
+      body = {};
+    }
+    return new Response(JSON.stringify({
+      data: body,
+      message: "Organization profile updated successfully."
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 
   return originalFetch.apply(this, arguments);
