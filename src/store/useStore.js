@@ -146,9 +146,24 @@ export const useStore = create(
     // =========================================================================
     politicalOptIn: false,
     politicalCountry: 'US', // 'US' | 'CA' | 'GB' | 'IN' | 'MX' | 'AR' | 'BR' | 'CO' | 'CL' | 'VE' | 'PE' | 'EC' | 'UY' | 'PY' | 'BO' | 'HN' | 'NI' | 'CR' | 'PA' | 'DO' | 'PR'
+    userState: '',
+    streetAddress: '',
+    userCity: '',
     districtFederal: '',
     districtStateLower: '',
     districtStateUpper: '',
+
+    setUserState: (userState) => set((state) => {
+      state.userState = userState;
+    }),
+
+    setStreetAddress: (streetAddress) => set((state) => {
+      state.streetAddress = streetAddress;
+    }),
+
+    setUserCity: (userCity) => set((state) => {
+      state.userCity = userCity;
+    }),
 
     setPoliticalOptIn: (optIn) => set((state) => {
       state.politicalOptIn = optIn;
@@ -186,6 +201,9 @@ export const useStore = create(
       communitiesTab: state.communitiesTab,
       politicalOptIn: state.politicalOptIn,
       politicalCountry: state.politicalCountry,
+      userState: state.userState,
+      streetAddress: state.streetAddress,
+      userCity: state.userCity,
       districtFederal: state.districtFederal,
       districtStateLower: state.districtStateLower,
       districtStateUpper: state.districtStateUpper

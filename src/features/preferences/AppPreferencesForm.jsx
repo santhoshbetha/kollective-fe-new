@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { APP_LOCALES, useTranslation } from '../../components/locales';
 import { DISTRICT_TERMINOLOGY } from '../../components/politicalConfig';
+import { getStatesByCountry } from '../../utils/geoUtils';
+import { lookupAddressBoundaries } from '../../api/mockApi';
 
 // 🎛️ Reusable toggle switch component matching the redesign style
 const Toggle = ({ checked, onChange }) => (
@@ -34,6 +36,12 @@ export function AppPreferencesForm() {
     // Zustand Political Persistence Store links
     const politicalOptIn = useStore((state) => state.politicalOptIn);
     const politicalCountry = useStore((state) => state.politicalCountry);
+    const userState = useStore((state) => state.userState);
+    const setUserState = useStore((state) => state.setUserState);
+    const streetAddress = useStore((state) => state.streetAddress);
+    const setStreetAddress = useStore((state) => state.setStreetAddress);
+    const userCity = useStore((state) => state.userCity);
+    const setUserCity = useStore((state) => state.setUserCity);
     const districtFederal = useStore((state) => state.districtFederal);
     const districtStateLower = useStore((state) => state.districtStateLower);
     const districtStateUpper = useStore((state) => state.districtStateUpper);
@@ -45,8 +53,11 @@ export function AppPreferencesForm() {
     // Local Form state buffers
     const [localTheme, setLocalTheme] = useState(currentTheme);
     const [localLanguage, setLocalLanguage] = useState(currentLanguage);
-    const [selectedState, setSelectedState] = useState('');
-    const [selectedCity, setSelectedCity] = useState('');
+    const [selectedState, setSelectedState] = useState(userState || '');
+    const [localStreetAddress, setLocalStreetAddress] = useState(streetAddress || '');
+    const [isResolvingAddress, setIsResolvingAddress] = useState(false);
+    const [lookupError, setLookupError] = useState(null);
+    const [stateSavedStatus, setStateSavedStatus] = useState(false);
     const [pushEnabled, setPushEnabled] = useState(true);
     const [emailEnabled, setEmailEnabled] = useState(true);
     const [repliesEnabled, setRepliesEnabled] = useState(true);
@@ -56,11 +67,41 @@ export function AppPreferencesForm() {
     // Translation interpreter
     const t = useTranslation(currentLanguage);
 
-    const states = ['California', 'New York', 'Texas'];
-    const citiesByState = {
-        California: ['Los Angeles', 'San Francisco', 'San Diego'],
-        'New York': ['New York City', 'Buffalo', 'Rochester'],
-        Texas: ['Houston', 'Austin', 'Dallas'],
+    // Dynamic country states loaded based on selected politicalCountry
+    const states = getStatesByCountry(politicalCountry);
+
+    const handleSaveState = () => {
+        if (!selectedState) return;
+        setUserState(selectedState);
+        setStateSavedStatus(true);
+        setTimeout(() => setStateSavedStatus(false), 3000);
+    };
+
+    const handleLookupBoundaries = async () => {
+        if (!localStreetAddress || !localStreetAddress.trim()) {
+            setLookupError("Please enter a street address first.");
+            return;
+        }
+        setLookupError(null);
+        setIsResolvingAddress(true);
+        try {
+            const result = await lookupAddressBoundaries(localStreetAddress, selectedState, politicalCountry);
+            setStreetAddress(result.address);
+            setUserCity(result.city);
+            setDistrictFields({
+                federal: result.districtFederal,
+                stateUpper: result.districtStateUpper,
+                stateLower: result.districtStateLower
+            });
+            if (selectedState !== result.state && result.state) {
+                setUserState(result.state);
+                setSelectedState(result.state);
+            }
+        } catch (err) {
+            setLookupError(err.message || "Failed to resolve boundaries from backend.");
+        } finally {
+            setIsResolvingAddress(false);
+        }
     };
 
     const targetConfig = DISTRICT_TERMINOLOGY[politicalCountry] || DISTRICT_TERMINOLOGY['US'];
@@ -138,27 +179,162 @@ export function AppPreferencesForm() {
                 </div>
             </div>
 
-            {/* 📍 3. LOCATION DROP-DOWN SELECTORS */}
-            <div className="space-y-4 border-b border-white/5 pb-6">
+            {/* 📍 3. LOCATION PARAMETERS: STATE/PROVINCE & OPTIONAL STREET ADDRESS LOOKUP */}
+            <div className="space-y-5 border-b border-white/5 pb-6">
                 <div className="flex items-center gap-2 font-bold text-lg select-none">
                     <span className="material-symbols-outlined text-[18px] text-primary-container">location_on</span>
                     <h3 className="uppercase font-mono text-lg tracking-wider text-text-secondary">Location Parameters</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-[12px] font-bold text-text-secondary uppercase">State</label>
-                        <select value={selectedState} onChange={(e) => { setSelectedState(e.target.value); setSelectedCity(''); }} className="w-full bg-[#111111] border border-white/10 rounded-xl py-2 px-3 text-lg text-text-primary focus:outline-none">
-                            <option value="">Select your state</option>
-                            {states.map((st) => <option key={st} value={st}>{st}</option>)}
-                        </select>
+
+                {/* 💡 1. State / Province Opt-In Banner & Message */}
+                <div className="p-4 bg-primary-container/10 border border-primary-container/20 rounded-xl flex items-start gap-3">
+                    <span className="material-symbols-outlined text-primary-container text-[22px] shrink-0 mt-0.5">map</span>
+                    <div className="space-y-1">
+                        <p className="font-bold text-text-primary text-md">
+                            State &amp; Regional Post Feeds
+                        </p>
+                        <p className="text-text-secondary text-sm leading-relaxed">
+                            Select and save your State or Province to opt in to state-level feeds, enabling you to view and publish posts specific to your state or regional community.
+                        </p>
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-[12px] font-bold text-text-secondary uppercase">City</label>
-                        <select value={selectedCity} disabled={!selectedState} onChange={(e) => setSelectedCity(e.target.value)} className="w-full bg-[#111111] border border-white/10 rounded-xl py-2 px-3 text-lg text-text-primary focus:outline-none disabled:opacity-40">
-                            <option value="">{selectedState ? 'Select a city' : 'Select a state first'}</option>
-                            {selectedState && citiesByState[selectedState].map((city) => <option key={city} value={city}>{city}</option>)}
-                        </select>
+                </div>
+
+                {/* 📍 Top Option: State/Province Selector + Save Button */}
+                <div className="flex flex-col gap-3">
+                    <div className="flex flex-col md:flex-row gap-3 items-start md:items-end">
+                        <div className="flex-1 flex flex-col gap-1.5 w-full">
+                            <label className="text-[12px] font-bold text-text-secondary uppercase">State / Province</label>
+                            <select
+                                value={selectedState}
+                                onChange={(e) => {
+                                    setSelectedState(e.target.value);
+                                    setStateSavedStatus(false);
+                                }}
+                                className="w-full bg-[#111111] border border-white/10 rounded-xl py-3 px-4 text-lg text-text-primary focus:outline-none"
+                            >
+                                <option value="">Select your state / province</option>
+                                {states.map((st) => <option key={st} value={st}>{st}</option>)}
+                            </select>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleSaveState}
+                            disabled={!selectedState}
+                            className="w-full md:w-auto px-6 py-3 bg-primary-container hover:bg-primary-container/90 text-white font-bold text-md rounded-xl transition-all disabled:opacity-40 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">save</span>
+                            {stateSavedStatus ? 'Saved to Backend!' : 'Save State'}
+                        </button>
                     </div>
+                    {stateSavedStatus && (
+                        <p className="text-emerald-400 font-medium text-sm flex items-center gap-1.5 animate-in fade-in duration-200">
+                            <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                            State saved successfully. State-specific posting and feeds activated!
+                        </p>
+                    )}
+                </div>
+
+                {/* 🏠 2. Optional Street Address Section for City & District Boundaries */}
+                <div className="pt-4 border-t border-white/5 space-y-4">
+                    <div className="p-4 bg-surface-container-high/40 border border-white/10 rounded-xl flex items-start gap-3">
+                        <span className="material-symbols-outlined text-primary-container text-[22px] shrink-0 mt-0.5">location_city</span>
+                        <div className="space-y-1">
+                            <p className="font-bold text-text-primary text-md">
+                                Optional: Add Street Address for Local Features &amp; Boundaries
+                            </p>
+                            <p className="text-text-secondary text-sm leading-relaxed">
+                                Adding your street address is optional. Providing it allows our backend to automatically resolve your exact city and political voting districts, granting you access to location-based posts, local business directory, and community classifieds.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-[12px] font-bold text-text-secondary uppercase">
+                            Street Address <span className="text-text-secondary/60 font-normal lowercase">(optional)</span>
+                        </label>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <input
+                                type="text"
+                                value={localStreetAddress}
+                                onChange={(e) => setLocalStreetAddress(e.target.value)}
+                                placeholder="e.g. 100 Congress Ave, Austin, TX"
+                                className="flex-1 bg-[#111111] border border-white/10 rounded-xl py-3 px-4 text-lg text-text-primary focus:outline-none focus:border-primary-container/60 transition-all placeholder:text-text-secondary/40"
+                            />
+                            <button
+                                type="button"
+                                onClick={handleLookupBoundaries}
+                                disabled={isResolvingAddress || !localStreetAddress.trim()}
+                                className="px-5 py-3 bg-surface-container-high hover:bg-surface-container-highest text-text-primary border border-white/10 font-bold text-md rounded-xl transition-all disabled:opacity-40 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                            >
+                                {isResolvingAddress ? (
+                                    <>
+                                        <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                                        Resolving BE...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined text-[18px] text-primary-container">travel_explore</span>
+                                        Lookup Boundaries
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                        {lookupError && (
+                            <p className="text-rose-400 text-xs font-semibold mt-1">{lookupError}</p>
+                        )}
+                    </div>
+
+                    {/* Display Resolved Backend Boundaries & Unlocked Access */}
+                    {(userCity || districtFederal) && (
+                        <div className="p-4 bg-[#141414] border border-white/10 rounded-xl space-y-3 animate-in fade-in duration-200 mt-2">
+                            <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-emerald-400 text-[18px]">verified</span>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Resolved Backend Boundaries</span>
+                                </div>
+                                <span className="text-[11px] font-mono text-emerald-400/90 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">BE Synchronized</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                                <div className="p-3 bg-black/40 border border-white/5 rounded-lg">
+                                    <span className="text-text-secondary block font-bold text-[10px] uppercase mb-0.5">Resolved City</span>
+                                    <span className="font-bold text-text-primary text-sm flex items-center gap-1">
+                                        📍 {userCity || 'Not resolved'}
+                                    </span>
+                                </div>
+                                <div className="p-3 bg-black/40 border border-white/5 rounded-lg">
+                                    <span className="text-text-secondary block font-bold text-[10px] uppercase mb-0.5">Federal District</span>
+                                    <span className="font-bold text-text-primary text-sm flex items-center gap-1">
+                                        🏛️ {districtFederal || 'Not resolved'}
+                                    </span>
+                                </div>
+                                <div className="p-3 bg-black/40 border border-white/5 rounded-lg">
+                                    <span className="text-text-secondary block font-bold text-[10px] uppercase mb-0.5">State Senate (Upper)</span>
+                                    <span className="font-bold text-text-primary text-sm flex items-center gap-1">
+                                        🏛️ {districtStateUpper || 'Not resolved'}
+                                    </span>
+                                </div>
+                                <div className="p-3 bg-black/40 border border-white/5 rounded-lg">
+                                    <span className="text-text-secondary block font-bold text-[10px] uppercase mb-0.5">State House (Lower)</span>
+                                    <span className="font-bold text-text-primary text-sm flex items-center gap-1">
+                                        🏛️ {districtStateLower || 'Not resolved'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="pt-1 flex flex-wrap gap-2 text-[11px]">
+                                <span className="px-2.5 py-1 bg-primary-container/15 text-primary-container border border-primary-container/20 rounded-full font-medium flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[14px]">lock_open</span> Location Posts Unlocked
+                                </span>
+                                <span className="px-2.5 py-1 bg-primary-container/15 text-primary-container border border-primary-container/20 rounded-full font-medium flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[14px]">storefront</span> Local Businesses Unlocked
+                                </span>
+                                <span className="px-2.5 py-1 bg-primary-container/15 text-primary-container border border-primary-container/20 rounded-full font-medium flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[14px]">sell</span> Classifieds Access Active
+                                </span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -175,89 +351,33 @@ export function AppPreferencesForm() {
                     <Toggle checked={politicalOptIn} onChange={() => setPoliticalOptIn(!politicalOptIn)} />
                 </div>
 
-                {/* 🗺️ Dynamic Forms Field Stack Cascades */}
+                {/* 🛡️ Peer-to-Peer Vouching Requirement Notice when Political Features are Enabled */}
                 {politicalOptIn && (
-                    <div className="p-5 bg-[#111111] border border-white/10 rounded-2xl space-y-4 animate-in slide-in-from-top-3 duration-200 flex flex-col">
-
-                        {/* Country Selector Switchboard */}
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-[12px] font-black uppercase tracking-wider text-text-secondary">Jurisdiction Country Boundary</label>
-                            <select
-                                value={politicalCountry}
-                                onChange={(e) => setPoliticalCountry(e.target.value)}
-                                className="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-md font-bold text-text-primary focus:outline-none"
-                            >
-                                {Object.keys(DISTRICT_TERMINOLOGY).map((ccode) => (
-                                    <option key={ccode} value={ccode}>{DISTRICT_TERMINOLOGY[ccode].countryLabel}</option>
-                                ))}
-                            </select>
+                    <div className="p-5 bg-gradient-to-r from-primary-container/15 via-[#141414] to-[#111111] border border-primary-container/30 rounded-2xl space-y-3 animate-in slide-in-from-top-3 duration-200">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-primary-container font-bold text-sm">
+                                <span className="material-symbols-outlined text-[20px]">how_to_reg</span>
+                                <span className="uppercase tracking-wider">Peer-to-Peer Vouching Verification Required</span>
+                            </div>
+                            <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded border border-emerald-500/20 font-bold">Opt-In Active</span>
                         </div>
 
-                        {/* Dynamic District Parameters Rows Map */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                        <p className="text-sm text-text-secondary leading-relaxed">
+                            Political and Civic Governance features are enabled. To protect system integrity and prevent astroturfing, please complete <strong className="text-text-primary font-bold">Peer-to-Peer Vouching</strong> to access governance features including <strong className="text-text-primary font-bold">Organize</strong> and <strong className="text-text-primary font-bold">Civic Assembly</strong> (to run for office or view candidate debate videos).
+                        </p>
 
-                            {/* Dynamic Dropdown Field A: Federal Boundaries */}
-                            {targetConfig.labels.federal && (
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-[12px] font-bold text-text-secondary uppercase truncate" title={targetConfig.labels.federal}>
-                                        {targetConfig.labels.federal}
-                                    </label>
-                                    <select
-                                        value={districtFederal}
-                                        onChange={(e) => setDistrictFields({ federal: e.target.value })}
-                                        className="bg-[#141414] border border-white/10 rounded-xl px-3 py-2.5 text-md text-text-primary focus:outline-none"
-                                    >
-                                        <option value="">Select Boundary...</option>
-                                        {targetConfig.options['TX'].federal.map((opt) => (
-                                            <option key={opt} value={opt}>{opt}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
-                            {/* Dynamic Dropdown Field B: Upper House (Conditionally Rendered/Omitted) */}
-                            {targetConfig.labels.stateUpper ? (
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-[12px] font-bold text-text-secondary uppercase truncate" title={targetConfig.labels.stateUpper}>
-                                        {targetConfig.labels.stateUpper}
-                                    </label>
-                                    <select
-                                        value={districtStateUpper}
-                                        onChange={(e) => setDistrictFields({ stateUpper: e.target.value })}
-                                        className="bg-[#141414] border border-white/10 rounded-xl px-3 py-2.5 text-md text-text-primary focus:outline-none"
-                                    >
-                                        <option value="">Select Upper...</option>
-                                        {targetConfig.options['TX'].stateUpper.map((opt) => (
-                                            <option key={opt} value={opt}>{opt}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            ) : (
-                                /* Symmetrical Grid Placeholder layout fallback structure to balance empty spaces */
-                                <div className="hidden md:flex flex-col justify-center p-3 text-[12px] font-mono border border-dashed border-white/5 rounded-xl text-text-secondary/20 select-none">
-                                    Upper House Appointed / Omitted
-                                </div>
-                            )}
-
-                            {/* Dynamic Dropdown Field C: Lower House Boundaries */}
-                            {targetConfig.labels.stateLower && (
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-[12px] font-bold text-text-secondary uppercase truncate" title={targetConfig.labels.stateLower}>
-                                        {targetConfig.labels.stateLower}
-                                    </label>
-                                    <select
-                                        value={districtStateLower}
-                                        onChange={(e) => setDistrictFields({ stateLower: e.target.value })}
-                                        className="bg-[#141414] border border-white/10 rounded-xl px-3 py-2.5 text-md text-text-primary focus:outline-none"
-                                    >
-                                        <option value="">Select Lower...</option>
-                                        {targetConfig.options['TX'].stateLower.map((opt) => (
-                                            <option key={opt} value={opt}>{opt}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
+                        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => navigate('/verify/citizen')}
+                                className="px-5 py-2.5 bg-primary-container hover:bg-primary-container/90 text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                                Finish Peer-to-Peer Vouching ➔
+                            </button>
+                            <span className="text-xs text-text-secondary/70 font-mono text-center sm:text-left">
+                                Unlocks Organize hubs, Civic Assembly, & Candidate Desk
+                            </span>
                         </div>
                     </div>
                 )}

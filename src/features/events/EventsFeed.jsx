@@ -1,7 +1,7 @@
-// src/features/events/EventsFeed.jsx (Part 1 of 2)
 import React, { useState, useEffect } from 'react';
-import { useEventsQuery, useToggleEventInterest } from './useEventsFeature';
+import { useEventsQuery, useToggleEventInterest, useFilterEvents } from './useEventsFeature';
 import { useStore } from '../../store/useStore';
+import { useAuthStore } from '../../store/auth/useAuthStore';
 import { EventCard } from './EventCard';
 import { EventDateBadge, AttendeeStack } from './EventComponents';
 import {
@@ -9,10 +9,13 @@ import {
     ChevronDown,
     Search,
     MapPin,
-    Calendar,
+    Calendar as CalendarIcon,
     X
 } from 'lucide-react';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Calendar as DayCalendar } from '../../components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
 
 // Assuming you have an EventCard presentation sub-component imported or defined
 function EventCardX({ event, onInterestToggle, isPending }) {
@@ -65,6 +68,54 @@ export function EventsFeed({
 }) {
     const { events, eventsLoading } = useEventsQuery();
     const interestMutation = useToggleEventInterest();
+    const filterEventsMutation = useFilterEvents();
+
+    // 🗺️ Location & Settings Selectors
+    const userState = useStore((state) => state.userState);
+    const streetAddress = useStore((state) => state.streetAddress);
+    const currentUser = useAuthStore((state) => state.user);
+
+    const hasAddressOrCoords = Boolean((streetAddress && streetAddress.trim()) || currentUser?.street_address || currentUser?.latitude);
+    const hasState = Boolean((userState && userState.trim()) || currentUser?.state || currentUser?.origin_state);
+    const canAccessEvents = hasAddressOrCoords || hasState;
+
+    // 🎛️ Date & Distance Filter States
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [selectedDistance, setSelectedDistance] = useState('');
+    const [filteredEventsData, setFilteredEventsData] = useState(null);
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+    const DISTANCE_OPTIONS = [
+        { label: '5 miles', value: '5' },
+        { label: '10 miles', value: '10' },
+        { label: '25 miles', value: '25' },
+        { label: '40 miles', value: '40' },
+        { label: '100 miles', value: '100' },
+    ];
+
+    const handleApplyFilter = (newDate, newDistance) => {
+        const dateStr = newDate ? format(newDate, 'yyyy-MM-dd') : null;
+        const distVal = hasAddressOrCoords ? (newDistance !== undefined ? newDistance : selectedDistance) : null;
+        const stateVal = (!hasAddressOrCoords && hasState) ? (userState || currentUser?.state || currentUser?.origin_state) : null;
+
+        filterEventsMutation.mutate({
+            date: dateStr,
+            distance: distVal,
+            state: stateVal,
+            latitude: currentUser?.latitude,
+            longitude: currentUser?.longitude
+        }, {
+            onSuccess: (data) => {
+                setFilteredEventsData(data);
+            }
+        });
+    };
+
+    const handleClearFilters = () => {
+        setSelectedDate(null);
+        setSelectedDistance('');
+        setFilteredEventsData(null);
+    };
 
     // 🎛️ Zustand Position Cache Synchronization
     const eventsScroll = useStore((state) => state.eventsScroll);
@@ -217,9 +268,8 @@ export function EventsFeed({
         'Community & culture',
         'Performing & visual arts',
         'Film, media, & entertainment',
-        'Health & wellness',
-        'Sports & fitness',
-        'Science & technology',
+        'Fitness & Wellness',
+        'Technology',
         'Travel & outdoor',
         'Charity & causes',
         'Religion & spirituality',
@@ -228,31 +278,59 @@ export function EventsFeed({
     ];
 
     // Execute structural filtration matrix criteria on the query data cache
-    const filteredEvents = events?.filter((event) => {
+    const activeEventsList = filteredEventsData || events;
+
+    const filteredEvents = activeEventsList?.filter((event) => {
         // Search query match
         const matchesSearch =
-            event?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            event?.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            event?.organizer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            event?.location.toLowerCase().includes(searchQuery.toLowerCase());
+            !searchQuery ||
+            event?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            event?.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (event?.organizer && event.organizer.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (event?.location && event.location.toLowerCase().includes(searchQuery.toLowerCase()));
 
         // Location query match
         const matchesLocation =
             !locationQuery ||
-            event?.location.toLowerCase().includes(locationQuery.toLowerCase());
+            (event?.location && event.location.toLowerCase().includes(locationQuery.toLowerCase()));
 
         // Format filter match
         const matchesFormat =
             formatFilter === 'All Events' ||
-            event?.format.toLowerCase() === formatFilter.toLowerCase();
+            (event?.format && event.format.toLowerCase() === formatFilter.toLowerCase()) ||
+            (event?.participation_format && event.participation_format.toLowerCase() === formatFilter.toLowerCase());
 
         // Category filter match
         const matchesCategory =
             categoryFilter === 'All' ||
-            event?.category.toLowerCase() === categoryFilter.toLowerCase();
+            (event?.category && event.category.toLowerCase() === categoryFilter.toLowerCase());
 
         return matchesSearch && matchesLocation && matchesFormat && matchesCategory;
     });
+
+    if (!canAccessEvents) {
+        return (
+            <div className="max-w-[700px] mx-auto my-16 p-8 bg-[#141414] border border-[#262626] rounded-2xl shadow-2xl text-center space-y-6 animate-in fade-in duration-200">
+                <div className="w-16 h-16 rounded-2xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center mx-auto text-primary-container">
+                    <span className="material-symbols-outlined text-3xl">location_off</span>
+                </div>
+                <div className="space-y-2">
+                    <h2 className="text-2xl font-black text-text-primary tracking-tight">Events Page Access Restricted</h2>
+                    <p className="text-text-secondary text-sm leading-relaxed max-w-md mx-auto">
+                        To view and discover community events, please opt-in and provide either your <span className="font-bold text-text-primary">State / Province</span> or <span className="font-bold text-text-primary">Street Address</span> in your Account Settings.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => navigate('/settings?tab=index')}
+                    className="px-6 py-3 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-xl shadow-lg transition-all cursor-pointer inline-flex items-center gap-2"
+                >
+                    <span className="material-symbols-outlined text-lg">settings</span>
+                    Go to Settings
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="">
@@ -439,16 +517,86 @@ export function EventsFeed({
                     {/* Bottom Options Row */}
                     <div className="mt-8 flex flex-wrap items-center justify-between gap-6 pt-4 border-t border-outline-variant/30">
 
-                        {/* Date Picker Button */}
-                        <div className="flex items-center gap-6">
-                            <button
-                                type="button"
-                                onClick={() => showToast('Date picker is coming soon!')}
-                                className="bg-surface-container-low border border-outline-variant px-4 py-2 rounded-card text-xs font-bold flex items-center gap-2 hover:bg-surface-container-high transition-colors text-text-primary cursor-pointer"
-                            >
-                                <Calendar className="w-4 h-4 text-text-secondary" />
-                                <span>Pick dates</span>
-                            </button>
+                        {/* Date Picker & Distance Selector Controls */}
+                        <div className="flex flex-wrap items-center gap-4">
+                            {/* Date Picker Popover */}
+                            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <button
+                                        type="button"
+                                        className={cn(
+                                            "bg-surface-container-low border border-outline-variant px-4 py-2 rounded-card text-xs font-bold flex items-center gap-2 hover:bg-surface-container-high transition-colors cursor-pointer",
+                                            selectedDate ? "border-primary-container text-primary-container bg-primary-container/10" : "text-text-primary"
+                                        )}
+                                    >
+                                        <CalendarIcon className="w-4 h-4 text-text-secondary" />
+                                        <span>{selectedDate ? format(selectedDate, 'MMM d, yyyy') : 'Pick dates'}</span>
+                                        {selectedDate && (
+                                            <X
+                                                className="w-3.5 h-3.5 ml-1 text-primary-container hover:text-white cursor-pointer"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedDate(null);
+                                                    handleApplyFilter(null, selectedDistance);
+                                                }}
+                                            />
+                                        )}
+                                    </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 bg-[#18181b] border border-white/10 rounded-2xl shadow-2xl z-[9999]" align="start">
+                                    <DayCalendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={(d) => {
+                                            setSelectedDate(d);
+                                            setIsPopoverOpen(false);
+                                            handleApplyFilter(d, selectedDistance);
+                                        }}
+                                        defaultMonth={selectedDate || new Date()}
+                                    />
+                                </PopoverContent>
+                            </Popover>
+
+                            {/* Distance Filter (If Street Address / Coords provided) */}
+                            {hasAddressOrCoords ? (
+                                <div className="flex items-center gap-2 bg-surface-container-low border border-outline-variant px-3 py-2 rounded-card text-xs font-bold text-text-primary">
+                                    <MapPin className="w-4 h-4 text-primary-container" />
+                                    <span className="text-text-secondary text-[11px] font-bold">Distance:</span>
+                                    <select
+                                        value={selectedDistance}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setSelectedDistance(val);
+                                            handleApplyFilter(selectedDate, val);
+                                        }}
+                                        className="bg-transparent text-text-primary font-bold text-xs focus:outline-none cursor-pointer"
+                                    >
+                                        <option value="" className="bg-[#18181b] text-text-primary">All Distances</option>
+                                        {DISTANCE_OPTIONS.map((opt) => (
+                                            <option key={opt.value} value={opt.value} className="bg-[#18181b] text-text-primary">
+                                                {opt.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            ) : hasState ? (
+                                /* State Fallback Badge */
+                                <div className="flex items-center gap-1.5 bg-primary-container/10 border border-primary-container/20 px-3 py-2 rounded-card text-xs font-bold text-primary-container">
+                                    <MapPin className="w-3.5 h-3.5" />
+                                    <span>Showing events in {userState || currentUser?.state || currentUser?.origin_state}</span>
+                                </div>
+                            ) : null}
+
+                            {/* Reset Filter Button */}
+                            {(selectedDate || selectedDistance) && (
+                                <button
+                                    type="button"
+                                    onClick={handleClearFilters}
+                                    className="text-xs text-text-secondary hover:text-white underline font-bold transition-colors cursor-pointer"
+                                >
+                                    Reset filters
+                                </button>
+                            )}
                         </div>
 
                         {/* Event Format Selection Capsule */}
@@ -506,7 +654,7 @@ export function EventsFeed({
                         </div>
                     ) : (
                         /* 🎨 Clean Finite Grid Stream Render Frame */
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                             {filteredEvents?.map((event) => (
                                 <EventCard
                                     key={event?.id}

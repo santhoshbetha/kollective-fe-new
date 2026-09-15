@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useBusinessesQuery } from '../features/businesses/useBusinessesFeature';
+import { useBusinessDetailsQuery } from '../features/businesses/useBusinessesFeature';
 
 export const BusinessDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { businesses, businessesLoading, businessesError } = useBusinessesQuery();
+  const { business, businessLoading, businessError } = useBusinessDetailsQuery(id);
 
   const [activeSubTab, setActiveSubTab] = useState('about'); // 'about', 'services', 'reviews'
 
-  // Find business in mock database
-  const business = businesses.find(b => b.id === id);
-
-  if (businessesLoading) {
+  if (businessLoading) {
     return (
       <div className="pt-24 px-4 text-center flex flex-col items-center justify-center gap-4">
         <div className="w-10 h-10 rounded-full border-4 border-t-primary-container border-white/10 animate-spin"></div>
@@ -23,7 +20,7 @@ export const BusinessDetailsPage = () => {
     );
   }
 
-  if (!business) {
+  if (businessError || !business) {
     return (
       <div className="pt-24 px-4 text-center">
         <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">
@@ -35,7 +32,7 @@ export const BusinessDetailsPage = () => {
         </p>
         <button
           onClick={() => navigate('/businesses')}
-          className="px-6 py-2.5 bg-primary-container text-white font-bold rounded-lg text-sm  transition-all active:scale-95"
+          className="px-6 py-2.5 bg-primary-container text-white font-bold rounded-lg text-sm transition-all active:scale-95"
         >
           Return to Directory
         </button>
@@ -43,7 +40,7 @@ export const BusinessDetailsPage = () => {
     );
   }
 
-  const renderStars = (rating) => {
+  const renderStars = (rating = 5.0) => {
     const stars = [];
     const floor = Math.floor(rating);
     for (let i = 0; i < 5; i++) {
@@ -60,12 +57,25 @@ export const BusinessDetailsPage = () => {
     return stars;
   };
 
+  const ownerHandle = business.owner_name || (typeof business.owner === 'string' ? business.owner : business.owner?.username) || 'community_member';
+  const ownerAvatar = business.ownerAvatar || (typeof business.owner === 'object' ? business.owner?.avatar_url : null);
+  const servicesList = Array.isArray(business.services) ? business.services : [];
+  const reviewsCount = business.reviewsCount ?? business.reviews_count ?? 0;
+  const ratingValue = business.rating ?? 5.0;
+  const addressText = business.address || business.contact?.address || 'Local District';
+  const phoneText = business.phone || business.contact?.phone || 'N/A';
+  const emailText = business.email || business.contact?.email || 'N/A';
+  const websiteText = business.website || business.contact?.website || 'N/A';
+  const hoursText = business.hours || business.business_hours || '9:00 AM - 5:00 PM';
+  const establishedYear = business.established || business.year_established || 'N/A';
+  const employeesCount = business.employees || business.number_of_employees || '1-5';
+
   return (
     <div className="max-w-[1280px] mx-auto pb-20">
       {/* Back Link */}
       <button
         onClick={() => navigate('/businesses')}
-        className="inline-flex items-center gap-2 text-primary font-bold text-sm  hover:-translate-x-1 transition-transform mb-6 bg-transparent border-none cursor-pointer"
+        className="inline-flex items-center gap-2 text-primary font-bold text-sm hover:-translate-x-1 transition-transform mb-6 bg-transparent border-none cursor-pointer"
       >
         <span className="material-symbols-outlined text-sm">arrow_back</span>
         Back to Businesses
@@ -73,11 +83,11 @@ export const BusinessDetailsPage = () => {
 
       {/* Hero Section */}
       <div className="relative w-full h-[260px] md:h-[400px] rounded-3xl overflow-hidden mb-8 border border-white/10 group shadow-2xl bg-surface-container">
-        {business.image ? (
+        {business.image || business.profile_image_url ? (
           <img
             alt={business.name}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src={business.image}
+            src={business.image || business.profile_image_url}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-surface-container-low text-text-secondary">
@@ -123,25 +133,25 @@ export const BusinessDetailsPage = () => {
 
             <div className="flex flex-wrap items-center gap-4 mb-6">
               <div className="flex items-center gap-1">
-                {renderStars(business.rating)}
-                <span className="font-bold text-text-secondary text-lg ml-1">{business.rating}</span>
-                <span className="text-text-secondary text-sm ">({business.reviewsCount} reviews)</span>
+                {renderStars(ratingValue)}
+                <span className="font-bold text-text-secondary text-lg ml-1">{ratingValue}</span>
+                <span className="text-text-secondary text-sm">({reviewsCount} reviews)</span>
               </div>
               <div className="w-1.5 h-1.5 bg-white/10 rounded-full"></div>
               <div className="flex items-center gap-2 cursor-pointer group">
-                {business.ownerAvatar ? (
+                {ownerAvatar ? (
                   <img
                     className="w-7 h-7 rounded-full object-cover border border-primary/20"
-                    src={business.ownerAvatar}
+                    src={ownerAvatar}
                     alt="Owner"
                   />
                 ) : (
-                  <div className="w-7 h-7 rounded-full bg-surface-variant flex items-center justify-center border border-primary/20 text-lg">
-                    {business.owner[0]}
+                  <div className="w-7 h-7 rounded-full bg-surface-variant flex items-center justify-center border border-primary/20 text-lg uppercase font-bold text-text-primary">
+                    {ownerHandle ? ownerHandle[0] : 'O'}
                   </div>
                 )}
-                <span className="text-sm  text-text-secondary group-hover:text-primary transition-colors">
-                  Owned by <span className="text-text-primary font-bold">@{business.owner}</span>
+                <span className="text-sm text-text-secondary group-hover:text-primary transition-colors">
+                  Owned by <span className="text-text-primary font-bold">@{ownerHandle}</span>
                 </span>
               </div>
             </div>
@@ -149,27 +159,27 @@ export const BusinessDetailsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-dark dark:text-white text-lg">
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-primary text-[20px]">location_on</span>
-                <span>{business.address}</span>
+                <span>{addressText}</span>
               </div>
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-primary text-[20px]">call</span>
-                <span>{business.phone}</span>
+                <span>{phoneText}</span>
               </div>
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-primary text-[20px]">mail</span>
-                <a className="hover:text-primary transition-colors" href={`mailto:${business.email}`}>
-                  {business.email}
+                <a className="hover:text-primary transition-colors" href={`mailto:${emailText}`}>
+                  {emailText}
                 </a>
               </div>
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-primary text-[20px]">language</span>
-                <a className="hover:text-primary transition-colors" href={`https://${business.website}`} target="_blank" rel="noreferrer">
-                  {business.website}
+                <a className="hover:text-primary transition-colors" href={websiteText.startsWith('http') ? websiteText : `https://${websiteText}`} target="_blank" rel="noreferrer">
+                  {websiteText}
                 </a>
               </div>
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-primary text-[20px]">schedule</span>
-                <span>{business.hours}</span>
+                <span>{hoursText}</span>
               </div>
             </div>
           </div>
@@ -201,7 +211,7 @@ export const BusinessDetailsPage = () => {
                 : 'text-text-secondary hover:text-on-surface'
                 }`}
             >
-              Reviews ({business.reviewsCount})
+              Reviews ({reviewsCount})
             </button>
           </div>
 
@@ -211,7 +221,7 @@ export const BusinessDetailsPage = () => {
               <section className="space-y-6">
                 <h3 className="font-headline-md text-xl font-bold text-text-primary">About this business</h3>
                 <p className="font-body-lg text-lg text-dark dark:text-white leading-relaxed">
-                  {business.description} Detailed and verified within the Kollective Crimson Directory. As a local vendor, they contribute to autonomous community development and support localized supply chains.
+                  {business.description || 'Verified local business inside the Kollective Directory.'}
                 </p>
 
                 {/* Gallery Section */}
@@ -222,27 +232,7 @@ export const BusinessDetailsPage = () => {
                       <img
                         alt="Workspace view"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkHK-pm4Dr-maj1odqm-sCVJAk034-mpkuLxSlo0nGnJNraj0QGEoBkeuc4EoCU1iogWZUNlc3k57hXdOGEFP7HlHj_UzyBEl86m_IM99tvqIgg7pJfC32b5Ru86Qi9BTw36Y7YQvL1tDamP18gewFFcVlXLM9VUSkFsnHcPWOJxqwbEPvL-6XDnyKF5PCr7iuRIZEKw1l9LKtjvGU3_qANZRUVPOU1PAKCXUBytgUk-ECu50BtBDHV297kbXvsNGnTfDm_rOQ4uU"
-                      />
-                      <div className="absolute inset-0 bg-primary-container/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="material-symbols-outlined text-white text-2xl">zoom_in</span>
-                      </div>
-                    </div>
-                    <div className="group relative rounded-2xl overflow-hidden aspect-square cursor-zoom-in bg-surface-container border border-white/5">
-                      <img
-                        alt="Minimalist workbench"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlxsb4mW1ifiNQjwFO56pYaK7GjOr9BwBIZ3IbQyslwi56A1Mk4LBWX0mcjn5eLNLGrdKxneQfxxmndJTtIa442XmvH5Up7-MJNtriSjVqsJFmonE4RtuKk4w9ExqkPkXjfHTnhZ4lojUWA-AbaLBW_6318kZNLq9_GtPJW1dOWVYHusc5rDhPj6j2h3yiXrKbPkS_klopGy9TyF_OxCgICKbG-7aPIpsN05dCxvgUdZ-zbQdyV2GMCdSDXvdxOxoyNptO2oyvo4I"
-                      />
-                      <div className="absolute inset-0 bg-primary-container/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="material-symbols-outlined text-white text-2xl">zoom_in</span>
-                      </div>
-                    </div>
-                    <div className="group relative rounded-2xl overflow-hidden aspect-square cursor-zoom-in bg-surface-container border border-white/5">
-                      <img
-                        alt="Diagnostics center"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCr8pnQZR59aptHvAps7KMHklfeHSiYvySc70kIinsiUrnMM17YG1LGFAu0OlV7OnCE6AcPQUUa0UuZSrk1g2hqL-TlJVPwwDtP2g3zdCJ40qPNcnvWSTJuSIyb797l2ikO8y--FuSGbp4WyJShtzCBKgWoxFgmT6b3CyYy6HVBHZFU5mvS_SU20MrrBaWcmjnyyR6CCsg0l9Q7n6ZDd2WkEFA6psL2Z8TFipDP3s_5Xz1IiL9y9bpgVMu1Df9ds-4sBBVKtMiSLQw"
+                        src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80"
                       />
                       <div className="absolute inset-0 bg-primary-container/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <span className="material-symbols-outlined text-white text-2xl">zoom_in</span>
@@ -256,14 +246,18 @@ export const BusinessDetailsPage = () => {
             {activeSubTab === 'services' && (
               <section className="space-y-4">
                 <h3 className="font-headline-md text-xl font-bold text-text-primary">Services & Offerings</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {business.services.map((svc, i) => (
-                    <div key={i} className="bg-surface-container-low border border-white/5 p-4 rounded-xl flex items-center gap-3">
-                      <span className="material-symbols-outlined text-primary text-[20px]">check_circle</span>
-                      <span className="text-lg font-bold text-text-primary">{svc}</span>
-                    </div>
-                  ))}
-                </div>
+                {servicesList.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {servicesList.map((svc, i) => (
+                      <div key={i} className="bg-surface-container-low border border-white/5 p-4 rounded-xl flex items-center gap-3">
+                        <span className="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+                        <span className="text-lg font-bold text-text-primary">{svc}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-text-secondary text-base">No specific services listed yet.</p>
+                )}
               </section>
             )}
 
@@ -272,8 +266,8 @@ export const BusinessDetailsPage = () => {
                 <div className="flex justify-between items-center">
                   <h3 className="font-headline-md text-xl font-bold text-text-primary">Customer Feedback</h3>
                   <button
-                    onClick={() => alert('Review form popup')}
-                    className="px-4 py-2 border border-primary-container/30 text-primary-container text-sm  font-bold rounded-xl hover:bg-primary-container/10 transition-all"
+                    onClick={() => alert('Review feature coming soon!')}
+                    className="px-4 py-2 border border-primary-container/30 text-primary-container text-sm font-bold rounded-xl hover:bg-primary-container/10 transition-all"
                   >
                     Add Review
                   </button>
@@ -286,7 +280,7 @@ export const BusinessDetailsPage = () => {
                       <span className="text-[14px] text-text-secondary ml-auto">1 week ago</span>
                     </div>
                     <p className="text-lg text-text-secondary leading-relaxed">
-                      Excellent service! Fixed my laptop screen within 4 hours. Transparent pricing and friendly team. Highly recommend!
+                      Excellent service! Highly recommended community vendor.
                     </p>
                   </div>
                 </div>
@@ -304,8 +298,8 @@ export const BusinessDetailsPage = () => {
                 <span className="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-xl">calendar_today</span>
                 <span className="text-[14px] text-text-secondary uppercase tracking-widest font-bold">Since</span>
               </div>
-              <span className="text-3xl font-bold text-text-primary">{business.established}</span>
-              <span className="text-sm  text-text-secondary">Established Year</span>
+              <span className="text-3xl font-bold text-text-primary">{establishedYear}</span>
+              <span className="text-sm text-text-secondary">Established Year</span>
             </div>
 
             <div className="bg-surface-ink border border-white/5 p-6 rounded-3xl flex flex-col gap-1 hover:border-primary/20 transition-all">
@@ -313,8 +307,8 @@ export const BusinessDetailsPage = () => {
                 <span className="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-xl">groups</span>
                 <span className="text-[14px] text-text-secondary uppercase tracking-widest font-bold">Team</span>
               </div>
-              <span className="text-3xl font-bold text-text-primary">{business.employees}</span>
-              <span className="text-sm  text-text-secondary">Employees</span>
+              <span className="text-3xl font-bold text-text-primary">{employeesCount}</span>
+              <span className="text-sm text-text-secondary">Employees</span>
             </div>
 
             <div className="bg-surface-ink border border-white/5 p-6 rounded-3xl flex flex-col gap-1 hover:border-primary/20 transition-all">
@@ -322,8 +316,8 @@ export const BusinessDetailsPage = () => {
                 <span className="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-xl">reviews</span>
                 <span className="text-[14px] text-text-secondary uppercase tracking-widest font-bold">Feedback</span>
               </div>
-              <span className="text-3xl font-bold text-text-primary">{business.reviewsCount}</span>
-              <span className="text-sm  text-text-secondary">Total Reviews</span>
+              <span className="text-3xl font-bold text-text-primary">{reviewsCount}</span>
+              <span className="text-sm text-text-secondary">Total Reviews</span>
             </div>
           </div>
 
@@ -331,15 +325,15 @@ export const BusinessDetailsPage = () => {
           <div className="bg-surface-ink border border-white/5 p-6 rounded-3xl space-y-4 shadow-xl">
             <h4 className="font-headline-md text-lg font-bold text-text-primary">Quick Actions</h4>
             <button
-              onClick={() => alert(`Calling business: ${business.phone}`)}
-              className="w-full bg-primary-container text-white py-4 rounded-2xl font-bold text-sm  uppercase tracking-wider shadow-lg shadow-primary-container/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 border-none"
+              onClick={() => alert(`Calling business: ${phoneText}`)}
+              className="w-full bg-primary-container text-white py-4 rounded-2xl font-bold text-sm uppercase tracking-wider shadow-lg shadow-primary-container/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 border-none"
             >
               <span className="material-symbols-outlined text-sm">call</span>
               Contact Business
             </button>
             <button
-              onClick={() => alert(`Opening chat channel with @${business.owner}`)}
-              className="w-full bg-surface-variant border border-white/10 text-on-surface py-4 rounded-2xl font-bold text-sm  uppercase tracking-wider hover:bg-white/10 transition-all active:scale-95 border-none cursor-pointer text-text-primary"
+              onClick={() => alert(`Opening chat channel with @${ownerHandle}`)}
+              className="w-full bg-surface-variant border border-white/10 text-on-surface py-4 rounded-2xl font-bold text-sm uppercase tracking-wider hover:bg-white/10 transition-all active:scale-95 border-none cursor-pointer text-text-primary"
             >
               Send Message
             </button>
@@ -350,7 +344,7 @@ export const BusinessDetailsPage = () => {
             <img
               alt="Map Location"
               className="w-full h-full object-cover grayscale opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-750"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAt1ueRY6_RFiIXhGgc_slLyZQqu7145MRNPM9bCwpIIlnUS_Cr6Y5NR4a7rFZVS0tWdfL_sOuUCp2K5tI8Eje-jxqXZAk_TKH6LDu8ZRzLzivb1YlPrJ-iUt35vVfqu850Gb7wTQ_TAjt2wfozGige3iAACkh5qFIwvMzLuMjj3bVL1KSbjU0f3K-DYmr2jCs205XbN35_efuDls-O3vkpiAZKkNaMIuyXJy5rK6WLctUNC-12g_e-ieEVivLWy6jK2gjyDpqMopw"
+              src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=600&q=80"
             />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="bg-primary-container p-2.5 rounded-full shadow-lg shadow-primary-container/40 animate-bounce">

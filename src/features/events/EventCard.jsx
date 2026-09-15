@@ -3,63 +3,103 @@ import { useNavigate } from 'react-router-dom';
 import { useToggleEventInterest } from '../../features/events/useEventsFeature';
 import { EventDateBadge, AttendeeStack } from './EventComponents';
 
-export const EventCard = ({ event }) => {
-    const toggleEventInterest = useToggleEventInterest();
+export const EventCard = ({ event, onInterestToggle, isPending }) => {
+    const defaultToggleInterest = useToggleEventInterest();
     const navigate = useNavigate();
+
+    const handleInterestClick = (e) => {
+        e.stopPropagation();
+        if (onInterestToggle) {
+            onInterestToggle(event?.id);
+        } else if (defaultToggleInterest) {
+            defaultToggleInterest(event?.id);
+        }
+    };
 
     const isLive = event?.format?.toLowerCase() === 'online' || event?.format?.toLowerCase() === 'live' || event?.isLive;
 
     return (
         <article
             onClick={() => navigate(`/events/${event?.id}`)}
-            className="group bg-[#141414] rounded-[8px] overflow-hidden border border-[#262626] hover:border-[#a10836]/50 transition-all shadow-lg hover:shadow-[#a10836]/5 cursor-pointer flex flex-col h-full"
+            className="group bg-surface-container-low/90 hover:bg-surface-container-low rounded-xl overflow-hidden border border-white/10 hover:border-primary-container/30 transition-all shadow-md hover:shadow-xl cursor-pointer flex flex-col justify-between h-full"
         >
-            <div className="relative h-56 overflow-hidden flex-shrink-0">
-                <img
-                    alt={event?.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    src={event?.image}
-                />
-                <div className="absolute top-4 left-4">
-                    {isLive ? (
-                        <span className="bg-[#a10836] text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-tighter animate-pulse">Live Now</span>
+            <div>
+                {/* Compact Image Header */}
+                <div className="relative h-36 overflow-hidden flex-shrink-0 bg-surface-container-high">
+                    {event?.image ? (
+                        <img
+                            alt={event?.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            src={event?.image}
+                        />
                     ) : (
-                        <span className="bg-green-600/95 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-tighter backdrop-blur-sm">In-Person</span>
+                        <div className="w-full h-full flex items-center justify-center text-text-secondary/40 bg-surface-container-high/60">
+                            <span className="material-symbols-outlined text-4xl">event</span>
+                        </div>
+                    )}
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                        {isLive ? (
+                            <span className="bg-[#a10836] text-white text-[9px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider animate-pulse shadow">
+                                Live Now
+                            </span>
+                        ) : (
+                            <span className="bg-green-600/90 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider backdrop-blur-sm shadow">
+                                In-Person
+                            </span>
+                        )}
+                        {event?.category && (
+                            <span className="bg-black/60 text-text-secondary text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider backdrop-blur-md">
+                                {event.category}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Content Body */}
+                <div className="p-4 space-y-2">
+                    <h3 className="text-base font-bold text-text-primary group-hover:text-primary-container transition-colors line-clamp-1 tracking-tight">
+                        {event?.title}
+                    </h3>
+
+                    {/* Metadata */}
+                    <div className="space-y-1 text-xs text-text-secondary/80">
+                        <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-primary-container text-[15px] shrink-0">calendar_today</span>
+                            <span className="line-clamp-1 font-medium">{event?.displayDate || event?.date}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-primary-container text-[15px] shrink-0">location_on</span>
+                            <span className="line-clamp-1 font-medium">{event?.location}</span>
+                        </div>
+                    </div>
+
+                    {event?.description && (
+                        <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed pt-1">
+                            {event?.description}
+                        </p>
                     )}
                 </div>
             </div>
-            <div className="p-6 flex flex-col justify-between flex-1">
-                <div>
-                    <h3 className="text-xl font-bold mb-2 group-hover:text-[#a10836] transition-colors line-clamp-1">
-                        {event?.title}
-                    </h3>
-                    <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <span className="material-symbols-outlined text-[#a10836] text-sm">calendar_today</span>
-                            <span className="line-clamp-1">{event?.displayDate || event?.date}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <span className="material-symbols-outlined text-[#a10836] text-sm">location_on</span>
-                            <span className="line-clamp-1">{event?.location}</span>
-                        </div>
-                    </div>
-                    <p className="text-sm text-gray-500 line-clamp-2 mb-6">
-                        {event?.description}
-                    </p>
-                </div>
-                <div className="flex items-center justify-between pt-4 border-t border-[#262626]/50">
-                    <span className="text-xs font-bold text-green-500">Free</span>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            toggleEventInterest(event?.id);
-                        }}
-                        className={`hover:bg-red-700 text-white text-xs font-bold px-6 py-2.5 rounded-[8px] transition-colors uppercase tracking-widest border-none cursor-pointer ${event?.isInterested ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-[#a10836]'
-                            }`}
-                    >
-                        {event?.isInterested ? 'Interested' : 'Interest'}
-                    </button>
-                </div>
+
+            {/* Compact Action Footer */}
+            <div className="px-4 pb-4 pt-2 flex items-center justify-between border-t border-white/5 mt-auto">
+                <span className="text-xs font-bold text-green-400 font-mono">
+                    {event?.price || 'Free'}
+                </span>
+                <button
+                    onClick={handleInterestClick}
+                    disabled={isPending}
+                    className={`text-xs font-extrabold px-4 py-1.5 rounded-lg transition-all uppercase tracking-wider border-none cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                        event?.isInterested 
+                            ? 'bg-surface-container-high text-text-secondary hover:bg-surface-container-highest' 
+                            : 'bg-primary-container text-white hover:bg-primary-container/80 shadow-md shadow-primary-container/20'
+                    }`}
+                >
+                    <span className="material-symbols-outlined text-[14px]">
+                        {event?.isInterested ? 'check' : 'star'}
+                    </span>
+                    {event?.isInterested ? 'Interested' : 'Interest'}
+                </button>
             </div>
         </article>
     );

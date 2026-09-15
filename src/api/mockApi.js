@@ -575,7 +575,7 @@ let businesses = [
     hours: '24/7 Access',
     owner: 'Fitcorp',
     ownerAvatar: '',
-    category: 'Health & Fitness',
+    category: 'Fitness & Wellness',
     reviewsCount: 892,
     rating: 4.7,
     verified: true,
@@ -725,6 +725,28 @@ export const getBusinesses = async () => {
   return [...businesses];
 };
 
+export const filterBusinesses = async ({ distance, state, latitude, longitude } = {}) => {
+  await delay(LATENCY);
+  let result = [...businesses];
+
+  if (distance) {
+    const maxMiles = parseFloat(distance);
+    if (!isNaN(maxMiles)) {
+      result = result.filter(b => {
+        if (typeof b.distanceMiles === 'number') return b.distanceMiles <= maxMiles;
+        return true;
+      });
+    }
+  } else if (state) {
+    result = result.filter(b => {
+      const bState = b.origin_state || b.state || b.address || b.location || '';
+      return bState.toLowerCase().includes(state.toLowerCase());
+    });
+  }
+
+  return result;
+};
+
 export const getBusinessById = async (id) => {
   await delay(LATENCY);
   return businesses.find(b => b.id === id) || null;
@@ -745,6 +767,11 @@ export const createBusiness = async (biz) => {
   };
   businesses = [newBiz, ...businesses];
   return newBiz;
+};
+
+export const getProposalById = async (id) => {
+  await delay(LATENCY);
+  return proposals.find(p => p.id === id) || null;
 };
 
 export const getProposals = async () => {
@@ -1009,6 +1036,42 @@ let events = [
 export const getEvents = async () => {
   await delay(LATENCY);
   return [...events];
+};
+
+export const filterEventsByDate = async ({ date, distance, state, latitude, longitude } = {}) => {
+  await delay(LATENCY);
+  let result = [...events];
+
+  if (date) {
+    result = result.filter(e => {
+      const eDateStr = e.date || (e.start_time ? e.start_time.split('T')[0] : '');
+      if (!eDateStr) return true;
+      if (eDateStr.includes(date)) return true;
+      try {
+        const parsed = new Date(e.date || e.start_time).toISOString().split('T')[0];
+        return parsed === date;
+      } catch (err) {
+        return true;
+      }
+    });
+  }
+
+  if (distance) {
+    const maxMiles = parseFloat(distance);
+    if (!isNaN(maxMiles)) {
+      result = result.filter(e => {
+        if (typeof e.distanceMiles === 'number') return e.distanceMiles <= maxMiles;
+        return true;
+      });
+    }
+  } else if (state) {
+    result = result.filter(e => {
+      const eState = e.origin_state || e.state || e.location || '';
+      return eState.toLowerCase().includes(state.toLowerCase());
+    });
+  }
+
+  return result;
 };
 
 export const getEventById = async (id) => {
@@ -1289,4 +1352,49 @@ export const getMockPostContext2 = (targetId) => {
     descendants
   };
 };
+
+/**
+ * 🗺️ Mock Backend Endpoint: Resolves exact city and political district boundaries from user street address.
+ */
+export const lookupAddressBoundaries = async (streetAddress, state, country = 'US') => {
+  await new Promise((resolve) => setTimeout(resolve, 600));
+
+  if (!streetAddress || !streetAddress.trim()) {
+    throw new Error('Street address is required to resolve boundaries.');
+  }
+
+  const cleanAddr = streetAddress.trim();
+  const cleanState = (state || 'State').trim();
+
+  let city = 'Metro Hub';
+  if (cleanAddr.toLowerCase().includes('austin')) city = 'Austin';
+  else if (cleanAddr.toLowerCase().includes('york') || cleanState === 'New York') city = 'New York City';
+  else if (cleanAddr.toLowerCase().includes('angeles') || cleanState === 'California') city = 'Los Angeles';
+  else if (cleanState === 'Texas') city = 'Austin';
+  else if (cleanState === 'Illinois') city = 'Chicago';
+  else if (cleanState === 'Ontario') city = 'Toronto';
+  else if (cleanState === 'Maharashtra') city = 'Mumbai';
+  else if (cleanState === 'England') city = 'London';
+  else city = `${cleanState} District City`;
+
+  const num = cleanAddr.length > 0 ? (cleanAddr.charCodeAt(0) % 25) + 1 : 1;
+  const upperNum = (num % 30) + 1;
+  const lowerNum = ((num * 2) % 80) + 1;
+
+  const stateCode = cleanState.slice(0, 2).toUpperCase() || 'ST';
+
+  return {
+    success: true,
+    address: cleanAddr,
+    city: city,
+    state: cleanState,
+    country: country,
+    districtFederal: `${stateCode}-${num}`,
+    districtStateUpper: `${stateCode}-SD-${upperNum}`,
+    districtStateLower: `${stateCode}-HD-${lowerNum}`,
+    county: `${cleanState} Central Jurisdiction`,
+    unlockedFeatures: ['location_posts', 'local_businesses', 'classifieds']
+  };
+};
+
 

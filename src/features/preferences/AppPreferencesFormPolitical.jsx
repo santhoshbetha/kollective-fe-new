@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { useTranslation } from '../../components/locales';
+import { getStatesByCountry } from '../../utils/geoUtils';
 
 // 🎛️ Reusable toggle switch component matching the redesign style
 const Toggle = ({ checked, onChange }) => (
@@ -97,12 +98,7 @@ export function AppPreferencesFormPolitical() {
 
     const t = useTranslation(currentLanguage);
 
-    const states = ['California', 'New York', 'Texas'];
-    const citiesByState = {
-        California: ['Los Angeles', 'San Francisco', 'San Diego'],
-        'New York': ['New York City', 'Buffalo', 'Rochester'],
-        Texas: ['Houston', 'Austin', 'Dallas'],
-    };
+    const states = getStatesByCountry(politicalCountry);
 
     const targetConfig = DISTRICT_TERMINOLOGY[politicalCountry] || DISTRICT_TERMINOLOGY['US'];
 

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { VirtuosoGrid } from 'react-virtuoso';
 import { PostAdModal } from '../features/classifieds/PostAdModal';
+import { useStore } from '../store/useStore';
+import { useAuthStore } from '../store/auth/useAuthStore';
 import {
     ArrowLeft,
     Search,
@@ -111,6 +113,39 @@ export const ClassifiedsDirectoryPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isPostAdOpen, setIsPostAdOpen] = useState(false);
     const [selectedAd, setSelectedAd] = useState(null);
+
+    // 🗺️ Location Selectors
+    const userState = useStore((state) => state.userState);
+    const streetAddress = useStore((state) => state.streetAddress);
+    const currentUser = useAuthStore((state) => state.user);
+
+    const hasAddressOrCoords = Boolean((streetAddress && streetAddress.trim()) || currentUser?.street_address || currentUser?.latitude);
+    const hasState = Boolean((userState && userState.trim()) || currentUser?.state || currentUser?.origin_state);
+    const canAccessClassifieds = hasAddressOrCoords || hasState;
+
+    if (!canAccessClassifieds) {
+        return (
+            <div className="max-w-[700px] mx-auto my-16 p-8 bg-[#141414] border border-[#262626] rounded-2xl shadow-2xl text-center space-y-6 animate-in fade-in duration-200 font-sans">
+                <div className="w-16 h-16 rounded-2xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center mx-auto text-primary-container">
+                    <span className="material-symbols-outlined text-3xl">location_off</span>
+                </div>
+                <div className="space-y-2">
+                    <h2 className="text-2xl font-black text-text-primary tracking-tight">Local Classifieds Access Restricted</h2>
+                    <p className="text-text-secondary text-sm leading-relaxed max-w-md mx-auto">
+                        To discover local classified advertisements in your neighborhood, please opt-in and provide either your <span className="font-bold text-text-primary">State / Province</span> or <span className="font-bold text-text-primary">Street Address</span> in your Account Settings.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => navigate('/settings?tab=index')}
+                    className="px-6 py-3 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-xl shadow-lg transition-all cursor-pointer inline-flex items-center gap-2 border-none"
+                >
+                    <span className="material-symbols-outlined text-lg">settings</span>
+                    Go to Settings
+                </button>
+            </div>
+        );
+    }
 
     const categories = ['All', 'For Sale', 'Services', 'Handmade', 'Housing', 'Gigs', 'Community'];
 

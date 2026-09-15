@@ -6,67 +6,72 @@ export const BusinessProposalCard = ({ prop }) => {
     const navigate = useNavigate();
 
     const statusColors = prop.status === 'Hot'
-        ? 'bg-primary-container/20 text-primary border-primary-container/30'
+        ? 'bg-primary-container/20 text-primary-container border-primary-container/30'
         : prop.status === 'Active'
-            ? 'bg-green-900/20 text-green-400 border-green-500/20'
-            : 'bg-surface-container-high text-on-surface-variant border-white/5';
+            ? 'bg-green-500/20 text-green-400 border-green-500/30'
+            : 'bg-surface-container-high text-text-secondary border-white/5';
+
     return (
-        <div
+        <article
             key={prop.id}
             onClick={() => navigate(`/proposals/${prop.id}`)}
-            className="glass-card border border-white/5 p-6 rounded-2xl group cursor-pointer transition-all hover:scale-[1.01] hover:border-primary-container/20 crimson-glow relative overflow-hidden flex flex-col justify-between min-h-[360px]"
+            className="glass-card border border-white/10 p-4 sm:p-5 rounded-2xl group cursor-pointer transition-all hover:border-primary-container/30 bg-surface-container-low/90 hover:bg-surface-container-low shadow-md hover:shadow-xl relative overflow-hidden flex flex-col justify-between gap-3"
         >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors"></div>
+            <div className="absolute top-0 right-0 w-28 h-28 bg-primary-container/5 rounded-full blur-2xl -mr-12 -mt-12 group-hover:bg-primary-container/10 transition-colors pointer-events-none"></div>
 
             <div>
-                <div className="flex justify-between items-start mb-6">
-                    <div className="w-12 h-12 bg-surface-container-highest/30 rounded-xl flex items-center justify-center text-primary border border-white/5">
-                        <span className="material-symbols-outlined">
-                            {prop.category === 'Infrastructure' ? 'deck' : prop.category === 'Agriculture' ? 'agriculture' : 'electric_bolt'}
+                {/* Header Row */}
+                <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-primary-container/10 rounded-lg flex items-center justify-center text-primary-container border border-primary-container/20 shrink-0">
+                            <span className="material-symbols-outlined text-[16px]">
+                                {prop.category === 'Infrastructure' ? 'deck' : prop.category === 'Agriculture' ? 'agriculture' : 'electric_bolt'}
+                            </span>
+                        </div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-text-secondary/70">
+                            {prop.category}
                         </span>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-[14px] font-bold border uppercase tracking-wider ${statusColors}`}>
+
+                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold border uppercase tracking-wider ${statusColors}`}>
                         {prop.status}
                     </span>
                 </div>
 
-                <h3 className="font-headline-md text-lg font-bold text-text-primary mb-2 group-hover:text-primary transition-colors">
+                {/* Title */}
+                <h3 className="font-headline-sm text-base font-bold text-text-primary tracking-tight group-hover:text-primary-container transition-colors line-clamp-1">
                     {prop.title}
                 </h3>
 
-                <p className="font-body-md text-lg text-on-surface-variant mb-6 line-clamp-3">
+                {/* Description */}
+                <p className="text-xs text-text-secondary leading-snug line-clamp-2 mt-1">
                     {prop.description}
                 </p>
             </div>
 
-            <div>
+            <div className="space-y-3 pt-2">
                 {/* Progress Bar */}
-                <div className="space-y-2 mb-6">
-                    <div className="flex justify-between text-[14px] font-bold">
-                        <span className="text-on-surface-variant">Funding Goal</span>
-                        <span className="text-text-primary">${prop.fundingGoal.toLocaleString()}</span>
+                <div className="space-y-1.5 bg-surface-container-lowest/40 p-2.5 rounded-xl border border-white/5">
+                    <div className="flex justify-between text-xs font-bold">
+                        <span className="text-text-secondary">Goal: <span className="text-text-primary">${prop.fundingGoal ? prop.fundingGoal.toLocaleString() : '0'}</span></span>
+                        <span className="text-primary-container font-extrabold">{prop.percent}% funded</span>
                     </div>
                     <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden border border-white/5">
-                        <div className="h-full bg-primary-container" style={{ width: `${prop.percent}%` }}></div>
+                        <div className="h-full bg-primary-container" style={{ width: `${Math.min(prop.percent || 0, 100)}%` }}></div>
                     </div>
-                    <div className="flex justify-between text-[14px] font-bold">
-                        <span className="text-primary">{prop.percent}% funded</span>
-                        <span className="text-on-surface-variant">{prop.daysLeft} days left</span>
+                    <div className="flex justify-between text-[11px] text-text-secondary/70 font-mono">
+                        <span>{prop.daysLeft || 0} days left</span>
+                        <span>{prop.participants || 0} backers</span>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
-                    <div>
-                        <p className="text-on-surface-variant text-[14px] uppercase font-bold tracking-wider opacity-60">Investment</p>
-                        <p className="text-text-primary font-bold text-sm">${prop.minInvest} - ${prop.maxInvest >= 1000 ? `${prop.maxInvest / 1000}k` : prop.maxInvest}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-on-surface-variant text-[14px] uppercase font-bold tracking-wider opacity-60">Participants</p>
-                        <p className="text-text-primary font-bold text-sm">{prop.participants}</p>
-                    </div>
+                {/* Investment Info */}
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5">
+                    <span className="text-text-secondary/70">Min Investment:</span>
+                    <span className="text-text-primary font-bold">${prop.minInvest} - ${prop.maxInvest >= 1000 ? `${prop.maxInvest / 1000}k` : prop.maxInvest}</span>
                 </div>
             </div>
-        </div>
+        </article>
     );
 };
 

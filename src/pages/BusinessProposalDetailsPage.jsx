@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth/useAuthStore';
-import { useProposalsQuery, useVoteOnProposal } from '../features/businesses/useProposalsFeature';
+import { useProposalDetailsQuery } from '../features/businesses/useProposalsFeature';
 
 export const BusinessProposalDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const { proposals, proposalsLoading, proposalsError } = useProposalsQuery();
+  const { proposal, proposalLoading, proposalError } = useProposalDetailsQuery(id);
 
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState([
@@ -32,10 +32,7 @@ export const BusinessProposalDetailsPage = () => {
   const [hasInterest, setHasInterest] = useState(false);
   const [interestCount, setInterestCount] = useState(23);
 
-  // Find proposal in mock database
-  const proposal = proposals.find(p => p.id === id);
-
-  if (proposalsLoading) {
+  if (proposalLoading) {
     return (
       <div className="pt-24 px-4 text-center flex flex-col items-center justify-center gap-4">
         <div className="w-10 h-10 rounded-full border-4 border-t-primary-container border-white/10 animate-spin"></div>
@@ -46,7 +43,7 @@ export const BusinessProposalDetailsPage = () => {
     );
   }
 
-  if (!proposal) {
+  if (proposalError || !proposal) {
     return (
       <div className="pt-24 px-4 text-center">
         <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">
@@ -70,12 +67,16 @@ export const BusinessProposalDetailsPage = () => {
   const getHeroImage = (cat) => {
     switch (cat) {
       case 'Sustainable Energy':
+      case 'sustainable_energy':
         return 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1200&q=80';
       case 'Agriculture':
+      case 'agriculture':
         return 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=1200&q=80';
       case 'Technology':
+      case 'technology':
         return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80';
       case 'Infrastructure':
+      case 'infrastructure':
       default:
         return 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80';
     }
@@ -87,8 +88,8 @@ export const BusinessProposalDetailsPage = () => {
 
     const newCommentObj = {
       id: `c-${Date.now()}`,
-      author: user.handle ? user.handle.replace('@', '') : 'julian_thorne',
-      avatar: user.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+      author: user?.username || (user?.handle ? user.handle.replace('@', '') : 'julian_thorne'),
+      avatar: user?.avatar_url || user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
       text: newComment.trim(),
       time: 'Just now',
       verified: false
@@ -108,6 +109,17 @@ export const BusinessProposalDetailsPage = () => {
     }
   };
 
+  const proposalTitle = proposal.title || proposal.name || 'Untitled Proposal';
+  const fundingGoalVal = proposal.fundingGoal ?? proposal.money_required ?? 0;
+  const daysLeftVal = proposal.daysLeft ?? 45;
+  const locationText = proposal.location || proposal.district_l1 || proposal.address || 'Local District';
+  const categoryText = proposal.category || 'General';
+  const statusText = proposal.status || 'Active';
+  const ownerHandle = proposal.owner_name || (typeof proposal.owner === 'string' ? proposal.owner : proposal.owner?.username) || 'proposer';
+  const lookingForTags = (Array.isArray(proposal.tags) && proposal.tags.length > 0)
+    ? proposal.tags
+    : ['Co-founder', 'Tech Lead', 'Operations'];
+
   return (
     <div className="max-w-[1280px] mx-auto pb-20">
       {/* Back Link */}
@@ -124,14 +136,14 @@ export const BusinessProposalDetailsPage = () => {
       {/* Hero Banner Section */}
       <div className="relative w-full h-[260px] md:h-[400px] rounded-3xl overflow-hidden mb-8 border border-white/10 group shadow-2xl bg-surface-container">
         <img
-          alt={proposal.title}
+          alt={proposalTitle}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-102"
-          src={getHeroImage(proposal.category)}
+          src={proposal.image || proposal.profile_image_url || getHeroImage(proposal.category)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/20"></div>
         <div className="absolute top-6 left-6">
           <span className="bg-primary-container/95 backdrop-blur-md text-white font-bold text-sm px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg border border-primary-container/20 uppercase tracking-wider">
-            {proposal.status} Proposal
+            {statusText} Proposal
           </span>
         </div>
       </div>
@@ -144,16 +156,16 @@ export const BusinessProposalDetailsPage = () => {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-4">
               <span className="bg-primary-container/20 text-primary-container text-sm uppercase font-bold tracking-widest px-2.5 py-1 rounded border border-primary-container/20">
-                {proposal.category}
+                {categoryText}
               </span>
               <div className="flex items-center gap-1 text-text-secondary text-sm">
                 <span className="material-symbols-outlined text-[16px] text-green-400">verified</span>
-                <span>Active Coordinator</span>
+                <span>Active Coordinator @{ownerHandle}</span>
               </div>
             </div>
 
             <h2 className="font-headline-lg text-3xl font-extrabold text-text-primary mb-4 leading-tight">
-              {proposal.title}
+              {proposalTitle}
             </h2>
             <p className="font-body-lg text-base md:text-lg text-on-surface-variant leading-relaxed max-w-4xl">
               {proposal.description}
@@ -174,7 +186,7 @@ export const BusinessProposalDetailsPage = () => {
               {hasInterest ? 'Backing Registered' : 'Back this Proposal'}
             </button>
             <button
-              onClick={() => alert(`Starting channel with Proposer for: ${proposal.title}`)}
+              onClick={() => alert(`Starting channel with Proposer @${ownerHandle} for: ${proposalTitle}`)}
               className="border border-white/10 hover:border-primary-container/30 text-text-secondary hover:text-white px-6 py-3.5 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 bg-transparent"
             >
               <span className="material-symbols-outlined text-sm">mail</span>
@@ -190,7 +202,7 @@ export const BusinessProposalDetailsPage = () => {
               <span className="material-symbols-outlined text-lg text-primary-container">payments</span>
               <span className="font-label-sm text-sm uppercase tracking-wider font-bold">Funding Goal</span>
             </div>
-            <span className="text-xl font-bold text-text-primary">${proposal.fundingGoal.toLocaleString()}</span>
+            <span className="text-xl font-bold text-text-primary">${fundingGoalVal.toLocaleString()}</span>
           </div>
 
           <div className="flex flex-col gap-1">
@@ -198,7 +210,7 @@ export const BusinessProposalDetailsPage = () => {
               <span className="material-symbols-outlined text-lg text-text-secondary">location_on</span>
               <span className="font-label-sm text-sm uppercase tracking-wider font-bold">Target Area</span>
             </div>
-            <span className="text-xl font-bold text-text-primary">{proposal.location || 'District 4'}</span>
+            <span className="text-xl font-bold text-text-primary">{locationText}</span>
           </div>
 
           <div className="flex flex-col gap-1">
@@ -206,7 +218,7 @@ export const BusinessProposalDetailsPage = () => {
               <span className="material-symbols-outlined text-lg text-primary-container">schedule</span>
               <span className="font-label-sm text-sm uppercase tracking-wider font-bold">Timeline</span>
             </div>
-            <span className="text-xl font-bold text-text-primary">{proposal.daysLeft} Days Left</span>
+            <span className="text-xl font-bold text-text-primary">{daysLeftVal} Days Left</span>
           </div>
 
           <div className="flex flex-col gap-1">
@@ -248,7 +260,7 @@ export const BusinessProposalDetailsPage = () => {
             <div className="p-4 rounded-2xl bg-surface-container-high border border-white/5 max-w-sm">
               <span className="text-sm font-bold text-text-secondary uppercase tracking-widest">Target Project Valuation</span>
               <div className="text-2xl font-extrabold text-primary-container mt-1">
-                ${(proposal.fundingGoal * 1.5).toLocaleString()} <span className="text-sm text-text-secondary font-bold">est. utility</span>
+                ${(fundingGoalVal * 1.5).toLocaleString()} <span className="text-sm text-text-secondary font-bold">est. utility</span>
               </div>
             </div>
           </div>
@@ -263,7 +275,7 @@ export const BusinessProposalDetailsPage = () => {
             {/* Comment Form */}
             <form onSubmit={handlePostComment} className="flex gap-4 mb-8">
               <div className="w-9 h-9 rounded-full bg-surface-container flex-shrink-0 flex items-center justify-center text-sm font-bold border border-white/10 uppercase">
-                {user?.name ? user?.name[0] : 'J'}
+                {user?.name ? user?.name[0] : (user?.username ? user?.username[0] : 'J')}
               </div>
               <div className="flex-1">
                 <textarea
@@ -322,15 +334,11 @@ export const BusinessProposalDetailsPage = () => {
               <h3 className="font-headline-md text-lg font-bold text-text-primary">Looking For</h3>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="bg-primary-container/20 text-primary border border-primary-container/30 px-3.5 py-1.5 rounded-full text-lg font-bold">
-                Co-founder
-              </span>
-              <span className="bg-primary-container/20 text-primary border border-primary-container/30 px-3.5 py-1.5 rounded-full text-lg font-bold">
-                Tech Lead
-              </span>
-              <span className="bg-primary-container/20 text-primary border border-primary-container/30 px-3.5 py-1.5 rounded-full text-lg font-bold">
-                Operations
-              </span>
+              {lookingForTags.map((tag, idx) => (
+                <span key={idx} className="bg-primary-container/20 text-primary border border-primary-container/30 px-3.5 py-1.5 rounded-full text-lg font-bold">
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
 

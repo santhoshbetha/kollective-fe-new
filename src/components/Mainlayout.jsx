@@ -36,14 +36,21 @@ export const MainLayout = () => {
         setMobileMenuOpen(false);
     }, [currentPath]);
 
+    const userState = useStore((state) => state.userState);
+    const streetAddress = useStore((state) => state.streetAddress);
+
+    const hasAddressOrCoords = Boolean((streetAddress && streetAddress.trim()) || user?.street_address || user?.latitude);
+    const hasState = Boolean((userState && userState.trim()) || user?.state || user?.origin_state);
+    const canAccessEvents = hasAddressOrCoords || hasState;
+
     const navItems = [
         { name: 'Home', path: '/home', icon: 'home' },
         { name: 'Communities', path: '/communities', icon: 'communities' },
-        { name: 'Events', path: '/events', icon: 'calendar_today' },
+        ...(canAccessEvents ? [{ name: 'Events', path: '/events', icon: 'calendar_today' }] : []),
         { name: 'Polls', path: '/polls', icon: 'poll' },
         { name: 'Explore', path: '/explore', icon: 'explore' },
-        { name: 'Local Businesses', path: '/businesses', icon: 'storefront' },
-        { name: 'Classifieds', path: '/classifieds', icon: 'newspaper' },
+        ...(canAccessEvents ? [{ name: 'Local Businesses', path: '/businesses', icon: 'storefront' }] : []),
+        ...(canAccessEvents ? [{ name: 'Classifieds', path: '/classifieds', icon: 'newspaper' }] : []),
         { name: 'Organize', path: '/organize', icon: 'campaign' },
         { name: 'Civic Assembly', path: '/campaigns/local', icon: 'groups' },
         { name: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' },
@@ -85,7 +92,7 @@ export const MainLayout = () => {
                     </div>
 
                     {/* Navigation Links */}
-                    <nav className="flex flex-col gap-1">
+                    <nav className="flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-160px)] pr-1 scrollbar-thin">
                         {allNavItems.map((item) => {
                             const isActive = currentPath === item.path ||
                                 (item.path === '/home' && currentPath.startsWith('/post')) ||
@@ -113,6 +120,7 @@ export const MainLayout = () => {
                         })}
                     </nav>
 
+
                     {/* Create Button & User Card */}
                     <div className="mt-auto">
                         <button
@@ -134,9 +142,8 @@ export const MainLayout = () => {
                                 <div className="relative flex-shrink-0">
                                     <img alt="User avatar" className="w-10 h-10 rounded-full object-cover border border-white/10" src={activeAccount?.avatar || user.avatar} />
                                     <span
-                                        className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-surface ${
-                                            !activeAccount || activeAccount.type === 'personal' ? 'bg-primary-container' : 'bg-amber-400'
-                                        }`}
+                                        className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-surface ${!activeAccount || activeAccount.type === 'personal' ? 'bg-primary-container' : 'bg-amber-400'
+                                            }`}
                                     />
                                 </div>
                                 <div className="overflow-hidden min-w-0 flex-1">

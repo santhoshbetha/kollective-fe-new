@@ -158,7 +158,7 @@ export const CreateEventPage = () => {
     return (
         <div className="max-w-[var(--spacing-container-max)] mx-auto px-[var(--spacing-margin-mobile)] md:px-[var(--spacing-margin-desktop)] py-[var(--spacing-gutter)] relative space-y-8 isolate font-sans">
 
-            
+
             {/* Embedded Floating Toast Notification */}
             {toastMessage && (
                 <div className={cn(
@@ -371,12 +371,18 @@ export const CreateEventPage = () => {
                                         onChange={(e) => setCategory(e.target.value)}
                                         className="w-full bg-surface-container-low border border-outline-variant rounded-card px-4 py-2.5 text-text-primary focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-xs sm:text-sm cursor-pointer appearance-none"
                                     >
+                                        <option value="Music">Music</option>
+                                        <option value="Business & professional">Business & professional</option>
+                                        <option value="Community & culture">Community & culture</option>
+                                        <option value="Performing & visual arts">Performing & visual arts</option>
+                                        <option value="Film, media, & entertainment">Film, media, & entertainment</option>
+                                        <option value="Fitness & Wellness">Fitness & Wellness</option>
                                         <option value="Technology">Technology</option>
-                                        <option value="Politics">Politics</option>
-                                        <option value="Education">Education</option>
-                                        <option value="Arts">Arts</option>
-                                        <option value="Climate">Climate</option>
-                                        <option value="Environment">Environment</option>
+                                        <option value="Travel & outdoor">Travel & outdoor</option>
+                                        <option value="Charity & causes">Charity & causes</option>
+                                        <option value="Religion & spirituality">Religion & spirituality</option>
+                                        <option value="Family & education">Family & education</option>
+                                        <option value="Seasonal & holiday">Seasonal & holiday</option>
                                     </select>
                                 </div>
                             </div>

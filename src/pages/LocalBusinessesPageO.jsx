@@ -26,7 +26,7 @@ export const LocalBusinessesPageO = () => {
   }, [activeCategory, searchQuery]);
 
   const categories = [
-    'All', 'Technology', 'Food & Beverage', 'Health & Fitness',
+    'All', 'Technology', 'Food & Beverage', 'Fitness & Wellness',
     'Retail', 'Services', 'Manufacturing'
   ];
 

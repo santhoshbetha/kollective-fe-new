@@ -159,9 +159,8 @@ export const EventsPageO = () => {
     'Community & culture',
     'Performing & visual arts',
     'Film, media, & entertainment',
-    'Health & wellness',
-    'Sports & fitness',
-    'Science & technology',
+    'Fitness & Wellness',
+    'Technology',
     'Travel & outdoor',
     'Charity & causes',
     'Religion & spirituality',
@@ -286,7 +285,9 @@ export const EventsPageO = () => {
                 />
                 <span className="material-symbols-outlined text-gray-500 absolute left-3 top-3 text-[20px]">search</span>
               </div>
-              <p className="text-[11px] text-[#A19B95] italic">Search across event titles, descriptions, locations, and organizer names</p>
+              <p className="text-[11px] text-[#A19B95] italic">
+                Search across event titles, descriptions, locations, and organizer names
+              </p>
             </div>
 
             {/* Location Input */}

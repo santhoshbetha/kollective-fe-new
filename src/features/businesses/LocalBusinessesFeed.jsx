@@ -3,14 +3,26 @@ import React from 'react';
 import { useBusinessesQuery } from './useBusinessesFeature';
 import { BusinessCard } from './BusinessCard';
 
-export function LocalBusinessesFeed({ searchQuery, activeCategory, renderPagination, itemsPerPage, currentPage, onPageChange }) {
+export function LocalBusinessesFeed({ searchQuery, activeCategory, selectedDistance, renderPagination, itemsPerPage, currentPage, onPageChange }) {
     const { businesses = [], businessesLoading } = useBusinessesQuery();
 
     const filteredBusinesses = businesses.filter(biz => {
         const matchesCategory = activeCategory === 'All' || biz.category === activeCategory;
-        const matchesSearch = biz.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        const matchesSearch = !searchQuery ||
+            biz.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             biz.description.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
+
+        let matchesDistance = true;
+        if (selectedDistance) {
+            const maxMiles = parseFloat(selectedDistance);
+            if (!isNaN(maxMiles)) {
+                if (typeof biz.distanceMiles === 'number') {
+                    matchesDistance = biz.distanceMiles <= maxMiles;
+                }
+            }
+        }
+
+        return matchesCategory && matchesSearch && matchesDistance;
     });
 
     const totalPages = Math.ceil(filteredBusinesses.length / itemsPerPage);
@@ -50,10 +62,12 @@ export function LocalBusinessesFeed({ searchQuery, activeCategory, renderPaginat
     }
 
     return (
-        <div className="space-y-8 pb-20">
-            {paginatedBusinesses.map((biz) => (
-                <BusinessCard key={biz.id} biz={biz} />
-            ))}
+        <div className="space-y-6 pb-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {paginatedBusinesses.map((biz) => (
+                    <BusinessCard key={biz.id} biz={biz} />
+                ))}
+            </div>
             {renderPagination(currentPage, totalPages, onPageChange)}
         </div>
     );

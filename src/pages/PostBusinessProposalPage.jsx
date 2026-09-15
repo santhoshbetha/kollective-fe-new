@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateProposal } from '../features/businesses/useProposalsFeature';
+import { useAuthStore } from '../store/auth/useAuthStore';
 
 export const PostBusinessProposalPage = () => {
   const navigate = useNavigate();
   const createProposalMutation = useCreateProposal();
+  const user = useAuthStore((state) => state.user);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -61,6 +63,25 @@ export const PostBusinessProposalPage = () => {
       daysLeft: 45,
       participants: '0 Members',
       status: 'New',
+      metadata: {
+        funding_data: {
+          funding_required: true,
+          money_required: goal,
+          fundingGoal: goal,
+          minimum_amount: minInv,
+          minInvest: minInv,
+          maximum_amount: maxInv,
+          maxInvest: maxInv,
+          fundingCollected: 0,
+          percent: 0,
+          daysLeft: 45,
+          participants: '0 Members',
+          status: 'New'
+        },
+        location: formData.location || 'Local District',
+        looking_for: ['Co-founder', 'Tech Lead', 'Operations'],
+        owner_handle: user.username
+      }
     };
 
     // Trigger proposal creation mutation
@@ -84,11 +105,10 @@ export const PostBusinessProposalPage = () => {
     <div className="max-w-[1280px] mx-auto relative">
       {/* Embedded Floating Toast Notification */}
       {toastMessage && (
-        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-fadeIn transition-all ${
-          toastMessage.type === 'success'
-            ? 'bg-green-600 text-white border border-green-500 shadow-green-900/30'
-            : 'bg-[#a10836] text-white border border-red-500 shadow-red-900/30'
-        }`}>
+        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-fadeIn transition-all ${toastMessage.type === 'success'
+          ? 'bg-green-600 text-white border border-green-500 shadow-green-900/30'
+          : 'bg-[#a10836] text-white border border-red-500 shadow-red-900/30'
+          }`}>
           <span>{toastMessage.msg}</span>
           <button
             type="button"
@@ -171,12 +191,22 @@ export const PostBusinessProposalPage = () => {
                     onChange={handleInputChange}
                     className="w-full bg-surface-ink border border-white/10 rounded-xl p-4 text-text-primary focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all text-lg appearance-none cursor-pointer"
                   >
-                    <option>Infrastructure</option>
-                    <option>Technology</option>
-                    <option>Sustainable Energy</option>
-                    <option>Agriculture</option>
-                    <option>Education</option>
+                    <option>Food & Beverage</option>
+                    <option>Grocery Store</option>
                     <option>Healthcare</option>
+                    <option>Transportation</option>
+                    <option>Retail & Crafts</option>
+                    <option>Fitness & Wellness</option>
+                    <option>Beauty & Personal Care</option>
+                    <option>Agriculture</option>
+                    <option>Cleaning Services</option>
+                    <option>Movers</option>
+                    <option>Technology</option>
+                    <option>Professional Services</option>
+                    <option>Legal Services</option>
+                    <option>Tax Services</option>
+                    <option>Manufacturing</option>
+                    <option>Construction</option>
                   </select>
                 </div>
 

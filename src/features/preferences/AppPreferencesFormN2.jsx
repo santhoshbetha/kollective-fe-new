@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { APP_LOCALES, useTranslation } from '../../components/locales';
+import { getStatesByCountry } from '../../utils/geoUtils';
 
 // 🎛️ Reusable toggle switch component matching the redesign style
 const Toggle = ({ checked, onChange }) => (
@@ -55,12 +56,7 @@ export function AppPreferencesFormN2() {
     // Translation interpreter
     const t = useTranslation(currentLanguage);
 
-    const states = ['California', 'New York', 'Texas'];
-    const citiesByState = {
-        California: ['Los Angeles', 'San Francisco', 'San Diego'],
-        'New York': ['New York City', 'Buffalo', 'Rochester'],
-        Texas: ['Houston', 'Austin', 'Dallas'],
-    };
+    const states = getStatesByCountry(politicalCountry);
 
     const targetConfig = DISTRICT_TERMINOLOGY[politicalCountry] || DISTRICT_TERMINOLOGY['US'];
 
@@ -143,21 +139,12 @@ export function AppPreferencesFormN2() {
                     <span className="material-symbols-outlined text-[18px] text-primary-container">location_on</span>
                     <h3 className="uppercase font-mono text-lg tracking-wider text-text-secondary">Location Parameters</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-[10px] font-bold text-text-secondary uppercase">State</label>
-                        <select value={selectedState} onChange={(e) => { setSelectedState(e.target.value); setSelectedCity(''); }} className="w-full bg-[#111111] border border-white/10 rounded-xl py-2 px-3 text-lg text-text-primary focus:outline-none">
-                            <option value="">Select your state</option>
-                            {states.map((st) => <option key={st} value={st}>{st}</option>)}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-[10px] font-bold text-text-secondary uppercase">City</label>
-                        <select value={selectedCity} disabled={!selectedState} onChange={(e) => setSelectedCity(e.target.value)} className="w-full bg-[#111111] border border-white/10 rounded-xl py-2 px-3 text-lg text-text-primary focus:outline-none disabled:opacity-40">
-                            <option value="">{selectedState ? 'Select a city' : 'Select a state first'}</option>
-                            {selectedState && citiesByState[selectedState].map((city) => <option key={city} value={city}>{city}</option>)}
-                        </select>
-                    </div>
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-text-secondary uppercase">State / Province</label>
+                    <select value={selectedState} onChange={(e) => setSelectedState(e.target.value)} className="w-full bg-[#111111] border border-white/10 rounded-xl py-2 px-3 text-lg text-text-primary focus:outline-none">
+                        <option value="">Select your state / province</option>
+                        {states.map((st) => <option key={st} value={st}>{st}</option>)}
+                    </select>
                 </div>
             </div>
 

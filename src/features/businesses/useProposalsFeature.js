@@ -1,29 +1,66 @@
-// src/features/proposals/useProposalsFeature.js
+// src/features/businesses/useProposalsFeature.js
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
 // Hook A: Handles lazy-loading the proposal stream list
 export function useProposalsQuery() {
     const { data, isPending, error } = useQuery({
         queryKey: ['proposals', 'stream'],
-        queryFn: api.getProposals,
-        staleTime: 1 * 60 * 1000, // 1 minute cache validity
+        queryFn: async () => {
+            try {
+                const res = await apiFetch('/business_proposals');
+                if (res && res.status === 'success' && res.data) {
+                    return res.data;
+                }
+            } catch (e) {
+                console.warn('Falling back to mock proposals stream', e);
+            }
+            return api.getProposals();
+        },
+        staleTime: 1 * 60 * 1000,
     });
 
     return {
-        proposals: data?.proposals || data || [],
+        proposals: Array.isArray(data) ? data : (data?.proposals || []),
         proposalsLoading: isPending,
         proposalsError: error,
     };
 }
 
-// Hook B: Handles submitting a new community proposal
+// Hook B: Handles single proposal details fetching by ID
+export function useProposalDetailsQuery(id) {
+    const { data, isPending, error } = useQuery({
+        queryKey: ['proposals', 'detail', id],
+        queryFn: async () => {
+            if (!id) return null;
+            try {
+                const res = await apiFetch(`/business_proposals/${id}`);
+                if (res && res.status === 'success' && res.data) {
+                    return res.data;
+                }
+            } catch (e) {
+                console.warn('Falling back to mock proposal details by ID', e);
+            }
+            return api.getProposalById(id);
+        },
+        enabled: Boolean(id),
+        staleTime: 1 * 60 * 1000,
+    });
+
+    return {
+        proposal: data,
+        proposalLoading: isPending,
+        proposalError: error,
+    };
+}
+
+// Hook C: Handles submitting a new community proposal
 export function useCreateProposal() {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (proposalData) => {
-            // proposalData structure: { title: "...", description: "...", budget: "..." }
             return api.createProposal(proposalData);
         },
         onSuccess: () => {
@@ -32,13 +69,12 @@ export function useCreateProposal() {
     });
 }
 
-// Hook C: Handles casting a vote on an active proposal
+// Hook D: Handles casting a vote on an active proposal
 export function useVoteOnProposal() {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async ({ proposalId, voteType }) => {
-            // voteType can be 'sponsor' or 'abstain' / 'veto' depending on your api rules
             return api.voteInPoll(proposalId, voteType);
         },
         onSuccess: () => {

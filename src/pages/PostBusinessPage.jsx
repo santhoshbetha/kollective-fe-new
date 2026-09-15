@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateBusiness } from '../features/businesses/useBusinessesFeature';
+import { useAuthStore } from '../store/auth/useAuthStore';
 
 export const PostBusinessPage = () => {
   const navigate = useNavigate();
   const createBusinessMutation = useCreateBusiness();
+  const user = useAuthStore((state) => state.user);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -99,12 +101,24 @@ export const PostBusinessPage = () => {
       profile_image_url: formData.image,
       services: selectedTags,
       tags: selectedTags,
-      owner: 'julian_thorne',
-      ownerAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c',
+      owner: user.username,
+      ownerAvatar: user.avatar_url,
       rating: 5.0,
       reviewsCount: 0,
       verified: false,
       open: true,
+      metadata: {
+        business_hours: formData.hours,
+        hours: formData.hours,
+        services: selectedTags,
+        tags: selectedTags,
+        employee_range: formData.employees,
+        established: parseInt(formData.established, 10) || new Date().getFullYear(),
+        rating: 5.0,
+        reviews_count: 0,
+        owner_handle: user.username,
+        owner_avatar: user.avatar_url
+      }
     };
 
     createBusinessMutation.mutate(businessData, {
@@ -127,11 +141,10 @@ export const PostBusinessPage = () => {
     <div className="max-w-[1280px] mx-auto relative">
       {/* Embedded Floating Toast Notification */}
       {toastMessage && (
-        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-fadeIn transition-all ${
-          toastMessage.type === 'success'
-            ? 'bg-green-600 text-white border border-green-500 shadow-green-900/30'
-            : 'bg-[#a10836] text-white border border-red-500 shadow-red-900/30'
-        }`}>
+        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-fadeIn transition-all ${toastMessage.type === 'success'
+          ? 'bg-green-600 text-white border border-green-500 shadow-green-900/30'
+          : 'bg-[#a10836] text-white border border-red-500 shadow-red-900/30'
+          }`}>
           <span>{toastMessage.msg}</span>
           <button
             type="button"
@@ -207,15 +220,20 @@ export const PostBusinessPage = () => {
                 >
                   <option>Food & Beverage</option>
                   <option>Grocery Store</option>
-                  <option>Health & Wellness</option>
-                  <option>Services</option>
-                  <option>Tax Services</option>
-                  <option>Movers</option>
+                  <option>Healthcare</option>
                   <option>Transportation</option>
-                  <option>Manufacturing</option>
                   <option>Retail & Crafts</option>
+                  <option>Fitness & Wellness</option>
+                  <option>Beauty & Personal Care</option>
                   <option>Agriculture</option>
+                  <option>Cleaning Services</option>
+                  <option>Movers</option>
                   <option>Technology</option>
+                  <option>Professional Services</option>
+                  <option>Legal Services</option>
+                  <option>Tax Services</option>
+                  <option>Manufacturing</option>
+                  <option>Construction</option>
                 </select>
               </div>
 

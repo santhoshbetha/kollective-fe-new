@@ -3,19 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useToggleEventInterest } from '../../features/events/useEventsFeature';
 
 export const BusinessCard = ({ biz }) => {
-    const toggleEventInterest = useToggleEventInterest();
     const navigate = useNavigate();
-
-    const isLive = biz?.format?.toLowerCase() === 'online' || biz?.format?.toLowerCase() === 'live' || biz?.isLive;
 
     const renderStars = (rating) => {
         const stars = [];
-        const floor = Math.floor(rating);
+        const floor = Math.floor(rating || 0);
         for (let i = 0; i < 5; i++) {
             stars.push(
                 <span
                     key={i}
-                    className="material-symbols-outlined text-[16px]"
+                    className="material-symbols-outlined text-[14px] text-amber-400"
                     style={{ fontVariationSettings: `'FILL' ${i < floor ? 1 : 0}` }}
                 >
                     star
@@ -32,146 +29,147 @@ export const BusinessCard = ({ biz }) => {
         navigate(`/businesses/${bizId}`);
     };
 
-
     return (
-        <div
+        <article
             key={biz.id}
             onClick={(e) => handleCardClick(biz.id, e)}
-            className="glass-card rounded-[24px] overflow-hidden flex flex-col lg:flex-row shadow-2xl transition-all border border-white/5 hover:border-primary-container/20 group cursor-pointer"
+            className="glass-card rounded-2xl p-4 overflow-hidden flex flex-col sm:flex-row gap-4 border border-white/10 hover:border-primary-container/30 bg-surface-container-low/90 hover:bg-surface-container-low transition-all shadow-md hover:shadow-xl group cursor-pointer"
         >
-            {/* Image Section */}
-            <div className="lg:w-[280px] h-[260px] lg:h-auto relative bg-surface-container-high overflow-hidden flex-shrink-0">
+            {/* Image Thumbnail Section */}
+            <div className="w-full sm:w-44 h-36 sm:h-auto rounded-xl relative bg-surface-container-high overflow-hidden shrink-0">
                 {biz.image ? (
                     <img
                         alt={biz.name}
-                        className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         src={biz.image}
                     />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-surface-container-low text-text-secondary">
-                        <span className="material-symbols-outlined text-5xl">storefront</span>
+                        <span className="material-symbols-outlined text-4xl">storefront</span>
                     </div>
                 )}
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
+
+                {/* Status Badges Overlay */}
+                <div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10">
                     {biz.verified && (
-                        <span className="bg-green-500/20 text-green-400 backdrop-blur-md px-3 py-1 rounded-full text-[14px] font-bold border border-green-500/30 flex items-center gap-1 uppercase tracking-wider">
-                            <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        <span className="bg-green-500/80 text-white backdrop-blur-md px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider flex items-center gap-0.5 shadow-sm">
+                            <span className="material-symbols-outlined text-[11px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                                 check_circle
                             </span>
                             Verified
                         </span>
                     )}
-                    <span className={`backdrop-blur-md px-3 py-1 rounded-full text-[14px] font-bold border flex items-center gap-1 uppercase tracking-wider ${biz.open
-                        ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                        : 'bg-red-500/20 text-red-400 border-red-500/30'
+                    <span className={`backdrop-blur-md px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider flex items-center gap-0.5 border shadow-sm ${biz.open
+                        ? 'bg-black/60 text-green-400 border-green-500/40'
+                        : 'bg-black/60 text-red-400 border-red-500/40'
                         }`}>
-                        {biz.open ? (
-                            <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                Open Now
-                            </>
-                        ) : (
-                            <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                Closed
-                            </>
-                        )}
+                        <span className={`w-1.5 h-1.5 rounded-full ${biz.open ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></span>
+                        {biz.open ? 'Open' : 'Closed'}
                     </span>
                 </div>
 
-                <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-2 border border-white/10">
-                    <div className="flex text-text-secondary gap-0.5">
+                {/* Rating Badge */}
+                <div className="absolute bottom-2 left-2 bg-black/75 backdrop-blur-xs px-2 py-1 rounded-lg flex items-center gap-1 border border-white/10 text-xs">
+                    <div className="flex gap-0.2">
                         {renderStars(biz.rating)}
                     </div>
-                    <span className="text-white font-bold text-sm">{biz.rating}</span>
+                    <span className="text-white font-bold text-[11px] ml-0.5">{biz.rating}</span>
                 </div>
             </div>
 
-            {/* Content Section */}
-            <div className="flex-1 p-8 flex flex-col justify-between">
+            {/* Main Details Section */}
+            <div className="flex-1 flex flex-col justify-between min-w-0">
                 <div>
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <h2 className="font-headline-md text-2xl font-bold text-text-primary mb-2 group-hover:text-primary-container transition-colors">
-                                {biz.name}
-                            </h2>
-                            <p className="font-body-md text-lg text-text-secondary leading-relaxed">
-                                {biz.description}
-                            </p>
-                        </div>
+                    {/* Header Row */}
+                    <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-headline-sm text-lg font-bold text-text-primary tracking-tight group-hover:text-primary-container transition-colors truncate">
+                            {biz.name}
+                        </h3>
+                        <span className="shrink-0 px-2 py-0.5 bg-primary-container/10 border border-primary-container/20 text-primary-container text-[10px] font-extrabold uppercase rounded tracking-wider">
+                            {biz.category}
+                        </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-                        <div className="flex items-center gap-2 text-text-secondary text-lg">
-                            <span className="material-symbols-outlined text-primary text-[18px]">location_on</span>
-                            <span className="truncate">{biz.address}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-text-secondary text-lg">
-                            <span className="material-symbols-outlined text-primary text-[18px]">call</span>
-                            <span>{biz.phone}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-text-secondary text-lg">
-                            <span className="material-symbols-outlined text-primary text-[18px]">language</span>
-                            <a
-                                href={`https://${biz.website}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="hover:underline text-primary"
-                            >
-                                {biz.website}
-                            </a>
-                        </div>
-                        <div className="flex items-center gap-2 text-text-secondary text-lg">
-                            <span className="material-symbols-outlined text-primary text-[18px]">schedule</span>
-                            <span>{biz.hours}</span>
-                        </div>
-                    </div>
-                </div>
+                    {/* Description */}
+                    <p className="text-xs text-text-secondary leading-snug line-clamp-2 mt-1">
+                        {biz.description}
+                    </p>
 
-                <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-white/5">
-                    <div className="flex items-center gap-3">
-                        {biz.ownerAvatar ? (
-                            <div className="relative w-10 h-10 rounded-full border-2 border-primary-container p-[1px]">
-                                <img
-                                    alt="Owner"
-                                    className="w-full h-full rounded-full object-cover"
-                                    src={biz.ownerAvatar}
-                                />
-                            </div>
-                        ) : (
-                            <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-sm text-white">
-                                {biz.owner[0]}
+                    {/* Info Metadata Bar */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-3 pt-2 border-t border-white/5 text-xs text-text-secondary">
+                        {biz.address && (
+                            <div className="flex items-center gap-1.5 truncate">
+                                <span className="material-symbols-outlined text-primary-container text-[15px] shrink-0">location_on</span>
+                                <span className="truncate">{biz.address}</span>
                             </div>
                         )}
-                        <div>
-                            <p className="text-sm font-bold text-on-surface">@{biz.owner}</p>
-                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-[12px] rounded-full border border-primary/20 uppercase font-extrabold tracking-wider">
-                                {biz.category}
-                            </span>
-                        </div>
-                        <div className="h-6 w-px bg-white/10 mx-1"></div>
-                        <span className="text-[14px] text-text-secondary">{biz.reviewsCount} reviews</span>
+                        {biz.hours && (
+                            <div className="flex items-center gap-1.5 truncate">
+                                <span className="material-symbols-outlined text-primary-container text-[15px] shrink-0">schedule</span>
+                                <span className="truncate">{biz.hours}</span>
+                            </div>
+                        )}
+                        {biz.phone && (
+                            <div className="flex items-center gap-1.5 truncate">
+                                <span className="material-symbols-outlined text-primary-container text-[15px] shrink-0">call</span>
+                                <span className="truncate">{biz.phone}</span>
+                            </div>
+                        )}
+                        {biz.website && (
+                            <div className="flex items-center gap-1.5 truncate">
+                                <span className="material-symbols-outlined text-primary-container text-[15px] shrink-0">language</span>
+                                <a
+                                    href={`https://${biz.website}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="hover:underline text-primary-container truncate"
+                                >
+                                    {biz.website}
+                                </a>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Footer Owner & Actions */}
+                <div className="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-white/5">
+                    <div className="flex items-center gap-2 min-w-0">
+                        {biz.ownerAvatar ? (
+                            <img
+                                alt="Owner"
+                                className="w-6 h-6 rounded-full object-cover border border-white/10 shrink-0"
+                                src={biz.ownerAvatar}
+                            />
+                        ) : (
+                            <div className="w-6 h-6 rounded-full bg-surface-container border border-white/10 flex items-center justify-center text-[10px] text-white shrink-0">
+                                {biz.owner ? biz.owner[0] : 'B'}
+                            </div>
+                        )}
+                        <span className="text-xs text-text-secondary font-medium truncate">@{biz.owner}</span>
+                        <span className="text-[11px] text-text-secondary/50 font-mono shrink-0">({biz.reviewsCount || 0} reviews)</span>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5 shrink-0">
                         <button
+                            type="button"
                             onClick={() => alert(`Sharing business: ${biz.name}`)}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-white/10 text-text-primary text-sm font-bold hover:bg-white/5 transition-all"
+                            className="p-1.5 rounded-lg border border-white/10 text-text-secondary hover:text-white hover:bg-white/5 transition-all cursor-pointer flex items-center justify-center"
+                            title="Share"
                         >
-                            <span className="material-symbols-outlined text-[16px]">share</span>
-                            Share
+                            <span className="material-symbols-outlined text-[15px]">share</span>
                         </button>
                         <button
+                            type="button"
                             onClick={() => alert(`Starting discussion with: @${biz.owner}`)}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-primary-container/30 text-primary-container text-sm font-bold hover:bg-primary-container/10 transition-all"
+                            className="px-3 py-1 rounded-lg border border-primary-container/30 text-primary-container hover:bg-primary-container hover:text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
                         >
-                            <span className="material-symbols-outlined text-[16px]">chat_bubble</span>
-                            Contact
+                            <span className="material-symbols-outlined text-[14px]">chat_bubble</span>
+                            <span>Contact</span>
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+        </article>
     );
 };
 

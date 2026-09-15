@@ -15,6 +15,26 @@ export function useEventsQuery() {
     };
 }
 
+// Hook to filter events by date, distance, or state via POST call
+export function useFilterEvents() {
+    return useMutation({
+        mutationFn: async (filterPayload) => {
+            try {
+                const { apiFetch } = await import('../../api/apiClient');
+                const res = await apiFetch('/events/filter_by_date', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(filterPayload)
+                });
+                return res?.data || res?.events || res;
+            } catch (err) {
+                console.warn('Backend POST filter_by_date failed, falling back to mock filter:', err);
+                return api.filterEventsByDate(filterPayload);
+            }
+        }
+    });
+}
+
 
 // Hook B: Replaces toggleEventInterest
 export function useToggleEventInterest() {
