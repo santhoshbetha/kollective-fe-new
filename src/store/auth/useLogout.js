@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from './useAuthStore';
-import { useTimelineBufferStore } from './useTimelineBufferStore';
+import { useTimelineBufferStore } from '../useTimelineBufferStore';
 
 export function useLogout() {
     const queryClient = useQueryClient();
