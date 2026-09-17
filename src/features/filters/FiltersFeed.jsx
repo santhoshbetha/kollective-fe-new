@@ -1,6 +1,7 @@
 // src/features/filters/FiltersFeed.jsx
 import React, { useState } from 'react';
 import { useFiltersQuery, useCreateFilterMutation, useDeleteFilterMutation } from './useFiltersFeature';
+import { KollectiveSpinner } from '../../components/ui/KollectiveSpinner';
 
 export function FiltersFeed() {
     const { data: filters, isPending, isError } = useFiltersQuery();
@@ -29,12 +30,7 @@ export function FiltersFeed() {
     };
 
     if (isPending) {
-        return (
-            <div className="py-12 text-center flex flex-col items-center justify-center gap-4">
-                <div className="w-8 h-8 rounded-full border-2 border-t-primary-container border-white/10 animate-spin" />
-                <p className="text-text-secondary text-xs font-mono font-bold uppercase tracking-widest animate-pulse">Syncing keyword filters...</p>
-            </div>
-        );
+        return <KollectiveSpinner variant="page" text="Syncing keyword filters..." />;
     }
 
     return (

@@ -72,6 +72,8 @@ export const useAuthStore = create(
             // 🛑 2. VOLATILE MATRIX ENTITIES (Bypassed entirely from browser disk)
             // =========================================================================
             isHydrated: false,     // Tracks if Zustand finished loading localStorage keys
+            isLoggingIn: false,    // Tracks active login transition state
+            isLoggingOut: false,   // Tracks active logout transition state
             authError: null,
 
             // =========================================================================
@@ -137,6 +139,16 @@ export const useAuthStore = create(
             setHydrated: () =>
                 set((state) => {
                     state.isHydrated = true;
+                }),
+
+            setIsLoggingIn: (val) =>
+                set((state) => {
+                    state.isLoggingIn = val;
+                }),
+
+            setIsLoggingOut: (val) =>
+                set((state) => {
+                    state.isLoggingOut = val;
                 }),
 
             // Action C: 🚪 THE UNIFIED SECURE LOGOUT LIFECYCLE FLUSH

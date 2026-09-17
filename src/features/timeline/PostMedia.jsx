@@ -2,7 +2,11 @@
 import React, { useState } from 'react';
 
 export function PostMedia({ post, setCarouselIndex, setCarouselOpen }) {
-    const attachments = (post?.images || (post?.image ? [post.image] : [])).filter(Boolean);
+    const rawAttachments = post?.images || post?.media_attachments || (post?.image ? [post.image] : []);
+    const attachments = (Array.isArray(rawAttachments) ? rawAttachments : [rawAttachments])
+        .filter(Boolean)
+        .map((img) => (typeof img === 'object' ? img?.url || img?.preview_url || img?.src || '' : img))
+        .filter(Boolean);
     const hasMedia = attachments.length > 0;
 
     // 🛡️ Soapbox Rule: Check if the media should be masked behind a content warning blur

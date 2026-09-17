@@ -1,18 +1,37 @@
 // apiClient.js
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useTimelineBufferStore } from '../store/useTimelineBufferStore';
+import { getMockPostContext } from './mockApi';
+
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1').replace(/\/$/, '');
+const API_HOST = API_BASE.replace(/\/api\/v1\/?$/, '');
 
 export async function apiFetch(endpoint, options = {}, queryClient) {
     const { token, activeAccount } = useAuthStore.getState();
-    const headers = token ?
-        {
-            'Authorization': `Bearer ${token}`,
-            // 👈 This is the magic signal for Elixir to switch contexts
-            'X-Active-Account-Id': activeAccount?.id || ''
-        }
-        : {};
+    let url = endpoint || '';
 
-    const response = await fetch(`/api/v1${endpoint}`, { ...options, headers });
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Already absolute URL
+    } else if (url.startsWith('/api/v1')) {
+        url = `${API_BASE}${url.replace('/api/v1', '')}`;
+    } else if (url.startsWith('/api/')) {
+        url = `${API_HOST}${url}`;
+    } else {
+        const cleanEndpoint = url.startsWith('/') ? url : `/${url}`;
+        url = `${API_BASE}${cleanEndpoint}`;
+    }
+
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+    const headers = {
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+        ...(options.headers || {}),
+        ...(token ? {
+            'Authorization': `Bearer ${token}`,
+            'X-Active-Account-Id': activeAccount?.id || ''
+        } : {})
+    };
+
+    const response = await fetch(url, { ...options, headers });
 
     // 🚨 GLOBAL INTERCEPTION: Detect Revoked Token
     if (response.status === 401) {
@@ -30,25 +49,21 @@ export async function apiFetch(endpoint, options = {}, queryClient) {
     return response.json();
 }
 
-// src/api/apiClient.js
-import { getMockPostContext } from './mockApi';
-
 export async function apiFetchPosts(url, options = {}) {
-    // Intercept the post context pattern matching path strings
-    if (url.includes('/posts/') && url.includes('/context')) {
-        // Extract the id variable token out of the string split array indices
-        const segments = url.split('/');
-        const postId = segments[segments.length - 2];
-
-        // Simulate async network latency promise timers safely
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve(getMockPostContext(postId));
-            }, 400); // 400ms simulation time window
-        });
+    try {
+        const data = await apiFetch(url, options);
+        if (data && (data.ancestors || data.focus || data.descendants || data.data)) {
+            return data.data || data;
+        }
+        return data;
+    } catch (err) {
+        if (url.includes('/posts/') && url.includes('/context')) {
+            const segments = url.split('/');
+            const postId = segments[segments.length - 2];
+            return getMockPostContext(postId);
+        }
+        throw err;
     }
-
-    // Fallback to standard fetch processing blocks when production endpoints go live
-    // return fetch(url, options).then(res => res.json());
 }
+
 

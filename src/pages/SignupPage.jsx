@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Alert, AlertTitle, AlertDescription } from '../components/ui/Alert';
 import { DatePicker } from '../components/ui/date-picker';
+import { useRegisterMutation } from '../store/auth/useRegisterMutation';
 
 const DEMOCRATIC_COUNTRIES = [
     "Albania", "Argentina", "Australia", "Austria", "Belgium", "Botswana", "Brazil",
@@ -20,6 +21,7 @@ const DEMOCRATIC_COUNTRIES = [
 
 export const SignupPage = () => {
     const navigate = useNavigate();
+    const registerMutation = useRegisterMutation();
     const [currentStep, setCurrentStep] = useState(1); // 1: Welcome, 2: Details, 3: Verify
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
@@ -46,15 +48,25 @@ export const SignupPage = () => {
         setError(null);
     };
 
-    const handleNext = (e) => {
+    const handleNext = async (e) => {
         e.preventDefault();
         setError(null);
-        if (currentStep === 1 && !formData.agreeToGuidelines) {
-            setError("Please agree to the community guidelines to proceed.");
+        if (currentStep === 1) {
+            if (!formData.agreeToGuidelines) {
+                setError("Please agree to the community guidelines to proceed.");
+                return;
+            }
+            setCurrentStep(2);
             return;
         }
-        if (currentStep < 3) {
-            setCurrentStep((prev) => prev + 1);
+
+        if (currentStep === 2) {
+            try {
+                await registerMutation.mutateAsync(formData);
+                setCurrentStep(3);
+            } catch (err) {
+                setError(err.message || "Registration failed. Please check your details and try again.");
+            }
         }
     };
 

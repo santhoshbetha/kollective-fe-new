@@ -7,7 +7,8 @@ export function useFiltersQuery() {
     return useQuery({
         queryKey: ['filters', 'list'],
         queryFn: async () => {
-            return apiFetch('/api/v1/filters'); // Returns an array of filter schema objects
+            const res = await apiFetch('/api/v1/filters');
+            return Array.isArray(res) ? res : (res?.data || []);
         },
     });
 }
@@ -43,8 +44,14 @@ export function useDeleteFilterMutation() {
         onSuccess: (_, filterId) => {
             // Local optimistic cache ejection mapping routine
             queryClient.setQueryData(['filters', 'list'], (oldData) => {
-                if (!oldData || !Array.isArray(oldData)) return oldData;
-                return oldData.filter((item) => item.id !== filterId);
+                if (!oldData) return oldData;
+                if (Array.isArray(oldData)) {
+                    return oldData.filter((item) => item.id !== filterId);
+                }
+                if (Array.isArray(oldData.data)) {
+                    return { ...oldData, data: oldData.data.filter((item) => item.id !== filterId) };
+                }
+                return oldData;
             });
             queryClient.invalidateQueries({ queryKey: ['filters', 'list'] });
             queryClient.invalidateQueries({ queryKey: ['timeline'] });

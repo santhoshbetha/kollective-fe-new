@@ -1,7 +1,7 @@
-// src/features/blocks/BlocksFeed.jsx
 import React from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { useBlocksQuery, useUnblockMutation } from './useBlocksFeature';
+import { KollectiveSpinner } from '../../components/ui/KollectiveSpinner';
 
 export function BlocksFeed() {
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useBlocksQuery();
@@ -12,12 +12,7 @@ export function BlocksFeed() {
     const blockedUsers = data?.pages.flatMap((page) => page.accounts || page || []) || [];
 
     if (status === 'pending') {
-        return (
-            <div className="py-12 text-center flex flex-col items-center justify-center gap-4">
-                <div className="w-8 h-8 rounded-full border-2 border-t-primary-container border-white/10 animate-spin" />
-                <p className="text-text-secondary text-xs font-mono font-bold uppercase tracking-widest animate-pulse">Retrieving blocks index...</p>
-            </div>
-        );
+        return <KollectiveSpinner variant="page" text="Retrieving blocks index..." />;
     }
 
     if (status === 'error') {

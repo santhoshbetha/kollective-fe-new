@@ -24,29 +24,19 @@ export function TimelineFeed() {
         refetch  // Extract the native hard-reset fetch loop action tracker
     } = useHomeTimeline();
 
-    // 🔔 READ THE BUFFER KEY LINKED SPECIFICALLY TO THIS ACTIVE TAB //TODO -- original: open this later
     // 📡 Real-time Push Staging Buffer Query
-    //  const { data: bufferedPosts = [] } = useQuery({
-    //      queryKey: ['timeline', 'home', activeTab, 'buffer'],
-    //       queryFn: () => [],
-    //      staleTime: Infinity, // Prevent automatic background refetching on the local array
-    //  });
-
-    const bufferedPosts = data?.pages?.[0]?.filter(post => {
-        if (activeTab === 'All Activity') return true;
-        return post?.category === activeTab;
+    const { data: bufferedPosts = [] } = useQuery({
+        queryKey: ['timeline', 'home', activeTab, 'buffer'],
+        queryFn: () => [],
+        staleTime: Infinity,
     });
 
-    console.log("homepage data =>", data);
-    console.log("bufferedPosts =>", bufferedPosts);
+    const unreadCount = bufferedPosts?.length || 0;
 
-    const unreadCount = bufferedPosts?.length;
+    const allPosts = data?.pages?.flatMap((page) => (Array.isArray(page) ? page : page?.data || page?.posts || [])) || [];
 
-    //const allPosts = data?.pages?.flatMap((page) => page?.posts || []) || []; //TODO -- original: open this later
-    const allPosts = data?.pages?.[0]?.filter(post => {
-        if (activeTab === 'All Activity') return true;
-        return post?.category === activeTab;
-    });
+    console.log("allPosts", allPosts);
+    console.log("activeFilters", activeFilters);
 
     const filteredPosts = allPosts?.filter((post) => {
         if (!activeFilters) return true;
@@ -59,6 +49,8 @@ export function TimelineFeed() {
         }
         return true;
     });
+
+    console.log("filteredPosts", filteredPosts);
 
     // 🪟 Sync unread counts with the browser tab title (e.g., "(3) Kollective")
     // Sync tab counts to the browser window title
@@ -89,6 +81,7 @@ export function TimelineFeed() {
             return {
                 ...oldTimelineData,
                 pages: oldTimelineData.pages?.map((page, index) =>
+
                     index === 0 ? { ...page, posts: [...bufferedPosts, ...page?.posts] } : p
                 ),
             };
@@ -165,13 +158,13 @@ export function TimelineFeed() {
                     <div className="flex flex-col border border-[#262626] bg-[#141414] overflow-hidden shadow-2xl">
                         <Virtuoso
                             useWindowScroll
-                            data={allPosts}
+                            data={filteredPosts}
                             endReached={() => {
                                 if (hasNextPage && !isFetchingNextPage) fetchNextPage();
                             }}
                             overscan={400}
                             itemContent={(index, post) => (
-                                <PostCard key={index} post={post} isLast={index === filteredPosts.length - 1} />
+                                <PostCard key={post?.id || index} post={post} isLast={index === filteredPosts.length - 1} />
                             )}
                             components={{
                                 Footer: () => isFetchingNextPage && (

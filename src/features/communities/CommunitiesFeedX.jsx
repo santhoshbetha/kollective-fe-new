@@ -7,7 +7,7 @@ import { useStore } from '../../store/useStore';
 import { useCommunitiesFeed } from './useCommunitiesFeed';
 import { PostCard } from '../timeline/PostCard';
 
-export function CommunitiesFeed() {
+export function CommunitiesFeedX() {
     const queryClient = useQueryClient();
     const activeTab = useStore((state) => state.communitiesTab);
 
@@ -93,7 +93,7 @@ export function CommunitiesFeed() {
             backgroundColor="transparent"
             maxPullDownDistance={90}
         >
-            <div className="w-full flex flex-col h-full">
+            <div className="w-full flex flex-col">
                 {/* 🔔 Dynamic scope-bound staging update banner */}
                 {unreadCount > 0 && (
                     <button
@@ -116,7 +116,7 @@ export function CommunitiesFeed() {
                     </div>
                 ) : (
                     /* 🏆 Custom List Border Wrapping Shell */
-                    <div className="flex flex-col border border-[#262626] bg-[#141414] overflow-hidden shadow-2xl">
+                    <div className="flex flex-col border border-[#262626] bg-[#141414] rounded-[16px] overflow-hidden shadow-2xl">
                         <Virtuoso
                             useWindowScroll
                             data={allPosts}

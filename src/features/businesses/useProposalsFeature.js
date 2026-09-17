@@ -61,7 +61,15 @@ export function useCreateProposal() {
 
     return useMutation({
         mutationFn: async (proposalData) => {
-            return api.createProposal(proposalData);
+            try {
+                return await apiFetch('/business_proposals', {
+                    method: 'POST',
+                    body: JSON.stringify({ proposal: proposalData })
+                });
+            } catch (err) {
+                console.warn('Backend create proposal failed, falling back to mockApi', err);
+                return api.createProposal(proposalData);
+            }
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['proposals', 'stream'] });
@@ -75,7 +83,15 @@ export function useVoteOnProposal() {
 
     return useMutation({
         mutationFn: async ({ proposalId, voteType }) => {
-            return api.voteInPoll(proposalId, voteType);
+            try {
+                return await apiFetch(`/business_proposals/${proposalId}/votes`, {
+                    method: 'POST',
+                    body: JSON.stringify({ vote_type: voteType })
+                });
+            } catch (err) {
+                console.warn('Backend vote proposal failed, falling back to mockApi', err);
+                return api.voteInPoll(proposalId, voteType);
+            }
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['proposals', 'stream'] });

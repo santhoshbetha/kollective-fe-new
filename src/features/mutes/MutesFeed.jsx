@@ -1,7 +1,7 @@
-// src/features/mutes/MutesFeed.jsx
 import React from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { useMutesQuery, useUnmuteMutation } from './useMutesFeature';
+import { KollectiveSpinner } from '../../components/ui/KollectiveSpinner';
 
 export function MutesFeed() {
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useMutesQuery();
@@ -11,12 +11,7 @@ export function MutesFeed() {
     const mutedUsers = data?.pages.flatMap((page) => page.accounts || page || []) || [];
 
     if (status === 'pending') {
-        return (
-            <div className="py-12 text-center flex flex-col items-center justify-center gap-4">
-                <div className="w-8 h-8 rounded-full border-2 border-t-primary-container border-white/10 animate-spin" />
-                <p className="text-text-secondary text-xs font-mono font-bold uppercase tracking-wider animate-pulse">Syncing mutes data matrix...</p>
-            </div>
-        );
+        return <KollectiveSpinner variant="page" text="Syncing mutes data matrix..." />;
     }
 
     if (status === 'error') {

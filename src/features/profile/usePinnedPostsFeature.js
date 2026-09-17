@@ -2,6 +2,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
 
+import { usePostsStore } from '../../store/usePostsStore';
+
 // 📌 Query: Pulls the small array of pinned spotlight posts for a specific profile node
 export function usePinnedPostsQuery(accountId) {
     return useQuery({
@@ -10,6 +12,10 @@ export function usePinnedPostsQuery(accountId) {
             return apiFetch(`/api/v1/accounts/${accountId}/posts?pinned=true`); // Returns flat array of statuses
         },
         enabled: !!accountId,
+        select: (data) => {
+            if (!Array.isArray(data)) return data;
+            return usePostsStore.getState().importFetchedPosts(data);
+        },
     });
 }
 

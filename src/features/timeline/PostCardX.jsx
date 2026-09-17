@@ -523,15 +523,19 @@ export const PostCardX = ({ post, isLast = false, standalone = false }) => {
 
           {/* Tag Chips */}
           {post?.tags && post?.tags.length > 0 && (
-            <div className="mt-4 flex gap-2">
-              {post?.tags.map((tag, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 rounded-lg bg-surface-container-highest/50 text-primary-container font-bold text-[15px] border border-primary-container/10"
-                >
-                  {tag}
-                </span>
-              ))}
+            <div className="mt-4 flex gap-2 flex-wrap">
+              {post?.tags.map((tag, idx) => {
+                const tagName = typeof tag === 'object' ? tag?.name || tag?.title || tag?.tag || '' : tag;
+                if (!tagName) return null;
+                return (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 rounded-lg bg-surface-container-highest/50 text-primary-container font-bold text-[15px] border border-primary-container/10"
+                  >
+                    {tagName}
+                  </span>
+                );
+              })}
             </div>
           )}
 

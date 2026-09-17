@@ -10,7 +10,15 @@ import {
     HoverCardTrigger,
 } from "@/components/ui/hover-card";
 
-export const UserHoverCard = ({ author, children }) => {
+import { useAccountsStore } from '../store/useAccountsStore';
+import { usePresenceStore } from '../store/usePresenceStore';
+
+export const UserHoverCard = ({ author: propAuthor, children }) => {
+    const storeAccount = useAccountsStore((state) => propAuthor?.id ? state.entities[propAuthor.id] : null);
+    const author = storeAccount || propAuthor || {};
+
+    const isOnline = usePresenceStore((state) => author?.id ? !!state.activeList[String(author.id)] : false);
+
     const navigate = useNavigate();
     const [isFollowing, setIsFollowing] = useState(false);
 
@@ -36,7 +44,7 @@ export const UserHoverCard = ({ author, children }) => {
     const handleNavigation = (e) => {
         e.stopPropagation();
         e.preventDefault();
-        const username = (author.handle || author.name.toLowerCase().replace(/\s+/g, '_')).replace('@', '');
+        const username = (author.handle || author.name?.toLowerCase().replace(/\s+/g, '_') || 'user').replace('@', '');
         navigate(`/profile/${username}`, { state: { fromCard: true } });
     };
 
@@ -59,17 +67,25 @@ export const UserHoverCard = ({ author, children }) => {
             >
                 {/* Summary Block */}
                 <div className="flex gap-3 items-start mb-3">
-                    {author.avatar ? (
-                        <img
-                            alt={author.name}
-                            className="w-11 h-11 rounded-xl object-cover border border-border/20 shrink-0 opacity-90"
-                            src={author.avatar}
-                        />
-                    ) : (
-                        <div className="w-11 h-11 rounded-xl bg-primary/5 flex items-center justify-center font-bold text-sm text-primary/70 uppercase shrink-0">
-                            {author.name[0]}
-                        </div>
-                    )}
+                    <div className="relative shrink-0">
+                        {author.avatar ? (
+                            <img
+                                alt={author.name}
+                                className="w-11 h-11 rounded-xl object-cover border border-border/20 opacity-90"
+                                src={author.avatar}
+                            />
+                        ) : (
+                            <div className="w-11 h-11 rounded-xl bg-primary/5 flex items-center justify-center font-bold text-sm text-primary/70 uppercase">
+                                {author.name ? author.name[0] : '?'}
+                            </div>
+                        )}
+                        {isOnline && (
+                            <span
+                                className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[var(--surface-container)] shadow-sm animate-in fade-in duration-300"
+                                title="Online now"
+                            />
+                        )}
+                    </div>
 
                     <div className="min-w-0 flex-1">
                         <h4
@@ -80,9 +96,16 @@ export const UserHoverCard = ({ author, children }) => {
                             {author.verified && <VerificationBadge type="journalist" size="md" className="opacity-80" />}
                         </h4>
 
-                        <p className="text-xs text-muted-foreground/60 truncate font-medium mt-0.5">
-                            {author.handle || `@${author.name.toLowerCase().replace(/\s+/g, '_')}`}@kollective.social
-                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <p className="text-xs text-muted-foreground/60 truncate font-medium">
+                                {author.handle || `@${author.name?.toLowerCase().replace(/\s+/g, '_')}`}@kollective.social
+                            </p>
+                            {isOnline && (
+                                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                                    Online
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
 

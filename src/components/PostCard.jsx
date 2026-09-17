@@ -326,7 +326,7 @@ export const PostCard = ({ post }) => {
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: post.liked ? "'FILL' 1" : "'FILL' 0" }}>
                     favorite
                   </span>
-                  <span className="text-sm">{post.liked ? !likeMutation.isPending ? post.likes - 1 : 'Liking...' : !likeMutation.isPending ? 'Liking...' : post.likes}</span>
+                  <span className="text-sm">{post.liked ? !likeMutation.isPending ? post.likes - 1 : 'Liking11...' : !likeMutation.isPending ? 'Liking22...' : post.likes}</span>
                 </button>
                 <button
                   onClick={() => navigate(`/post/${post.id}`)}
@@ -512,16 +512,20 @@ export const PostCard = ({ post }) => {
           )}
 
           {/* Tag Chips */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="mt-4 flex gap-2">
-              {post.tags.map((tag, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 rounded-lg bg-surface-container-highest/50 text-primary-container font-bold text-[15px] border border-primary-container/10"
-                >
-                  {tag}
-                </span>
-              ))}
+          {post?.tags && post?.tags.length > 0 && (
+            <div className="mt-4 flex gap-2 flex-wrap">
+              {post?.tags.map((tag, idx) => {
+                const tagName = typeof tag === 'object' ? tag?.name || tag?.title || tag?.tag || '' : tag;
+                if (!tagName) return null;
+                return (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 rounded-lg bg-surface-container-highest/50 text-primary-container font-bold text-[15px] border border-primary-container/10"
+                  >
+                    {tagName}
+                  </span>
+                );
+              })}
             </div>
           )}
 

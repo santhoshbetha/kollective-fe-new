@@ -2,6 +2,7 @@
 import React from 'react';
 import { useStore } from '../store/useStore';
 import { CommunitiesFeed } from '../features/communities/CommunitiesFeed';
+import { TimelineFeed } from '../features/timeline/TimelineFeed';
 
 export const CommunitiesPage = () => {
     // 🎛️ Pull dynamic geographic state settings natively out of your unified useStore
@@ -26,14 +27,14 @@ export const CommunitiesPage = () => {
                 </div>
 
                 {/* Geographic Tabs Navigation Selection Row */}
-                <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar border-b border-white/5 pb-4">
+                <div className="flex gap-3 overflow-x-auto py-2 px-1 no-scrollbar border-b border-white/5 mb-2">
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab;
                         return (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-6 py-2 rounded-full font-bold text-label-md transition-all duration-200 border ${isActive
+                                className={`px-6 py-2 rounded-full font-bold text-label-md transition-all duration-200 whitespace-nowrap cursor-pointer border ${isActive
                                     ? 'bg-primary-container text-white border-primary-container crimson-glow'
                                     : 'bg-surface-container-high text-text-secondary hover:text-text-primary border-white/5 hover:border-white/10'
                                     }`}

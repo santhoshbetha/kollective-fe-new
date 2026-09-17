@@ -241,6 +241,19 @@
   }
 }
 
+/* Target the library's base wrapper class */
+.ptr {
+  display: flex !important;
+  flex-direction: column !important;
+  height: auto !important;
+}
+
+.ptr__children {
+  flex: 1 1 auto !important;
+  transform: none !important;
+  /* Prevents initial layout math from pulling content up */
+}
+
 .protest-strike-regular {
   font-family: "Protest Strike", sans-serif;
   font-weight: 400;

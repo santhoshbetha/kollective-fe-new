@@ -10,6 +10,7 @@ import { PostMedia } from './PostMedia';
 import { ImageLightbox } from './ImageLightbox';
 import { usePostActions } from './usePostActions';
 import { useRsvpToAction } from '../../features/organize/useOrganizeFeature';
+import { usePostsStore } from '../../store/usePostsStore';
 
 import {
     ExternalLink,
@@ -147,7 +148,10 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
 let activeMenuPostId = null;
 let activeMenuSetShowMenu = null;
 
-export function PostCard({ post, isLast = false, standalone = false }) {
+export function PostCard({ post: propPost, isLast = false, standalone = false }) {
+    const storePost = usePostsStore((state) => propPost?.id ? state.entities[propPost.id] : null);
+    const post = storePost || propPost;
+
     const postActions = usePostActions();
     const rsvpMutation = useRsvpToAction();
     //const { toggleLike, toggleReblog, toggleBookmark, isActionPending } = usePostActions();
@@ -311,9 +315,10 @@ export function PostCard({ post, isLast = false, standalone = false }) {
                                 e.stopPropagation();
                                 toggleBookmark(post?.id);
                             }}
-                            className={`p-2 rounded-full backdrop-blur-md border border-white/10 z-20 focus:outline-none transition-all cursor-pointer ${post?.bookmarked ? 'bg-primary-container/20 text-primary-container border-primary-container/40' : 'bg-black/40 text-text-secondary hover:text-white'
+                            className={`p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer 
+                                        ${post?.bookmarked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
                                 }`}
-                            title={post?.bookmarked ? 'Remove Bookmark' : 'Bookmark Pulse'}
+                            title={post?.bookmarked ? 'Remove Bookmark22' : 'Bookmark Pulse22'}
                         >
                             <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}>
                                 bookmark
@@ -424,14 +429,9 @@ export function PostCard({ post, isLast = false, standalone = false }) {
                                     <span className="material-symbols-outlined" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
                                         favorite
                                     </span>
-                                    <span className="text-sm">{post?.liked ? !likeMutation.isPending ? post?.likes - 1 : 'Liking...' : !likeMutation.isPending ? 'Liking...' : post?.likes}</span>
-                                </button>
-                                <button
-                                    onClick={() => navigate(`/post/${post?.id}`)}
-                                    className="flex items-center gap-2 text-text-secondary font-bold hover:text-white transition-all"
-                                >
-                                    <span className="material-symbols-outlined">chat_bubble</span>
-                                    <span className="text-sm">1.2k</span>
+                                    <span className="text-sm">
+                                        {post?.liked ? !likeMutation.isPending ? post?.likes - 1 : 'Liking...' : !likeMutation.isPending ? 'Liking...' : post?.likes}
+                                    </span>
                                 </button>
                                 <button
                                     onClick={(e) => {
@@ -444,6 +444,13 @@ export function PostCard({ post, isLast = false, standalone = false }) {
                                 >
                                     <span className="material-symbols-outlined text-[20px]">repeat</span>
                                     <span className="text-sm">{post?.shares || 0}</span>
+                                </button>
+                                <button
+                                    onClick={() => navigate(`/post/${post?.id}`)}
+                                    className="flex items-center gap-2 text-text-secondary font-bold hover:text-white transition-all"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">mode_comment</span>
+                                    <span className="text-sm">1.2k</span>
                                 </button>
                             </div>
 
@@ -478,7 +485,7 @@ export function PostCard({ post, isLast = false, standalone = false }) {
         <>
             <div
                 onClick={handleCardClick}
-                className={`p-6 hover:bg-white/[0.01] border-b ${isLast ? 'border-transparent' : 'border-black/20 dark:border-white/20'} transition-all group cursor-pointer relative 
+                className={`p-6 hover:bg-white/[0.01] border-b ${isLast ? 'border-transparent' : 'border-black/20 dark:border-white/20'} transition-all group cursor-pointer relative  
                 ${standalone
                         ? 'glass-card rounded-[16px] border border-white/5 shadow-md'
                         : ''
@@ -539,9 +546,10 @@ export function PostCard({ post, isLast = false, standalone = false }) {
                                 <button
                                     onClick={(e) => handleBookmarkClick(e)} // toggleBookmark(post?.id);
                                     disabled={bookmarkMutation.isPending}
-                                    className={`p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer ${post?.bookmarked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
+                                    className={`p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer 
+                                        ${post?.bookmarked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
                                         }`}
-                                    title={post?.bookmarked ? 'Remove Bookmark' : 'Bookmark Pulse'}
+                                    title={post?.bookmarked ? 'Remove Bookmark11' : 'Bookmark Pulse11'}
                                 >
                                     <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: bookmarkMutation.isPending ? "'FILL' 1" : "'FILL' 0" }}>
                                         bookmark
@@ -584,15 +592,19 @@ export function PostCard({ post, isLast = false, standalone = false }) {
 
                         {/* Tag Chips */}
                         {post?.tags && post?.tags.length > 0 && (
-                            <div className="mt-4 flex gap-2">
-                                {post?.tags.map((tag, idx) => (
-                                    <span
-                                        key={idx}
-                                        className="px-3 py-1 rounded-lg bg-surface-container-highest/50 text-primary-container font-bold text-[15px] border border-primary-container/10"
-                                    >
-                                        {tag}
-                                    </span>
-                                ))}
+                            <div className="mt-4 flex gap-2 flex-wrap">
+                                {post?.tags.map((tag, idx) => {
+                                    const tagName = typeof tag === 'object' ? tag?.name || tag?.title || tag?.tag || '' : tag;
+                                    if (!tagName) return null;
+                                    return (
+                                        <span
+                                            key={idx}
+                                            className="px-3 py-1 rounded-lg bg-surface-container-highest/50 text-primary-container font-bold text-[15px] border border-primary-container/10"
+                                        >
+                                            {tagName}
+                                        </span>
+                                    );
+                                })}
                             </div>
                         )}
 

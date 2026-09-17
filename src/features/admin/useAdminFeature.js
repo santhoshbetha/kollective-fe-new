@@ -2,6 +2,8 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
 
+import { useAccountsStore } from '../../store/useAccountsStore';
+
 // Helper for extracting pagination cursor across array or object responses
 const getNextCursor = (lastPage) =>
     lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined;
@@ -16,6 +18,17 @@ export function useAdminApprovalQuery() {
         },
         getNextPageParam: getNextCursor,
         initialPageParam: null,
+        select: (data) => {
+            if (data?.pages) {
+                const importFetchedAccounts = useAccountsStore.getState().importFetchedAccounts;
+                data.pages.forEach((page) => {
+                    if (!page) return;
+                    const rawAccounts = Array.isArray(page) ? page : page.accounts || page.users || [];
+                    if (rawAccounts.length > 0) importFetchedAccounts(rawAccounts);
+                });
+            }
+            return data;
+        },
     });
 }
 
@@ -56,6 +69,17 @@ export function useAdminUsersQuery(searchQuery = '') {
         },
         getNextPageParam: getNextCursor,
         initialPageParam: null,
+        select: (data) => {
+            if (data?.pages) {
+                const importFetchedAccounts = useAccountsStore.getState().importFetchedAccounts;
+                data.pages.forEach((page) => {
+                    if (!page) return;
+                    const rawAccounts = Array.isArray(page) ? page : page.accounts || page.users || [];
+                    if (rawAccounts.length > 0) importFetchedAccounts(rawAccounts);
+                });
+            }
+            return data;
+        },
     });
 }
 

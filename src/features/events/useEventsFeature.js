@@ -1,16 +1,27 @@
 // src/features/events/useEventsFeature.js
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
 // Hook A: Replaces events and eventsLoading
 export function useEventsQuery() {
     const { data, isPending } = useQuery({
         queryKey: ['events', 'list'],
-        queryFn: api.getEvents,
+        queryFn: async () => {
+            try {
+                const res = await apiFetch('/events');
+                if (res && (res.data || Array.isArray(res))) {
+                    return res;
+                }
+            } catch (err) {
+                console.warn('apiFetch failed for events query, falling back to mockApi', err);
+            }
+            return api.getEvents();
+        },
     });
 
     return {
-        events: data?.events || data || [],
+        events: data?.events || data?.data || (Array.isArray(data) ? data : []),
         eventsLoading: isPending,
     };
 }

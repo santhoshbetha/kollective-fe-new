@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/auth/useAuthStore';
+import { useLogout } from '../store/auth/useLogout';
 import { useStore } from '../store/useStore';
 //import { useTimelineSocket } from '../hooks/useTimelineSocket';
 import { CreatePostModal } from './CreatePostModal';
@@ -16,6 +17,7 @@ export const MainLayout = () => {
     const user = useAuthStore((state) => state.user);
     const activeAccount = useAuthStore((state) => state.activeAccount);
     const executeGlobalLogout = useAuthStore((state) => state.executeGlobalLogout);
+    const logout = useLogout();
 
     // 🎨 UI Store Selectors (Zustand + Immer)
     const theme = useStore((state) => state.theme);
@@ -70,8 +72,7 @@ export const MainLayout = () => {
 
     const handleLogoutClick = (e) => {
         e.stopPropagation();
-        executeGlobalLogout();
-        navigate('/');
+        logout(() => navigate('/'));
     };
 
     return (

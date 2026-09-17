@@ -7,11 +7,19 @@ import * as api from '../../api/mockApi';
 export function usePollsQuery() {
     const { data, isPending } = useQuery({
         queryKey: ['polls', 'stream'],
-        queryFn: api.getPolls,
+        queryFn: async () => {
+            try {
+                const res = await apiFetch('/polls/stream');
+                return res?.data || res?.polls || res;
+            } catch (err) {
+                console.warn('Backend polls query failed, falling back to mockApi', err);
+                return api.getPolls();
+            }
+        },
     });
 
     return {
-        polls: data?.polls || data || [],
+        polls: Array.isArray(data) ? data : (data?.polls || []),
         pollsLoading: isPending,
     };
 }
@@ -22,9 +30,16 @@ export function useVoteInPoll() {
 
     return useMutation({
         mutationFn: async ({ pollId, optionIndex }) => {
-            return api.voteInPoll(pollId, optionIndex);
+            try {
+                return await apiFetch(`/polls/${pollId}/votes`, {
+                    method: 'POST',
+                    body: JSON.stringify({ choices: [optionIndex] })
+                });
+            } catch (err) {
+                console.warn('Backend vote poll failed, falling back to mockApi', err);
+                return api.voteInPoll(pollId, optionIndex);
+            }
         },
-        // Triggers a targeted cache invalidation on success
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['polls', 'stream'] });
         },

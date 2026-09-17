@@ -26,19 +26,11 @@ export function useSubmitCandidacyApplicationMutation() {
         mutationFn: async ({ profession, proofFile }) => {
             const formData = new FormData();
             formData.append('candidate_application[declared_profession]', profession);
-            formData.append('proof', proofFile); // Raw document asset attachment chunk
+            formData.append('proof', proofFile);
 
-            const token = useAuthStore.getState().token || localStorage.getItem('jwt_auth_token');
-
-            return fetch('/api/v1/campaigns/apply', {
+            return apiFetch('/api/v1/campaigns/apply', {
                 method: 'POST',
-                headers: {
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
                 body: formData
-            }).then(res => {
-                if (!res.ok) throw new Error("Portfolio ingestion failure.");
-                return res.json();
             });
         },
         onSuccess: () => {

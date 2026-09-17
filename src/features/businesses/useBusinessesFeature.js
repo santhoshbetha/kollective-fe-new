@@ -79,7 +79,15 @@ export function useCreateBusiness() {
 
     return useMutation({
         mutationFn: async (fullBusinessData) => {
-            return api.createBusiness(fullBusinessData);
+            try {
+                return await apiFetch('/businesses', {
+                    method: 'POST',
+                    body: JSON.stringify(fullBusinessData)
+                });
+            } catch (err) {
+                console.warn('Backend create business failed, falling back to mockApi', err);
+                return api.createBusiness(fullBusinessData);
+            }
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['businesses', 'list'] });

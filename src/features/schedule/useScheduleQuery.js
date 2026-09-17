@@ -1,18 +1,27 @@
 // src/features/schedule/useScheduleQuery.js
 import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
 export function useScheduleQuery() {
     const { data, isPending, error } = useQuery({
-        // Isolate schedule timeline data under its own unique cache boundary
         queryKey: ['schedule', 'timeline'],
-        queryFn: api.getSchedule,
-        staleTime: 30 * 1000, // Stays fresh in cache for 30 seconds before auto-refetching
+        queryFn: async () => {
+            try {
+                const res = await apiFetch('/events');
+                return res?.data || res?.events || res;
+            } catch (err) {
+                console.warn('Backend schedule query failed, falling back to mockApi', err);
+                return api.getSchedule();
+            }
+        },
+        staleTime: 30 * 1000,
     });
 
     return {
-        schedule: data?.schedule || data || [],
+        schedule: Array.isArray(data) ? data : (data?.schedule || []),
         scheduleLoading: isPending,
         scheduleError: error,
     };
 }
+

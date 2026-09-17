@@ -8,6 +8,7 @@ import { usePresenceStore } from '../store/usePresenceStore';
 import { Presence } from 'phoenix';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAccountsStore } from '../store/useAccountsStore';
+import { usePostsStore } from '../store/usePostsStore';
 
 export function useTimelineSocket() {
     const queryClient = useQueryClient();
@@ -46,9 +47,9 @@ export function useTimelineSocket() {
         channel.on('new_post', (payload) => {
             const newPost = payload.post; // E.g., { id: 123, type: "voice", isFollowing: true, scope: "local" }
 
-            if (newPost?.author) {
+            if (newPost) {
                 // 🎟️ Seed the global look-up directory instantly on the socket tick
-                useAccountsStore.getState().importFetchedAccounts([newPost.author]);
+                usePostsStore.getState().importFetchedPosts([newPost]);
             }
 
             // 🔄 DYNAMIC EVALUATION: Evaluate if the post belongs to the tab the user is actively viewing

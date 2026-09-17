@@ -6,20 +6,28 @@ export function useLogout() {
     const queryClient = useQueryClient();
     const clearSession = useAuthStore((state) => state.clearSession);
     const clearBuffer = useTimelineBufferStore((state) => state.clearBuffer);
+    const setIsLoggingOut = useAuthStore((state) => state.setIsLoggingOut);
 
-    const logout = () => {
-        // 1. Clear layout arrays and pending server streams
-        clearBuffer();
+    const logout = (onComplete) => {
+        setIsLoggingOut(true);
 
-        // 2. Clear state, which causes useTimelineSocket's cleanup to run and disconnect the socket
-        clearSession();
+        setTimeout(() => {
+            // 1. Clear layout arrays and pending server streams
+            clearBuffer();
 
-        // 3. Purge disk storage
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
+            // 2. Clear state, which causes useTimelineSocket's cleanup to run and disconnect the socket
+            clearSession();
 
-        // 4. Reset query caches completely
-        queryClient.clear();
+            // 3. Purge disk storage
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
+
+            // 4. Reset query caches completely
+            queryClient.clear();
+
+            setIsLoggingOut(false);
+            if (onComplete) onComplete();
+        }, 500);
     };
 
     return logout;

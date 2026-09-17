@@ -3,6 +3,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSuggestionsQuery, useSuggestionFollowMutation } from '../features/suggestions/useSuggestionsFeature';
 
+import { UserAvatar } from '../components/UserAvatar';
+
 export const SuggestionsPage = () => {
     const navigate = useNavigate();
     const { data: suggestions, isPending } = useSuggestionsQuery();
@@ -41,9 +43,7 @@ export const SuggestionsPage = () => {
                         return (
                             <div key={account.id} className="p-5 bg-[#141414] border border-[#262626] rounded-2xl flex items-center justify-between gap-4 hover:border-white/10 transition-colors">
                                 <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-[#1A1616]">
-                                        <img src={account.avatar || null} alt="" className="w-full h-full object-cover" />
-                                    </div>
+                                    <UserAvatar user={account} className="w-10 h-10 rounded-xl overflow-hidden border border-white/10" />
                                     <div className="flex flex-col min-w-0">
                                         <span className="font-bold text-text-primary text-sm truncate">{account.name || account.username}</span>
                                         <span className="text-xs font-mono font-bold text-text-secondary/40 truncate">{handle}</span>

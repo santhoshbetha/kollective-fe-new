@@ -21,6 +21,17 @@ export function useRelationshipsQuery({ id, type }) {
         getNextPageParam: getNextCursor,
         initialPageParam: null,
         enabled: !!id || type === 'requests',
+        select: (data) => {
+            if (data?.pages) {
+                const importFetchedAccounts = useAccountsStore.getState().importFetchedAccounts;
+                data.pages.forEach((page) => {
+                    if (!page) return;
+                    const rawAccounts = Array.isArray(page) ? page : page.accounts || [];
+                    if (rawAccounts.length > 0) importFetchedAccounts(rawAccounts);
+                });
+            }
+            return data;
+        },
     });
 }
 

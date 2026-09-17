@@ -4,14 +4,29 @@ import { apiFetch } from '../../api/apiClient';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import * as api from '../../api/mockApi';
 
+import { usePostsStore } from '../../store/usePostsStore';
+
+import { useAccountsStore } from '../../store/useAccountsStore';
+
 // 👤 Query: Fetches a single user profile record cleanly by their specific node handle index
 export function useProfileQuery(username) {
     return useQuery({
         queryKey: ['profile', username],
         queryFn: async () => {
-            return apiFetch(`/api/v1/accounts/${username}`);
+            try {
+                return await apiFetch(`/api/v1/accounts/${username}`);
+            } catch (err) {
+                console.warn('Backend profile query failed', err);
+                throw err;
+            }
         },
         enabled: !!username,
+        select: (data) => {
+            if (data && data.id) {
+                useAccountsStore.getState().importFetchedAccounts([data]);
+            }
+            return data;
+        },
     });
 }
 
@@ -31,6 +46,18 @@ export function useProfilePostsQuery(username) {
         getNextPageParam: getNextCursor,
         initialPageParam: null,
         enabled: !!username,
+        select: (data) => {
+            if (!data?.pages) return data;
+            const importFetchedPosts = usePostsStore.getState().importFetchedPosts;
+            const pages = data.pages.map((page) => {
+                if (!page) return page;
+                const rawPosts = Array.isArray(page) ? page : page.statuses || page.posts || [];
+                const imported = importFetchedPosts(rawPosts);
+                if (Array.isArray(page)) return imported;
+                return { ...page, statuses: imported, posts: imported };
+            });
+            return { ...data, pages };
+        },
     });
 }
 
@@ -46,6 +73,9 @@ export function useUpdateProfileMutation(username) {
             });
         },
         onSuccess: (updatedData) => {
+            if (updatedData && updatedData.id) {
+                useAccountsStore.getState().importFetchedAccounts([updatedData]);
+            }
             // Flush caches concurrently to refresh presentation layers instantly
             queryClient.invalidateQueries({ queryKey: ['profile', username] });
             queryClient.setQueryData(['profile', username], updatedData);
@@ -59,19 +89,22 @@ export function useUpdateUser() {
     const token = useAuthStore((state) => state.token);
 
     return useMutation({
-        // 1. Submit the updated user variables to your mockApi
         mutationFn: async (updatedData) => {
-            // updatedData structure: { name: "...", bio: "...", avatar: "..." }
-            return api.updateUser(updatedData);
+            try {
+                return await apiFetch('/profile', {
+                    method: 'PUT',
+                    body: JSON.stringify(updatedData),
+                });
+            } catch (err) {
+                console.warn('Backend update user failed, falling back to mockApi', err);
+                return api.updateUser(updatedData);
+            }
         },
 
-        // 2. Synchronize both your local store and TanStack cache fields on success
         onSuccess: (updatedUser) => {
-            // Invalidate the primary user query cache key so view profiles sync across the app
             queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
             queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
 
-            // Update your global Zustand auth store so sidebars and headers update instantly
             if (updatedUser) {
                 setSession(token, updatedUser);
             }
@@ -96,6 +129,18 @@ export function useProfileTimelineQuery(username, currentMode) {
         getNextPageParam: getNextCursor,
         initialPageParam: null,
         enabled: !!username,
+        select: (data) => {
+            if (!data?.pages) return data;
+            const importFetchedPosts = usePostsStore.getState().importFetchedPosts;
+            const pages = data.pages.map((page) => {
+                if (!page) return page;
+                const rawPosts = Array.isArray(page) ? page : page.statuses || page.posts || [];
+                const imported = importFetchedPosts(rawPosts);
+                if (Array.isArray(page)) return imported;
+                return { ...page, statuses: imported, posts: imported };
+            });
+            return { ...data, pages };
+        },
     });
 }
 

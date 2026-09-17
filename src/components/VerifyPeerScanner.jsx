@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Html5QrcodeScanner } from "html5-qrcode";
+import { apiFetch } from '../api/apiClient';
 
 export function VerifyPeerScanner({ userToken, onVouchSuccess }) {
     const [scanStatus, setScanStatus] = useState("Ready to Scan");
@@ -28,19 +29,10 @@ export function VerifyPeerScanner({ userToken, onVouchSuccess }) {
 
                 setScanStatus("Transmitting Core Trust Packet...");
 
-                fetch('/api/vouch/verify-peer', {
+                apiFetch('/api/vouch/verify-peer', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${userToken}`
-                    },
                     body: JSON.stringify({ secure_token: decodedText })
                 })
-                    .then(async (res) => {
-                        const data = await res.json();
-                        if (!res.ok) throw new Error(data.error || "Verification pipeline rejected.");
-                        return data;
-                    })
                     .then(data => {
                         setScanStatus(`✅ Trust Set! Current District Vouch Count: ${data.current_vouches}`);
                         if (onVouchSuccess) onVouchSuccess(data);
@@ -61,19 +53,10 @@ export function VerifyPeerScanner({ userToken, onVouchSuccess }) {
         setErrorMessage("");
         setScanStatus("Transmitting Simulated Trust Packet...");
 
-        fetch('/api/vouch/verify-peer', {
+        apiFetch('/api/vouch/verify-peer', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${userToken}`
-            },
             body: JSON.stringify({ secure_token: "vouch_tok_simulated" })
         })
-            .then(async (res) => {
-                const data = await res.json();
-                if (!res.ok) throw new Error("Simulation failed");
-                return data;
-            })
             .then(data => {
                 setScanStatus(`✅ Simulated Vouch Success! Current Vouches: ${data.current_vouches}`);
                 if (onVouchSuccess) onVouchSuccess(data);

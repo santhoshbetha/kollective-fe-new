@@ -1,6 +1,7 @@
 // src/features/classifieds/PostAdModal.jsx
 import React, { useState } from 'react';
 import { cn } from "@/lib/utils";
+import { apiFetch } from '../../api/apiClient';
 
 export const PostAdModal = ({ isOpen, onClose, onAdCreated }) => {
     const [formData, setFormData] = useState({
@@ -42,21 +43,14 @@ export const PostAdModal = ({ isOpen, onClose, onAdCreated }) => {
 
         setIsSubmitting(true);
         try {
-            // Elixir API endpoint route destination placeholder
-            const response = await fetch('/classifieds', {
+            const newAd = await apiFetch('/classifieds', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ classified: formData }),
             });
 
-            if (response.ok) {
-                const newAd = await response.json();
-                onAdCreated(newAd);
-                onClose();
-                setFormData({ title: '', category: 'For Sale', price: '', neighborhood: '', description: '', duration_days: '7' });
-            } else {
-                setErrors({ server: 'Failed to broadcast ad. Ensure residency token is active.' });
-            }
+            onAdCreated(newAd);
+            onClose();
+            setFormData({ title: '', category: 'For Sale', price: '', neighborhood: '', description: '', duration_days: '7' });
         } catch (err) {
             setErrors({ server: 'Network communication bottleneck encountered.' });
         } finally {

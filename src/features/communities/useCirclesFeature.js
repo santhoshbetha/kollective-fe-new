@@ -1,17 +1,26 @@
 // src/features/communities/useCirclesFeature.js
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
 // Hook A: Handles fetching suggested circles
 export function useSuggestedCirclesQuery() {
     const { data, isPending } = useQuery({
         queryKey: ['communities', 'suggestions'],
-        queryFn: api.getSuggestedCircles,
-        staleTime: 3 * 60 * 1000, // 3 minutes in cache
+        queryFn: async () => {
+            try {
+                const res = await apiFetch('/organizations/search');
+                return res?.data || res?.circles || res;
+            } catch (err) {
+                console.warn('Backend suggested circles failed, falling back to mockApi', err);
+                return api.getSuggestedCircles();
+            }
+        },
+        staleTime: 3 * 60 * 1000,
     });
 
     return {
-        suggestedCircles: data?.circles || data || [],
+        suggestedCircles: Array.isArray(data) ? data : (data?.circles || []),
         suggestedCirclesLoading: isPending,
     };
 }
@@ -22,12 +31,17 @@ export function useToggleJoinCircle() {
 
     return useMutation({
         mutationFn: async (circleId) => {
-            return api.toggleJoinCircle(circleId);
+            try {
+                return await apiFetch(`/organizations/${circleId}/join`, { method: 'POST' });
+            } catch (err) {
+                console.warn('Backend toggle circle join failed, falling back to mockApi', err);
+                return api.toggleJoinCircle(circleId);
+            }
         },
         onSuccess: () => {
-            // Invalidate both suggestions and active feeds so states sync immediately
             queryClient.invalidateQueries({ queryKey: ['communities', 'suggestions'] });
             queryClient.invalidateQueries({ queryKey: ['communities', 'feed'] });
         },
     });
 }
+

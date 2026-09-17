@@ -2,12 +2,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
 
+import { useAccountsStore } from '../../store/useAccountsStore';
+
 // 📡 Query: Fetches a list of recommended accounts to follow from the local node registry
 export function useSuggestionsQuery() {
     return useQuery({
         queryKey: ['suggestions', 'list'],
         queryFn: async () => {
             return apiFetch('/api/v1/suggestions'); // Returns array of account suggestions
+        },
+        select: (data) => {
+            if (Array.isArray(data)) {
+                const accounts = data.map((item) => item.account || item).filter(Boolean);
+                if (accounts.length > 0) {
+                    useAccountsStore.getState().importFetchedAccounts(accounts);
+                }
+            }
+            return data;
         },
     });
 }

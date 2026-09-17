@@ -6,13 +6,20 @@ export function useCreateEvent() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        // 1. Deliver the structured event variables to your Elixir REST API
         mutationFn: async (eventData) => {
-            // eventData is an object: { title: "...", description: "...", date: "...", location: "..." }
-            return apiFetch('/events', {
-                method: 'POST',
-                body: JSON.stringify(eventData),
-            });
+            const payload = eventData.event ? eventData : { event: eventData };
+            try {
+                const res = await apiFetch('/events', {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                });
+                if (res && (res.data || res.status === 'ok' || res.id)) {
+                    return res.data || res;
+                }
+            } catch (err) {
+                console.warn('Backend create event failed, falling back to mockApi', err);
+            }
+            return api.createEvent ? api.createEvent(eventData) : eventData;
         },
 
         // 2. Clear out old stale caches immediately upon a successful creation run

@@ -74,6 +74,8 @@ import { ProfileEditPage } from './pages/ProfileEditPage';
 import { AlertProvider } from './context/AlertContext';
 
 import { useAuthStore } from './store/auth/useAuthStore';
+import { KollectiveSpinner } from './components/ui/KollectiveSpinner';
+import { TopProgressBar } from './components/ui/TopProgressBar';
 
 
 const queryClient = new QueryClient({
@@ -89,6 +91,8 @@ export default function App() {
   // ⚡ ATOMIC OBSERVATION: Tracks initialization states cleanly
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoggingIn = useAuthStore((state) => state.isLoggingIn);
+  const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
   const executeLogout = useAuthStore((state) => state.executeLogout);
 
   // 🏗️ Atomic Render Gate: Only open doors after hydration truth
@@ -96,12 +100,7 @@ export default function App() {
   if (!isHydrated) {
     return (
       <QueryClientProvider client={queryClient}>
-        <div className="min-h-screen flex items-center justify-center bg-white">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-green mx-auto mb-4"></div>
-            <p className="text-sm font-medium text-gray-700">Loading...</p>
-          </div>
-        </div>
+        <KollectiveSpinner variant="fullscreen" size="lg" text="Initializing Kollective Node..." />
       </QueryClientProvider>
     );
   }
@@ -109,7 +108,10 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AlertProvider>
+        {isLoggingIn && <KollectiveSpinner variant="fullscreen" size="lg" text="Authenticating Credentials..." />}
+        {isLoggingOut && <KollectiveSpinner variant="fullscreen" size="lg" text="Securing Session & Logging Out..." />}
         <BrowserRouter>
+          <TopProgressBar />
           <Routes>
             {/* 🌍 1. PUBLIC ROUTES (No Auth Required) */}
             <Route path="/" element={<LandingPage />} />

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { apiFetch } from '../api/apiClient';
 
 export function RequestVouchToken({ userToken }) {
     const [vouchToken, setVouchToken] = useState("");
@@ -8,15 +9,9 @@ export function RequestVouchToken({ userToken }) {
 
     const generateNewToken = async () => {
         try {
-            const response = await fetch('/api/vouch/generate-token', {
+            const data = await apiFetch('/api/vouch/generate-token', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${userToken}`,
-                    'Content-Type': 'application/json'
-                }
             });
-            if (!response.ok) throw new Error("Network authentication rejected.");
-            const data = await response.json();
 
             setVouchToken(data.secure_token);
             setCountdown(60);

@@ -2,6 +2,8 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
 
+import { useAccountsStore } from '../../store/useAccountsStore';
+
 // 🔇 Infinite Query: Pulls a flat, paginated list of muted account credentials from the server
 export function useMutesQuery() {
     return useInfiniteQuery({
@@ -15,6 +17,17 @@ export function useMutesQuery() {
         getNextPageParam: (lastPage) =>
             lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
         initialPageParam: null,
+        select: (data) => {
+            if (data?.pages) {
+                const importFetchedAccounts = useAccountsStore.getState().importFetchedAccounts;
+                data.pages.forEach((page) => {
+                    if (!page) return;
+                    const rawAccounts = Array.isArray(page) ? page : page.accounts || [];
+                    if (rawAccounts.length > 0) importFetchedAccounts(rawAccounts);
+                });
+            }
+            return data;
+        },
     });
 }
 

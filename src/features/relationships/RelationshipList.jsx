@@ -3,6 +3,8 @@ import React from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { useRelationshipsQuery, useRelationshipMutations } from './useRelationshipsFeature';
 
+import { UserAvatar } from '../../components/UserAvatar';
+
 export function RelationshipList({ accountId, type }) {
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useRelationshipsQuery({ id: accountId, type });
     const mutation = useRelationshipMutations(accountId);
@@ -40,9 +42,7 @@ export function RelationshipList({ accountId, type }) {
                     return (
                         <div className="flex items-center justify-between p-5 border-b border-[#262626] last:border-b-0 hover:bg-white/[0.01] transition-colors">
                             <div className="flex items-center gap-4 min-w-0">
-                                <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-[#1A1616]">
-                                    <img src={user.avatar} alt="" className="w-full h-full object-cover" />
-                                </div>
+                                <UserAvatar user={user} className="w-10 h-10 rounded-xl overflow-hidden border border-white/10" />
                                 <div className="flex flex-col min-w-0">
                                     <span className="font-bold text-text-primary text-sm truncate">{user.name || user.username}</span>
                                     <span className="text-xs font-mono font-bold text-text-secondary/40 truncate">{userHandle}</span>

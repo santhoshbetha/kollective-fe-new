@@ -53,6 +53,7 @@ let posts = [
     id: 'nymag-post-1',
     title: 'The Future of Decentralized Media',
     text: 'How alternative networks are shifting the landscape of urban storytelling and reporting. A deep dive into localized hubs. #Media #Decentralized #NY',
+    scope: 'State',
     author: {
       name: 'New York Magazine',
       handle: '@nymag@threads.net',
@@ -79,6 +80,7 @@ let posts = [
     id: 'strike-post-1',
     title: 'URGENT: National Strike Action confirmed for December 15th.',
     text: 'After failed negotiations regarding the new digital sovereignty bill, the Kollective has authorized a full-scale national strike. This is not just a protest; it is a fundamental reclamation of our digital rights. Stand with us as we pulse as one.',
+    scope: 'Country',
     author: {
       name: 'Marcus Vane',
       role: 'Chief Coordinator',
@@ -137,6 +139,7 @@ let posts = [
     id: 'standard-post-1',
     title: 'Decentralized Governance Report',
     text: 'Just finished the latest report on decentralized governance. The potential for Kollective99 to bridge the gap between policy and people is immense. Looking forward to the town hall next week!',
+    scope: 'State',
     author: {
       name: 'Elena S.',
       role: 'Editor',
@@ -158,6 +161,7 @@ let posts = [
     id: 'system-post-1',
     title: 'Pulse AI Analysis',
     text: 'Trend Alert: Community discussions around "Digital Autonomy" have increased by 140% in the last 24 hours. The Collective is polarizing around Clause 14.',
+    scope: 'Local',
     author: {
       name: 'Pulse AI',
       role: 'System Intelligence',
@@ -178,6 +182,7 @@ let posts = [
     id: 'carousel-post-1',
     title: 'City Planning Garden District',
     text: 'The proposed vertical garden district for Sector 7 is now open for community feedback. This deLog Incorporates modular living units and 100% solar capture.',
+    scope: 'Local',
     author: {
       name: 'City Planning Circle',
       role: 'Official Hub',
@@ -202,6 +207,7 @@ let posts = [
     id: 'renaissance-post',
     title: 'The Digital Renaissance: Why Decentralized Identity is our Final Frontier.',
     text: 'We are standing at the precipice of a new era. The current structures of data ownership are failing us. It is no longer enough to simply "participate" in the digital economy—we must own the digital soul of our existence.',
+    scope: 'World',
     author: {
       name: 'Julian Vane',
       role: 'Architect of the Red Shift',
@@ -349,9 +355,34 @@ export const getUser = async () => {
   return { ...user };
 };
 
-export const getPosts = async () => {
+export const getPosts = async (params = {}) => {
   await delay(LATENCY);
-  return [...posts];
+  const options = typeof params === 'string' ? { scope: params } : (params || {});
+  let result = [...posts];
+
+  if (options.scope) {
+    const scopeLower = options.scope.toLowerCase();
+    result = result.filter(p => (p.scope || 'local').toLowerCase() === scopeLower);
+  }
+
+  if (options.tab && options.tab !== 'All Activity') {
+    if (options.tab === 'Voices') {
+      result = result.filter(p => p.isVoice || p.category === 'Voices');
+    } else if (options.tab === 'Popular') {
+      result = result.filter(p => (p.likes || 0) > 200 || p.category === 'Popular');
+    } else if (options.tab === 'Following') {
+      result = result.filter(p => p.category === 'Following');
+    }
+  }
+
+  return {
+    data: result,
+    next_cursor: null
+  };
+};
+
+export const getCommunitiesFeed = async (params = {}) => {
+  return getPosts(params);
 };
 
 export const getPostById = async (id) => {

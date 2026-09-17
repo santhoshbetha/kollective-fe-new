@@ -1,5 +1,6 @@
 // UsernameAvailabilityInput.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../api/apiClient';
 
 const UsernameAvailabilityInput = ({ onValidated }) => {
     const [username, setUsername] = useState("");
@@ -16,8 +17,7 @@ const UsernameAvailabilityInput = ({ onValidated }) => {
 
         // Clear previous execution timers to establish the sliding input window
         const delayDebounceFn = setTimeout(() => {
-            fetch(`/api/v1/auth/check-username?username=${encodeURIComponent(username)}`)
-                .then(res => res.json())
+            apiFetch(`/auth/check-username?username=${encodeURIComponent(username)}`)
                 .then(json => {
                     if (json.status === "success") {
                         if (json.available) {

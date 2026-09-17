@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { Alert, AlertTitle, AlertDescription } from '../components/ui/Alert';
+import { useLoginMutation } from '../store/auth/useLoginMutation';
+import { KollectiveSpinner } from '../components/ui/KollectiveSpinner';
 
 export const LoginPage = () => {
     const navigate = useNavigate();
     const theme = useStore((state) => state.theme);
     const toggleTheme = useStore((state) => state.toggleTheme);
+    const loginMutation = useLoginMutation();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -14,15 +17,20 @@ export const LoginPage = () => {
     const [rememberMe, setRememberMe] = useState(false);
     const [alertInfo, setAlertInfo] = useState(null);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setAlertInfo(null);
         if (!email.trim() || !password.trim()) {
             setAlertInfo({ type: 'error', message: 'Please fill in all fields.' });
             return;
         }
-        // Navigate to platform home base
-        navigate('/home');
+
+        try {
+            await loginMutation.mutateAsync({ email, password });
+            navigate('/home');
+        } catch (err) {
+            setAlertInfo({ type: 'error', message: err.message || 'Invalid email or password.' });
+        }
     };
 
     const handleForgotPassword = (e) => {
@@ -175,12 +183,19 @@ export const LoginPage = () => {
                             {/* Action Call Button */}
                             <button
                                 type="submit"
-                                className="w-full flex items-center justify-center gap-2 bg-[#c2185b] hover:bg-[#a2123c] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-[#c2185b]/10 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none"
+                                disabled={loginMutation.isPending}
+                                className="w-full flex items-center justify-center gap-2 bg-[#c2185b] hover:bg-[#a2123c] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-[#c2185b]/10 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none disabled:opacity-60 cursor-pointer"
                             >
-                                Log In
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                </svg>
+                                {loginMutation.isPending ? (
+                                    <KollectiveSpinner variant="inline" size="sm" text="Authenticating..." />
+                                ) : (
+                                    <>
+                                        Log In
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                        </svg>
+                                    </>
+                                )}
                             </button>
                         </form>
 

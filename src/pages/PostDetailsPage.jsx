@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePostActions } from '../features/timeline/usePostActions';
 import { apiFetch, apiFetchPosts } from '../api/apiClient';
 import { CascadedPostRow } from '../components/CascadedPostRow';
+import { usePostsStore } from '../store/usePostsStore';
 
 // Helper: Hides sensitive data or spoilers behind a button toggle natively
 const ContentWarningWrapper = ({ warning, children }) => {
@@ -186,6 +187,14 @@ export const PostDetailsPage = () => {
             // Expected backend layout array parameters: { ancestors: [...], focus: {...}, descendants: [...] }
             return apiFetchPosts(`/api/v1/posts/${currentPostId}/context`);
         },
+        select: (data) => {
+            if (!data) return data;
+            const importFetchedPosts = usePostsStore.getState().importFetchedPosts;
+            const ancestors = data.ancestors ? importFetchedPosts(data.ancestors) : [];
+            const focus = data.focus ? (importFetchedPosts([data.focus])[0] || data.focus) : null;
+            const descendants = data.descendants ? importFetchedPosts(data.descendants) : [];
+            return { ancestors, focus, descendants };
+        },
     });
 
     // 🎯 SUBMISSION BALLOT MUTATION: Dispatches flat response elements natively near the view
@@ -196,7 +205,10 @@ export const PostDetailsPage = () => {
                 body: JSON.stringify(payload),
             });
         },
-        onSuccess: () => {
+        onSuccess: (newReply) => {
+            if (newReply && newReply.id) {
+                usePostsStore.getState().importFetchedPosts([newReply]);
+            }
             // Invalidate target query indices to trigger an immediate localized refresh
             queryClient.invalidateQueries({ queryKey: ['post', currentPostId, 'thread'] });
             setCommentText('');

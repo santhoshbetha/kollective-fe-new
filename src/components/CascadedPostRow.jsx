@@ -5,10 +5,11 @@ import { ThreadLine } from '../features/timeline/ThreadLine';
 import { PostContent } from '../features/timeline/PostContent';
 import { PostMedia } from '../features/timeline/PostMedia';
 import { ImageLightbox } from '../features/timeline/ImageLightbox';
+import { usePostsStore } from '../store/usePostsStore';
 
 // 🛑 HOOK IS GONE FROM HERE: Moved strictly into state attributes passed down
 export function CascadedPostRow({
-    post,
+    post: propPost,
     isFocus,
     isAncestor,
     depth = 0,
@@ -18,6 +19,9 @@ export function CascadedPostRow({
     onLike,
     onBookmark
 }) {
+    const storePost = usePostsStore((state) => propPost?.id ? state.entities[propPost.id] : null);
+    const post = storePost || propPost;
+
     // Local simple component variables are completely safe
     const [showCw, setShowCw] = useState(false);
     const [carouselOpen, setCarouselOpen] = useState(false);
