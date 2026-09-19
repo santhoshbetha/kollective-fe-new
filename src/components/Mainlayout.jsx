@@ -63,16 +63,16 @@ export const MainLayout = () => {
 
     const hasAddressOrCoords = Boolean((streetAddress && streetAddress.trim()) || user?.street_address || user?.latitude);
     const hasState = Boolean((userState && userState.trim()) || user?.state || user?.origin_state);
-    const canAccessEvents = hasAddressOrCoords || hasState;
+    const canAccessLocalizedFeatures = hasAddressOrCoords || hasState;
 
     const navItems = [
         { name: 'Home', path: '/home', icon: 'home' },
         { name: 'Communities', path: '/communities', icon: 'communities' },
-        ...(canAccessEvents ? [{ name: 'Events', path: '/events', icon: 'calendar_today' }] : []),
+        ...(canAccessLocalizedFeatures ? [{ name: 'Events', path: '/events', icon: 'calendar_today' }] : []),
         { name: 'Polls', path: '/polls', icon: 'poll' },
         { name: 'Explore', path: '/explore', icon: 'explore' },
-        ...(canAccessEvents ? [{ name: 'Local Businesses', path: '/businesses', icon: 'storefront' }] : []),
-        ...(canAccessEvents ? [{ name: 'Classifieds', path: '/classifieds', icon: 'newspaper' }] : []),
+        ...(canAccessLocalizedFeatures ? [{ name: 'Local Businesses', path: '/businesses', icon: 'storefront' }] : []),
+        ...(canAccessLocalizedFeatures ? [{ name: 'Classifieds', path: '/classifieds', icon: 'newspaper' }] : []),
         { name: 'Organize', path: '/organize', icon: 'campaign' },
         { name: 'Civic Assembly', path: '/campaigns/local', icon: 'groups' },
         { name: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' },

@@ -77,7 +77,7 @@ export function EventsFeed({
 
     const hasAddressOrCoords = Boolean((streetAddress && streetAddress.trim()) || currentUser?.street_address || currentUser?.latitude);
     const hasState = Boolean((userState && userState.trim()) || currentUser?.state || currentUser?.origin_state);
-    const canAccessEvents = hasAddressOrCoords || hasState;
+    const canAccessLocalizedFeatures = hasAddressOrCoords || hasState;
 
     // 🎛️ Date & Distance Filter States
     const [selectedDate, setSelectedDate] = useState(null);
@@ -308,7 +308,7 @@ export function EventsFeed({
         return matchesSearch && matchesLocation && matchesFormat && matchesCategory;
     });
 
-    if (!canAccessEvents) {
+    if (!canAccessLocalizedFeatures) {
         return (
             <div className="max-w-[700px] mx-auto my-16 p-8 bg-[#141414] border border-[#262626] rounded-2xl shadow-2xl text-center space-y-6 animate-in fade-in duration-200">
                 <div className="w-16 h-16 rounded-2xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center mx-auto text-primary-container">
