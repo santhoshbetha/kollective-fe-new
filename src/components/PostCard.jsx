@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserHoverCard } from './UserHoverCard';
+import { UserAvatar } from './UserAvatar';
 import { ImageCarouselModal } from './ImageCarouselModal';
 import { VerificationBadge } from './VerificationBadge';
 import { useLikePost } from '../features/timeline/useLikePost';
@@ -384,17 +385,7 @@ export const PostCard = ({ post }) => {
     >
       <div className="flex gap-4">
         <UserHoverCard author={post.author}>
-          {post.author.avatar ? (
-            <img
-              alt="User"
-              className="w-12 h-12 rounded-full object-cover border border-white/10"
-              src={post.author.avatar}
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-secondary to-orange-600 flex items-center justify-center text-on-secondary font-bold">
-              {post.author.name.split(' ').map(n => n[0]).join('')}
-            </div>
-          )}
+          <UserAvatar user={post.author} className="w-12 h-12" showStatus={false} />
         </UserHoverCard>
 
         <div className="flex-1">
@@ -426,7 +417,7 @@ export const PostCard = ({ post }) => {
                     }}
                     className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1"
                   >
-                    <img src={post.postedBy.avatar} className="w-4 h-4 rounded-full object-cover" alt="" />
+                    <UserAvatar user={post.postedBy} className="w-4 h-4" showStatus={false} />
                     {post.postedBy.name}
                   </span>
                 </div>

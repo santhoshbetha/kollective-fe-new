@@ -1,7 +1,7 @@
-// src/components/AccountSwitcher.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useSwitchAccount } from '../store/auth/useSwitchAccount';
+import { UserAvatar } from './UserAvatar';
 
 export default function AccountSwitcher({
     user: propUser,
@@ -106,13 +106,15 @@ export default function AccountSwitcher({
             >
                 {/* Avatar with status / role dot */}
                 <div className="relative flex-shrink-0">
-                    <img
-                        src={currentAccount?.avatar || currentUser?.avatar || '/default-avatar.jpg'}
-                        alt={currentAccount?.name || 'Avatar'}
-                        className="w-7 h-7 rounded-full object-cover border border-white/10"
+                    <UserAvatar
+                        user={currentAccount || currentUser}
+                        name={currentAccount?.name || currentUser?.name}
+                        avatar={currentAccount?.avatar || currentUser?.avatar}
+                        className="w-7 h-7"
+                        showStatus={false}
                     />
                     <span
-                        className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-surface ${
+                        className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-surface z-10 ${
                             isPersonalActive ? 'bg-primary-container' : 'bg-amber-400'
                         }`}
                     />
@@ -185,10 +187,12 @@ export default function AccountSwitcher({
                                     : 'hover:bg-surface-container-high/60 border border-transparent text-text-secondary hover:text-text-primary'
                             }`}
                         >
-                            <img
-                                src={currentUser?.avatar || '/default-avatar.jpg'}
-                                alt="Personal avatar"
-                                className="w-9 h-9 rounded-full object-cover border border-white/10 flex-shrink-0"
+                            <UserAvatar
+                                user={currentUser}
+                                name={currentUser?.name}
+                                avatar={currentUser?.avatar}
+                                className="w-9 h-9"
+                                showStatus={false}
                             />
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
@@ -243,12 +247,15 @@ export default function AccountSwitcher({
                                         }`}
                                     >
                                         <div className="relative flex-shrink-0">
-                                            <img
-                                                src={org.avatar || '/default-org.jpg'}
-                                                alt={org.name}
-                                                className="w-9 h-9 rounded-lg object-cover border border-white/10"
+                                            <UserAvatar
+                                                user={org}
+                                                name={org.name}
+                                                avatar={org.avatar}
+                                                className="w-9 h-9"
+                                                roundedClassName="rounded-lg"
+                                                showStatus={false}
                                             />
-                                            <span className="absolute -bottom-1 -right-1 material-symbols-outlined text-[12px] bg-surface-container p-0.5 rounded text-amber-400">
+                                            <span className="absolute -bottom-1 -right-1 material-symbols-outlined text-[12px] bg-surface-container p-0.5 rounded text-amber-400 z-10">
                                                 corporate_fare
                                             </span>
                                         </div>

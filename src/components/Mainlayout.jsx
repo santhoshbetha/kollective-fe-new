@@ -6,7 +6,16 @@ import { useStore } from '../store/useStore';
 //import { useTimelineSocket } from '../hooks/useTimelineSocket';
 import { CreatePostModal } from './CreatePostModal';
 import AccountSwitcher from './AccountSwitcher';
+import { UserAvatar } from './UserAvatar';
 import { useNotificationListener } from '../features/notifications/useNotificationListener';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogClose,
+    DialogFooter
+} from './ui/Dialog';
 
 export const MainLayout = () => {
     const location = useLocation();
@@ -15,6 +24,7 @@ export const MainLayout = () => {
 
     // 🔐 Auth Store Selectors (Zustand)
     const user = useAuthStore((state) => state.user);
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const activeAccount = useAuthStore((state) => state.activeAccount);
     const executeGlobalLogout = useAuthStore((state) => state.executeGlobalLogout);
     const logout = useLogout();
@@ -32,6 +42,16 @@ export const MainLayout = () => {
     useNotificationListener();
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+
+    const handleVoiceInClick = () => {
+        console.log("handleVoiceInClick called", isAuthenticated);
+        if (!isAuthenticated) {
+            setIsLoginPromptOpen(true);
+        } else {
+            setIsCreateOpen(true);
+        }
+    };
 
     // Close mobile drawer automatically on path shifts
     useEffect(() => {
@@ -125,7 +145,7 @@ export const MainLayout = () => {
                     {/* Create Button & User Card */}
                     <div className="mt-auto">
                         <button
-                            onClick={() => setIsCreateOpen(true)}
+                            onClick={handleVoiceInClick}
                             className="w-full bg-primary-container text-white font-bold text-label-md py-4 rounded-xl crimson-glow hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
                             <span className="material-symbols-outlined text-[20px]">add_circle</span>
@@ -141,9 +161,15 @@ export const MainLayout = () => {
                                 className="mt-6 p-3.5 bg-surface-container-low rounded-xl border border-white/5 flex items-center gap-3 cursor-pointer hover:bg-surface-container-high/40 transition-colors"
                             >
                                 <div className="relative flex-shrink-0">
-                                    <img alt="User avatar" className="w-10 h-10 rounded-full object-cover border border-white/10" src={activeAccount?.avatar || user.avatar} />
+                                    <UserAvatar
+                                        user={activeAccount || user}
+                                        name={activeAccount?.name || user?.name}
+                                        avatar={activeAccount?.avatar || user?.avatar}
+                                        className="w-10 h-10"
+                                        showStatus={false}
+                                    />
                                     <span
-                                        className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-surface ${!activeAccount || activeAccount.type === 'personal' ? 'bg-primary-container' : 'bg-amber-400'
+                                        className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-surface z-10 ${!activeAccount || activeAccount.type === 'personal' ? 'bg-primary-container' : 'bg-amber-400'
                                             }`}
                                     />
                                 </div>
@@ -216,7 +242,13 @@ export const MainLayout = () => {
                                     }}
                                     className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity p-2 rounded-xl bg-surface-container-low"
                                 >
-                                    <img alt="User avatar" className="w-10 h-10 rounded-full object-cover border border-white/10" src={activeAccount?.avatar || user.avatar} />
+                                    <UserAvatar
+                                        user={activeAccount || user}
+                                        name={activeAccount?.name || user?.name}
+                                        avatar={activeAccount?.avatar || user?.avatar}
+                                        className="w-10 h-10"
+                                        showStatus={false}
+                                    />
                                     <div className="overflow-hidden">
                                         <p className="font-bold text-sm truncate text-text-primary">{activeAccount?.name || user.name}</p>
                                         <p className="text-xs text-text-secondary truncate">{activeAccount?.handle || user.handle}</p>
@@ -230,7 +262,7 @@ export const MainLayout = () => {
 
             {/* 🧭 Top Header Fixed Bar */}
             <header className="fixed top-0 w-full z-40 bg-surface/95 backdrop-blur-xl border-b border-white/5 md:ml-72 md:w-[calc(100%-16rem)]">
-                <div className="flex justify-between items-center px-6 h-16 w-full max-w-7xl mx-auto">
+                <div className="flex justify-between items-center pl-6 pr-12 h-16 w-full max-w-7xl mx-auto">
                     <div className="flex items-center gap-4 md:hidden">
                         <button onClick={() => setMobileMenuOpen(true)} className="text-text-primary focus:outline-none">
                             <span className="material-symbols-outlined">menu</span>
@@ -304,7 +336,7 @@ export const MainLayout = () => {
 
                 {/* Floating Post Trigger */}
                 <button
-                    onClick={() => setIsCreateOpen(true)}
+                    onClick={handleVoiceInClick}
                     className="w-14 h-14 bg-primary-container rounded-2xl flex items-center justify-center -mt-8 shadow-2xl shadow-primary-container/40 border-4 border-surface active:scale-90 transition-transform"
                 >
                     <span className="material-symbols-outlined text-white text-[28px]">add</span>
@@ -329,6 +361,45 @@ export const MainLayout = () => {
             {/* 📝 Floating Create Post Dialog */}
             {isCreateOpen && (
                 <CreatePostModal open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+            )}
+
+            {/* 🔒 Unauthenticated Log in Prompt Modal */}
+            {isLoginPromptOpen && (
+                <Dialog open={isLoginPromptOpen} onOpenChange={setIsLoginPromptOpen}>
+                    <DialogContent className="max-w-[420px] bg-[#141414] text-white border border-white/10 rounded-2xl p-6 shadow-2xl">
+                        <DialogHeader className="border-b border-white/10 pb-4 p-0 bg-transparent flex flex-row items-center justify-between">
+                            <DialogTitle className="text-xl font-extrabold text-text-primary flex items-center gap-2">
+                                <span className="material-symbols-outlined text-primary-container text-2xl">lock</span>
+                                Log in
+                            </DialogTitle>
+                            <DialogClose />
+                        </DialogHeader>
+                        <div className="py-4 space-y-3">
+                            <p className="text-text-secondary text-xl leading-relaxed font-bold">
+                                Please log in to broadcast a post.
+                            </p>
+                        </div>
+                        <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 border-t-0 p-0">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsLoginPromptOpen(false);
+                                    navigate('/login');
+                                }}
+                                className="w-full py-3 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-xl shadow-lg transition-all cursor-pointer text-sm uppercase tracking-wider border-none"
+                            >
+                                Log in
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsLoginPromptOpen(false)}
+                                className="w-full py-3 bg-surface-container-high hover:bg-white/10 text-text-secondary hover:text-text-primary font-bold rounded-xl transition-all cursor-pointer text-sm border border-white/10"
+                            >
+                                Cancel
+                            </button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             )}
 
             {/* ⚡ Real-time Jury Duty Notification Modal Overlay */}

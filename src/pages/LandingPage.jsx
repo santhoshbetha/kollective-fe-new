@@ -1,16 +1,33 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
-import { Link } from 'react-router-dom';
-import { AtSign, Home } from 'lucide-react';
+import { AtSign, Home, Globe, Shield, Code, Terminal } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { Globe, Shield, Code, Terminal } from 'lucide-react';
+import { useAuthStore } from '../store/auth/useAuthStore';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+  DialogFooter
+} from '../components/ui/Dialog';
 
 export const LandingPage = () => {
   const navigate = useNavigate();
   const theme = useStore((s) => s.theme);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isLight = theme === 'light';
   const [activeFaq, setActiveFaq] = useState(null);
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+
+  const handleVoiceInClick = () => {
+    if (!isAuthenticated) {
+      setIsLoginPromptOpen(true);
+    } else {
+      navigate('/home');
+    }
+  };
 
   const faqs = [
     {
@@ -65,9 +82,7 @@ export const LandingPage = () => {
                 <span className="hidden sm:inline">Home</span>
               </Button>
             </Link>
-            <Link to="/login">
-              <Button variant="ghost">Voice in</Button>
-            </Link>
+            <Button variant="ghost" onClick={handleVoiceInClick}>Voice in</Button>
             <Link to="/create-account">
               <Button variant="default">Join</Button>
             </Link>
@@ -366,6 +381,45 @@ export const LandingPage = () => {
           </div>
         </div>
       </footer>
+
+      {/* 🔒 Unauthenticated Log in Prompt Modal */}
+      {isLoginPromptOpen && (
+        <Dialog open={isLoginPromptOpen} onOpenChange={setIsLoginPromptOpen}>
+          <DialogContent className="max-w-[420px] bg-[#141414] text-white border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <DialogHeader className="border-b border-white/10 pb-4 p-0 bg-transparent flex flex-row items-center justify-between">
+              <DialogTitle className="text-xl font-extrabold text-text-primary flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary-container text-2xl">lock</span>
+                Log in
+              </DialogTitle>
+              <DialogClose />
+            </DialogHeader>
+            <div className="py-4 space-y-3">
+              <p className="text-text-secondary text-xl leading-relaxed font-bold">
+                Please log in to broadcast a post.
+              </p>
+            </div>
+            <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 border-t-0 p-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLoginPromptOpen(false);
+                  navigate('/login');
+                }}
+                className="w-full py-3 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-xl shadow-lg transition-all cursor-pointer text-sm uppercase tracking-wider border-none"
+              >
+                Log in
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsLoginPromptOpen(false)}
+                className="w-full py-3 bg-surface-container-high hover:bg-white/10 text-text-secondary hover:text-text-primary font-bold rounded-xl transition-all cursor-pointer text-sm border border-white/10"
+              >
+                Cancel
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

@@ -1,15 +1,21 @@
 // src/features/filters/useFiltersFeature.js
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
+import { useAuthStore } from '../../store/auth/useAuthStore';
 
 // 🔍 Query: Fetches all active content filter rule arrays from the Elixir server
 export function useFiltersQuery() {
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
     return useQuery({
-        queryKey: ['filters', 'list'],
+        queryKey: ['filters', 'list', isAuthenticated],
         queryFn: async () => {
+            if (!isAuthenticated) return [];
             const res = await apiFetch('/api/v1/filters');
             return Array.isArray(res) ? res : (res?.data || []);
         },
+        enabled: !!isAuthenticated,
+        initialData: !isAuthenticated ? [] : undefined,
     });
 }
 

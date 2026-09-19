@@ -10,7 +10,7 @@ export default function useAuditChannel(activeOrgId, onNewLogReceived) {
 
         // 1. Fetch user socket token (generated upon login)
         const token = localStorage.getItem('socket_token');
-        const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:4000/socket';
+        const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/socket';
 
         // 2. Initialize connection
         const socket = new Socket(wsUrl, { params: { token } });

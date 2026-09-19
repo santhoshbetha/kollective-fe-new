@@ -1,6 +1,7 @@
 // src/pages/HomePage.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useStore } from '../store/useStore';
+import { useAuthStore } from '../store/auth/useAuthStore';
 import { TimelineFeed } from '../features/timeline/TimelineFeed';
 import { TrendingWidget } from '../components/TrendingWidget';
 
@@ -8,17 +9,25 @@ export const HomePage = () => {
     // 🎛️ Pull active feed configuration chips parameters directly from your unified useStore
     const activeTab = useStore((state) => state.homeFeedTab);
     const setActiveTab = useStore((state) => state.setHomeFeedTab);
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-    const tabs = ['All Activity', 'Voices', 'Popular', 'Following'];
+    const baseTabs = ['All Activity', 'Voices', 'Popular'];
+    const tabs = isAuthenticated ? [...baseTabs, 'Following'] : baseTabs;
+
+    useEffect(() => {
+        if (!isAuthenticated && activeTab === 'Following') {
+            setActiveTab('All Activity');
+        }
+    }, [isAuthenticated, activeTab, setActiveTab]);
 
     return (
-        <div className="max-w-7xl mx-auto flex gap-16">
+        <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row gap-0 md:gap-16">
 
-            {/* 📋 Central Feed Processing Column Layout */}
-            <div className="flex-1 flex flex-col gap-6 max-w-3xl">
+            <div className="w-full flex-1 flex flex-col gap-2 md:max-w-3xl">
 
                 {/* 🧭 Feed Filter Chips Navigation */}
-                <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+                {/* Added px-4 on mobile so chips don't hug the screen edge perfectly, matches layout */}
+                <div className="flex gap-3 overflow-x-auto px-4 md:px-0 pb-0 no-scrollbar">
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab;
                         return (
@@ -39,12 +48,17 @@ export const HomePage = () => {
                 {/* ⚡ VIRTUALIZED TIMELINE FEED CONTAINER INJECTION */}
                 {/* All pagination loaders, mock queries, unread banner flushes, 
                 and skeleton parameters are encapsulated cleanly right here! */}
-                <TimelineFeed />
+                <div className="-mx-4 md:mx-0 w-[calc(100%+2rem)] md:w-full">
+                    <TimelineFeed />
+                </div>
 
             </div>
 
             {/* 📈 Right Sidebar Trending Metadata Widgets */}
-            <TrendingWidget />
+            {/* Hidden on mobile (hidden), visible from medium screens up (md:block) */}
+            <div className="hidden md:block">
+                <TrendingWidget />
+            </div>
         </div>
     );
 };

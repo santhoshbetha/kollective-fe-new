@@ -230,20 +230,6 @@ export const EditProfilePage = () => {
           </div>
         </form>
       </div>
-
-      {/* Danger Zone */}
-      <div className="p-8 border border-red-500/20 rounded-[24px] bg-red-950/10 flex items-center justify-between">
-        <div>
-          <h4 className="font-label-md text-lg font-bold text-red-500 mb-1">Deactivate Account</h4>
-          <p className="text-lg text-text-secondary">Temporarily hide your profile and posts</p>
-        </div>
-        <button
-          onClick={() => alert('Account deactivation is a placeholder action?.')}
-          className="px-6 py-2 border border-red-500/40 text-red-500 rounded-lg hover:bg-red-500/10 transition-colors font-bold text-sm uppercase tracking-wider cursor-pointer"
-        >
-          Deactivate
-        </button>
-      </div>
     </div>
   );
 };

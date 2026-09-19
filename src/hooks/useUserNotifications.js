@@ -7,7 +7,7 @@ export default function useUserNotifications(currentUserId, onAlertReceived) {
         if (!currentUserId) return;
 
         const token = localStorage.getItem('socket_token');
-        const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:4000/socket';
+        const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/socket';
 
         const socket = new Socket(wsUrl, { params: { token } });
         socket.connect();

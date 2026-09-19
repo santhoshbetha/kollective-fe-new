@@ -50,6 +50,29 @@ const user = {
 
 let posts = [
   {
+    id: 'video-post-demo',
+    title: 'Decentralized Grid Demonstration Clip',
+    text: 'A quick video walkthrough showing real-time peer-to-peer telemetry data transfer across local municipal nodes. Watch the video clip below.',
+    scope: 'World',
+    author: {
+      name: 'Clara Diaz',
+      handle: '@clara_diaz',
+      role: 'Transit & Grid Engineer',
+      verified: true,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+    },
+    video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    videoPoster: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
+    likes: 342,
+    commentsCount: 29,
+    shares: 88,
+    isVoice: false,
+    time: '3h ago',
+    category: 'All Activity',
+    tags: ['#Video', '#Grid', '#Telemetry'],
+    comments: []
+  },
+  {
     id: 'nymag-post-1',
     title: 'The Future of Decentralized Media',
     text: 'How alternative networks are shifting the landscape of urban storytelling and reporting. A deep dive into localized hubs. #Media #Decentralized #NY',
@@ -373,6 +396,14 @@ export const getPosts = async (params = {}) => {
     } else if (options.tab === 'Following') {
       result = result.filter(p => p.category === 'Following');
     }
+  }
+
+  if (options.country) {
+    const countryLower = options.country.toLowerCase();
+    result = result.filter(p => {
+      const pCountry = (p.origin_country || p.country || 'us').toLowerCase();
+      return pCountry === countryLower || pCountry === 'us' || (p.scope && p.scope.toLowerCase() === 'country');
+    });
   }
 
   return {

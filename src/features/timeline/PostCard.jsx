@@ -2,11 +2,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserHoverCard } from '../../components/UserHoverCard';
+import { UserAvatar } from '../../components/UserAvatar';
 import VerificationBadge from '../../components/VerificationBadge';
 import { useLikePost } from '../../features/timeline/useLikePost';
 import { useBookmarkPost } from '../../features/timeline/useBookmarkPost';
 import { PostContent } from './PostContent';
 import { PostMedia } from './PostMedia';
+import { KollectiveVideoPlayer } from './KollectiveVideoPlayer';
 import { ImageLightbox } from './ImageLightbox';
 import { usePostActions } from './usePostActions';
 import { useRsvpToAction } from '../../features/organize/useOrganizeFeature';
@@ -318,7 +320,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                             className={`p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer 
                                         ${post?.bookmarked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
                                 }`}
-                            title={post?.bookmarked ? 'Remove Bookmark22' : 'Bookmark Pulse22'}
+                            title={post?.bookmarked ? 'Remove Bookmark' : 'Bookmark Pulse'}
                         >
                             <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}>
                                 bookmark
@@ -345,7 +347,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                             <UserHoverCard author={post?.author}>
                                 <div className="flex items-center gap-4 hover:opacity-85 transition-opacity">
                                     <div className="w-12 h-12 rounded-full border-2 border-primary-container p-0.5">
-                                        <img alt="Author" className="w-full h-full rounded-full object-cover" src={post?.author?.avatar || null} />
+                                        <UserAvatar user={post?.author} className="w-full h-full" showStatus={false} />
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
@@ -372,7 +374,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                         }}
                                         className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1.5"
                                     >
-                                        <img src={post?.author?.avatar || null} className="w-5 h-5 rounded-full object-cover" alt="" />
+                                        <UserAvatar user={post?.author} className="w-5 h-5" showStatus={false} />
                                         {post?.author.name}
                                     </span>
                                 </div>
@@ -396,7 +398,14 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                             )}
                         </div>
 
-                        {post?.image && (
+                        {post?.video || post?.videoUrl ? (
+                            <KollectiveVideoPlayer
+                                src={typeof post?.video === 'string' ? post.video : post?.video?.url || post?.videoUrl}
+                                poster={post?.videoPoster || post?.image}
+                                isGif={post?.isGif}
+                                title={post?.title}
+                            />
+                        ) : post?.image && (
                             <div
                                 className="relative aspect-[16/9] rounded-xl overflow-hidden border border-white/5 cursor-pointer"
                                 onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }}
@@ -491,24 +500,14 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                         : ''
                     } ${showMenu ? 'z-30' : 'z-10'}`}
             >
-                <div className="flex gap-4 items-start relative z-10">
+                <div className="flex gap-4 items-start relative z-10 w-full">
                     <UserHoverCard author={post?.author}>
-                        {post?.author.avatar ? (
-                            <img
-                                alt="User"
-                                className="w-12 h-12 rounded-full object-cover border border-white/10"
-                                src={post?.author.avatar}
-                            />
-                        ) : (
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-secondary to-orange-600 flex items-center justify-center text-on-secondary font-bold">
-                                {post?.author.name.split(' ').map(n => n[0]).join('')}
-                            </div>
-                        )}
+                        <UserAvatar user={post?.author} className="w-12 h-12" showStatus={false} />
                     </UserHoverCard>
 
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
-                            <div>
+                            <div className="min-w-0">
                                 <UserHoverCard author={post?.author}>
                                     <div className="hover:opacity-85 transition-opacity">
                                         <div className="flex items-center gap-1.5">
@@ -526,18 +525,24 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                 </UserHoverCard>
                                 {post?.author && (
                                     <div className="mt-1.5 flex items-center gap-1.5 text-sm text-text-secondary">
-                                        <span>posted by</span>
-                                        <span
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const username = post?.author?.handle?.replace('@', '');
-                                                navigate(`/profile/${username}`, { state: { fromCard: true } });
-                                            }}
-                                            className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1"
-                                        >
-                                            <img src={post?.author?.avatar || null} className="w-4 h-4 rounded-full object-cover" alt="" />
-                                            {post?.author?.name}
-                                        </span>
+                                        {post?.author.type === 'organization' ?
+                                            <>
+                                                <span>posted by </span>
+                                                <span
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const username = post?.author?.handle?.replace('@', '');
+                                                        navigate(`/profile/${username}`, { state: { fromCard: true } });
+                                                    }}
+                                                    className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1"
+                                                >
+                                                    <img src={post?.author?.avatar || null} className="w-4 h-4 rounded-full object-cover" alt="" />
+                                                    {post?.author?.name}
+                                                </span>
+                                            </>
+                                            :
+                                            <></>
+                                        }
                                     </div>
                                 )}
                             </div>
@@ -549,7 +554,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                     className={`p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer 
                                         ${post?.bookmarked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
                                         }`}
-                                    title={post?.bookmarked ? 'Remove Bookmark11' : 'Bookmark Pulse11'}
+                                    title={post?.bookmarked ? 'Remove Bookmark' : 'Bookmark Pulse'}
                                 >
                                     <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: bookmarkMutation.isPending ? "'FILL' 1" : "'FILL' 0" }}>
                                         bookmark
@@ -609,10 +614,12 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                         )}
 
                         {/* Engagement Button Bar Row */}
-                        <div className="mt-6 flex items-center gap-8 border-t border-white/5 pt-4">
+                        <div className="mt-6 flex items-center gap-4 sm:gap-8 border-t border-white/5 pt-4 w-full min-w-0">
+
+                            {/* Like Button */}
                             <button
                                 onClick={() => toggleLike(post?.id)}
-                                className={`flex items-center gap-2 hover:text-primary-container transition-colors ${post?.liked ? 'text-primary-container' : 'text-text-secondary'
+                                className={`flex items-center gap-1.5 hover:text-primary-container transition-colors shrink-0 ${post?.liked ? 'text-primary-container' : 'text-text-secondary'
                                     }`}
                             >
                                 <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
@@ -621,12 +628,13 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                 <span className="font-bold text-sm">{post?.likes}</span>
                             </button>
 
+                            {/* Share / Boost Button */}
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     toggleReblog(post?.id);
                                 }}
-                                className={`flex items-center gap-2 hover:text-green-500 transition-colors ${post?.reblogged ? 'text-green-500 font-bold' : 'text-text-secondary'
+                                className={`flex items-center gap-1.5 hover:text-green-500 transition-colors shrink-0 ${post?.reblogged ? 'text-green-500 font-bold' : 'text-text-secondary'
                                     }`}
                                 title="Boost Post"
                             >
@@ -636,27 +644,30 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                 <span className="font-bold text-sm">{post?.shares || 0}</span>
                             </button>
 
+                            {/* Comment Button */}
                             <button
                                 onClick={() => navigate(`/post/${post?.id}`)}
-                                className="flex items-center gap-2 text-text-secondary hover:text-primary-container transition-colors"
+                                className="flex items-center gap-1.5 text-text-secondary hover:text-primary-container transition-colors shrink-0"
                             >
                                 <span className="material-symbols-outlined text-[20px]">mode_comment</span>
                                 <span className="font-bold text-sm">{post?.commentsCount}</span>
                             </button>
 
+                            {/* Right-aligned Context Action */}
                             {post?.communityJoinable ? (
                                 <button
                                     onClick={() => alert('Joined planning circle!')}
-                                    className="ml-auto px-4 py-1.5 rounded-full border border-primary-container/30 text-primary-container font-bold text-[12px] hover:bg-primary-container hover:text-white transition-all"
+                                    className="ml-auto px-3 py-1 sm:px-4 sm:py-1.5 rounded-full border border-primary-container/30 text-primary-container font-bold text-[12px] hover:bg-primary-container hover:text-white transition-all whitespace-nowrap shrink-0"
                                 >
                                     Join Circle
                                 </button>
                             ) : (
-                                <button className="flex items-center gap-2 text-text-secondary hover:text-primary-container transition-colors ml-auto">
+                                <button className="flex items-center gap-2 text-text-secondary hover:text-primary-container transition-colors ml-auto shrink-0">
                                     <span className="material-symbols-outlined text-[20px]">bookmark_add</span>
                                 </button>
                             )}
                         </div>
+
                     </div>
                 </div>
             </div>

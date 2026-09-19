@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useProfileQuery, useUpdateProfileMutation } from '../features/profile/useProfileFeature';
+import { UserAvatar } from '../components/UserAvatar';
 
 export const ProfileEditPage = () => {
     const navigate = useNavigate();
@@ -91,13 +92,11 @@ export const ProfileEditPage = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
 
                     {/* Layered Avatar Float Preview Cap */}
-                    <div className="absolute bottom-3 left-4 w-16 h-16 rounded-xl overflow-hidden border-2 border-[#141414] bg-[#1A1616] shadow-xl">
-                        {avatarUrl ? (
-                            <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full bg-primary-container flex items-center justify-center font-bold text-white uppercase text-xl">{displayName[0] || '?'}</div>
-                        )}
-                    </div>
+                    <UserAvatar
+                        user={{ name: displayName, avatar: avatarUrl, handle: currentUser?.handle }}
+                        className="absolute bottom-3 left-4 w-16 h-16 border-2 border-[#141414] shadow-xl text-xl font-bold"
+                        roundedClassName="rounded-xl"
+                    />
                 </div>
             </div>
 

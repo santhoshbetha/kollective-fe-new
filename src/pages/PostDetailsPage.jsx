@@ -8,6 +8,7 @@ import { usePostActions } from '../features/timeline/usePostActions';
 import { apiFetch, apiFetchPosts } from '../api/apiClient';
 import { CascadedPostRow } from '../components/CascadedPostRow';
 import { usePostsStore } from '../store/usePostsStore';
+import { UserAvatar } from '../components/UserAvatar';
 
 // Helper: Hides sensitive data or spoilers behind a button toggle natively
 const ContentWarningWrapper = ({ warning, children }) => {
@@ -70,15 +71,7 @@ function CascadedPostRowX({ post, isFocus, isAncestor, hasNextReply, onClick, on
 
             <div className="flex gap-4 z-10 relative">
                 {/* User Profile Avatar Frame */}
-                <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-[#1A1616]">
-                    {post.author?.avatar ? (
-                        <img src={post.author.avatar} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="w-full h-full bg-primary-container flex items-center justify-center font-bold text-white uppercase text-lg">
-                            {post.author?.name ? post.author.name[0] : '?'}
-                        </div>
-                    )}
-                </div>
+                <UserAvatar user={post.author} className="w-12 h-12 border border-white/10 shrink-0 text-lg font-bold" roundedClassName="rounded-xl" />
 
                 {/* Text Content Node Stack */}
                 <div className="flex-1 min-w-0">

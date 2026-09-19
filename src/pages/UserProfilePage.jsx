@@ -6,6 +6,7 @@ import { PostCard } from '../features/timeline/PostCard';
 import { TrendingWidget } from '../components/TrendingWidget';
 import { useStore } from '../store/useStore';
 import VerificationBadge from '../components/VerificationBadge';
+import { UserAvatar } from '../components/UserAvatar';
 
 const profilesData = {
   alsweigart: {
@@ -383,17 +384,11 @@ export const UserProfilePage = () => {
           <div className="p-6 relative flex flex-col gap-6">
             <div className="flex justify-between items-start">
               {/* Profile Avatar - Rounded Square with smooth edges */}
-              {profile.avatar ? (
-                <img
-                  alt={profile.name}
-                  className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-xl border-4 border-surface shadow-2xl mt-[-64px] md:mt-[-80px] bg-surface relative z-10"
-                  src={profile.avatar}
-                />
-              ) : (
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl border-4 border-surface shadow-2xl mt-[-64px] md:mt-[-80px] bg-surface-container flex items-center justify-center font-bold text-3xl text-white uppercase relative z-10">
-                  {profile.name[0]}
-                </div>
-              )}
+              <UserAvatar
+                user={profile}
+                className="w-24 h-24 md:w-32 md:h-32 border-4 border-surface shadow-2xl mt-[-64px] md:mt-[-80px] relative z-10 text-3xl md:text-4xl"
+                roundedClassName="rounded-xl"
+              />
 
               {/* Action buttons */}
               <div className="flex items-center gap-3">
@@ -692,11 +687,7 @@ export const UserProfilePage = () => {
                   className="glass-panel rounded-xl p-5 border border-white/5 flex items-center justify-between hover:bg-surface-container-high/40 transition-all"
                 >
                   <div className="flex items-center gap-4">
-                    <img
-                      alt={member.name}
-                      className="w-12 h-12 rounded-xl object-cover border border-white/10"
-                      src={member.avatar}
-                    />
+                    <UserAvatar user={member} className="w-12 h-12 border border-white/10 shrink-0 text-sm font-semibold" roundedClassName="rounded-xl" />
                     <div>
                       <h4 className="font-bold text-text-primary text-sm flex items-center gap-1.5 leading-none">
                         {member.name}

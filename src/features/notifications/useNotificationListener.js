@@ -16,7 +16,8 @@ export function useNotificationListener() {
 
         // 1. Initialize Phoenix socket client connections
         const token = useAuthStore.getState().token || localStorage.getItem('jwt_auth_token');
-        const socket = new Socket('/socket', { params: { token } });
+        const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/socket';
+        const socket = new Socket(wsUrl, { params: { token } });
         socket.connect();
 
         // 2. Bind into the specific user notification room channel matrix

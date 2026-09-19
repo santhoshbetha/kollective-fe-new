@@ -49,12 +49,16 @@ export function CreatePostForm({
         ? (!title.trim() && !hasContent) || charsLeft < 0 || !protocolSigned
         : !hasContent || charsLeft < 0 || !protocolSigned;
 
-    const audiences = [
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const audiences = isAuthenticated ? [
         { label: 'World', value: 'World', icon: 'public' },
         { label: 'Local', value: 'my_location', icon: 'my_location' },
         { label: 'State', value: 'State', icon: 'map' },
         { label: 'Country', value: 'Country', icon: 'flag' },
         { label: 'Followers Only', value: 'Followers Only', icon: 'group' }
+    ] : [
+        { label: 'World', value: 'World', icon: 'public' },
+        { label: 'Country', value: 'Country', icon: 'flag' }
     ];
 
     const handleClearPoll = () => {

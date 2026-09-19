@@ -1,23 +1,45 @@
 // src/components/UserAvatar.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { usePresenceStore } from '../store/usePresenceStore';
+import { getAvatarInitials, getTeamsBackgroundColor } from '../utils/avatarUtils';
 
-export function UserAvatar({ user, className = 'w-10 h-10', showStatus = true, indicatorClassName = '' }) {
+export function UserAvatar({
+    user,
+    name,
+    avatar,
+    className = 'w-10 h-10',
+    showStatus = true,
+    indicatorClassName = '',
+    roundedClassName = 'rounded-full',
+    style = {}
+}) {
+    const [imgFailed, setImgFailed] = useState(false);
+
     const userId = user?.id || user?.userId;
-    // ⚡ ATOMIC SELECTOR: This component ONLY re-renders if THIS specific 
-    // user shifts between online and offline statuses.
-    const isOnline = usePresenceStore((state) => userId ? !!state.activeList[String(userId)] : false);
+    const isOnline = usePresenceStore((state) => (userId ? !!state.activeList[String(userId)] : false));
 
-    const userName = user?.name || user?.username || '';
-    const avatarUrl = user?.avatar;
+    const userName = name || user?.name || user?.username || user?.handle || '';
+    const avatarUrl = avatar !== undefined ? avatar : user?.avatar;
+    const isDefaultAvatarUrl = !avatarUrl || avatarUrl === '/default-avatar.jpg';
+
+    const initials = getAvatarInitials(userName);
+    const bgColor = getTeamsBackgroundColor(userName || userId || 'user');
 
     return (
-        <div className={`relative shrink-0 ${className}`}>
-            {avatarUrl ? (
-                <img src={avatarUrl} alt={userName || 'User'} className="w-full h-full rounded-full object-cover" />
+        <div className={`relative shrink-0 ${className}`} style={style}>
+            {!isDefaultAvatarUrl && !imgFailed ? (
+                <img
+                    src={avatarUrl}
+                    alt={userName || 'User'}
+                    className={`w-full h-full ${roundedClassName} object-cover`}
+                    onError={() => setImgFailed(true)}
+                />
             ) : (
-                <div className="w-full h-full rounded-full bg-primary-container flex items-center justify-center font-bold text-white uppercase text-xs">
-                    {userName ? userName[0] : '?'}
+                <div
+                    style={{ backgroundColor: bgColor }}
+                    className={`w-full h-full ${roundedClassName} flex items-center justify-center font-bold text-white uppercase select-none shadow-sm font-sans text-[0.45em] tracking-wider leading-none`}
+                >
+                    <span className="transform scale-[2.2] font-semibold">{initials}</span>
                 </div>
             )}
 
@@ -30,3 +52,6 @@ export function UserAvatar({ user, className = 'w-10 h-10', showStatus = true, i
         </div>
     );
 }
+
+export { getAvatarInitials, getTeamsBackgroundColor };
+export default UserAvatar;

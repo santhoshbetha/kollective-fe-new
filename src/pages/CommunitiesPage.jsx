@@ -1,6 +1,7 @@
 // src/pages/CommunitiesPage.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useStore } from '../store/useStore';
+import { useAuthStore } from '../store/auth/useAuthStore';
 import { CommunitiesFeed } from '../features/communities/CommunitiesFeed';
 import { TimelineFeed } from '../features/timeline/TimelineFeed';
 
@@ -8,8 +9,15 @@ export const CommunitiesPage = () => {
     // 🎛️ Pull dynamic geographic state settings natively out of your unified useStore
     const activeTab = useStore((state) => state.communitiesTab);
     const setActiveTab = useStore((state) => state.setCommunitiesTab);
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-    const tabs = ['Local', 'State', 'Country', 'World'];
+    const tabs = isAuthenticated ? ['Local', 'State', 'Country', 'World'] : ['Country', 'World'];
+
+    useEffect(() => {
+        if (!isAuthenticated && (activeTab === 'Local' || activeTab === 'State')) {
+            setActiveTab('Country');
+        }
+    }, [isAuthenticated, activeTab, setActiveTab]);
 
     return (
         <div className="max-w-[1280px] mx-auto flex flex-col lg:flex-row gap-12">
@@ -17,7 +25,7 @@ export const CommunitiesPage = () => {
             {/* 📋 Left Column: Feed Presentation Framework */}
             <div className="flex-1 flex flex-col gap-6 max-w-3xl">
                 {/* Header & Description */}
-                <div className="mb-4">
+                <div className="mb-0">
                     <h1 className="font-headline-lg text-3xl font-extrabold text-text-primary mb-2">
                         Communities Feed
                     </h1>
@@ -27,7 +35,7 @@ export const CommunitiesPage = () => {
                 </div>
 
                 {/* Geographic Tabs Navigation Selection Row */}
-                <div className="flex gap-3 overflow-x-auto py-2 px-1 no-scrollbar border-b border-white/5 mb-2">
+                <div className="flex gap-3 overflow-x-auto py-0 px-1 no-scrollbar border-b border-white/5 mb-0">
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab;
                         return (

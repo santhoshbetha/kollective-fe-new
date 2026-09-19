@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useProfileQuery } from '../features/profile/useProfileFeature';
 import { ProfileFeed } from '../features/profile/ProfileFeed';
 import { useAuthStore } from '../store/auth/useAuthStore';
-import { PinnedPostsSection } from '../features/profile/PinnedPostsSection';
+import { UserAvatar } from '../components/UserAvatar';
 
 export const ProfilePage = () => {
     const { username } = useParams();
@@ -52,13 +52,7 @@ export const ProfilePage = () => {
             {/* 👤 AVATAR & IDENTITY DISPATCH TOOLBAR LAYER */}
             <div className="flex justify-between items-end px-4 -mt-16 relative z-10 select-none">
                 {/* Profile Large Avatar Cap */}
-                <div className="w-24 h-24 rounded-2xl overflow-hidden border-4 border-[#141414] bg-[#1A1616] shadow-xl shrink-0">
-                    {profile.avatar ? (
-                        <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="w-full h-full bg-primary-container flex items-center justify-center font-black text-white text-3xl uppercase">{profile.name?.[0]}</div>
-                    )}
-                </div>
+                <UserAvatar user={profile} className="w-24 h-24 border-4 border-[#141414] shadow-xl shrink-0 text-3xl font-bold" roundedClassName="rounded-2xl" />
 
                 {/* Action button toggles based on relational session authentication mapping */}
                 {isOwnProfile ? (

@@ -8,6 +8,7 @@ import { AppPreferencesForm } from '../features/preferences/AppPreferencesForm';
 import { EmailSettingsForm, PasswordSettingsForm, DangerZoneSettingsForm } from '../features/settings/SettingsSubForms';
 import InvitationsList from './InvitationsList';
 import SettingsDashboard from '../features/settings/SettingsDashboard';
+import { UserAvatar } from '../components/UserAvatar';
 
 export const SettingsPage = () => {
     const navigate = useNavigate();
@@ -31,6 +32,7 @@ export const SettingsPage = () => {
 
     const settingsMenu = [
         { id: 'index', label: t('pref_heading'), icon: 'settings_accessibility', desc: t('pref_desc') },
+        { id: 'profile', label: 'Edit Profile', icon: 'account_circle', desc: 'Update profile picture, banner, and info' },
         { id: 'invitations', label: 'Organization Invitations', icon: 'mail_lock', desc: 'Pending team invites and access grants' },
         { id: 'org_workspace', label: 'Workspace & Team', icon: 'corporate_fare', desc: 'Manage org roster, invite contributors & audit logs' },
         { id: 'email', label: 'Email Configuration', icon: 'mail', desc: 'Manage your contact address links' },
@@ -39,6 +41,10 @@ export const SettingsPage = () => {
     ];
 
     const handleTabChange = (tabId) => {
+        if (tabId === 'profile') {
+            navigate('/settings/profile');
+            return;
+        }
         setActiveSettingsTab(tabId);
         if (tabId === 'index') {
             setSearchParams({});
@@ -75,7 +81,7 @@ export const SettingsPage = () => {
                 </div>
 
                 {/* Menu Options Flat Stack Loops */}
-                <div className="flex flex-col gap-1.5 bg-[#141414] border border-[#262626] p-2 rounded-2xl shadow-xl">
+                <div className="flex flex-col gap-1.5 bg-[#141414] border border-[#262626] p-2 shadow-xl">
                     {settingsMenu.map((menuItem) => {
                         const isTabActive = activeSettingsTab === menuItem.id;
                         return (
@@ -103,7 +109,7 @@ export const SettingsPage = () => {
             </div>
 
             {/* 🖥️ RIGHT WORKSPACE COLUMN: EXPLICIT SUB-FORM DETACHED INTERFACES */}
-            <div className="flex-1 min-w-0 bg-[#141414] border border-[#262626] rounded-2xl p-6 shadow-2xl relative min-h-[500px]">
+            <div className="flex-1 min-w-0 bg-[#141414] border border-[#262626] p-6 shadow-2xl relative min-h-[500px]">
 
                 {/* Quick Back Arrow Header for Desktop Sub-settings Views */}
                 {activeSettingsTab !== 'index' && (
@@ -115,6 +121,35 @@ export const SettingsPage = () => {
                         <span className="material-symbols-outlined text-[16px]">arrow_back</span>
                         <span>Return to Preferences</span>
                     </button>
+                )}
+
+                {/* 👤 Edit Profile Quick Action Card */}
+                {activeSettingsTab === 'index' && (
+                    <div
+                        onClick={() => navigate('/settings/profile')}
+                        className="mb-6 p-4 bg-surface-container-lowest/50 border border-white/10 hover:border-primary-container/40 rounded-xl flex items-center justify-between cursor-pointer hover:bg-surface-container-high/40 hover:shadow-lg transition-all group select-none"
+                    >
+                        <div className="flex items-center gap-4">
+                            <UserAvatar
+                                user={currentUser}
+                                className="w-14 h-14 border-2 border-primary-container/20 shrink-0 text-lg font-bold"
+                                roundedClassName="rounded-full"
+                            />
+                            <div>
+                                <h3 className="font-extrabold text-xl text-text-primary group-hover:text-primary-container transition-colors flex items-center gap-2">
+                                    Edit Profile
+                                    <span className="material-symbols-outlined text-sm opacity-50 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                </h3>
+                                <p className="text-sm text-text-secondary mt-0.5">
+                                    Update your profile picture, banner, and personal information
+                                </p>
+                            </div>
+                        </div>
+                        <div className="hidden sm:flex items-center gap-1 text-xs font-bold text-primary-container uppercase tracking-wider bg-primary-container/10 border border-primary-container/20 px-3.5 py-2 rounded-xl shrink-0 group-hover:bg-primary-container group-hover:text-white transition-all">
+                            <span>Edit</span>
+                            <span className="material-symbols-outlined text-[16px]">edit</span>
+                        </div>
+                    </div>
                 )}
 
                 {/* 🏆 SUB-FORM MATRIX SWITCHBOARD INJECTION */}

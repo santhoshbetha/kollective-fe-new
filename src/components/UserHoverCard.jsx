@@ -12,6 +12,7 @@ import {
 
 import { useAccountsStore } from '../store/useAccountsStore';
 import { usePresenceStore } from '../store/usePresenceStore';
+import { UserAvatar } from './UserAvatar';
 
 export const UserHoverCard = ({ author: propAuthor, children }) => {
     const storeAccount = useAccountsStore((state) => propAuthor?.id ? state.entities[propAuthor.id] : null);
@@ -67,25 +68,14 @@ export const UserHoverCard = ({ author: propAuthor, children }) => {
             >
                 {/* Summary Block */}
                 <div className="flex gap-3 items-start mb-3">
-                    <div className="relative shrink-0">
-                        {author.avatar ? (
-                            <img
-                                alt={author.name}
-                                className="w-11 h-11 rounded-xl object-cover border border-border/20 opacity-90"
-                                src={author.avatar}
-                            />
-                        ) : (
-                            <div className="w-11 h-11 rounded-xl bg-primary/5 flex items-center justify-center font-bold text-sm text-primary/70 uppercase">
-                                {author.name ? author.name[0] : '?'}
-                            </div>
-                        )}
-                        {isOnline && (
-                            <span
-                                className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[var(--surface-container)] shadow-sm animate-in fade-in duration-300"
-                                title="Online now"
-                            />
-                        )}
-                    </div>
+                    <UserAvatar
+                        user={author}
+                        name={author.name}
+                        avatar={author.avatar}
+                        className="w-11 h-11"
+                        roundedClassName="rounded-xl"
+                        showStatus={true}
+                    />
 
                     <div className="min-w-0 flex-1">
                         <h4

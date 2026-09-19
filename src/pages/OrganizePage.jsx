@@ -1,15 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScheduleWidget } from '../components/ScheduleWidget';
 import { useOrganizeActionsQuery } from '../features/organize/useOrganizeFeature';
 import { ActionCard } from '../features/organize/ActionCard';
+import { useAuthStore } from '../store/auth/useAuthStore';
 
 export const OrganizePage = () => {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { organizeActions, organizeActionsLoading } = useOrganizeActionsQuery();
-  const [activeGeo, setActiveGeo] = useState('Local');
+  const [activeGeo, setActiveGeo] = useState(isAuthenticated ? 'Local' : 'Country');
   const [toastMessage, setToastMessage] = useState('');
-  const geoFilters = ['Local', 'State', 'Country'];
+  const geoFilters = isAuthenticated ? ['Local', 'State', 'Country'] : ['Country'];
+
+  useEffect(() => {
+    if (!isAuthenticated && (activeGeo === 'Local' || activeGeo === 'State')) {
+      setActiveGeo('Country');
+    }
+  }, [isAuthenticated, activeGeo]);
 
   return (
     <div className="max-w-[1280px] mx-auto flex flex-col lg:flex-row gap-12 text-scale-large">

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/auth/useAuthStore';
+import { UserAvatar } from '../components/UserAvatar';
 import { useTranslation } from '../components/locales';
 import { AppPreferencesForm } from '../features/preferences/AppPreferencesForm';
 import { EmailSettingsForm, PasswordSettingsForm, DangerZoneSettingsForm } from '../features/settings/SettingsSubForms';
@@ -93,9 +94,7 @@ export const SettingsPageN = () => {
 
                         {/* Quick Presentational Identity Summary Row Block */}
                         <div className="p-4 bg-surface-container-lowest/50 border border-white/5 rounded-xl flex items-center gap-4 select-none">
-                            <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-[#1A1616]">
-                                <img src={currentUser?.avatar || null} alt="" className="w-full h-full object-cover" />
-                            </div>
+                            <UserAvatar user={currentUser} className="w-12 h-12 border border-white/10 shrink-0 text-md font-bold" roundedClassName="rounded-xl" />
                             <div className="flex flex-col">
                                 <span className="font-extrabold text-md text-text-primary">{currentUser?.name}</span>
                                 <span className="text-md font-mono font-bold text-primary-container mt-0.5">{currentUser?.handle}</span>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/auth/useAuthStore';
+import { UserAvatar } from '../components/UserAvatar';
 
 // Reusable toggle switch component matching the redesign style
 const Toggle = ({ checked, onChange }) => (
@@ -50,8 +51,6 @@ export const SettingsPageO = () => {
     navigate('/home');
   };
 
-
-
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12 text-scale-large">
       <header className="mb-10">
@@ -67,13 +66,7 @@ export const SettingsPageO = () => {
         className="glass-card bg-surface-ink border border-white/10 rounded-xl p-1 flex items-center justify-between cursor-pointer hover:border-primary-container/40 hover:shadow-lg transition-all group"
       >
         <div className="flex items-center gap-6 p-4">
-          <div className="w-14 h-14 rounded-full border-2 border-primary-container/20 p-1 flex-shrink-0">
-            <img
-              alt="User avatar"
-              className="w-full h-full rounded-full object-cover"
-              src={user?.avatar || null}
-            />
-          </div>
+          <UserAvatar user={user} className="w-14 h-14 border-2 border-primary-container/20 shrink-0 text-lg font-bold" roundedClassName="rounded-full" />
           <div>
             <h3 className="font-headline-md text-xl text-text-primary group-hover:text-primary-container transition-colors font-bold">
               Edit Profile
