@@ -380,7 +380,8 @@ export const PostCard = ({ post }) => {
   return (
     <article
       onClick={handleCardClick}
-      className={`glass-card rounded-[16px] p-6 hover:bg-surface-container-low transition-all border border-white/5 group cursor-pointer relative ${showMenu ? 'z-30' : 'z-10'
+      className={`glass-card rounded-[16px] p-6 hover:bg-surface-container-low transition-all border border-white/5 group 
+        cursor-pointer relative ${showMenu ? 'z-30' : 'z-10'
         }`}
     >
       <div className="flex gap-4">

@@ -7,6 +7,7 @@ import { useHomeTimeline } from './useHomeTimeline';
 import { useStore } from '../../store/useStore';
 import { PostCard } from './PostCard';
 import { useFiltersQuery } from '../filters/useFiltersFeature';
+import { usePostsStore } from '../../store/usePostsStore';
 
 export function TimelineFeed() {
     const queryClient = useQueryClient();
@@ -35,8 +36,11 @@ export function TimelineFeed() {
 
     const allPosts = data?.pages?.flatMap((page) => (Array.isArray(page) ? page : page?.data || page?.posts || [])) || [];
 
-    console.log("allPosts", allPosts);
-    console.log("activeFilters", activeFilters);
+    useEffect(() => {
+        if (allPosts && allPosts.length > 0) {
+            usePostsStore.getState().importFetchedPosts(allPosts);
+        }
+    }, [allPosts]);
 
     const filteredPosts = allPosts?.filter((post) => {
         if (!activeFilters) return true;
@@ -50,7 +54,7 @@ export function TimelineFeed() {
         return true;
     });
 
-    console.log("filteredPosts", filteredPosts);
+
 
     // 🪟 Sync unread counts with the browser tab title (e.g., "(3) Kollective")
     // Sync tab counts to the browser window title
@@ -155,10 +159,12 @@ export function TimelineFeed() {
                     </div>
                 ) : (
                     /* 🏆 Your Custom Structured List Border Wrapping Shell */
-                    <div className="flex flex-col border border-[#262626] bg-[#141414] overflow-hidden shadow-2xl">
+                    <div className="flex flex-col border border-[#262626] bg-transparent overflow-hidden shadow-2xl">
                         <Virtuoso
                             useWindowScroll
                             data={filteredPosts}
+                            computeItemKey={(index, post) => post?.id || index}
+                            initialItemCount={filteredPosts.length > 0 ? Math.min(filteredPosts.length, 4) : 0}
                             endReached={() => {
                                 if (hasNextPage && !isFetchingNextPage) fetchNextPage();
                             }}
@@ -177,6 +183,7 @@ export function TimelineFeed() {
                                 )
                             }}
                         />
+
                     </div>
                 )}
             </div>

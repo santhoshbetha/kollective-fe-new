@@ -16,8 +16,13 @@ export function useFiltersQuery() {
         },
         enabled: !!isAuthenticated,
         initialData: !isAuthenticated ? [] : undefined,
+        staleTime: 10 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
     });
 }
+
 
 // ➕ Mutation: Appends a brand new keyword filter phrase rule securely
 export function useCreateFilterMutation() {

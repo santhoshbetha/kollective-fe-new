@@ -16,7 +16,10 @@ export function useSuggestedCirclesQuery() {
                 return api.getSuggestedCircles();
             }
         },
-        staleTime: 3 * 60 * 1000,
+        staleTime: 10 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
     });
 
     return {
@@ -24,6 +27,7 @@ export function useSuggestedCirclesQuery() {
         suggestedCirclesLoading: isPending,
     };
 }
+
 
 // Hook B: Handles toggling a circle membership state (Join / Leave)
 export function useToggleJoinCircle() {

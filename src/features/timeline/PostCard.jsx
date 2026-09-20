@@ -159,6 +159,8 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
     //const { toggleLike, toggleReblog, toggleBookmark, isActionPending } = usePostActions();
     const navigate = useNavigate();
     const [showMenu, setShowMenu] = useState(false);
+    const [isActionJoined, setIsActionJoined] = useState(false);
+    const [isCircleJoined, setIsCircleJoined] = useState(false);
     // 🎛️ Lightbox state parameters sandboxed per post card item
     const [carouselOpen, setCarouselOpen] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
@@ -463,20 +465,28 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                 </button>
                             </div>
 
-                            {post?.id === 'strike-post-1' && (
+                            {(post?.isVoice || post?.isAction || post?.id === 'strike-post-1') && (
                                 <button
-                                    onClick={() => {
-                                        rsvpMutation.mutate({ actionId: 'action-1', status: 'Attending' });
-                                        alert('You have RSVP\'d to this strike. It has been added to your schedule!');
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const nextState = !isActionJoined;
+                                        setIsActionJoined(nextState);
+                                        if (nextState) {
+                                            rsvpMutation.mutate({ actionId: post?.actionId || 'action-1', status: 'Attending' });
+                                        }
                                     }}
-                                    className="bg-primary-container text-white px-8 py-3 rounded-xl font-bold text-sm crimson-glow active:scale-95 transition-transform"
+                                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer shadow-md active:scale-95 ${isActionJoined
+                                        ? 'bg-surface-container-high text-primary-container border border-primary-container/30'
+                                        : 'bg-primary-container text-white hover:brightness-110 crimson-glow'
+                                        }`}
                                 >
-                                    Join the Action
+                                    {isActionJoined ? '✓ Joined Action' : 'Join the Action'}
                                 </button>
                             )}
                         </div>
                     </div>
                 </article>
+
                 {/* 🏆 3. FULLSCREEN MEDIA OVERLAY CANVAS LIGHTBOX */}
                 <ImageLightbox
                     isOpen={carouselOpen}
@@ -494,7 +504,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
         <>
             <div
                 onClick={handleCardClick}
-                className={`p-6 hover:bg-white/[0.01] border-b ${isLast ? 'border-transparent' : 'border-black/20 dark:border-white/20'} transition-all group cursor-pointer relative  
+                className={`p-4 hover:bg-white/[0.01]X border-b border-[#262626] ${isLast ? 'border-transparent' : 'border-black/20 dark:border-white/20'} transition-all group cursor-pointer relative  
                 ${standalone
                         ? 'glass-card rounded-[16px] border border-white/5 shadow-md'
                         : ''
@@ -606,7 +616,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                             key={idx}
                                             className="px-3 py-1 rounded-lg bg-surface-container-highest/50 text-primary-container font-bold text-[15px] border border-primary-container/10"
                                         >
-                                            {tagName}
+                                            &#35;{tagName}
                                         </span>
                                     );
                                 })}
@@ -653,13 +663,18 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                 <span className="font-bold text-sm">{post?.commentsCount}</span>
                             </button>
 
-                            {/* Right-aligned Context Action */}
                             {post?.communityJoinable ? (
                                 <button
-                                    onClick={() => alert('Joined planning circle!')}
-                                    className="ml-auto px-3 py-1 sm:px-4 sm:py-1.5 rounded-full border border-primary-container/30 text-primary-container font-bold text-[12px] hover:bg-primary-container hover:text-white transition-all whitespace-nowrap shrink-0"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsCircleJoined(!isCircleJoined);
+                                    }}
+                                    className={`ml-auto px-3 py-1 sm:px-4 sm:py-1.5 rounded-full border font-bold text-[12px] transition-all whitespace-nowrap shrink-0 cursor-pointer ${isCircleJoined
+                                        ? 'bg-surface-container-high text-text-primary border-white/20'
+                                        : 'border-primary-container/30 text-primary-container hover:bg-primary-container hover:text-white'
+                                        }`}
                                 >
-                                    Join Circle
+                                    {isCircleJoined ? '✓ Joined Circle' : 'Join Circle'}
                                 </button>
                             ) : (
                                 <button className="flex items-center gap-2 text-text-secondary hover:text-primary-container transition-colors ml-auto shrink-0">

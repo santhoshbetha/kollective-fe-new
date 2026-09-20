@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { cn } from '../lib/utils';
 import { Upload, Trash2, Edit2, ZoomIn, ZoomOut, RotateCcw, Check, X, Image as ImageIcon } from 'lucide-react';
-import { Button } from './ui/Button';
+import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/Dialog';
 
 /**

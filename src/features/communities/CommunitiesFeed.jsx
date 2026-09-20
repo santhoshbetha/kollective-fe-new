@@ -6,6 +6,7 @@ import PullToRefresh from 'react-simple-pull-to-refresh';
 import { useStore } from '../../store/useStore';
 import { useCommunitiesFeed } from './useCommunitiesFeed';
 import { PostCard } from '../timeline/PostCard';
+import { usePostsStore } from '../../store/usePostsStore';
 
 export function CommunitiesFeed() {
     const queryClient = useQueryClient();
@@ -30,6 +31,13 @@ export function CommunitiesFeed() {
 
     const unreadCount = bufferedPosts.length;
     const allPosts = data?.pages.flatMap((page) => (Array.isArray(page) ? page : page.data || page.posts || [])) || [];
+
+    useEffect(() => {
+        if (allPosts && allPosts.length > 0) {
+            usePostsStore.getState().importFetchedPosts(allPosts);
+        }
+    }, [allPosts]);
+
 
     const handleRefreshGesture = async () => {
         // 🧼 Clear out any hidden background buffer counts during a hard pull action
@@ -116,7 +124,7 @@ export function CommunitiesFeed() {
                     </div>
                 ) : (
                     /* 🏆 Custom List Border Wrapping Shell */
-                    <div className="flex flex-col border border-[#262626] bg-[#141414] overflow-hidden shadow-2xl">
+                    <div className="flex flex-col border border-[#262626] bg-transparent overflow-hidden shadow-2xl">
                         <Virtuoso
                             useWindowScroll
                             data={allPosts}

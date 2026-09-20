@@ -13,13 +13,15 @@ export function useHomeTimeline() {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const { countryCode, countryName } = useCountry();
 
+    const countryKey = countryCode || countryName || 'US';
+
     return useInfiniteQuery({
         // 🚀 Include activeTab and country info in the Query Key array
-        queryKey: ['timeline', 'home', activeTab, isAuthenticated, countryCode || countryName],
+        queryKey: ['timeline', 'home', activeTab, isAuthenticated, countryKey],
         queryFn: async ({ pageParam }) => {
             const categoryParam = activeTab === 'All Activity' ? '' : `&category=${encodeURIComponent(activeTab.toLowerCase())}`;
             const cursorParam = pageParam ? `&cursor=${pageParam}` : '';
-            const detectedCountry = countryCode || countryName || '';
+            const detectedCountry = countryCode || countryName || 'US';
             const countryParam = (!isAuthenticated && detectedCountry)
                 ? `&country=${encodeURIComponent(detectedCountry)}&country_code=${encodeURIComponent(countryCode || 'US')}`
                 : '';
@@ -38,16 +40,12 @@ export function useHomeTimeline() {
         getNextPageParam: (lastPage) =>
             lastPage?.next_cursor ?? lastPage?.nextCursor ?? lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
 
-        // 🎯 THE HOOK INTERCEPT MATRIX:
-        // This side-effect safely normalizes posts & profiles during query execution phases.
-        select: (data) => {
-            const allPosts = data.pages.flatMap((page) => (Array.isArray(page) ? page : page.data || page.posts || []));
-
-            // Seed global post and account entity stores
-            importFetchedPosts(allPosts);
-
-            return data;
-        }
+        staleTime: 5 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
     });
 }
+
+
 

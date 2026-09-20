@@ -17,7 +17,10 @@ export function useTrendingQuery() {
             }
             return api.getTrendingTopics();
         },
-        staleTime: 5 * 60 * 1000, // Trending data changes slowly, keep fresh for 5 mins
+        staleTime: 10 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
     });
 
     return {
@@ -25,3 +28,4 @@ export function useTrendingQuery() {
         trendingLoading: isPending,
     };
 }
+

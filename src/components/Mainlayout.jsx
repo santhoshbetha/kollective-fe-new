@@ -16,6 +16,7 @@ import {
     DialogClose,
     DialogFooter
 } from './ui/Dialog';
+import { Button } from './ui/button';
 
 export const MainLayout = () => {
     const location = useLocation();
@@ -45,7 +46,6 @@ export const MainLayout = () => {
     const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
 
     const handleVoiceInClick = () => {
-        console.log("handleVoiceInClick called", isAuthenticated);
         if (!isAuthenticated) {
             setIsLoginPromptOpen(true);
         } else {
@@ -60,10 +60,20 @@ export const MainLayout = () => {
 
     const userState = useStore((state) => state.userState);
     const streetAddress = useStore((state) => state.streetAddress);
+    const politicalOptIn = useStore((state) => state.politicalOptIn);
+
+    const isVouched = Boolean(
+        user?.feature_flags?.is_vouched ||
+        user?.feature_flags?.is_peer_vouched ||
+        (user?.feature_flags?.vouch_count && user.feature_flags?.vouch_count >= 1) ||
+        (user?.feature_flags?.account_tier && user.feature_flags?.account_tier > 0) // ||
+        //(typeof window !== 'undefined' && parseInt(localStorage.getItem('mock_vouch_count') || '0', 10) >= 1)
+    );
 
     const hasAddressOrCoords = Boolean((streetAddress && streetAddress.trim()) || user?.street_address || user?.latitude);
     const hasState = Boolean((userState && userState.trim()) || user?.state || user?.origin_state);
     const canAccessLocalizedFeatures = hasAddressOrCoords || hasState;
+    const canAccessCivicAssembly = isAuthenticated && politicalOptIn && isVouched;
 
     const navItems = [
         { name: 'Home', path: '/home', icon: 'home' },
@@ -74,11 +84,12 @@ export const MainLayout = () => {
         ...(canAccessLocalizedFeatures ? [{ name: 'Local Businesses', path: '/businesses', icon: 'storefront' }] : []),
         ...(canAccessLocalizedFeatures ? [{ name: 'Classifieds', path: '/classifieds', icon: 'newspaper' }] : []),
         ...(isAuthenticated ? [{ name: 'Organize', path: '/organize', icon: 'campaign' }] : []),
-        ...(isAuthenticated ? [{ name: 'Civic Assembly', path: '/campaigns/local', icon: 'groups' }] : []),
+        ...(canAccessCivicAssembly ? [{ name: 'Civic Assembly', path: '/campaigns/local', icon: 'groups' }] : []),
         ...(isAuthenticated ? [{ name: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' }] : []),
         ...(isAuthenticated ? [{ name: 'Notifications', path: '/notifications', icon: 'notifications' }] : []),
         ...(isAuthenticated ? [{ name: 'Settings', path: '/settings', icon: 'settings' }] : []),
     ];
+
 
     const adminNavItems = [];
     if (user && (user.role === 'root_admin' || user.role === 'admin')) {
@@ -144,13 +155,15 @@ export const MainLayout = () => {
 
                     {/* Create Button & User Card */}
                     <div className="mt-auto">
-                        <button
+                        <Button
                             onClick={handleVoiceInClick}
-                            className="w-full bg-primary-container text-white font-bold text-label-md py-4 rounded-xl crimson-glow hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            variant="default"
+                            className="w-full bg-primary-container text-white font-bold text-label-md py-4 rounded-xl crimson-glow cursor-pointer
+                            hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
                             <span className="material-symbols-outlined text-[20px]">add_circle</span>
                             Voice In
-                        </button>
+                        </Button>
 
                         {user && (
                             <div
@@ -368,7 +381,7 @@ export const MainLayout = () => {
             {/* 🔒 Unauthenticated Log in Prompt Modal */}
             {isLoginPromptOpen && (
                 <Dialog open={isLoginPromptOpen} onOpenChange={setIsLoginPromptOpen}>
-                    <DialogContent className="max-w-[420px] bg-[#141414] text-white border border-white/10 rounded-2xl p-6 shadow-2xl">
+                    <DialogContent className="max-w-[420px] bg-transparent backdrop-blur-xl text-white border border-white/10 rounded-2xl p-6 shadow-2xl">
                         <DialogHeader className="border-b border-white/10 pb-4 p-0 bg-transparent flex flex-row items-center justify-between">
                             <DialogTitle className="text-xl font-extrabold text-text-primary flex items-center gap-2">
                                 <span className="material-symbols-outlined text-primary-container text-2xl">lock</span>

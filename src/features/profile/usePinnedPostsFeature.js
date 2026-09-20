@@ -12,12 +12,9 @@ export function usePinnedPostsQuery(accountId) {
             return apiFetch(`/api/v1/accounts/${accountId}/posts?pinned=true`); // Returns flat array of statuses
         },
         enabled: !!accountId,
-        select: (data) => {
-            if (!Array.isArray(data)) return data;
-            return usePostsStore.getState().importFetchedPosts(data);
-        },
     });
 }
+
 
 // 🔓 Mutation: Dispatches a request to unpin a post and invalidates local caches instantly
 export function useUnpinPostMutation(accountId) {

@@ -16,17 +16,6 @@ export function useBookmarksQuery() {
         initialPageParam: null,
         getNextPageParam: (lastPage) =>
             lastPage?.nextCursor ?? lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
-        select: (data) => {
-            if (!data?.pages) return data;
-            const importFetchedPosts = usePostsStore.getState().importFetchedPosts;
-            const pages = data.pages.map((page) => {
-                if (!page) return page;
-                const rawPosts = Array.isArray(page) ? page : page.statuses || page.posts || [];
-                const imported = importFetchedPosts(rawPosts);
-                if (Array.isArray(page)) return imported;
-                return { ...page, statuses: imported, posts: imported };
-            });
-            return { ...data, pages };
-        },
     });
 }
+

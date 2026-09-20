@@ -21,12 +21,6 @@ export function useProfileQuery(username) {
             }
         },
         enabled: !!username,
-        select: (data) => {
-            if (data && data.id) {
-                useAccountsStore.getState().importFetchedAccounts([data]);
-            }
-            return data;
-        },
     });
 }
 
@@ -46,20 +40,9 @@ export function useProfilePostsQuery(username) {
         getNextPageParam: getNextCursor,
         initialPageParam: null,
         enabled: !!username,
-        select: (data) => {
-            if (!data?.pages) return data;
-            const importFetchedPosts = usePostsStore.getState().importFetchedPosts;
-            const pages = data.pages.map((page) => {
-                if (!page) return page;
-                const rawPosts = Array.isArray(page) ? page : page.statuses || page.posts || [];
-                const imported = importFetchedPosts(rawPosts);
-                if (Array.isArray(page)) return imported;
-                return { ...page, statuses: imported, posts: imported };
-            });
-            return { ...data, pages };
-        },
     });
 }
+
 
 // 🎛️ Mutation: Dispatches persistent profile updates securely down to your Elixir storage layer
 export function useUpdateProfileMutation(username) {
@@ -140,18 +123,7 @@ export function useProfileTimelineQuery(username, currentMode) {
         getNextPageParam: getNextCursor,
         initialPageParam: null,
         enabled: !!username,
-        select: (data) => {
-            if (!data?.pages) return data;
-            const importFetchedPosts = usePostsStore.getState().importFetchedPosts;
-            const pages = data.pages.map((page) => {
-                if (!page) return page;
-                const rawPosts = Array.isArray(page) ? page : page.statuses || page.posts || [];
-                const imported = importFetchedPosts(rawPosts);
-                if (Array.isArray(page)) return imported;
-                return { ...page, statuses: imported, posts: imported };
-            });
-            return { ...data, pages };
-        },
     });
 }
+
 
