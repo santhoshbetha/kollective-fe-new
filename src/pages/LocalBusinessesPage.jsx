@@ -132,7 +132,7 @@ export const LocalBusinessesPage = () => {
                     <h1 className="font-headline-lg text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight">
                         {activeTab === 'businesses' ? 'Local Businesses' : 'Business Proposals'}
                     </h1>
-                    <p className="font-body-md text-lg text-text-secondary leading-relaxed">
+                    <p className="font-body-md text-xl text-text-secondary leading-relaxed">
                         {activeTab === 'businesses'
                             ? 'Discover and support strictly community-oriented and people-centered local businesses that keep wealth and vitality within our neighborhoods.'
                             : 'Review, vote on, and back community-led venture proposals designed to challenge corporate monopolies and build shared local prosperity.'}
@@ -142,8 +142,8 @@ export const LocalBusinessesPage = () => {
                     <div className="p-4 rounded-2xl bg-surface-container-low border border-white/10 flex items-start gap-3.5 text-left text-sm shadow-inner">
                         <span className="material-symbols-outlined text-primary-container text-2xl shrink-0 mt-0.5">volunteer_activism</span>
                         <div>
-                            <h4 className="font-bold text-text-primary text-md mb-1">Empowering Local & Ethical Ventures</h4>
-                            <p className="text-text-secondary text-sm leading-normal">
+                            <h4 className="font-bold text-text-primary text-xl mb-1">Empowering Local & Ethical Ventures</h4>
+                            <p className="text-text-secondary text-[16px] leading-normal">
                                 This space is explicitly reserved for independent, grassroots, and people-centered enterprises. We stand against extractive corporate monopolies and prioritize neighborhood sustainability, fair wages, and ethical service.
                             </p>
                         </div>

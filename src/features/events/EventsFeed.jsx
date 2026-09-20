@@ -4,6 +4,7 @@ import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { EventCard } from './EventCard';
 import { EventDateBadge, AttendeeStack } from './EventComponents';
+import { getDisplayLocation } from '../../utils/eventUtils';
 import {
     Filter,
     ChevronDown,
@@ -41,7 +42,7 @@ function EventCardX({ event, onInterestToggle, isPending }) {
                     </div>
                     <div className="flex items-center gap-1.5 max-w-[180px]">
                         <span className="material-symbols-outlined text-[16px] text-primary-container">location_on</span>
-                        <span className="truncate">{event.location}</span>
+                        <span className="truncate">{getDisplayLocation(event.location, event)}</span>
                     </div>
                 </div>
                 <AttendeeStack
@@ -281,18 +282,19 @@ export function EventsFeed({
     const activeEventsList = filteredEventsData || events;
 
     const filteredEvents = activeEventsList?.filter((event) => {
+        const locStr = getDisplayLocation(event?.location, event);
         // Search query match
         const matchesSearch =
             !searchQuery ||
             event?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             event?.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (event?.organizer && event.organizer.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (event?.location && event.location.toLowerCase().includes(searchQuery.toLowerCase()));
+            (event?.organizer && String(event.organizer).toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (locStr && locStr.toLowerCase().includes(searchQuery.toLowerCase()));
 
         // Location query match
         const matchesLocation =
             !locationQuery ||
-            (event?.location && event.location.toLowerCase().includes(locationQuery.toLowerCase()));
+            (locStr && locStr.toLowerCase().includes(locationQuery.toLowerCase()));
 
         // Format filter match
         const matchesFormat =
@@ -349,7 +351,9 @@ export function EventsFeed({
                     <h1 className="text-4xl font-extrabold flex items-center gap-3 text-[#F4F4F4] font-headline-lg">
                         Discover Events <span className="text-2xl">🎉</span>
                     </h1>
-                    <p className="text-[#A19B95] mt-2 font-semibold">Find your next adventure, connect with your community.</p>
+                    <p className="text-[#A19B95] mt-2 font-semibold text-lg">
+                        Find your next adventure, connect with your community.
+                    </p>
                 </div>
                 <div className="flex items-center gap-4">
                     {/* View Switcher */}
@@ -431,13 +435,13 @@ export function EventsFeed({
 
                         {/* Search Input */}
                         <div className="space-y-2 flex flex-col">
-                            <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">
+                            <label className="text-lg font-bold text-text-secondary uppercase tracking-widest">
                                 Search Events
                             </label>
                             <div className="relative group">
                                 <Search className="w-4 h-4 text-text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors group-focus-within:text-primary" />
                                 <input
-                                    className="w-full bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 text-xs sm:text-sm rounded-card pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/40 outline-none transition-all"
+                                    className="w-full bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 text-[16px]  rounded-card pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/40 outline-none transition-all"
                                     placeholder="Find parties, meetups, conferences..."
                                     type="text"
                                     value={searchQuery}
@@ -454,20 +458,20 @@ export function EventsFeed({
                                     </button>
                                 )}
                             </div>
-                            <p className="text-[11px] text-text-secondary/60 italic">
+                            <p className="text-[16px] text-text-secondary/60 italic">
                                 Search across event titles, descriptions, locations, and organizer names
                             </p>
                         </div>
 
                         {/* Location Input */}
                         <div className="space-y-2 flex flex-col">
-                            <label className="text-xs font-bold text-text-secondary uppercase tracking-widest">
+                            <label className="text-lg font-bold text-text-secondary uppercase tracking-widest">
                                 Filter by Location
                             </label>
                             <div className="relative group">
                                 <MapPin className="w-4 h-4 text-text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors group-focus-within:text-primary" />
                                 <input
-                                    className="w-full bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 text-xs sm:text-sm rounded-card pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/40 outline-none transition-all"
+                                    className="w-full bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 text-[16px] rounded-card pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/40 outline-none transition-all"
                                     placeholder="Search for a location..."
                                     type="text"
                                     value={locationQuery}
@@ -489,7 +493,7 @@ export function EventsFeed({
 
                     {/* Event Categories Tag Bar */}
                     <div className="mt-8">
-                        <label className="text-xs font-bold text-text-secondary uppercase tracking-widest block mb-4">
+                        <label className="text-lg font-bold text-text-secondary uppercase tracking-widest block mb-4">
                             Event Categories
                         </label>
                         <div className="flex flex-wrap items-center gap-2 w-full">
@@ -581,7 +585,7 @@ export function EventsFeed({
                                 </div>
                             ) : hasState ? (
                                 /* State Fallback Badge */
-                                <div className="flex items-center gap-1.5 bg-primary-container/10 border border-primary-container/20 px-3 py-2 rounded-card text-xs font-bold text-primary-container">
+                                <div className="flex items-center gap-1.5 bg-primary-container/10 border border-primary-container/20 px-3 py-2 rounded-card text-[14px] font-bold text-primary-container">
                                     <MapPin className="w-3.5 h-3.5" />
                                     <span>Showing events in {userState || currentUser?.state || currentUser?.origin_state}</span>
                                 </div>
@@ -601,7 +605,7 @@ export function EventsFeed({
 
                         {/* Event Format Selection Capsule */}
                         <div className="flex flex-col gap-2 w-full sm:w-auto">
-                            <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
+                            <label className="text-[14px] font-bold text-text-secondary uppercase tracking-widest">
                                 Event Type
                             </label>
                             <div className="flex bg-surface-container-low p-1 rounded-card border border-outline-variant">

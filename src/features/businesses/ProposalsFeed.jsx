@@ -63,28 +63,28 @@ export function ProposalsFeed({ searchQuery, activeCategory, renderPagination, i
                     Build Local Alternatives to Corporate Monopolies
                 </h3>
 
-                <p className="text-text-secondary text-md leading-relaxed">
+                <p className="text-text-secondary text-lg leading-relaxed">
                     We urge community organizers and neighbors to draft proposals for essential, high-impact everyday services that challenge greedy corporate monopolies:
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                     <div className="p-4 rounded-xl bg-surface-container-high/60 border border-white/5 space-y-2">
-                        <div className="flex items-center gap-2 text-primary-container font-bold text-md">
+                        <div className="flex items-center gap-2 text-primary-container font-bold text-xl">
                             <span className="material-symbols-outlined text-[20px]">local_cafe</span>
                             <h4>Local Coffee & Eateries</h4>
                         </div>
-                        <p className="text-md text-text-secondary leading-relaxed">
+                        <p className="text-lg text-text-secondary leading-relaxed">
                             Propose worker-owned cafes, local diners, and cooperative food halls to outshine and displace
                             existing corporate monopolies with fresh, ethical food networks.
                         </p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-surface-container-high/60 border border-white/5 space-y-2">
-                        <div className="flex items-center gap-2 text-emerald-400 font-bold text-md">
+                        <div className="flex items-center gap-2 text-emerald-400 font-bold text-xl">
                             <span className="material-symbols-outlined text-[20px]">medical_services</span>
                             <h4>Low-Cost Medical & Clinics</h4>
                         </div>
-                        <p className="text-md text-text-secondary leading-relaxed">
+                        <p className="text-lg text-text-secondary leading-relaxed">
                             Launch people-pro, low-cost and low-margin neighborhood medical stores, pharmacies, and urgent clinics
                             to beat greedy corporate monopolies.
                         </p>

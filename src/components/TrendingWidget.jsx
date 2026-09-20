@@ -1,4 +1,4 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
 import { useTrendingQuery } from '../features/trending/useTrendingQuery';
 import { useSuggestedCirclesQuery, useToggleJoinCircle } from '../features/communities/useCirclesFeature';
 
@@ -72,11 +72,11 @@ export const TrendingWidget = () => {
 
       {/* Footer Links */}
       <div className="px-2 flex flex-wrap gap-x-4 gap-y-2">
-        <a className="text-[15px] text-text-secondary hover:text-white transition-colors" href="#">Privacy Policy</a>
-        <a className="text-[15px] text-text-secondary hover:text-white transition-colors" href="#">Terms of Service</a>
-        <a className="text-[15px] text-text-secondary hover:text-white transition-colors" href="#">Cookies</a>
-        <a className="text-[15px] text-text-secondary hover:text-white transition-colors" href="#">More...</a>
-        <p className="text-[15px] text-text-secondary w-full mt-2">© {new Date().getFullYear()} Kollective</p>
+        <Link className="text-[15px] text-text-secondary hover:text-white transition-colors" to="/privacy">Privacy Policy</Link>
+        <Link className="text-[15px] text-text-secondary hover:text-white transition-colors" to="/terms">Terms of Service</Link>
+        <Link className="text-[15px] text-text-secondary hover:text-white transition-colors" to="#">Cookies</Link>
+        <Link className="text-[15px] text-text-secondary hover:text-white transition-colors" to="#">More...</Link>
+        <p className="text-[16px] text-text-secondary w-full mt-2">© {new Date().getFullYear()} Kollective</p>
       </div>
     </aside>
   );

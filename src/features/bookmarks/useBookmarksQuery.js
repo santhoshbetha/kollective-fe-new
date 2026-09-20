@@ -9,7 +9,7 @@ export function useBookmarksQuery() {
         // 🔒 Isolate bookmarks under their own dedicated cache root key
         queryKey: ['timeline', 'bookmarks'],
         queryFn: ({ pageParam }) => {
-            const baseUrl = '/api/v1/posts/bookmarks';
+            const baseUrl = '/api/v1/bookmarks';
             const path = pageParam ? `${baseUrl}?max_id=${pageParam}` : baseUrl;
             return apiFetch(path);
         },

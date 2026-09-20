@@ -7,6 +7,7 @@ import { TrendingWidget } from '../components/TrendingWidget';
 import { useStore } from '../store/useStore';
 import VerificationBadge from '../components/VerificationBadge';
 import { UserAvatar } from '../components/UserAvatar';
+import { useProfileQuery } from '../features/profile/useProfileFeature';
 
 const profilesData = {
   alsweigart: {
@@ -256,6 +257,8 @@ export const UserProfilePage = () => {
   const showPersonalHandle = useStore((state) => state.showPersonalHandleOnOrg);
 
   const cleanUsername = (username || '').toLowerCase().replace('@', '');
+  const { data: remoteProfile } = useProfileQuery(cleanUsername);
+
   let profile = profilesData[cleanUsername];
 
   if (!profile && cleanUsername.includes('nymag')) {
@@ -285,11 +288,29 @@ export const UserProfilePage = () => {
     };
   }
 
-  let isOwnProfile = user && (profile && (user.handle === profile.handle || user.handle?.replace('@', '') === cleanUsername));
+  let isOwnProfile = user && ((user.username && user.username.toLowerCase() === cleanUsername) || (user.handle && (user.handle === profile.handle || user.handle.replace('@', '').toLowerCase() === cleanUsername)));
+
+  // Merge backend remote profile data if available
+  if (remoteProfile) {
+    const backendData = remoteProfile.data || remoteProfile.user || remoteProfile;
+    profile = {
+      ...profile,
+      name: backendData.display_name || backendData.name || profile.name,
+      avatar: backendData.avatar_url || backendData.avatar || profile.avatar,
+      banner: backendData.cover_image_url || backendData.banner || backendData.header || profile.banner,
+      bio: backendData.bio || profile.bio,
+      location: backendData.location || profile.location,
+    };
+  }
 
   if (isOwnProfile && profile) {
     profile = {
       ...profile,
+      name: user.display_name || user.name || profile.name,
+      avatar: user.avatar_url || user.avatar || profile.avatar,
+      banner: user.cover_image_url || user.banner || user.header || profile.banner,
+      bio: user.bio || profile.bio,
+      location: user.location || profile.location,
       badge_type: user.badge_type || profile.badge_type,
       orcid_id: profile.orcid_id || (user.badge_type?.toLowerCase() === 'scholar' || user.badge_type?.toLowerCase() === 'citizen' ? '0000-0002-1825-0001' : null),
       publication_count: profile.publication_count || 14,

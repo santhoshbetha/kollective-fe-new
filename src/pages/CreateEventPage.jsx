@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateEvent } from '../features/events/useCreateEvent';
+import { ImageUploader } from '../components/ImageUploader';
+import { uploadProfileImageToR2 } from '../utils/uploadMedia';
 import {
     ArrowLeft,
     Sparkles,
@@ -62,7 +64,7 @@ export const CreateEventPage = () => {
         setTimeout(() => setToastMessage(null), 3500);
     };
 
-    const handleCreate = (e) => {
+    const handleCreate = async (e) => {
         e.preventDefault();
 
         if (!title.trim()) {
@@ -84,75 +86,88 @@ export const CreateEventPage = () => {
 
         setIsSubmitting(true);
 
-        const formattedDate = new Date(startDate).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        });
-
-        const displayDate = `${new Date(startDate).toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'short',
-            day: 'numeric',
-        })} • ${startTime} ${endTime ? `- ${endTime}` : ''}`;
-
-        let start_time = null;
         try {
-            if (startDate && startTime) {
-                start_time = new Date(`${startDate}T${startTime}`).toISOString();
+            let finalCoverUrl = coverImage;
+            if (coverImage && (coverImage.startsWith('data:') || coverImage instanceof File)) {
+                finalCoverUrl = await uploadProfileImageToR2(coverImage, 'event');
             }
-        } catch {
-            start_time = null;
+
+            const formattedDate = new Date(startDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+            });
+
+            const displayDate = `${new Date(startDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric',
+            })} • ${startTime} ${endTime ? `- ${endTime}` : ''}`;
+
+            let start_time = null;
+            try {
+                if (startDate && startTime) {
+                    start_time = new Date(`${startDate}T${startTime}`).toISOString();
+                }
+            } catch {
+                start_time = null;
+            }
+
+            let end_time = null;
+            try {
+                const finalEndDate = endDate || startDate;
+                if (finalEndDate && endTime) {
+                    end_time = new Date(`${finalEndDate}T${endTime}`).toISOString();
+                }
+            } catch {
+                end_time = null;
+            }
+
+            const formatMapping = {
+                'In-Person': 'in_person',
+                'Online': 'online_virtual',
+                'Hybrid': 'hybrid',
+            };
+
+            const newEvent = {
+                title,
+                description,
+                format: formatType,
+                participation_format: formatMapping[formatType] || 'in_person',
+                category,
+                start_time,
+                end_time,
+                date: formattedDate,
+                displayDate,
+                time: `${startTime} ${endTime ? `- ${endTime}` : ''}`,
+                location,
+                location_name: location,
+                street: location,
+                capacity: capacity ? parseInt(capacity, 10) : null,
+                max_participants: capacity ? parseInt(capacity, 10) : null,
+                image: finalCoverUrl,
+                banner_url: finalCoverUrl,
+                cover_image_url: finalCoverUrl,
+                image_url: finalCoverUrl,
+            };
+
+            createEventMutation.mutate(newEvent, {
+                onSuccess: () => {
+                    triggerToast('Event successfully launched!', 'success');
+                    setTimeout(() => {
+                        navigate('/events');
+                    }, 1200);
+                },
+                onError: (err) => {
+                    setIsSubmitting(false);
+                    triggerToast(err?.message || 'Error occurred while creating event.', 'error');
+                }
+            });
+        } catch (err) {
+            console.error('Error during image upload:', err);
+            triggerToast('Failed to upload event cover image. Please try again.', 'error');
+            setIsSubmitting(false);
         }
-
-        let end_time = null;
-        try {
-            const finalEndDate = endDate || startDate;
-            if (finalEndDate && endTime) {
-                end_time = new Date(`${finalEndDate}T${endTime}`).toISOString();
-            }
-        } catch {
-            end_time = null;
-        }
-
-        const formatMapping = {
-            'In-Person': 'in_person',
-            'Online': 'online_virtual',
-            'Hybrid': 'hybrid',
-        };
-
-        const newEvent = {
-            title,
-            description,
-            format: formatType,
-            participation_format: formatMapping[formatType] || 'in_person',
-            category,
-            start_time,
-            end_time,
-            date: formattedDate,
-            displayDate,
-            time: `${startTime} ${endTime ? `- ${endTime}` : ''}`,
-            location,
-            location_name: location,
-            street: location,
-            capacity: capacity ? parseInt(capacity, 10) : null,
-            max_participants: capacity ? parseInt(capacity, 10) : null,
-            image: coverImage,
-            banner_url: coverImage,
-        };
-
-        createEventMutation.mutate(newEvent, {
-            onSuccess: () => {
-                triggerToast('Event successfully launched!', 'success');
-                setTimeout(() => {
-                    navigate('/events');
-                }, 1200);
-            },
-            onError: (err) => {
-                setIsSubmitting(false);
-                triggerToast(err?.message || 'Error occurred while creating event.', 'error');
-            }
-        });
     };
 
     return (
@@ -209,82 +224,54 @@ export const CreateEventPage = () => {
             <form onSubmit={handleCreate} className="space-y-6">
 
                 {/* Section Block: Cover Display Element */}
-                <section className="bg-surface-container border border-outline-variant rounded-card p-5 relative overflow-hidden">
-                    <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-outline-variant/60 rounded-card bg-surface-container-low hover:bg-surface-container-high transition-all group relative min-h-64">
-                        {coverImage ? (
-                            <div className="w-full max-h-72 overflow-hidden rounded-card relative">
-                                <img
-                                    src={coverImage}
-                                    alt="Selected Manifest Cover Node Preview"
-                                    className="w-full h-full object-cover object-center max-h-72"
-                                />
-                                <div className="absolute inset-0 bg-inverse-surface/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowImagePicker(true)}
-                                        className="px-5 py-2.5 bg-primary text-on-primary font-bold rounded-card text-xs uppercase tracking-wider shadow-md hover:brightness-110 active:scale-98 transition-all border-none cursor-pointer"
-                                    >
-                                        Change Cover Image
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center space-y-4 px-4">
-                                <div className="w-12 h-12 rounded-card bg-primary-container/10 text-primary flex items-center justify-center mx-auto transition-transform group-hover:scale-105">
-                                    <UploadCloud className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-text-primary text-sm sm:text-base">Event Cover Image</h3>
-                                    <p className="text-xs text-text-secondary max-w-xs mx-auto mt-1 leading-relaxed">
-                                        Select a stunning template to customize your event blueprint interface.
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowImagePicker(true)}
-                                    className="px-4 py-2 bg-surface-container border border-outline-variant rounded-card text-xs font-bold text-text-primary hover:bg-surface-container-high transition-all cursor-pointer"
-                                >
-                                    Choose Template Image
-                                </button>
-                            </div>
-                        )}
+                <section className="bg-surface-container border border-outline-variant rounded-card p-5 relative overflow-hidden space-y-4">
+                    <div className="flex justify-between items-center pb-2 border-b border-outline-variant/40">
+                        <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider flex items-center gap-2">
+                            <UploadCloud className="w-4 h-4 text-primary" />
+                            <span>Event Cover Image</span>
+                        </h4>
+                        <button
+                            type="button"
+                            onClick={() => setShowImagePicker(!showImagePicker)}
+                            className="px-3 py-1 bg-surface-container-low border border-outline-variant rounded-card text-xs font-bold text-text-primary hover:bg-surface-container-high transition-all cursor-pointer"
+                        >
+                            {showImagePicker ? 'Hide Presets' : 'Choose Preset Template'}
+                        </button>
                     </div>
+
+                    <ImageUploader
+                        mode="banner"
+                        aspectRatio={16 / 9}
+                        value={coverImage}
+                        onChange={(newImage) => setCoverImage(newImage)}
+                        onImageRemove={() => setCoverImage('')}
+                        label="Upload Event Cover"
+                        description="Recommended 16:9 format. Drag & drop, crop, and position your cover image."
+                    />
 
                     {/* Inline Preset template image collection portal context */}
                     {showImagePicker && (
-                        <div className="absolute inset-0 bg-background/95 backdrop-blur-md flex items-center justify-center p-4 z-20 animate-fadeIn">
-                            <div className="max-w-xl w-full bg-surface border border-outline-variant p-5 rounded-card shadow-2xl space-y-4">
-                                <div className="flex justify-between items-center pb-2 border-b border-outline-variant/40">
-                                    <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider">Select Event Cover</h4>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowImagePicker(false)}
-                                        className="p-1.5 rounded-card hover:bg-surface-container-high text-text-secondary hover:text-text-primary cursor-pointer bg-transparent border-none"
+                        <div className="pt-2 border-t border-outline-variant/40 space-y-2">
+                            <p className="text-xs font-bold text-text-secondary uppercase tracking-wider">Preset Templates</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {PRESET_COVERS.map((preset) => (
+                                    <div
+                                        key={preset.id}
+                                        onClick={() => {
+                                            setCoverImage(preset.url);
+                                            setShowImagePicker(false);
+                                        }}
+                                        className={cn(
+                                            "relative rounded-card overflow-hidden cursor-pointer border-2 transition-all group",
+                                            coverImage === preset.url ? 'border-primary shadow-xs' : 'border-transparent hover:border-outline-variant'
+                                        )}
                                     >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-1">
-                                    {PRESET_COVERS.map((preset) => (
-                                        <div
-                                            key={preset.id}
-                                            onClick={() => {
-                                                setCoverImage(preset.url);
-                                                setShowImagePicker(false);
-                                            }}
-                                            className={cn(
-                                                "relative rounded-card overflow-hidden cursor-pointer border-2 transition-all group",
-                                                coverImage === preset.url ? 'border-primary shadow-xs' : 'border-transparent hover:border-outline-variant'
-                                            )}
-                                        >
-                                            <img src={preset.url} alt={preset.name} className="w-full h-20 object-cover" />
-                                            <div className="absolute inset-x-0 bottom-0 bg-inverse-surface/70 p-1.5 text-center truncate">
-                                                <span className="text-[11px] font-bold text-white uppercase tracking-wider">{preset.name}</span>
-                                            </div>
+                                        <img src={preset.url} alt={preset.name} className="w-full h-20 object-cover" />
+                                        <div className="absolute inset-x-0 bottom-0 bg-inverse-surface/70 p-1 text-center truncate">
+                                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{preset.name}</span>
                                         </div>
-                                    ))}
-                                </div>
-                                <p className="text-center text-xs text-text-secondary">Click a cover design block layout slot above to load state configurations.</p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
@@ -484,7 +471,7 @@ export const CreateEventPage = () => {
 
                 {/* Submission Action Bar Strip */}
                 <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-surface-container border border-outline-variant rounded-card shadow-xs">
-                    <p className="text-text-secondary text-xs font-bold max-w-sm text-center sm:text-left leading-relaxed">
+                    <p className="text-text-secondary text-[14px] font-bold max-w-sm text-center sm:text-left leading-relaxed">
                         Please verify all required parameters marked with <span className="text-primary font-bold">*</span> are logged before deploying item manifest onto feed index tables.
                     </p>
                     <div className="flex items-center gap-3 w-full sm:w-auto">

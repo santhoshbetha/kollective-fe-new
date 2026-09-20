@@ -1,9 +1,102 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToggleEventInterest } from '../../features/events/useEventsFeature';
+import { CategoryGraphic } from '../../components/CategoryGraphic';
+
+const BUSINESS_CATEGORY_GRAPHICS = {
+    'Food & Beverage': {
+        url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80',
+        icon: 'restaurant',
+        color: 'from-amber-950/80 via-black/40 to-black/80',
+    },
+    'Grocery Store': {
+        url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80',
+        icon: 'local_grocery_store',
+        color: 'from-emerald-950/80 via-black/40 to-black/80',
+    },
+    'Healthcare': {
+        url: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=600&q=80',
+        icon: 'medical_services',
+        color: 'from-blue-950/80 via-black/40 to-black/80',
+    },
+    'Transportation': {
+        url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=600&q=80',
+        icon: 'directions_bus',
+        color: 'from-sky-950/80 via-black/40 to-black/80',
+    },
+    'Retail & Crafts': {
+        url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=600&q=80',
+        icon: 'shopping_bag',
+        color: 'from-purple-950/80 via-black/40 to-black/80',
+    },
+    'Fitness & Wellness': {
+        url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=600&q=80',
+        icon: 'fitness_center',
+        color: 'from-rose-950/80 via-black/40 to-black/80',
+    },
+    'Beauty & Personal Care': {
+        url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=600&q=80',
+        icon: 'content_cut',
+        color: 'from-pink-950/80 via-black/40 to-black/80',
+    },
+    'Agriculture': {
+        url: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=600&q=80',
+        icon: 'agriculture',
+        color: 'from-green-950/80 via-black/40 to-black/80',
+    },
+    'Cleaning Services': {
+        url: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80',
+        icon: 'cleaning_services',
+        color: 'from-teal-950/80 via-black/40 to-black/80',
+    },
+    'Movers': {
+        url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
+        icon: 'local_shipping',
+        color: 'from-amber-950/80 via-black/40 to-black/80',
+    },
+    'Technology': {
+        url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
+        icon: 'memory',
+        color: 'from-indigo-950/80 via-black/40 to-black/80',
+    },
+    'Professional Services': {
+        url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
+        icon: 'work',
+        color: 'from-slate-950/80 via-black/40 to-black/80',
+    },
+    'Legal Services': {
+        url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+        icon: 'gavel',
+        color: 'from-stone-950/80 via-black/40 to-black/80',
+    },
+    'Tax Services': {
+        url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80',
+        icon: 'calculate',
+        color: 'from-emerald-950/80 via-black/40 to-black/80',
+    },
+    'Manufacturing': {
+        url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80',
+        icon: 'precision_manufacturing',
+        color: 'from-red-950/80 via-black/40 to-black/80',
+    },
+    'Construction': {
+        url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=600&q=80',
+        icon: 'construction',
+        color: 'from-orange-950/80 via-black/40 to-black/80',
+    },
+};
+
+const DEFAULT_CATEGORY_GRAPHIC = {
+    url: 'https://images.unsplash.com/photo-1542744094-3a31f103e35f?auto=format&fit=crop&w=600&q=80',
+    icon: 'storefront',
+    color: 'from-red-950/80 via-black/40 to-black/80',
+};
 
 export const BusinessCard = ({ biz }) => {
     const navigate = useNavigate();
+    const [imgError, setImgError] = useState(false);
+
+    const categoryGraphic = BUSINESS_CATEGORY_GRAPHICS[biz.category] || DEFAULT_CATEGORY_GRAPHIC;
+    const hasValidImage = biz.image && !imgError;
 
     const renderStars = (rating) => {
         const stars = [];
@@ -37,16 +130,15 @@ export const BusinessCard = ({ biz }) => {
         >
             {/* Image Thumbnail Section */}
             <div className="w-full sm:w-44 h-36 sm:h-auto rounded-xl relative bg-surface-container-high overflow-hidden shrink-0">
-                {biz.image ? (
+                {hasValidImage ? (
                     <img
                         alt={biz.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         src={biz.image}
+                        onError={() => setImgError(true)}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-surface-container-low text-text-secondary">
-                        <span className="material-symbols-outlined text-4xl">storefront</span>
-                    </div>
+                    <CategoryGraphic category={biz.category} title={biz.name} />
                 )}
 
                 {/* Status Badges Overlay */}
@@ -82,21 +174,21 @@ export const BusinessCard = ({ biz }) => {
                 <div>
                     {/* Header Row */}
                     <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-headline-sm text-lg font-bold text-text-primary tracking-tight group-hover:text-primary-container transition-colors truncate">
+                        <h3 className="font-headline-sm text-xl font-bold text-text-primary tracking-tight group-hover:text-primary-container transition-colors truncate">
                             {biz.name}
                         </h3>
-                        <span className="shrink-0 px-2 py-0.5 bg-primary-container/10 border border-primary-container/20 text-primary-container text-[10px] font-extrabold uppercase rounded tracking-wider">
+                        <span className="shrink-0 px-2 py-0.5 bg-primary-container/10 border border-primary-container/20 text-primary-container text-[14px] font-extrabold uppercase rounded tracking-wider">
                             {biz.category}
                         </span>
                     </div>
 
                     {/* Description */}
-                    <p className="text-xs text-text-secondary leading-snug line-clamp-2 mt-1">
+                    <p className="text-[18px] text-text-secondary leading-snug line-clamp-2 mt-1">
                         {biz.description}
                     </p>
 
                     {/* Info Metadata Bar */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-3 pt-2 border-t border-white/5 text-xs text-text-secondary">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-3 pt-2 border-t border-white/5 text-[16px] text-text-secondary">
                         {biz.address && (
                             <div className="flex items-center gap-1.5 truncate">
                                 <span className="material-symbols-outlined text-primary-container text-[15px] shrink-0">location_on</span>
@@ -141,12 +233,12 @@ export const BusinessCard = ({ biz }) => {
                                 src={biz.ownerAvatar}
                             />
                         ) : (
-                            <div className="w-6 h-6 rounded-full bg-surface-container border border-white/10 flex items-center justify-center text-[10px] text-white shrink-0">
+                            <div className="w-6 h-6 rounded-full bg-surface-container border border-white/10 flex items-center justify-center text-[16px] text-white shrink-0">
                                 {biz.owner ? biz.owner[0] : 'B'}
                             </div>
                         )}
-                        <span className="text-xs text-text-secondary font-medium truncate">@{biz.owner}</span>
-                        <span className="text-[11px] text-text-secondary/50 font-mono shrink-0">({biz.reviewsCount || 0} reviews)</span>
+                        <span className="text-[16px] text-text-secondary font-medium truncate">@{biz.owner}</span>
+                        <span className="text-[14px] text-text-secondary/50 font-mono shrink-0">({biz.reviewsCount || 0} reviews)</span>
                     </div>
 
                     <div className="flex gap-1.5 shrink-0">

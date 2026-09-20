@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useProfileQuery, useUpdateProfileMutation } from '../features/profile/useProfileFeature';
 import { UserAvatar } from '../components/UserAvatar';
+import { ImageUploader } from '../components/ImageUploader';
 
 export const ProfileEditPage = () => {
     const navigate = useNavigate();
@@ -82,20 +83,29 @@ export const ProfileEditPage = () => {
             </div>
 
             {/* 🖼️ REAL-TIME HARDWARE-ACCELERATED VISUAL MEDIA PREVIEW PANELS */}
-            <div className="flex flex-col gap-4 w-full select-none">
-                <div className="w-full aspect-[3/1] bg-surface-container-high rounded-xl border border-white/5 overflow-hidden relative shadow-inner">
-                    {headerImageUrl ? (
-                        <img src={headerImageUrl} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-[#2d0a0a] via-[#1a1616] to-[#141414]" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+            <div className="flex flex-col gap-6 w-full select-none glass-panel p-6 rounded-2xl border border-white/10">
+                <div className="flex flex-col gap-2">
+                    <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Header Banner</label>
+                    <ImageUploader
+                        mode="banner"
+                        aspectRatio={3}
+                        value={headerImageUrl}
+                        onChange={(newBanner) => setHeaderImageUrl(newBanner)}
+                        onImageRemove={() => setHeaderImageUrl('')}
+                        label="Upload Header Banner"
+                    />
+                </div>
 
-                    {/* Layered Avatar Float Preview Cap */}
-                    <UserAvatar
-                        user={{ name: displayName, avatar: avatarUrl, handle: currentUser?.handle }}
-                        className="absolute bottom-3 left-4 w-16 h-16 border-2 border-[#141414] shadow-xl text-xl font-bold"
-                        roundedClassName="rounded-xl"
+                <div className="flex flex-col gap-2 pt-4 border-t border-white/5">
+                    <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Profile Avatar</label>
+                    <ImageUploader
+                        mode="avatar"
+                        aspectRatio={1}
+                        value={avatarUrl}
+                        onChange={(newAvatar) => setAvatarUrl(newAvatar)}
+                        onImageRemove={() => setAvatarUrl('')}
+                        label="Profile Picture"
+                        description="Square format (400x400). Crop and position your avatar."
                     />
                 </div>
             </div>

@@ -6,7 +6,7 @@ export const PrivacyPage = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-[#0b0f19] text-text-primary font-sans relative pb-20">
+        <div className="min-h-screen dark:bg-[#0b0f19] text-text-primary font-sans relative pb-20">
             {/* Ambient Background Glows */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-container/5 blur-[120px] -z-10 rounded-full animate-pulse duration-[8000ms]" />
             <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-secondary-container/5 blur-[100px] -z-10 rounded-full animate-pulse duration-[10000ms]" />
@@ -28,7 +28,7 @@ export const PrivacyPage = () => {
                             <Shield className="w-8 h-8" />
                         </div>
                         <div>
-                            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Privacy Policy</h1>
+                            <h1 className="text-2xl sm:text-3xl font-black dark:text-white tracking-tight">Privacy Policy</h1>
                             <p className="text-xs font-bold uppercase tracking-wider text-text-secondary mt-1">Last Updated: 19 Feb 2026</p>
                         </div>
                     </div>
@@ -38,7 +38,7 @@ export const PrivacyPage = () => {
                             Welcome to Kollective ("we," "us," "our"). We are committed to protecting your personal information and your right to privacy. If you have any questions or concerns about this privacy notice, or our practices with regards to your personal information, please contact us at <a href="mailto:team@kollective.social" className="text-[#c2185b] hover:underline font-semibold">team@kollective.social</a>.
                         </p>
 
-                        <h2 className="text-lg font-bold text-white uppercase tracking-wider pt-4 border-b border-white/5 pb-2">1. Information We Collect</h2>
+                        <h2 className="text-lg font-bold dark:text-white uppercase tracking-wider pt-4 border-b border-white/5 pb-2">1. Information We Collect</h2>
                         <p>
                             We may collect personal information that you voluntarily provide to us when you register on the Services, express an interest in obtaining information about us or our products and services, participate in activities on the Services, or otherwise when you contact us.
                         </p>
@@ -55,7 +55,7 @@ export const PrivacyPage = () => {
                             */}
                         </ul>
 
-                        <h2 className="text-lg font-bold text-white uppercase tracking-wider pt-4 border-b border-white/5 pb-2">2. How We Use Your Information</h2>
+                        <h2 className="text-lg font-bold dark:text-white uppercase tracking-wider pt-4 border-b border-white/5 pb-2">2. How We Use Your Information</h2>
                         <p>
                             We use personal information collected via our Services for standard coordination and system operations:
                         </p>
@@ -68,17 +68,17 @@ export const PrivacyPage = () => {
                             */}
                         </ul>
 
-                        <h2 className="text-lg font-bold text-white uppercase tracking-wider pt-4 border-b border-white/5 pb-2">3. Sharing of Your Information</h2>
+                        <h2 className="text-lg font-bold dark:text-white uppercase tracking-wider pt-4 border-b border-white/5 pb-2">3. Sharing of Your Information</h2>
                         <p>
                             We only share information with your consent, to comply with laws, to provide you with services, to protect your rights, or to fulfill platform security obligations. Personal email details and raw documents uploaded for onboarding verification are strictly private and restricted.
                         </p>
 
-                        <h2 className="text-lg font-bold text-white uppercase tracking-wider pt-4 border-b border-white/5 pb-2">4. Data Security</h2>
+                        <h2 className="text-lg font-bold dark:text-white uppercase tracking-wider pt-4 border-b border-white/5 pb-2">4. Data Security</h2>
                         <p>
                             We aim to protect your personal information through a system of organizational and technical security measures. However, please also remember that we cannot guarantee that the internet itself is 100% secure. Once your account is created, you are responsible for keeping your password confidential.
                         </p>
 
-                        <h2 className="text-lg font-bold text-white uppercase tracking-wider pt-4 border-b border-white/5 pb-2">5. Privacy Rights</h2>
+                        <h2 className="text-lg font-bold dark:text-white uppercase tracking-wider pt-4 border-b border-white/5 pb-2">5. Privacy Rights</h2>
                         <p>
                             You have rights that allow you greater access to and control over your personal information. You may review, change, or terminate your account at any time. For users within the European Economic Area (EEA), EU, or local regions, we process information in compliance with GDPR.
                         </p>

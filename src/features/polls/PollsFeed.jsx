@@ -3,21 +3,35 @@ import React from 'react';
 import { usePollsQuery } from './usePollsFeature'; // Hook A pulling data
 import { PollCard } from './PollCard';
 
-export function PollsFeed({ searchQuery, filterTab, endedPollsCallback }) {
-    const { polls, pollsLoading } = usePollsQuery();
+export function PollsFeed({ scope = 'all', searchQuery = '', filterTab = 'All', categoryFilter = 'All', country = null, endedPollsCallback }) {
+    const { polls, pollsLoading } = usePollsQuery(scope, filterTab, country);
 
     // Filter Logic Matrix
     const filteredPolls = polls?.filter((poll) => {
+        const queryLower = (searchQuery || '').toLowerCase();
         const matchesSearch =
-            poll?.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            poll?.category.toLowerCase().includes(searchQuery.toLowerCase());
+            !searchQuery ||
+            (poll?.question || '').toLowerCase().includes(queryLower) ||
+            (poll?.category || '').toLowerCase().includes(queryLower) ||
+            (poll?.author || '').toLowerCase().includes(queryLower);
 
         const matchesFilter =
             filterTab === 'All' ||
-            (filterTab === 'Active' && poll?.active) ||
-            (filterTab === 'Ended' && !poll?.active);
+            (filterTab === 'Active' && poll?.active !== false) ||
+            (filterTab === 'Ended' && poll?.active === false) ||
+            (filterTab === 'My Votes' && (poll?.voted || poll?.user_voted || poll?.votedIndex !== undefined && poll?.votedIndex !== null));
 
-        return matchesSearch && matchesFilter;
+        const matchesCategory =
+            categoryFilter === 'All' || poll?.category === categoryFilter;
+
+        const matchesScope =
+            !scope ||
+            scope === 'all' ||
+            scope === 'world' ||
+            !poll?.scope ||
+            poll?.scope === scope;
+
+        return matchesSearch && matchesFilter && matchesCategory && matchesScope;
     });
 
     // Pull out closed entries cleanly to share up with the sidebar widgets layout

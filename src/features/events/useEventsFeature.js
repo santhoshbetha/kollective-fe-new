@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
+import { normalizeEvent } from '../../utils/eventUtils';
 
 // Hook A: Replaces events and eventsLoading
 export function useEventsQuery() {
@@ -20,8 +21,11 @@ export function useEventsQuery() {
         },
     });
 
+    const rawList = data?.events || data?.data || (Array.isArray(data) ? data : []);
+    const normalizedEvents = Array.isArray(rawList) ? rawList.map(normalizeEvent) : [];
+
     return {
-        events: data?.events || data?.data || (Array.isArray(data) ? data : []),
+        events: normalizedEvents,
         eventsLoading: isPending,
     };
 }
@@ -30,6 +34,7 @@ export function useEventsQuery() {
 export function useFilterEvents() {
     return useMutation({
         mutationFn: async (filterPayload) => {
+            let result;
             try {
                 const { apiFetch } = await import('../../api/apiClient');
                 const res = await apiFetch('/events/filter_by_date', {
@@ -37,11 +42,15 @@ export function useFilterEvents() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(filterPayload)
                 });
-                return res?.data || res?.events || res;
+                result = res?.data || res?.events || res;
             } catch (err) {
                 console.warn('Backend POST filter_by_date failed, falling back to mock filter:', err);
-                return api.filterEventsByDate(filterPayload);
+                result = api.filterEventsByDate(filterPayload);
             }
+            if (Array.isArray(result)) {
+                return result.map(normalizeEvent);
+            }
+            return result;
         }
     });
 }

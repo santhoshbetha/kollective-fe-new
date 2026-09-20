@@ -2,10 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreatePoll } from '../features/polls/useCreatePoll';
 import { Alert, AlertTitle, AlertDescription } from '../components/ui/Alert';
+import { useAuthStore } from '../store/auth/useAuthStore';
 
 export const CreatePollPage = () => {
   const navigate = useNavigate();
   const createPollMutation = useCreatePoll();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  if (!isAuthenticated) {
+    navigate('/login');
+    return null;
+  }
 
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']); // Initial 2 choices

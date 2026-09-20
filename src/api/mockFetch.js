@@ -294,7 +294,7 @@ window.fetch = async function (input, init) {
       const reportId = match[1];
       const body = JSON.parse(init.body || "{}");
       const action = body.action || "dismiss";
-      
+
       let reports = getReports();
       const report = reports.find(r => r.id === reportId);
       if (report) {
@@ -560,7 +560,7 @@ window.fetch = async function (input, init) {
     if (!currentUser) {
       currentUser = {
         id: 'usr-1',
-        name: 'Julian Thorne',
+        name: 'Julian Thorne2',
         username: 'j_thorne',
         handle: '@j_thorne',
         avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c',

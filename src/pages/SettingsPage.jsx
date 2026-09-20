@@ -14,6 +14,16 @@ export const SettingsPage = () => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const currentUser = useAuthStore((state) => state.user);
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+    console.log("SettingsPage: isAuthenticated: ", isAuthenticated);
+    console.log("SettingsPage: currentUser: ", currentUser);
+    console.log("SettingsPage: searchParams: ", searchParams);
+
+    if (!isAuthenticated) {
+        navigate('/login');
+        return null;
+    }
 
     // 🗺️ Connect active language variables straight to translation dictionaries
     const currentLanguage = useStore((state) => state.appLanguage);

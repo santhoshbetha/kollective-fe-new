@@ -1,5 +1,6 @@
 import React from 'react';
 import { useScheduleQuery } from '../features/schedule/useScheduleQuery';
+import { getDisplayLocation } from '../utils/eventUtils';
 
 export const ScheduleWidget = () => {
   const { schedule, scheduleLoading, scheduleError } = useScheduleQuery();
@@ -17,27 +18,32 @@ export const ScheduleWidget = () => {
         <p className="text-text-secondary text-lg italic">No actions scheduled yet. RSVP to an action to build your schedule.</p>
       ) : (
         <div className="space-y-4">
-          {schedule.map((item) => (
-            <div
-              key={item.id}
-              className={`p-4 rounded-xl bg-surface-ink border-l-4 shadow-sm hover:translate-x-1 transition-transform cursor-pointer ${item.rsvp === 'Attending' ? 'border-primary-container' : 'border-gold-muted'
-                }`}
-            >
-              <div className={`text-sm font-bold mb-1 ${item.rsvp === 'Attending' ? 'text-primary-container' : 'text-gold-muted'
-                }`}>
-                {item.time} • {item.rsvp.toUpperCase()}
+          {schedule.map((item) => {
+            const locStr = getDisplayLocation(item?.location, item);
+            const isVirtual = locStr.toLowerCase().includes('zoom') || locStr.toLowerCase().includes('virtual');
+
+            return (
+              <div
+                key={item?.id}
+                className={`p-4 rounded-xl bg-surface-ink border-l-4 shadow-sm hover:translate-x-1 transition-transform cursor-pointer ${item?.rsvp === 'Attending' ? 'border-primary-container' : 'border-gold-muted'
+                  }`}
+              >
+                <div className={`text-sm font-bold mb-1 ${item?.rsvp === 'Attending' ? 'text-primary-container' : 'text-gold-muted'
+                  }`}>
+                  {item?.time} • {item?.rsvp?.toUpperCase()}
+                </div>
+                <h4 className="font-label-md text-label-md text-text-primary mb-2 leading-tight">
+                  {item?.title}
+                </h4>
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <span className="material-symbols-outlined text-[14px]">
+                    {isVirtual ? 'videocam' : 'location_on'}
+                  </span>
+                  <span className="text-[14px]">{locStr}</span>
+                </div>
               </div>
-              <h4 className="font-label-md text-label-md text-text-primary mb-2 leading-tight">
-                {item.title}
-              </h4>
-              <div className="flex items-center gap-2 text-text-secondary">
-                <span className="material-symbols-outlined text-[14px]">
-                  {item.location.toLowerCase().includes('zoom') || item.location.toLowerCase().includes('virtual') ? 'videocam' : 'location_on'}
-                </span>
-                <span className="text-[14px]">{item.location}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

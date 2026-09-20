@@ -147,6 +147,7 @@ export const useStore = create(
     politicalOptIn: false,
     politicalCountry: 'US', // 'US' | 'CA' | 'GB' | 'IN' | 'MX' | 'AR' | 'BR' | 'CO' | 'CL' | 'VE' | 'PE' | 'EC' | 'UY' | 'PY' | 'BO' | 'HN' | 'NI' | 'CR' | 'PA' | 'DO' | 'PR'
     userState: '',
+    stateUpdatedAt: null,
     streetAddress: '',
     userCity: '',
     districtFederal: '',
@@ -155,6 +156,10 @@ export const useStore = create(
 
     setUserState: (userState) => set((state) => {
       state.userState = userState;
+    }),
+
+    setStateUpdatedAt: (timestamp) => set((state) => {
+      state.stateUpdatedAt = timestamp;
     }),
 
     setStreetAddress: (streetAddress) => set((state) => {
@@ -202,6 +207,7 @@ export const useStore = create(
       politicalOptIn: state.politicalOptIn,
       politicalCountry: state.politicalCountry,
       userState: state.userState,
+      stateUpdatedAt: state.stateUpdatedAt,
       streetAddress: state.streetAddress,
       userCity: state.userCity,
       districtFederal: state.districtFederal,

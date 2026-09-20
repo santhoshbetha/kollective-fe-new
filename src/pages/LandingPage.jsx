@@ -56,7 +56,7 @@ export const LandingPage = () => {
   return (
     <div className="bg-background text-on-surface font-body-md antialiased min-h-screen selection:bg-primary-container selection:text-white flex flex-col">
       {/* Top Navigation */}
-      <nav className="w-full sticky top-0 z-50 backdrop-blur-xl dark:bg-background/80 bg-white/80 border-b dark:border-white/10 border-black/5 shadow-sm">
+      <nav className="w-full sticky top-0 z-50 backdrop-blur-xl dark:bg-background/80 bg-white/80 border-b dark:border-white/10 border-black/5 shadow-sm px-10 md:px-20">
         <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop flex justify-between items-center h-20">
           <div className="flex items-center gap-0">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-primary-container crimson-glow" hidden>

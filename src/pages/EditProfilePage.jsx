@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useUpdateUser } from '../features/profile/useProfileFeature';
+import { ImageUploader } from '../components/ImageUploader';
+import { uploadProfileImageToR2 } from '../utils/uploadMedia';
 
 export const EditProfilePage = () => {
   const navigate = useNavigate();
@@ -10,33 +12,56 @@ export const EditProfilePage = () => {
   const updateUserMutation = useUpdateUser();
 
   // Form states prefilled with context user details
-  const [name, setName] = useState(user?.name || '');
-  const [handle, setHandle] = useState(user?.handle || '');
+  const [name, setName] = useState(user?.name || user?.display_name || '');
+  const [handle, setHandle] = useState(user?.handle || user?.username || '');
   const [email, setEmail] = useState(user?.email || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [location, setLocation] = useState(user?.location || '');
   const [website, setWebsite] = useState(user?.website || '');
-  const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [avatar, setAvatar] = useState(user?.avatar_url || user?.avatar || '');
+  const [banner, setBanner] = useState(user?.cover_image_url || user?.banner || user?.headerImage || '');
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleUploadPhoto = () => {
-    const newUrl = prompt('Enter a new avatar image URL:', avatar);
-    if (newUrl !== null && newUrl.trim() !== '') {
-      setAvatar(newUrl);
-    }
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    updateUserMutation.mutate({
-      name,
-      handle,
-      email,
-      bio,
-      location,
-      website,
-      avatar,
-    });
-    navigate('/settings');
+    setIsUploading(true);
+
+    try {
+      let finalAvatarUrl = avatar;
+      let finalBannerUrl = banner;
+
+      // 1. Upload avatar image to R2 if changed / new data URL
+      if (avatar && (avatar.startsWith('data:') || avatar instanceof File)) {
+        finalAvatarUrl = await uploadProfileImageToR2(avatar, 'avatar');
+      }
+
+      // 2. Upload banner image to R2 if changed / new data URL
+      if (banner && (banner.startsWith('data:') || banner instanceof File)) {
+        finalBannerUrl = await uploadProfileImageToR2(banner, 'banner');
+      }
+
+      // 3. Persist profile graphics & data to backend database & auth state
+      await updateUserMutation.mutateAsync({
+        name,
+        display_name: name,
+        handle,
+        email,
+        bio,
+        location,
+        website,
+        avatar: finalAvatarUrl,
+        avatar_url: finalAvatarUrl,
+        banner: finalBannerUrl,
+        cover_image_url: finalBannerUrl,
+        headerImage: finalBannerUrl,
+      });
+
+      navigate('/settings');
+    } catch (err) {
+      console.error('Error updating user profile:', err);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -63,62 +88,31 @@ export const EditProfilePage = () => {
       <div className="glass-panel bg-surface-ink border border-white/10 rounded-[24px] overflow-hidden mb-12">
         {/* Banner Upload */}
         <div className="p-8 pb-4">
-          <div className="flex justify-between items-end mb-4">
-            <div>
-              <h3 className="font-headline-md text-xl font-bold text-text-primary mb-1">Profile Banner</h3>
-              <p className="text-lg text-text-secondary">Recommended size: 1500x500px. Max file size: 5MB</p>
-            </div>
+          <div className="mb-4">
+            <h3 className="font-headline-md text-xl font-bold text-text-primary mb-1">Profile Banner</h3>
+            <p className="text-sm text-text-secondary">Recommended size: 1500x500px. Drag & drop or upload your header image.</p>
           </div>
-          <div
-            onClick={() => alert('Banner upload feature placeholder clicked')}
-            className="relative w-full aspect-[3/1] bg-surface-container rounded-2xl border-2 border-dashed border-outline-variant/30 overflow-hidden group cursor-pointer hover:border-primary-container/50 transition-colors"
-          >
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-text-secondary group-hover:text-primary-container transition-colors">
-              <span className="material-symbols-outlined text-4xl">add_photo_alternate</span>
-              <span className="text-sm font-semibold">Upload Header Image</span>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          </div>
+          <ImageUploader
+            mode="banner"
+            aspectRatio={3}
+            value={banner}
+            onChange={(newBanner) => setBanner(newBanner)}
+            onImageRemove={() => setBanner('')}
+            label="Upload Header Image"
+          />
         </div>
 
         {/* Profile Picture Upload */}
-        <div className="px-8 py-8 flex flex-col md:flex-row items-center gap-8 border-t border-white/5">
-          <div className="relative">
-            <div className="w-32 h-32 rounded-full bg-surface-container border-4 border-surface-ink overflow-hidden shadow-xl">
-              {avatar ? (
-                <img
-                  alt="User avatar preview"
-                  className="w-full h-full object-cover"
-                  src={avatar}
-                />
-              ) : (
-                <div className="w-full h-full bg-primary-container flex items-center justify-center text-white text-3xl font-bold">
-                  {name ? name[0] : 'U'}
-                </div>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={handleUploadPhoto}
-              className="absolute bottom-0 right-0 p-2 bg-primary-container text-white rounded-full shadow-lg active:scale-90 transition-transform cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-sm">edit</span>
-            </button>
-          </div>
-          <div className="flex-1 text-center md:text-left">
-            <h3 className="font-headline-md text-xl font-bold text-text-primary mb-1">Profile Picture</h3>
-            <p className="text-lg text-text-secondary mb-4">Recommended size: 400x400px. Max file size: 2MB</p>
-            <div className="flex flex-wrap justify-center md:justify-start gap-4">
-              <button
-                type="button"
-                onClick={handleUploadPhoto}
-                className="px-6 py-2 bg-primary-container text-white rounded-lg font-bold hover:brightness-110 active:scale-95 transition-all cursor-pointer text-sm uppercase tracking-wider crimson-glow"
-              >
-                Upload Photo
-              </button>
-              <span className="text-sm text-text-secondary flex items-center">JPG, PNG or GIF</span>
-            </div>
-          </div>
+        <div className="px-8 py-8 border-t border-white/5">
+          <ImageUploader
+            mode="avatar"
+            aspectRatio={1}
+            value={avatar}
+            onChange={(newAvatar) => setAvatar(newAvatar)}
+            onImageRemove={() => setAvatar('')}
+            label="Profile Picture"
+            description="Recommended size: 400x400px. Select, crop, and position your photo."
+          />
         </div>
 
         {/* Form Fields */}
@@ -216,9 +210,10 @@ export const EditProfilePage = () => {
           <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-white/5">
             <button
               type="submit"
-              className="flex-1 sm:flex-none px-8 py-3.5 bg-primary-container text-white rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all text-sm uppercase tracking-wider crimson-glow cursor-pointer"
+              disabled={isUploading || updateUserMutation.isPending}
+              className="flex-1 sm:flex-none px-8 py-3.5 bg-primary-container text-white rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all text-sm uppercase tracking-wider crimson-glow cursor-pointer disabled:opacity-50"
             >
-              Save Changes
+              {isUploading ? 'Uploading to R2...' : updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
             </button>
             <button
               type="button"

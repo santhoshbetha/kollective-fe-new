@@ -28,23 +28,23 @@ export const BusinessProposalCard = ({ prop }) => {
                                 {prop.category === 'Infrastructure' ? 'deck' : prop.category === 'Agriculture' ? 'agriculture' : 'electric_bolt'}
                             </span>
                         </div>
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-text-secondary/70">
+                        <span className="text-[16px] font-extrabold uppercase tracking-wider text-text-secondary/70">
                             {prop.category}
                         </span>
                     </div>
 
-                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold border uppercase tracking-wider ${statusColors}`}>
+                    <span className={`px-2 py-0.5 rounded-md text-[16px] font-extrabold border uppercase tracking-wider ${statusColors}`}>
                         {prop.status}
                     </span>
                 </div>
 
                 {/* Title */}
-                <h3 className="font-headline-sm text-base font-bold text-text-primary tracking-tight group-hover:text-primary-container transition-colors line-clamp-1">
+                <h2 className="font-headline-lg text-lg font-bold text-text-primary tracking-tight group-hover:text-primary-container transition-colors line-clamp-1">
                     {prop.title}
-                </h3>
+                </h2>
 
                 {/* Description */}
-                <p className="text-xs text-text-secondary leading-snug line-clamp-2 mt-1">
+                <p className="text-[16px] text-text-secondary leading-snug line-clamp-2 mt-1">
                     {prop.description}
                 </p>
             </div>
@@ -52,22 +52,22 @@ export const BusinessProposalCard = ({ prop }) => {
             <div className="space-y-3 pt-2">
                 {/* Progress Bar */}
                 <div className="space-y-1.5 bg-surface-container-lowest/40 p-2.5 rounded-xl border border-white/5">
-                    <div className="flex justify-between text-xs font-bold">
+                    <div className="flex justify-between text-md font-bold">
                         <span className="text-text-secondary">Goal: <span className="text-text-primary">${prop.fundingGoal ? prop.fundingGoal.toLocaleString() : '0'}</span></span>
                         <span className="text-primary-container font-extrabold">{prop.percent}% funded</span>
                     </div>
                     <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden border border-white/5">
                         <div className="h-full bg-primary-container" style={{ width: `${Math.min(prop.percent || 0, 100)}%` }}></div>
                     </div>
-                    <div className="flex justify-between text-[11px] text-text-secondary/70 font-mono">
+                    <div className="flex justify-between text-md text-text-secondary/80 font-mono">
                         <span>{prop.daysLeft || 0} days left</span>
                         <span>{prop.participants || 0} backers</span>
                     </div>
                 </div>
 
                 {/* Investment Info */}
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5">
-                    <span className="text-text-secondary/70">Min Investment:</span>
+                <div className="flex items-center justify-between text-lg pt-1 border-t border-white/5">
+                    <span className="text-text-secondary/90">Min Investment:</span>
                     <span className="text-text-primary font-bold">${prop.minInvest} - ${prop.maxInvest >= 1000 ? `${prop.maxInvest / 1000}k` : prop.maxInvest}</span>
                 </div>
             </div>

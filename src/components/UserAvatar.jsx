@@ -19,7 +19,7 @@ export function UserAvatar({
     const isOnline = usePresenceStore((state) => (userId ? !!state.activeList[String(userId)] : false));
 
     const userName = name || user?.name || user?.username || user?.handle || '';
-    const avatarUrl = avatar !== undefined ? avatar : user?.avatar;
+    const avatarUrl = (avatar !== undefined && avatar !== '') ? avatar : (user?.avatar || user?.avatar_url);
     const isDefaultAvatarUrl = !avatarUrl || avatarUrl === '/default-avatar.jpg';
 
     const initials = getAvatarInitials(userName);

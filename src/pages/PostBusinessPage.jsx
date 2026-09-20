@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateBusiness } from '../features/businesses/useBusinessesFeature';
 import { useAuthStore } from '../store/auth/useAuthStore';
+import { ImageUploader } from '../components/ImageUploader';
+import { uploadProfileImageToR2 } from '../utils/uploadMedia';
 
 export const PostBusinessPage = () => {
   const navigate = useNavigate();
@@ -67,7 +69,7 @@ export const PostBusinessPage = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.description.trim()) {
       triggerToast('Please fill out the business name and description.', 'error');
@@ -76,65 +78,77 @@ export const PostBusinessPage = () => {
 
     setIsSubmitting(true);
 
-    // Formatting business details for the database model
-    const businessData = {
-      name: formData.name.trim(),
-      category: formData.category,
-      legalStructure: formData.legalStructure,
-      legal_structure: formData.legalStructure,
-      description: formData.description.trim(),
-      address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip}`,
-      street: formData.address,
-      city: formData.city,
-      state: formData.state,
-      zip: formData.zip,
-      email: formData.email,
-      phone: formData.phone,
-      website: formData.website || 'kollective.social',
-      established: parseInt(formData.established, 10) || new Date().getFullYear(),
-      year_established: parseInt(formData.established, 10) || new Date().getFullYear(),
-      employees: formData.employees,
-      number_of_employees: parseInt(formData.employees, 10) || 5,
-      hours: formData.hours,
-      business_hours: formData.hours,
-      image: formData.image,
-      profile_image_url: formData.image,
-      services: selectedTags,
-      tags: selectedTags,
-      owner: user.username,
-      ownerAvatar: user.avatar_url,
-      rating: 5.0,
-      reviewsCount: 0,
-      verified: false,
-      open: true,
-      metadata: {
-        business_hours: formData.hours,
+    try {
+      let finalImageUrl = formData.image;
+      if (formData.image && (formData.image.startsWith('data:') || formData.image instanceof File)) {
+        finalImageUrl = await uploadProfileImageToR2(formData.image, 'business');
+      }
+
+      // Formatting business details for the database model
+      const businessData = {
+        name: formData.name.trim(),
+        category: formData.category,
+        legalStructure: formData.legalStructure,
+        legal_structure: formData.legalStructure,
+        description: formData.description.trim(),
+        address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip}`,
+        street: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
+        email: formData.email,
+        phone: formData.phone,
+        website: formData.website || 'kollective.social',
+        established: parseInt(formData.established, 10) || new Date().getFullYear(),
+        year_established: parseInt(formData.established, 10) || new Date().getFullYear(),
+        employees: formData.employees,
+        number_of_employees: parseInt(formData.employees, 10) || 5,
         hours: formData.hours,
+        business_hours: formData.hours,
+        image: finalImageUrl,
+        profile_image_url: finalImageUrl,
         services: selectedTags,
         tags: selectedTags,
-        employee_range: formData.employees,
-        established: parseInt(formData.established, 10) || new Date().getFullYear(),
+        owner: user.username,
+        ownerAvatar: user.avatar_url,
         rating: 5.0,
-        reviews_count: 0,
-        owner_handle: user.username,
-        owner_avatar: user.avatar_url
-      }
-    };
+        reviewsCount: 0,
+        verified: false,
+        open: true,
+        metadata: {
+          business_hours: formData.hours,
+          hours: formData.hours,
+          services: selectedTags,
+          tags: selectedTags,
+          employee_range: formData.employees,
+          established: parseInt(formData.established, 10) || new Date().getFullYear(),
+          rating: 5.0,
+          reviews_count: 0,
+          owner_handle: user.username,
+          owner_avatar: user.avatar_url,
+          image_url: finalImageUrl
+        }
+      };
 
-    createBusinessMutation.mutate(businessData, {
-      onSuccess: () => {
-        triggerToast('Enterprise successfully registered!', 'success');
-        setTimeout(() => {
+      createBusinessMutation.mutate(businessData, {
+        onSuccess: () => {
+          triggerToast('Enterprise successfully registered!', 'success');
+          setTimeout(() => {
+            setIsSubmitting(false);
+            navigate('/businesses');
+          }, 1200);
+        },
+        onError: (err) => {
           setIsSubmitting(false);
-          navigate('/businesses');
-        }, 1200);
-      },
-      onError: (err) => {
-        setIsSubmitting(false);
-        console.error('Error listing business:', err);
-        triggerToast(err?.message || 'Failed to register business. Please check details and try again.', 'error');
-      }
-    });
+          console.error('Error listing business:', err);
+          triggerToast(err?.message || 'Failed to register business. Please check details and try again.', 'error');
+        }
+      });
+    } catch (err) {
+      console.error('Error during image upload:', err);
+      triggerToast('Failed to upload business image. Please try again.', 'error');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -465,35 +479,27 @@ export const PostBusinessPage = () => {
 
         {/* Right Column: Preview & Image */}
         <div className="lg:col-span-4 space-y-8">
-          {/* Section: Image URL */}
-          <section className="glass-panel p-8 rounded-2xl border border-white/5 text-center">
-            <h3 className="font-headline-md text-lg font-bold text-text-primary mb-6 text-left">Business Profile Image</h3>
+          {/* Section: Image Upload & Preview */}
+          <section className="glass-panel p-8 rounded-2xl border border-white/5 space-y-4">
+            <h3 className="font-headline-md text-lg font-bold text-text-primary text-left">Business Profile Image</h3>
 
-            <div className="group relative aspect-video w-full rounded-2xl bg-surface-container overflow-hidden border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-3">
-              {formData.image ? (
-                <img
-                  alt="Business Hero"
-                  className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-75 transition-opacity"
-                  src={formData.image}
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container mb-2">
-                  <span className="material-symbols-outlined text-3xl">storefront</span>
-                </div>
-              )}
-              <div className="relative z-10 flex flex-col items-center p-4">
-                <span className="material-symbols-outlined text-3xl text-white mb-2">image</span>
-                <p className="text-lg font-bold text-white">Profile Image Preview</p>
-              </div>
-            </div>
+            <ImageUploader
+              mode="banner"
+              aspectRatio={16 / 9}
+              value={formData.image}
+              onChange={(newImage) => setFormData((prev) => ({ ...prev, image: newImage }))}
+              onImageRemove={() => setFormData((prev) => ({ ...prev, image: '' }))}
+              label="Upload Business Image"
+              description="Recommended 16:9 format. Drag & drop, crop, and position your hero photo."
+            />
 
-            <div className="mt-4 text-left space-y-2">
-              <label className="text-[14px] font-bold text-text-secondary uppercase tracking-wider block">Image URL</label>
+            <div className="text-left space-y-2 pt-2">
+              <label className="text-[14px] font-bold text-text-secondary uppercase tracking-wider block">Or enter Image URL directly</label>
               <input
                 name="image"
-                value={formData.image}
+                value={formData.image.startsWith('data:') ? '[Cropped Upload Image]' : formData.image}
                 onChange={handleInputChange}
-                className="w-full bg-surface-ink border border-white/10 rounded-xl px-4 py-2.5 text-text-primary text-lg focus:border-primary-container focus:ring-1 focus:ring-primary-container"
+                className="w-full bg-surface-ink border border-white/10 rounded-xl px-4 py-2.5 text-text-primary text-sm focus:border-primary-container focus:ring-1 focus:ring-primary-container"
                 placeholder="Enter image URL..."
                 type="text"
               />

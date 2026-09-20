@@ -73,11 +73,11 @@ export const MainLayout = () => {
         { name: 'Explore', path: '/explore', icon: 'explore' },
         ...(canAccessLocalizedFeatures ? [{ name: 'Local Businesses', path: '/businesses', icon: 'storefront' }] : []),
         ...(canAccessLocalizedFeatures ? [{ name: 'Classifieds', path: '/classifieds', icon: 'newspaper' }] : []),
-        { name: 'Organize', path: '/organize', icon: 'campaign' },
-        { name: 'Civic Assembly', path: '/campaigns/local', icon: 'groups' },
-        { name: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' },
-        { name: 'Notifications', path: '/notifications', icon: 'notifications' },
-        { name: 'Settings', path: '/settings', icon: 'settings' },
+        ...(isAuthenticated ? [{ name: 'Organize', path: '/organize', icon: 'campaign' }] : []),
+        ...(isAuthenticated ? [{ name: 'Civic Assembly', path: '/campaigns/local', icon: 'groups' }] : []),
+        ...(isAuthenticated ? [{ name: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' }] : []),
+        ...(isAuthenticated ? [{ name: 'Notifications', path: '/notifications', icon: 'notifications' }] : []),
+        ...(isAuthenticated ? [{ name: 'Settings', path: '/settings', icon: 'settings' }] : []),
     ];
 
     const adminNavItems = [];
@@ -285,29 +285,31 @@ export const MainLayout = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 sm:gap-4">
-                        {/* 🔄 Interactive Account Switcher */}
-                        <AccountSwitcher />
+                    {isAuthenticated && (
+                        <div className="flex items-center gap-3 sm:gap-4">
+                            {/* 🔄 Interactive Account Switcher */}
+                            <AccountSwitcher />
 
-                        <button
-                            onClick={toggleTheme}
-                            className="flex items-center gap-1 cursor-pointer text-text-secondary hover:text-text-primary transition-colors focus:outline-none bg-transparent border-none"
-                            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                        >
-                            <span className="material-symbols-outlined text-[22px]">
-                                {theme === 'dark' ? 'light_mode' : 'dark_mode'}
-                            </span>
-                        </button>
+                            <button
+                                onClick={toggleTheme}
+                                className="flex items-center gap-1 cursor-pointer text-text-secondary hover:text-text-primary transition-colors focus:outline-none bg-transparent border-none"
+                                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                            >
+                                <span className="material-symbols-outlined text-[22px]">
+                                    {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+                                </span>
+                            </button>
 
-                        <div onClick={() => navigate('/notifications')} className="relative cursor-pointer text-text-secondary hover:text-white transition-colors">
-                            <span className="material-symbols-outlined text-[22px]">notifications</span>
-                            <span className="absolute top-0 right-0 w-2 h-2 bg-primary-container rounded-full border-2 border-surface"></span>
+                            <div onClick={() => navigate('/notifications')} className="relative cursor-pointer text-text-secondary hover:text-white transition-colors">
+                                <span className="material-symbols-outlined text-[22px]">notifications</span>
+                                <span className="absolute top-0 right-0 w-2 h-2 bg-primary-container rounded-full border-2 border-surface"></span>
+                            </div>
+
+                            <div onClick={() => navigate('/settings')} className="cursor-pointer text-text-secondary hover:text-white transition-colors">
+                                <span className="material-symbols-outlined text-[22px]">settings</span>
+                            </div>
                         </div>
-
-                        <div onClick={() => navigate('/settings')} className="cursor-pointer text-text-secondary hover:text-white transition-colors">
-                            <span className="material-symbols-outlined text-[22px]">settings</span>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </header>
 

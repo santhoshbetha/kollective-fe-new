@@ -46,7 +46,32 @@ export async function apiFetch(endpoint, options = {}, queryClient) {
         throw new Error('Session expired. Please log in again.');
     }
 
-    return response.json();
+    const contentType = response.headers.get('content-type') || '';
+    let data = null;
+
+    if (contentType.includes('application/json')) {
+        try {
+            data = await response.json();
+        } catch (e) {
+            data = null;
+        }
+    } else {
+        const text = await response.text();
+        if (!response.ok) {
+            throw new Error(text || `Server error (${response.status})`);
+        }
+        return text;
+    }
+
+    if (!response.ok) {
+        const errorMessage = data?.message || data?.error || `Request failed with status ${response.status}`;
+        const err = new Error(errorMessage);
+        err.status = response.status;
+        err.data = data;
+        throw err;
+    }
+
+    return data;
 }
 
 export async function apiFetchPosts(url, options = {}) {

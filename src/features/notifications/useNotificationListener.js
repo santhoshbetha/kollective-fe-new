@@ -21,7 +21,7 @@ export function useNotificationListener() {
         socket.connect();
 
         // 2. Bind into the specific user notification room channel matrix
-        const channel = socket.channel(`notifications:user:${accountId}`, {});
+        const channel = socket.channel(`user_notifications:${accountId}`, {});
 
         channel.join()
             .receive("ok", () => console.log("🎰 Real-time notification array stream synchronized securely."))

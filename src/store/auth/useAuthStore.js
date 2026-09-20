@@ -14,12 +14,14 @@ export const buildPersonalAccount = (user) => {
         avatar: user.avatar || '/default-avatar.jpg',
         role: user.role || 'citizen',
         badge_type: user.badge_type || 'citizen',
+        state: user.state || user.political_location?.state || null,
+        state_updated_at: user.state_updated_at || user.political_location?.state_updated_at || null,
     };
 };
 
 export const DEFAULT_MOCK_USER = {
     id: 'usr-1',
-    name: 'Julian Thorne',
+    name: 'Julian Thorne1',
     username: 'j_thorne',
     handle: '@j_thorne',
     avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c',
@@ -200,20 +202,36 @@ export const useAuthStore = create(
                 if (state) {
                     state.isHydrated = true;
 
-                    // If app started fresh in dev/mock environment, seed default user
-                    if (!state.user && !state.token) {
-                        state.user = DEFAULT_MOCK_USER;
-                        state.token = 'mock-jwt-token-initial';
-                        state.isAuthenticated = true;
-                    }
+                    // 🛡️ ONLY seed mock data if we are NOT running in production
+                    // If using Vite, replace process.env.NODE_ENV !== 'production' with import.meta.env.DEV
+                    const isDev = import.meta.env.DEV;
 
-                    // Backfill memberships if user has no memberships linked yet
-                    if (state.user && (!state.user.memberships || state.user.memberships.length === 0)) {
-                        state.user.memberships = DEFAULT_MOCK_USER.memberships;
-                    }
+                    if (isDev) {
+                        // If app started fresh in dev/mock environment, seed default user
+                        if (!state.user && !state.token) {
+                            state.user = DEFAULT_MOCK_USER;
+                            state.token = 'mock-jwt-token-initial';
+                            state.isAuthenticated = true;
+                        }
 
-                    if (!state.activeAccount && state.user) {
-                        state.activeAccount = buildPersonalAccount(state.user);
+                        // Backfill memberships if user has no memberships linked yet
+                        if (state.user && (!state.user.memberships || state.user.memberships.length === 0)) {
+                            state.user.memberships = DEFAULT_MOCK_USER.memberships;
+                        }
+
+                        if (!state.activeAccount && state.user) {
+                            state.activeAccount = buildPersonalAccount(state.user);
+                        }
+                    } else {
+                        // 🌐 PRODUCTION LIFECYCLE SANITIZATION
+                        // If the user isn't authenticated, ensure context fields are explicitly flatlined
+                        if (!state.isAuthenticated || !state.token) {
+                            state.token = null;
+                            state.user = null;
+                            state.isAuthenticated = false;
+                            state.activeAccount = null;
+                            state.permissions = [];
+                        }
                     }
                 }
             },

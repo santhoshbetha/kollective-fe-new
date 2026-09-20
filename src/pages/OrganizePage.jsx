@@ -24,7 +24,7 @@ export const OrganizePage = () => {
       {/* Center Content: Action Feed */}
       <div className="flex-1">
         {/* Header & Tabs Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6 border-b border-white/5 pb-8">
+        <div className="flex flex-col lg:flex-row justify-between items-start md:items-end mb-8 gap-6 border-b border-white/5 pb-8">
           <div className='flex flex-col'>
             <div className='flex items-center gap-0'>
               <img src="../KFISTS.png" alt="Organize Logo" className="w-16" />

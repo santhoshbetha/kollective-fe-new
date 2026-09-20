@@ -205,7 +205,7 @@ export const ClassifiedsDirectoryPage = () => {
                     <div className="absolute -inset-x-6 top-1/2 -translate-y-1/2 h-1/2 bg-primary/5 blur-xl rounded-full -z-10"></div>
                 </div>
 
-                <p className="font-mono text-xs text-primary mt-1 tracking-widest uppercase font-bold">
+                <p className="font-mono text-lg text-primary mt-1 tracking-widest uppercase font-bold">
                     📰 Hyper-Local Classified Advertisements • Updated Live
                 </p>
 
@@ -230,7 +230,7 @@ export const ClassifiedsDirectoryPage = () => {
             </header>
 
             {/* Retro Ribbon Sub-Controls / Newspaper Info Banner */}
-            <div className="grid grid-cols-1 md:grid-cols-3 items-center border-y-2 border-dashed border-outline-variant py-3 font-mono text-[11px] text-on-surface-variant gap-4 select-none bg-surface-container/20 px-4 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 items-center border-y-2 border-dashed border-outline-variant py-3 font-mono text-[16px] text-on-surface-variant gap-4 select-none bg-surface-container/20 px-4 rounded-lg">
                 <div className="text-left font-bold tracking-wider">VOL. IV // NO. 206</div>
                 <div className="relative w-full">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[18px]">search</span>
@@ -239,7 +239,7 @@ export const ClassifiedsDirectoryPage = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Filter the bulletin archives..."
-                        className="w-full bg-surface-container border border-outline-variant rounded-xl py-2 pl-9 pr-4 text-xs font-mono text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/30 transition-colors"
+                        className="w-full bg-surface-container border border-outline-variant rounded-xl py-2 pl-9 pr-4 text-xl font-mono text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/30 transition-colors"
                     />
                 </div>
                 <div className="text-right hidden md:block font-bold tracking-wider">POSTING TIMELINES: 7-DAY FLASH MAX</div>
@@ -291,8 +291,8 @@ export const ClassifiedsDirectoryPage = () => {
 
                                 <div>
                                     {/* Card Metadata header */}
-                                    <div className="flex justify-between items-baseline font-mono text-[11px] mb-4 text-on-surface-variant">
-                                        <span className="font-bold border border-outline-variant px-2 py-0.5 rounded bg-surface-container-high/50 uppercase tracking-wider text-[10px]">
+                                    <div className="flex justify-between items-baseline font-mono text-[14px] mb-4 text-on-surface-variant">
+                                        <span className="font-bold border border-outline-variant px-2 py-0.5 rounded bg-surface-container-high/50 uppercase tracking-wider text-[14px]">
                                             {ad.category}
                                         </span>
                                         <span className="text-amber-500/90 font-bold flex items-center gap-1">
@@ -302,25 +302,25 @@ export const ClassifiedsDirectoryPage = () => {
                                     </div>
 
                                     {/* Ad Title */}
-                                    <h3 className="font-bold text-lg text-on-surface group-hover:text-primary transition-colors tracking-tight line-clamp-1 underline-offset-4 group-hover:underline mb-2">
+                                    <h3 className="font-bold text-xl text-on-surface group-hover:text-primary transition-colors tracking-tight line-clamp-1 underline-offset-4 group-hover:underline mb-2">
                                         {ad.title}
                                     </h3>
 
                                     {/* Ad text body */}
-                                    <p className="text-sm text-on-surface-variant leading-relaxed mb-6 font-serif italic font-medium line-clamp-2 h-10 overflow-hidden text-ellipsis">
+                                    <p className="text-lg text-on-surface-variant leading-relaxed mb-6 font-serif italic font-medium line-clamp-2 h-20 overflow-hidden text-ellipsis">
                                         {ad.desc}
                                     </p>
                                 </div>
 
                                 {/* Card Footer row */}
-                                <div className="border-t border-dashed border-outline-variant/60 pt-4 flex items-center justify-between font-mono text-xs text-on-surface-variant mt-auto">
+                                <div className="border-t border-dashed border-outline-variant/60 pt-4 flex items-center justify-between font-mono text-[14px] text-on-surface-variant mt-auto">
                                     <div className="flex flex-col">
                                         <span className="text-emerald-400 font-bold text-base bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded shadow-inner">
                                             {ad.price}
                                         </span>
-                                        <span className="text-[10px] text-on-surface-variant/60 mt-1 font-bold">{ad.user}</span>
+                                        <span className="text-[16px] text-on-surface-variant/60 mt-1 font-bold">{ad.user}</span>
                                     </div>
-                                    <div className="flex items-center gap-1 text-[11px] text-on-surface-variant/80 bg-surface-container-high/50 px-2.5 py-1 rounded-lg border border-outline-variant/40 shadow-xs">
+                                    <div className="flex items-center gap-1 text-[16px] text-on-surface-variant/80 bg-surface-container-high/50 px-2.5 py-1 rounded-lg border border-outline-variant/40 shadow-xs">
                                         <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
                                         <span>{ad.location}</span>
                                     </div>

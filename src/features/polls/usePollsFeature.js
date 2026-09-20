@@ -4,12 +4,19 @@ import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
 // Hook A: Replaces polls and pollsLoading
-export function usePollsQuery() {
+export function usePollsQuery(scope = 'all', status = 'All', country = null) {
     const { data, isPending } = useQuery({
-        queryKey: ['polls', 'stream'],
+        queryKey: ['polls', 'stream', scope, status, country],
         queryFn: async () => {
             try {
-                const res = await apiFetch('/polls/stream');
+                let path = `/polls/stream?scope=${encodeURIComponent(scope)}`;
+                if (status && status !== 'All') {
+                    path += `&status=${encodeURIComponent(status)}`;
+                }
+                if (country) {
+                    path += `&country=${encodeURIComponent(country)}`;
+                }
+                const res = await apiFetch(path);
                 return res?.data || res?.polls || res;
             } catch (err) {
                 console.warn('Backend polls query failed, falling back to mockApi', err);

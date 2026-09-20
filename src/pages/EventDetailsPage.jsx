@@ -3,6 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 //import { useEventsQuery } from '../features/events/useEventsQuery';
 import { useEventsQuery } from '../features/events/useEventsFeature';
 import { useToggleEventInterest, useToggleEventAttendance, useAddEventComment } from '../features/events/useEventsFeature';
+import { EventDateBadge, AttendeeStack } from '../features/events/EventComponents';
+import { getDisplayLocation, getOrganizerName } from '../utils/eventUtils';
+import { CategoryGraphic } from '../components/CategoryGraphic';
 
 export const EventDetailsPage = () => {
   const { id } = useParams();
@@ -18,6 +21,7 @@ export const EventDetailsPage = () => {
   const [commentText, setCommentText] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
@@ -27,6 +31,8 @@ export const EventDetailsPage = () => {
   };
 
   const event = events?.find((e) => e.id === id);
+
+  console.log("event", event);
 
   if (eventsLoading) {
     return (
@@ -58,6 +64,10 @@ export const EventDetailsPage = () => {
       </div>
     );
   }
+
+  const organizerName = getOrganizerName(event?.organizerName || event?.organizer);
+  const organizerAvatar = event?.organizerAvatar || (typeof event?.organizer === 'object' ? (event?.organizer?.avatar_url || event?.organizer?.avatar) : '');
+  const eventImageUrl = event?.image || event?.cover_image_url || event?.banner_url;
 
   const handlePostComment = (e) => {
     e.preventDefault();
@@ -112,20 +122,27 @@ export const EventDetailsPage = () => {
           {/* Cover and header card */}
           <div className="bg-surface-container rounded-3xl overflow-hidden border border-outline-variant shadow-xl">
             {/* Cinematic banner with background blur and main image */}
-            <div className="relative h-56 md:h-80 overflow-hidden bg-black/40">
-              <img
-                alt={`${event?.title} banner background`}
-                className="w-full h-full object-cover object-center scale-110 blur-[4px] brightness-[0.4]"
-                src={event?.image}
-              />
-              <div className="absolute inset-0 flex items-center justify-center p-6 md:p-10">
+            {eventImageUrl && !imgError ? (
+              <div className="relative h-56 md:h-80 overflow-hidden bg-black/40">
                 <img
-                  alt={event?.title}
-                  className="max-h-full rounded-2xl shadow-2xl border border-outline-variant object-cover aspect-[16/9]"
-                  src={event?.image}
+                  alt={`${event?.title} banner background`}
+                  className="w-full h-full object-cover object-center scale-110 blur-[4px] brightness-[0.4]"
+                  src={eventImageUrl}
                 />
+                <div className="absolute inset-0 flex items-center justify-center p-6 md:p-10">
+                  <img
+                    alt={event?.title}
+                    className="max-h-full rounded-2xl shadow-2xl border border-outline-variant object-cover aspect-[16/9]"
+                    src={eventImageUrl}
+                    onError={() => setImgError(true)}
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="relative h-56 md:h-80 overflow-hidden">
+                <CategoryGraphic category={event?.category} title={event?.title} className="w-full h-full" />
+              </div>
+            )}
 
             <div className="p-6 md:p-8">
               <div className="flex justify-between items-start mb-6 gap-4">
@@ -134,19 +151,19 @@ export const EventDetailsPage = () => {
                     {event?.title}
                   </h2>
                   <div className="flex items-center gap-2.5 text-text-secondary">
-                    {event?.organizerAvatar ? (
+                    {organizerAvatar ? (
                       <img
-                        alt={event?.organizer}
+                        alt={organizerName}
                         className="w-6 h-6 rounded-full object-cover border border-primary-container/20"
-                        src={event?.organizerAvatar}
+                        src={organizerAvatar}
                       />
                     ) : (
                       <div className="w-6 h-6 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container font-black text-sm">
-                        {event?.organizer.charAt(0)}
+                        {organizerName.charAt(0)}
                       </div>
                     )}
                     <span className="text-sm md:text-sm">
-                      Organized by <strong className="text-text-primary font-medium">{event?.organizer}</strong>
+                      Organized by <strong className="text-text-primary font-medium">{organizerName}</strong>
                     </span>
                     <span className="material-symbols-outlined text-blue-400 text-sm">verified</span>
                   </div>
@@ -172,7 +189,9 @@ export const EventDetailsPage = () => {
                 </div>
                 <div className="flex items-center gap-3 text-text-secondary">
                   <span className="material-symbols-outlined text-primary-container text-xl">location_on</span>
-                  <span className="text- sm md:text-lg font-semibold truncate" title={event?.location}>{event?.location}</span>
+                  <span className="text-sm md:text-lg font-semibold truncate" title={getDisplayLocation(event?.location, event)}>
+                    {getDisplayLocation(event?.location, event)}
+                  </span>
                 </div>
                 <div className="flex items-center gap-3 text-text-secondary">
                   <span className="material-symbols-outlined text-primary-container text-xl">group</span>
@@ -318,7 +337,7 @@ export const EventDetailsPage = () => {
                               <span className="text-sm md:text-base font-bold text-text-primary truncate">
                                 {comment.author?.name}
                               </span>
-                              {comment.author?.name === event?.organizer && (
+                              {comment.author?.name === organizerName && (
                                 <span className="bg-primary-container/20 text-primary-container text-[12px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
                                   Organizer
                                 </span>
@@ -363,7 +382,7 @@ export const EventDetailsPage = () => {
                                     <span className="text-sm md:text-base font-bold text-text-primary truncate">
                                       {reply.author?.name}
                                     </span>
-                                    {(reply.author?.name === event?.organizer || reply.role === 'Organizer') && (
+                                    {(reply.author?.name === organizerName || reply.role === 'Organizer') && (
                                       <span className="bg-primary-container/20 text-primary-container text-[12px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
                                         Organizer
                                       </span>
@@ -414,7 +433,7 @@ export const EventDetailsPage = () => {
               </div>
               <div className="overflow-hidden">
                 <h4 className="text-text-primary font-bold text-sm truncate">
-                  {event?.organizer}
+                  {organizerName}
                 </h4>
                 <p className="text-[14px] text-text-secondary uppercase tracking-wider font-semibold">
                   Verified Hub

@@ -87,14 +87,16 @@ export function useUpdateUser() {
     const queryClient = useQueryClient();
     const setSession = useAuthStore((state) => state.setSession);
     const token = useAuthStore((state) => state.token);
+    const currentUser = useAuthStore((state) => state.user);
 
     return useMutation({
         mutationFn: async (updatedData) => {
             try {
-                return await apiFetch('/profile', {
+                const res = await apiFetch('/profile', {
                     method: 'PUT',
                     body: JSON.stringify(updatedData),
                 });
+                return res?.data || res?.user || res;
             } catch (err) {
                 console.warn('Backend update user failed, falling back to mockApi', err);
                 return api.updateUser(updatedData);
@@ -106,7 +108,16 @@ export function useUpdateUser() {
             queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
 
             if (updatedUser) {
-                setSession(token, updatedUser);
+                const userObj = updatedUser.data || updatedUser.user || updatedUser;
+                const mergedUser = {
+                    ...currentUser,
+                    ...userObj,
+                    avatar: userObj.avatar_url || userObj.avatar || currentUser?.avatar,
+                    avatar_url: userObj.avatar_url || userObj.avatar || currentUser?.avatar_url,
+                    banner: userObj.cover_image_url || userObj.banner || userObj.header || currentUser?.banner,
+                    cover_image_url: userObj.cover_image_url || userObj.banner || userObj.header || currentUser?.cover_image_url,
+                };
+                setSession(token, mergedUser);
             }
         },
     });
