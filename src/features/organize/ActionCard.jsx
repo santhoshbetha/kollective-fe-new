@@ -33,7 +33,7 @@ export const ActionCard = ({ action, setToastMessage }) => {
             <div>
                 {/* Header Row */}
                 <div className="flex justify-between items-center mb-2.5">
-                    <span className={`px-2.5 py-0.5 border text-[10px] font-extrabold uppercase tracking-wider rounded-md ${typeBadgeStyles}`}>
+                    <span className={`px-2.5 py-0.5 border text-[14px] font-bold uppercase tracking-wider rounded-md ${typeBadgeStyles}`}>
                         {action?.type || 'Action'}
                     </span>
                     <button
@@ -51,13 +51,13 @@ export const ActionCard = ({ action, setToastMessage }) => {
                 {/* Title */}
                 <h3
                     onClick={() => navigate(`/organize/${action?.id}`)}
-                    className="text-base sm:text-lg font-bold text-text-primary hover:text-primary-container transition-colors line-clamp-1 cursor-pointer tracking-tight mb-2"
+                    className="text-base sm:text-2xl font-bold text-text-primary hover:text-primary-container transition-colors line-clamp-1 cursor-pointer tracking-tight mb-2"
                 >
                     {action?.title}
                 </h3>
 
                 {/* Metadata List */}
-                <div className="space-y-1.5 text-xs text-text-secondary/80">
+                <div className="space-y-1.5 text-[16px] text-text-secondary/80">
                     <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary-container text-[15px] shrink-0">calendar_today</span>
                         <span className="line-clamp-1 font-medium">{action?.time}</span>
@@ -85,11 +85,10 @@ export const ActionCard = ({ action, setToastMessage }) => {
                         rsvpMutation.mutate({ actionId: action?.id, status: newStatus });
                         triggerToast(newStatus === 'Attending' ? 'Marked as Attending!' : 'RSVP Cancelled');
                     }}
-                    className={`flex-1 py-2 rounded-lg font-extrabold text-xs transition-all uppercase tracking-wider cursor-pointer border-none flex items-center justify-center gap-1.5 active:scale-95 ${
-                        isAttending
-                            ? 'bg-primary-container text-white shadow-md shadow-primary-container/20'
-                            : 'bg-surface-container-high text-text-secondary hover:bg-surface-container-highest hover:text-text-primary'
-                    }`}
+                    className={`flex-1 py-2 rounded-lg font-extrabold text-xs transition-all uppercase tracking-wider cursor-pointer border-none flex items-center justify-center gap-1.5 active:scale-95 ${isAttending
+                        ? 'bg-primary-container text-white shadow-md shadow-primary-container/20'
+                        : 'bg-surface-container-high text-text-secondary hover:bg-surface-container-highest hover:text-text-primary'
+                        }`}
                 >
                     <span className="material-symbols-outlined text-[14px]">
                         {isAttending ? 'check_circle' : 'event_available'}
@@ -105,11 +104,10 @@ export const ActionCard = ({ action, setToastMessage }) => {
                         rsvpMutation.mutate({ actionId: action?.id, status: newStatus });
                         triggerToast(newStatus === 'Interested' ? 'Marked as Interested!' : 'RSVP Cancelled');
                     }}
-                    className={`flex-1 py-2 rounded-lg font-extrabold text-xs transition-all uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
-                        isInterested
-                            ? 'bg-secondary text-on-secondary shadow-md'
-                            : 'bg-surface-container-high/60 text-text-secondary hover:bg-surface-container-high hover:text-text-primary border border-white/5'
-                    }`}
+                    className={`flex-1 py-2 rounded-lg font-extrabold text-xs transition-all uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${isInterested
+                        ? 'bg-secondary text-on-secondary shadow-md'
+                        : 'bg-surface-container-high/60 text-text-secondary hover:bg-surface-container-high hover:text-text-primary border border-white/5'
+                        }`}
                 >
                     <span className="material-symbols-outlined text-[14px]">
                         {isInterested ? 'star' : 'star_outline'}

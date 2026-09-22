@@ -47,7 +47,7 @@ export function KollectiveSpinner({
       {/* Center Kollective Thunderbolt Logo Emblem */}
       <div className="absolute flex items-center justify-center animate-pulse" style={{ animationDuration: '1.8s' }}>
         <img
-          src="/KThunder.png"
+          src="/Shield&WINGS.png"
           alt="Kollective Loading"
           className={`${currentSize.logo} w-auto object-contain drop-shadow-[0_0_12px_rgba(204,3,59,0.8)]`}
           onError={(e) => {

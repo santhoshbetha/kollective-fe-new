@@ -437,10 +437,10 @@ export const UserProfilePage = () => {
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary tracking-tight">{profile.name}</h1>
                 {profile.badge_type && (
-                  <VerificationBadge type={profile.badge_type.toLowerCase()} />
+                  <VerificationBadge type={profile.badge_type.toLowerCase()} size="xl" />
                 )}
                 {!profile.badge_type && (cleanUsername === 'alsweigart' || cleanUsername === 'marcus_vane' || profile.type === 'organization') && (
-                  <span className="material-symbols-outlined text-green-400 text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span className="material-symbols-outlined text-green-400 text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     verified
                   </span>
                 )}
@@ -618,15 +618,15 @@ export const UserProfilePage = () => {
 
             {/* Stats Row */}
             <div className="flex gap-8 border-t border-white/5 pt-4">
-              <div className="flex gap-1.5 text-sm">
+              <div className="flex gap-1.5 text-lg">
                 <span className="font-extrabold text-text-primary">{profile.postsCount}</span>
                 <span className="text-text-secondary">posts</span>
               </div>
-              <div className="flex gap-1.5 text-sm">
+              <div className="flex gap-1.5 text-lg">
                 <span className="font-extrabold text-text-primary">{profile.followingCount}</span>
                 <span className="text-text-secondary">following</span>
               </div>
-              <div className="flex gap-1.5 text-sm">
+              <div className="flex gap-1.5 text-lg">
                 <span className="font-extrabold text-text-primary">{profile.followersCount}</span>
                 <span className="text-text-secondary">followers</span>
               </div>
@@ -747,7 +747,7 @@ export const UserProfilePage = () => {
               </p>
             </div>
           ) : (
-            <div className="flex flex-col border border-[#262626] bg-[#141414] rounded-[16px] overflow-hidden shadow-2xl">
+            <div className="flex flex-col border border-[#262626] bg-[#141414] overflow-hidden shadow-2xl">
               {finalUserPosts?.map((post) => (
                 <PostCard key={post?.id} post={post} />
               ))}

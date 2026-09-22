@@ -72,10 +72,10 @@ export const SettingsPage = () => {
     };
 
     return (
-        <div className="max-w-[1280px] mx-auto flex flex-col lg:flex-row gap-8 pb-20 w-full animate-in fade-in duration-200">
+        <div className="max-w-[1280px] mx-auto flex flex-col xl:flex-row gap-8 pb-20 w-full animate-in fade-in duration-200">
 
             {/* 🧭 LEFT SIDEBAR COLUMN: NAVIGATION STRIP TRACKING PANEL */}
-            <div className="w-full lg:w-80 flex flex-col gap-4 shrink-0 select-none">
+            <div className="w-full xl:w-80 flex flex-col gap-4 shrink-0 select-none">
                 <div className="flex justify-between items-center border-b border-white/5 pb-4">
                     <div>
                         <h1 className="text-2xl font-black text-text-primary tracking-tight">{t('settings_title')}</h1>

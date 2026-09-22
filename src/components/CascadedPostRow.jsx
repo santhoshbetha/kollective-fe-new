@@ -6,6 +6,7 @@ import { PostContent } from '../features/timeline/PostContent';
 import { PostMedia } from '../features/timeline/PostMedia';
 import { ImageLightbox } from '../features/timeline/ImageLightbox';
 import { usePostsStore } from '../store/usePostsStore';
+import { useAuthStore } from '../store/auth/useAuthStore';
 
 // 🛑 HOOK IS GONE FROM HERE: Moved strictly into state attributes passed down
 export function CascadedPostRow({
@@ -21,6 +22,26 @@ export function CascadedPostRow({
 }) {
     const storePost = usePostsStore((state) => propPost?.id ? state.entities[propPost.id] : null);
     const post = storePost || propPost;
+
+    const currentUser = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+
+    const isSelfPost = () => {
+        if (!post || !post.author) return false;
+        const currentUserId = currentUser?.id || activeAccount?.id;
+        const currentUsername = currentUser?.username || activeAccount?.username;
+        const currentName = currentUser?.name || activeAccount?.name;
+
+        const authorId = post.author.id;
+        const authorUsername = post.author.username || (post.author.handle ? post.author.handle.replace('@', '') : null);
+        const authorName = post.author.name;
+
+        if (currentUserId && authorId && String(currentUserId) === String(authorId)) return true;
+        if (currentUsername && authorUsername && currentUsername.toLowerCase() === authorUsername.toLowerCase()) return true;
+        if (currentName && authorName && currentName.toLowerCase() === authorName.toLowerCase()) return true;
+        return false;
+    };
+    const isSelf = isSelfPost();
 
     // Local simple component variables are completely safe
     const [showCw, setShowCw] = useState(false);
@@ -152,8 +173,10 @@ export function CascadedPostRow({
                     <div className="pt-4 flex items-center gap-8 text-text-secondary">
                         <button
                             type="button"
-                            onClick={(e) => { e.stopPropagation(); onReplyClick(post?.author?.name); }}
-                            className="flex items-center gap-1.5 text-sm hover:text-primary-container bg-transparent border-none cursor-pointer"
+                            disabled={isSelf}
+                            onClick={(e) => { e.stopPropagation(); if (!isSelf && onReplyClick) onReplyClick(post?.author?.name); }}
+                            title={isSelf ? "You cannot reply to your own post" : "Reply"}
+                            className={`flex items-center gap-1.5 text-sm bg-transparent border-none ${isSelf ? 'opacity-40 cursor-not-allowed text-text-secondary/50' : 'hover:text-primary-container cursor-pointer'}`}
                         >
                             <span className="material-symbols-outlined text-[18px]">reply</span>
                             <span>{post?.commentsCount || 0}</span>
@@ -161,8 +184,10 @@ export function CascadedPostRow({
 
                         <button
                             type="button"
-                            onClick={(e) => { e.stopPropagation(); onLike(post?.id); }}
-                            className={`flex items-center gap-1.5 text-sm transition-colors bg-transparent border-none cursor-pointer ${post?.liked ? 'text-primary-container font-black' : 'hover:text-white'}`}
+                            disabled={isSelf}
+                            onClick={(e) => { e.stopPropagation(); if (!isSelf && onLike) onLike(post?.id); }}
+                            title={isSelf ? "You cannot like your own post" : "Like"}
+                            className={`flex items-center gap-1.5 text-sm transition-colors bg-transparent border-none ${isSelf ? 'opacity-40 cursor-not-allowed text-text-secondary/50' : post?.liked ? 'text-primary-container font-black cursor-pointer' : 'hover:text-white cursor-pointer'}`}
                         >
                             <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
                                 favorite

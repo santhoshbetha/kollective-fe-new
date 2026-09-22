@@ -83,7 +83,7 @@ export const SignupPage = () => {
             <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-12 pt-4 bg-transparent border-b border-white/5 backdrop-blur-sm">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
                     <div onClick={() => navigate('/')} className="mb-8 px-2 flex items-center gap-0 cursor-pointer hover:opacity-90">
-                        <img src="/K99.png" alt="Kollective Logo" className="h-12 w-auto" />
+                        <img src="/Shield&WINGS.png" alt="Kollective Logo" className="h-14 w-auto" />
                         <div>
                             <span className="text-xl font-bold sm:inline-block bg-[#CC033B] bg-clip-text text-transparent"
                                 style={{ fontSize: "28px", fontFamily: "Protest Riot, sans-serif" }}>

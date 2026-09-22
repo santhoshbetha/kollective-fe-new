@@ -1110,11 +1110,16 @@ export const filterEventsByDate = async ({ date, distance, state, latitude, long
       if (!eDateStr) return true;
       if (eDateStr.includes(date)) return true;
       try {
-        const parsed = new Date(e.date || e.start_time).toISOString().split('T')[0];
-        return parsed === date;
-      } catch (err) {
-        return true;
-      }
+        const dObj = new Date(e.date || e.start_time);
+        if (!isNaN(dObj.getTime())) {
+          const year = dObj.getFullYear();
+          const month = String(dObj.getMonth() + 1).padStart(2, '0');
+          const day = String(dObj.getDate()).padStart(2, '0');
+          const formatted = `${year}-${month}-${day}`;
+          if (formatted === date) return true;
+        }
+      } catch (err) {}
+      return false;
     });
   }
 
@@ -1458,5 +1463,8 @@ export const lookupAddressBoundaries = async (streetAddress, state, country = 'U
     unlockedFeatures: ['location_posts', 'local_businesses', 'classifieds']
   };
 };
+
+
+
 
 

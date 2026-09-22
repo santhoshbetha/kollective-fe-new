@@ -198,11 +198,11 @@ export const CreateActionPage = () => {
                             <span className="material-symbols-outlined text-primary-container">
                               {item.icon}
                             </span>
-                            <h3 className="font-bold text-text-primary text-sm md:text-base">
+                            <h3 className="font-bold text-text-primary text-md md:text-base">
                               {item.type}
                             </h3>
                           </div>
-                          <p className="text-sm md:text-sm text-text-secondary leading-relaxed">
+                          <p className="text-md md:text-lg text-text-secondary leading-relaxed">
                             {item.desc}
                           </p>
                         </div>

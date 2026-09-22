@@ -36,7 +36,6 @@ export function useFilterEvents() {
         mutationFn: async (filterPayload) => {
             let result;
             try {
-                const { apiFetch } = await import('../../api/apiClient');
                 const res = await apiFetch('/events/filter_by_date', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -45,7 +44,7 @@ export function useFilterEvents() {
                 result = res?.data || res?.events || res;
             } catch (err) {
                 console.warn('Backend POST filter_by_date failed, falling back to mock filter:', err);
-                result = api.filterEventsByDate(filterPayload);
+                result = await api.filterEventsByDate(filterPayload);
             }
             if (Array.isArray(result)) {
                 return result.map(normalizeEvent);
@@ -57,49 +56,208 @@ export function useFilterEvents() {
 
 
 // Hook B: Replaces toggleEventInterest
-export function useToggleEventInterest() {
+export function useToggleEventInterest(defaultEventId) {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (eventId) => {
-            return api.toggleEventInterest(eventId);
+            const targetId = eventId || defaultEventId;
+            let result;
+            try {
+                const res = await apiFetch(`/events/${targetId}/rsvp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'interested' })
+                });
+                if (res) result = res?.data || res;
+            } catch (err) {
+                console.warn('Backend toggleEventInterest failed, falling back to mockApi:', err);
+            }
+            if (!result && typeof api.toggleEventInterest === 'function') {
+                result = await api.toggleEventInterest(targetId);
+            }
+            return result;
         },
-        // Optimistic Update: instantly flip state on click without deep nesting
-        onSuccess: () => {
-            // Safely invalidate just the events cache to trigger a localized background update
+        onMutate: async (eventId) => {
+            const targetId = eventId || defaultEventId;
+            await queryClient.cancelQueries({ queryKey: ['events'] });
+
+            const updateItem = (item) => {
+                if (item.id === targetId) {
+                    const nextInterested = !item.isInterested;
+                    return {
+                        ...item,
+                        isInterested: nextInterested,
+                        interestedCount: nextInterested
+                            ? (item.interestedCount || 0) + 1
+                            : Math.max(0, (item.interestedCount || 1) - 1)
+                    };
+                }
+                return item;
+            };
+
+            const updateCache = (old) => {
+                if (!old) return old;
+                if (Array.isArray(old)) return old.map(updateItem);
+                if (old.data && Array.isArray(old.data)) return { ...old, data: old.data.map(updateItem) };
+                if (old.events && Array.isArray(old.events)) return { ...old, events: old.events.map(updateItem) };
+                return old;
+            };
+
+            queryClient.setQueriesData({ queryKey: ['events'] }, updateCache);
+        },
+        onSettled: (data, error, variables) => {
+            const targetId = variables || defaultEventId;
+            queryClient.invalidateQueries({ queryKey: ['events'] });
             queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
+            queryClient.invalidateQueries({ queryKey: ['event', targetId] });
         },
     });
 }
 
 // Hook D: Replaces toggleEventAttendance
-export function useToggleEventAttendance(eventId) {
+export function useToggleEventAttendance(defaultEventId) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async () => {
-            return api.toggleEventAttendance(eventId);
+        mutationFn: async (eventId) => {
+            const targetId = eventId || defaultEventId;
+            let result;
+            try {
+                const res = await apiFetch(`/kollective/events/${targetId}/join`, {
+                    method: 'POST'
+                });
+                if (res) result = res?.data || res;
+            } catch (err) {
+                console.warn('Backend toggleEventAttendance failed, falling back to mockApi:', err);
+            }
+            if (!result && typeof api.toggleEventAttendance === 'function') {
+                result = await api.toggleEventAttendance(targetId);
+            }
+            return result;
         },
-        onSuccess: () => {
-            // Invalidate both the events grid list and specific expanded layout detail keys
+        onMutate: async (eventId) => {
+            const targetId = eventId || defaultEventId;
+            await queryClient.cancelQueries({ queryKey: ['events'] });
+
+            const updateItem = (item) => {
+                if (item.id === targetId) {
+                    const nextAttending = !item.isAttending;
+                    return {
+                        ...item,
+                        isAttending: nextAttending,
+                        attendeesCount: nextAttending
+                            ? (item.attendeesCount || 0) + 1
+                            : Math.max(0, (item.attendeesCount || 1) - 1)
+                    };
+                }
+                return item;
+            };
+
+            const updateCache = (old) => {
+                if (!old) return old;
+                if (Array.isArray(old)) return old.map(updateItem);
+                if (old.data && Array.isArray(old.data)) return { ...old, data: old.data.map(updateItem) };
+                if (old.events && Array.isArray(old.events)) return { ...old, events: old.events.map(updateItem) };
+                return old;
+            };
+
+            queryClient.setQueriesData({ queryKey: ['events'] }, updateCache);
+        },
+        onSettled: (data, error, variables) => {
+            const targetId = variables || defaultEventId;
+            queryClient.invalidateQueries({ queryKey: ['events'] });
             queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
-            queryClient.invalidateQueries({ queryKey: ['event', eventId, 'details'] });
+            queryClient.invalidateQueries({ queryKey: ['event', targetId] });
         },
     });
 }
 
 // Hook E: Replaces addEventComment
-export function useAddEventComment(eventId) {
+export function useAddEventComment(defaultEventId) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (commentText) => {
-            return api.addEventComment(eventId, commentText);
+        mutationFn: async (payload) => {
+            let targetId = defaultEventId;
+            let text = '';
+            let parentId = null;
+
+            if (typeof payload === 'string') {
+                text = payload;
+            } else if (payload && typeof payload === 'object') {
+                targetId = payload.eventId || defaultEventId;
+                text = payload.commentText || payload.text || payload.content || '';
+                parentId = payload.parentId || payload.parent_id || null;
+                imageUrl = payload.imageUrl || payload.image_url || null;
+            }
+
+            let result;
+            try {
+                const res = await apiFetch(`/events_comments/${targetId}/comment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, content: text, parent_id: parentId, image_url: imageUrl })
+                });
+                if (res) result = res?.data || res;
+            } catch (err) {
+                console.warn('Backend addEventComment failed, falling back to mockApi:', err);
+            }
+            if (!result && typeof api.addEventComment === 'function') {
+                result = await api.addEventComment(targetId, text, { parent_id: parentId, image_url: imageUrl });
+            }
+            return result;
         },
-        onSuccess: () => {
-            // Invalidate the detailed log parameters for this unique entity so the thread updates
-            queryClient.invalidateQueries({ queryKey: ['event', eventId, 'details'] });
+        onSuccess: (data, payload) => {
+            const targetId = (typeof payload === 'object' && payload?.eventId) ? payload.eventId : defaultEventId;
+            queryClient.invalidateQueries({ queryKey: ['events'] });
+            queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
+            queryClient.invalidateQueries({ queryKey: ['event', targetId] });
+            queryClient.invalidateQueries({ queryKey: ['event_comments', targetId] });
         },
     });
 }
+
+// Hook F: Fetches discussion comments for an event
+export function useEventCommentsQuery(eventId) {
+    return useQuery({
+        queryKey: ['event_comments', eventId],
+        enabled: Boolean(eventId),
+        queryFn: async () => {
+            try {
+                const res = await apiFetch(`/event_comments?event_id=${eventId}`);
+                if (res && (res.data || Array.isArray(res))) {
+                    return res.data || res;
+                }
+            } catch (err) {
+                console.warn('apiFetch failed for event_comments, returning empty array:', err);
+            }
+            return [];
+        },
+    });
+}
+
+// Hook G: Likes a specific event comment
+export function useLikeEventComment(eventId) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (commentId) => {
+            let result;
+            try {
+                const res = await apiFetch(`/event_comments/${commentId}/like`, {
+                    method: 'POST'
+                });
+                if (res) result = res?.data || res;
+            } catch (err) {
+                console.warn('Backend like comment failed:', err);
+            }
+            return result;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['event_comments', eventId] });
+        },
+    });
+}
+
 

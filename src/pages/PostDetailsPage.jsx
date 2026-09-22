@@ -1,5 +1,4 @@
-// src/pages/PostDetailsPage.jsx (Part 1 of 4)
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TrendingWidget } from '../components/TrendingWidget';
 import { ImageCarouselModal } from '../components/ImageCarouselModal';
@@ -9,6 +8,7 @@ import { apiFetch, apiFetchPosts } from '../api/apiClient';
 import { CascadedPostRow } from '../components/CascadedPostRow';
 import { usePostsStore } from '../store/usePostsStore';
 import { UserAvatar } from '../components/UserAvatar';
+import { EmojiSelector } from '../components/EmojiSelector';
 
 // Helper: Hides sensitive data or spoilers behind a button toggle natively
 const ContentWarningWrapper = ({ warning, children }) => {
@@ -168,10 +168,24 @@ export const PostDetailsPage = () => {
     const [commentText, setCommentText] = useState('');
     const [showCommentCwInput, setShowCommentCwInput] = useState(false);
     const [commentCwText, setCommentCwText] = useState('');
+    const [commentImage, setCommentImage] = useState(null);
+    const [showEmojiDropdown, setShowEmojiDropdown] = useState(false);
+    const commentFileInputRef = useRef(null);
 
     const [showToast, setShowToast] = useState(false);
     const [carouselOpen, setCarouselOpen] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
+
+    const handleCommentFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setCommentImage(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     // 🎯 NETWORK INTERACTION QUERY: Fetch the complete thread map list from your Elixir context endpoint
     const { data: threadContext, isPending } = useQuery({
@@ -206,6 +220,8 @@ export const PostDetailsPage = () => {
             queryClient.invalidateQueries({ queryKey: ['post', currentPostId, 'thread'] });
             setCommentText('');
             setCommentCwText('');
+            setCommentImage(null);
+            setShowEmojiDropdown(false);
             setShowCommentCwInput(false);
         },
     });
@@ -235,11 +251,12 @@ export const PostDetailsPage = () => {
 
     const handleCommentSubmit = (e) => {
         e.preventDefault();
-        if (!commentText.trim()) return;
+        if (!commentText.trim() && !commentImage) return;
 
         replyMutation.mutate({
             text: commentText.trim(),
             content_warning: showCommentCwInput ? commentCwText.trim() : undefined,
+            images: commentImage ? [commentImage] : undefined,
         });
     };
 
@@ -305,7 +322,7 @@ export const PostDetailsPage = () => {
                     )}
 
                     {/* 🗳️ LAYOUT MARKS C: Inline Response Form Element */}
-                    <form onSubmit={handleCommentSubmit} className="p-6 bg-[#111111] border-b border-[#262626] flex flex-col gap-4">
+                    <form onSubmit={handleCommentSubmit} className="p-6 bg-[#111111] border-b border-[#262626] flex flex-col gap-4 relative">
                         {showCommentCwInput && (
                             <input
                                 type="text"
@@ -321,19 +338,68 @@ export const PostDetailsPage = () => {
                             onChange={(e) => setCommentText(e.target.value)}
                             placeholder="Publish your response parameters..."
                             className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-4 text-sm h-24 text-text-primary placeholder:text-text-secondary/30 focus:outline-none resize-none leading-relaxed"
-                            required
                         />
-                        <div className="flex justify-between items-center">
-                            <button
-                                type="button"
-                                onClick={() => setShowCommentCwInput(!showCommentCwInput)}
-                                className="text-xs font-bold text-text-secondary hover:text-text-primary bg-transparent border-none cursor-pointer"
-                            >
-                                {showCommentCwInput ? 'Remove CW' : 'Add CW'}
-                            </button>
+
+                        {commentImage && (
+                            <div className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10 group">
+                                <img src={commentImage} alt="Attachment Preview" className="w-full h-full object-cover" />
+                                <button
+                                    type="button"
+                                    onClick={() => setCommentImage(null)}
+                                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 hover:bg-black text-white text-xs flex items-center justify-center border-none cursor-pointer"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        )}
+
+                        <input
+                            type="file"
+                            ref={commentFileInputRef}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleCommentFileChange}
+                        />
+
+                        <div className="flex justify-between items-center relative">
+                            <div className="flex items-center gap-3 relative">
+                                <button
+                                    type="button"
+                                    onClick={() => commentFileInputRef.current?.click()}
+                                    className="p-1.5 rounded-full hover:bg-white/5 text-text-secondary hover:text-primary-container transition-colors cursor-pointer bg-transparent border-none flex items-center justify-center"
+                                    title="Attach Image"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">attachment</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setShowEmojiDropdown(!showEmojiDropdown)}
+                                    className="p-1.5 rounded-full hover:bg-white/5 text-text-secondary hover:text-primary-container transition-colors cursor-pointer bg-transparent border-none flex items-center justify-center"
+                                    title="Add Emoji"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">sentiment_satisfied</span>
+                                </button>
+
+                                {showEmojiDropdown && (
+                                    <EmojiSelector
+                                        onSelect={(emoji) => setCommentText((prev) => prev + emoji)}
+                                        onClose={() => setShowEmojiDropdown(false)}
+                                    />
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCommentCwInput(!showCommentCwInput)}
+                                    className="text-xs font-bold text-text-secondary hover:text-text-primary bg-transparent border-none cursor-pointer ml-2"
+                                >
+                                    {showCommentCwInput ? 'Remove CW' : 'Add CW'}
+                                </button>
+                            </div>
+
                             <button
                                 type="submit"
-                                disabled={replyMutation.isPending || !commentText.trim()}
+                                disabled={replyMutation.isPending || (!commentText.trim() && !commentImage)}
                                 className="bg-primary-container text-white font-bold text-xs px-5 py-2.5 rounded-xl hover:brightness-110 active:scale-95 cursor-pointer disabled:opacity-40"
                             >
                                 {replyMutation.isPending ? 'Broadcasting...' : 'Broadcast Reply'}

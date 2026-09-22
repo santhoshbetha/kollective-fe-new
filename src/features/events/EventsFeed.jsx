@@ -99,6 +99,19 @@ export function EventsFeed({
         const distVal = hasAddressOrCoords ? (newDistance !== undefined ? newDistance : selectedDistance) : null;
         const stateVal = (!hasAddressOrCoords && hasState) ? (userState || currentUser?.state || currentUser?.origin_state) : null;
 
+        if (!dateStr && !distVal && !stateVal) {
+            setFilteredEventsData(null);
+            return;
+        }
+
+        console.log("filterEventsMutation", {
+            date: dateStr,
+            distance: distVal,
+            state: stateVal,
+            latitude: currentUser?.latitude,
+            longitude: currentUser?.longitude
+        });
+
         filterEventsMutation.mutate({
             date: dateStr,
             distance: distVal,
@@ -107,7 +120,8 @@ export function EventsFeed({
             longitude: currentUser?.longitude
         }, {
             onSuccess: (data) => {
-                setFilteredEventsData(data);
+                const list = Array.isArray(data) ? data : (data?.events || data?.data || []);
+                setFilteredEventsData(list);
             }
         });
     };
@@ -156,7 +170,7 @@ export function EventsFeed({
     const [locationQuery, setLocationQuery] = useState('');
     const [formatFilter, setFormatFilter] = useState('All Events');
     const [categoryFilter, setCategoryFilter] = useState('All');
-    const [isSearchExpanded, setIsSearchExpanded] = useState(true);
+    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [viewMode, setViewMode] = useState('grid');
     const [currentYear, setCurrentYear] = useState(2026);
     const [currentMonth, setCurrentMonth] = useState(6); // July (0-indexed)
@@ -279,7 +293,7 @@ export function EventsFeed({
     ];
 
     // Execute structural filtration matrix criteria on the query data cache
-    const activeEventsList = filteredEventsData || events;
+    const activeEventsList = Array.isArray(filteredEventsData) ? filteredEventsData : events;
 
     const filteredEvents = activeEventsList?.filter((event) => {
         const locStr = getDisplayLocation(event?.location, event);
@@ -346,7 +360,7 @@ export function EventsFeed({
             )}
 
             {/* Title Area */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-4">
                 <div>
                     <h1 className="text-4xl font-extrabold flex items-center gap-3 text-[#F4F4F4] font-headline-lg">
                         Discover Events <span className="text-2xl">🎉</span>
@@ -367,10 +381,7 @@ export function EventsFeed({
                             Grid
                         </button>
                         <button
-                            onClick={() => {
-                                setViewMode('calendar');
-                                //showToast('Calendar view is coming soon!');
-                            }}
+                            onClick={() => setViewMode('calendar')}
                             className={`px-4 py-1.5 text-xs font-bold rounded-[8px] flex items-center gap-2 border-none cursor-pointer ${viewMode === 'calendar' ? 'bg-[#a10836] text-white' : 'text-gray-500 hover:text-white bg-transparent'
                                 }`}
                         >
@@ -389,6 +400,14 @@ export function EventsFeed({
                             Map
                         </button>
                     </div>
+
+                    <button
+                        onClick={() => navigate('/calendar')}
+                        className="flex items-center justify-center gap-2 px-5 py-3 bg-surface-container-low border border-white/10 hover:bg-surface-container-high text-text-primary rounded-[8px] font-bold transition-all active:scale-95 text-xs uppercase tracking-widest cursor-pointer"
+                    >
+                        <span className="material-symbols-outlined text-sm text-primary-container">event_available</span>
+                        My Schedule
+                    </button>
 
                     <button
                         onClick={() => navigate('/events/create')}
@@ -565,7 +584,7 @@ export function EventsFeed({
                             {hasAddressOrCoords ? (
                                 <div className="flex items-center gap-2 bg-surface-container-low border border-outline-variant px-3 py-2 rounded-card text-xs font-bold text-text-primary">
                                     <MapPin className="w-4 h-4 text-primary-container" />
-                                    <span className="text-text-secondary text-[11px] font-bold">Distance:</span>
+                                    <span className="text-text-secondary text-[16px] font-bold">Distance:</span>
                                     <select
                                         value={selectedDistance}
                                         onChange={(e) => {
@@ -573,7 +592,7 @@ export function EventsFeed({
                                             setSelectedDistance(val);
                                             handleApplyFilter(selectedDate, val);
                                         }}
-                                        className="bg-transparent text-text-primary font-bold text-xs focus:outline-none cursor-pointer"
+                                        className="bg-transparent text-text-primary font-bold text-[16px] focus:outline-none cursor-pointer"
                                     >
                                         <option value="" className="bg-[#18181b] text-text-primary">All Distances</option>
                                         {DISTANCE_OPTIONS.map((opt) => (
@@ -663,7 +682,26 @@ export function EventsFeed({
                                 <EventCard
                                     key={event?.id}
                                     event={event}
-                                    onInterestToggle={(id) => interestMutation.mutate(id)}
+                                    onInterestToggle={(id) => {
+                                        if (filteredEventsData) {
+                                            setFilteredEventsData((prev) =>
+                                                prev?.map((item) => {
+                                                    if (item.id === id) {
+                                                        const nextInterested = !item.isInterested;
+                                                        return {
+                                                            ...item,
+                                                            isInterested: nextInterested,
+                                                            interestedCount: nextInterested
+                                                                ? (item.interestedCount || 0) + 1
+                                                                : Math.max(0, (item.interestedCount || 1) - 1)
+                                                        };
+                                                    }
+                                                    return item;
+                                                })
+                                            );
+                                        }
+                                        interestMutation.mutate(id);
+                                    }}
                                     isPending={interestMutation.isPending}
                                 />
                             ))}

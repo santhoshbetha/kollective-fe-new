@@ -54,8 +54,6 @@ export function TimelineFeed() {
         return true;
     });
 
-
-
     // 🪟 Sync unread counts with the browser tab title (e.g., "(3) Kollective")
     // Sync tab counts to the browser window title
     useEffect(() => {

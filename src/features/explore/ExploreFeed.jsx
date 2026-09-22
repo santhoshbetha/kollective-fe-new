@@ -166,7 +166,7 @@ export function ExploreFeed({ searchQuery = '', activeTab = 'all', enableCivic =
                                 <span className="material-symbols-outlined text-primary-container">groups</span>
                                 <h2 className="font-headline-lg text-lg md:text-xl font-bold text-text-primary">Grassroots Hubs & Circles</h2>
                             </div>
-                            <span className="text-text-secondary text-xs">{filteredHubs.length} available</span>
+                            <span className="text-text-secondary text-md">{filteredHubs.length} available</span>
                         </div>
 
                         <div className="flex flex-col gap-4">
@@ -197,11 +197,11 @@ export function ExploreFeed({ searchQuery = '', activeTab = 'all', enableCivic =
                                                                     verified
                                                                 </span>
                                                             )}
-                                                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-white/5 text-text-secondary border border-white/5">
+                                                            <span className="px-2 py-0.5 rounded-md text-[14px] font-semibold bg-white/5 text-text-secondary border border-white/5">
                                                                 {hub.badge}
                                                             </span>
                                                         </div>
-                                                        <p className="text-text-secondary text-lg leading-relaxed mt-1">{hub.description}</p>
+                                                        <p className="text-text-secondary text-xl leading-relaxed mt-1">{hub.description}</p>
                                                     </div>
                                                 </div>
                                                 <button
@@ -213,7 +213,7 @@ export function ExploreFeed({ searchQuery = '', activeTab = 'all', enableCivic =
                                                 </button>
                                             </div>
 
-                                            <div className="flex items-center gap-4 text-xs text-text-secondary border-t border-white/5 pt-3">
+                                            <div className="flex items-center gap-4 text-[16px] text-text-secondary border-t border-white/5 pt-3">
                                                 <span className="flex items-center gap-1.5 font-medium">
                                                     <span className="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
                                                     {hub.members}
@@ -309,17 +309,17 @@ export function ExploreFeed({ searchQuery = '', activeTab = 'all', enableCivic =
                                 filteredEvents.map((ev) => (
                                     <div key={ev.id} className="bg-surface-container-low border border-white/5 rounded-2xl p-5 flex flex-col justify-between gap-4">
                                         <div>
-                                            <div className="flex items-center gap-2 text-xs text-primary-container font-semibold mb-2">
+                                            <div className="flex items-center gap-2 text-lg text-primary-container font-semibold mb-2">
                                                 <span className="material-symbols-outlined text-sm">schedule</span>
                                                 {ev.date}
                                             </div>
                                             <h4 className="font-bold text-text-primary text-base leading-snug mb-2">{ev.title}</h4>
-                                            <p className="text-xs text-text-secondary flex items-center gap-1.5">
+                                            <p className="text-lg text-text-secondary flex items-center gap-1.5">
                                                 <span className="material-symbols-outlined text-sm">location_on</span>
                                                 {ev.location}
                                             </p>
                                         </div>
-                                        <div className="flex items-center justify-between border-t border-white/5 pt-3 text-xs text-text-secondary">
+                                        <div className="flex items-center justify-between border-t border-white/5 pt-3 text-[16px] text-text-secondary">
                                             <span>{ev.attendees}</span>
                                             <button className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-text-primary font-medium cursor-pointer border border-white/5">
                                                 RSVP
@@ -365,7 +365,7 @@ export function ExploreFeed({ searchQuery = '', activeTab = 'all', enableCivic =
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <h3 className="font-bold text-text-primary text-sm group-hover:text-primary-container transition-colors">
+                                                    <h3 className="font-bold text-text-primary text-lg group-hover:text-primary-container transition-colors">
                                                         {item.tag}
                                                     </h3>
                                                     {item.isHot && (
@@ -374,7 +374,7 @@ export function ExploreFeed({ searchQuery = '', activeTab = 'all', enableCivic =
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className="text-text-secondary text-xs">{item.posts}</p>
+                                                <p className="text-text-secondary text-lg">{item.posts}</p>
                                             </div>
                                         </div>
 
@@ -411,11 +411,11 @@ export function ExploreFeed({ searchQuery = '', activeTab = 'all', enableCivic =
                 ) : (
                     <div className="relative overflow-hidden rounded-2xl p-6 group border border-white/10 bg-gradient-to-br from-surface-container-high via-surface-container-low to-surface-container">
                         <div className="relative z-10 flex flex-col gap-3">
-                            <span className="inline-block px-3 py-1 bg-white/10 text-text-primary border border-white/10 rounded-full text-[11px] font-bold uppercase tracking-wider w-fit">
+                            <span className="inline-block px-3 py-1 bg-white/10 text-text-primary border border-white/10 rounded-full text-[16px] font-bold uppercase tracking-wider w-fit">
                                 Community Hub Spotlight
                             </span>
                             <h3 className="font-display-lg text-lg font-bold text-white leading-tight">Start Your Own Community Circle</h3>
-                            <p className="text-text-secondary text-xs leading-relaxed">
+                            <p className="text-text-secondary text-[14px] leading-relaxed">
                                 Connect with neighbors, organize local events, and highlight ethical businesses in your area.
                             </p>
                             <button className="mt-1 w-full py-2.5 bg-primary-container text-white font-bold rounded-xl hover:brightness-110 transition-all text-xs cursor-pointer shadow-md">

@@ -27,14 +27,14 @@ export const HomePage = () => {
 
                 {/* 🧭 Feed Filter Chips Navigation */}
                 {/* Added px-4 on mobile so chips don't hug the screen edge perfectly, matches layout */}
-                <div className="flex gap-3 overflow-x-auto px-4 md:px-0 pb-0 no-scrollbar">
+                <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 px-4 md:px-0 pb-0 overflow-x-auto no-scrollbar">
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab;
                         return (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-6 py-2 rounded-full font-bold text-label-md transition-all duration-200 whitespace-nowrap border ${isActive
+                                className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-label-md transition-all duration-200 border cursor-pointer ${isActive
                                     ? 'bg-primary-container text-white border-primary-container crimson-glow'
                                     : 'bg-surface-container-high text-text-secondary hover:text-text-primary border-white/5 hover:border-white/10'
                                     }`}

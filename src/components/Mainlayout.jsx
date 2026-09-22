@@ -79,6 +79,7 @@ export const MainLayout = () => {
         { name: 'Home', path: '/home', icon: 'home' },
         { name: 'Communities', path: '/communities', icon: 'communities' },
         ...(canAccessLocalizedFeatures ? [{ name: 'Events', path: '/events', icon: 'calendar_today' }] : []),
+        ...(canAccessLocalizedFeatures ? [{ name: 'My Schedule', path: '/calendar', icon: 'event_available' }] : []),
         { name: 'Polls', path: '/polls', icon: 'poll' },
         { name: 'Explore', path: '/explore', icon: 'explore' },
         ...(canAccessLocalizedFeatures ? [{ name: 'Local Businesses', path: '/businesses', icon: 'storefront' }] : []),
@@ -114,13 +115,11 @@ export const MainLayout = () => {
                 <div className="flex flex-col gap-2 p-6 h-full">
                     {/* Logo */}
                     <div onClick={() => navigate('/')} className="mb-8 px-2 flex items-center gap-0 cursor-pointer hover:opacity-90">
-                        <img src="/KThunder.png" alt="Kollective Logo" className="h-8 w-auto" />
-                        <div>
-                            <span className="text-xl font-bold sm:inline-block bg-[#CC033B] bg-clip-text text-transparent ml-1"
-                                style={{ fontSize: "28px", fontFamily: "Protest Riot, sans-serif" }}>
-                                Kollective
-                            </span>
-                        </div>
+                        <img src="/Shield&WINGS.png" alt="Kollective Logo" className="h-14 w-auto" />
+                        <span className="text-xl font-bold sm:inline-block bg-[#CC033B] bg-clip-text text-transparent"
+                            style={{ fontSize: "28px", fontFamily: "Protest Riot, sans-serif" }}>
+                            Kollective
+                        </span>
                     </div>
 
                     {/* Navigation Links */}
@@ -316,6 +315,10 @@ export const MainLayout = () => {
                             <div onClick={() => navigate('/notifications')} className="relative cursor-pointer text-text-secondary hover:text-white transition-colors">
                                 <span className="material-symbols-outlined text-[22px]">notifications</span>
                                 <span className="absolute top-0 right-0 w-2 h-2 bg-primary-container rounded-full border-2 border-surface"></span>
+                            </div>
+
+                            <div onClick={() => navigate('/calendar')} className={`cursor-pointer transition-colors ${currentPath === '/calendar' ? 'text-primary-container' : 'text-text-secondary hover:text-white'}`} title="My Schedule Calendar">
+                                <span className="material-symbols-outlined text-[22px]">event_available</span>
                             </div>
 
                             <div onClick={() => navigate('/settings')} className="cursor-pointer text-text-secondary hover:text-white transition-colors">

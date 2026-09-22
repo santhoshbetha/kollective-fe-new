@@ -76,40 +76,63 @@ export function ImageUploader({
         }
     };
 
-    // Draw interactive preview inside Crop Modal Canvas
-    const updateCanvasPreview = useCallback(() => {
-        if (!canvasRef.current || !rawImage) return;
+    // Helper to draw image onto canvas
+    const drawOnCanvas = useCallback((img) => {
+        if (!canvasRef.current || !img) return;
 
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const img = new Image();
-        img.src = rawImage;
-        img.onload = () => {
-            imgRef.current = img;
-            const containerWidth = canvas.width;
-            const containerHeight = canvas.height;
+        const containerWidth = canvas.width;
+        const containerHeight = canvas.height;
 
-            ctx.clearRect(0, 0, containerWidth, containerHeight);
+        ctx.clearRect(0, 0, containerWidth, containerHeight);
 
-            // Compute scaled dimensions based on aspect ratio & zoom
-            const scale = Math.max(containerWidth / img.width, containerHeight / img.height) * zoom;
-            const drawWidth = img.width * scale;
-            const drawHeight = img.height * scale;
+        // Compute scaled dimensions based on aspect ratio & zoom
+        const scale = Math.max(containerWidth / img.width, containerHeight / img.height) * zoom;
+        const drawWidth = img.width * scale;
+        const drawHeight = img.height * scale;
 
-            const drawX = (containerWidth - drawWidth) / 2 + cropOffset.x;
-            const drawY = (containerHeight - drawHeight) / 2 + cropOffset.y;
+        const drawX = (containerWidth - drawWidth) / 2 + cropOffset.x;
+        const drawY = (containerHeight - drawHeight) / 2 + cropOffset.y;
 
-            ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-        };
-    }, [rawImage, zoom, cropOffset]);
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+    }, [zoom, cropOffset]);
 
+    // Draw preview whenever rawImage, zoom, or cropOffset changes
     useEffect(() => {
-        if (isCropDialogOpen) {
-            updateCanvasPreview();
+        if (!isCropDialogOpen || !rawImage) return;
+
+        let animationFrameId;
+        let timeoutId;
+
+        const render = (img) => {
+            animationFrameId = requestAnimationFrame(() => {
+                drawOnCanvas(img);
+            });
+        };
+
+        if (imgRef.current && imgRef.current.src === rawImage && imgRef.current.complete) {
+            render(imgRef.current);
+            // Backup render after modal animation completes
+            timeoutId = setTimeout(() => render(imgRef.current), 50);
+        } else {
+            const img = new Image();
+            img.onload = () => {
+                imgRef.current = img;
+                render(img);
+                timeoutId = setTimeout(() => render(img), 50);
+            };
+            img.src = rawImage;
         }
-    }, [isCropDialogOpen, updateCanvasPreview]);
+
+        return () => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+    }, [isCropDialogOpen, rawImage, drawOnCanvas]);
+
 
     // Canvas pan handlers
     const handleCanvasMouseDown = (e) => {

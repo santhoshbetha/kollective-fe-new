@@ -45,7 +45,7 @@ export const LoginPage = () => {
             <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-12 py-4 bg-transparent border-b border-white/5 backdrop-blur-sm">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
                     <div onClick={() => navigate('/')} className="mb-8 px-2 flex items-center gap-0 cursor-pointer hover:opacity-90">
-                        <img src="/K99.png" alt="Kollective Logo" className="h-12 w-auto" />
+                        <img src="/Shield&WINGS.png" alt="Kollective Logo" className="h-14 w-auto" />
                         <div>
                             <span className="text-xl font-bold sm:inline-block bg-[#CC033B] bg-clip-text text-transparent"
                                 style={{ fontSize: "28px", fontFamily: "Protest Riot, sans-serif" }}>
@@ -216,7 +216,7 @@ export const LoginPage = () => {
             <footer className="w-full py-6 border-t border-white/5 bg-[var(--surface-container)]/20 relative z-10 backdrop-blur-md">
                 <div className="flex flex-col md:flex-row justify-between items-center px-6 md:px-12 gap-4 w-full mx-auto">
                     <div className="flex items-center gap-3 text-xs font-semibold text-on-surface-variant/70">
-                        <img alt="Identity Badge" className="h-5 w-auto opacity-40" src="/K99.png" />
+                        <img alt="Identity Badge" className="h-5 w-auto opacity-40" src="/Shield&WINGS.png" />
                         <span>© {new Date().getFullYear()} Kollective. The Revolution is Digital.</span>
                     </div>
                     <div className="flex gap-6 text-xs font-bold text-on-surface-variant/70">

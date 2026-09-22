@@ -13,6 +13,7 @@ import { ImageLightbox } from './ImageLightbox';
 import { usePostActions } from './usePostActions';
 import { useRsvpToAction } from '../../features/organize/useOrganizeFeature';
 import { usePostsStore } from '../../store/usePostsStore';
+import { cn } from "@/lib/utils";
 
 import {
     ExternalLink,
@@ -154,9 +155,8 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
     const storePost = usePostsStore((state) => propPost?.id ? state.entities[propPost.id] : null);
     const post = storePost || propPost;
 
-    const postActions = usePostActions();
+    const { toggleLike, toggleReblog, toggleBookmark, isActionPending } = usePostActions();
     const rsvpMutation = useRsvpToAction();
-    //const { toggleLike, toggleReblog, toggleBookmark, isActionPending } = usePostActions();
     const navigate = useNavigate();
     const [showMenu, setShowMenu] = useState(false);
     const [isActionJoined, setIsActionJoined] = useState(false);
@@ -164,9 +164,28 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
     // 🎛️ Lightbox state parameters sandboxed per post card item
     const [carouselOpen, setCarouselOpen] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
-    const likeMutation = useLikePost();
-    const bookmarkMutation = useBookmarkPost();
     const allImages = post?.images || (post?.image ? [post.image] : []);
+
+    const handleLikeClick = (e) => {
+        if (e) e.stopPropagation();
+        if (post?.id) {
+            toggleLike(post.id);
+        }
+    };
+
+    const handleReblogClick = (e) => {
+        if (e) e.stopPropagation();
+        if (post?.id) {
+            toggleReblog(post.id);
+        }
+    };
+
+    const handleBookmarkClick = (e) => {
+        if (e) e.stopPropagation();
+        if (post?.id) {
+            toggleBookmark(post.id);
+        }
+    };
 
     React.useEffect(() => {
         if (!showMenu) return;
@@ -214,17 +233,6 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
             activeMenuPostId = post?.id;
             activeMenuSetShowMenu = setShowMenu;
             setShowMenu(true);
-        }
-    };
-
-    const handleLikeClick = (e) => {
-        e.stopPropagation();
-        if (post?.liked) {
-            // Optimistic UI update is handled inside useLikePost mutation
-            likeMutation.mutate(post?.id);
-        } else {
-            // Optimistic UI update is handled inside useLikePost mutation
-            likeMutation.mutate(post?.id);
         }
     };
     const authorHandle = post?.author?.handle || `@${post?.author?.name?.toLowerCase().replace(/\s+/g, '')}@kollective.social`;
@@ -429,39 +437,47 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                             </div>
                         )}
 
-                        <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                        <div className="flex items-center justify-between pt-4 border-t border-outline-variant/30">
                             <div className="flex items-center gap-6">
                                 <button
-                                    onClick={() => handleLikeClick(post?.id)} // togglelike
-                                    disabled={likeMutation.isPending}
-                                    className={`flex items-center gap-2 font-bold hover:brightness-125 transition-all ${post?.liked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
-                                        }`}
+                                    onClick={handleLikeClick}
+                                    disabled={isActionPending}
+                                    className={cn(
+                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent cursor-pointer hover:scale-105 active:scale-95",
+                                        post?.liked ? "text-primary-container font-extrabold" : "text-text-secondary hover:text-text-primary"
+                                    )}
+                                    title={post?.liked ? "Unlike Voice" : "Like Voice"}
                                 >
-                                    <span className="material-symbols-outlined" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
+                                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
                                         favorite
                                     </span>
                                     <span className="text-sm">
-                                        {post?.liked ? !likeMutation.isPending ? post?.likes - 1 : 'Liking...' : !likeMutation.isPending ? 'Liking...' : post?.likes}
+                                        {post?.likes ?? post?.likesCount ?? 0}
                                     </span>
+                                </button>
+                                <button
+                                    onClick={handleReblogClick}
+                                    disabled={isActionPending}
+                                    className={cn(
+                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent cursor-pointer hover:scale-105 active:scale-95",
+                                        post?.reblogged ? "text-emerald-500 font-extrabold" : "text-text-secondary hover:text-text-primary"
+                                    )}
+                                    title="Boost Voice"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: post?.reblogged ? "'wght' 700" : "'wght' 400" }}>
+                                        repeat
+                                    </span>
+                                    <span className="text-sm">{post?.shares ?? post?.reblogsCount ?? 0}</span>
                                 </button>
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        toggleReblog(post?.id);
+                                        navigate(`/post/${post?.id}`);
                                     }}
-                                    className={`flex items-center gap-2 font-bold transition-all ${post?.reblogged ? 'text-green-500 hover:brightness-110' : 'text-text-secondary hover:text-white'
-                                        }`}
-                                    title="Boost Voice"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">repeat</span>
-                                    <span className="text-sm">{post?.shares || 0}</span>
-                                </button>
-                                <button
-                                    onClick={() => navigate(`/post/${post?.id}`)}
-                                    className="flex items-center gap-2 text-text-secondary font-bold hover:text-white transition-all"
+                                    className="flex items-center gap-2 text-text-secondary hover:text-text-primary font-bold transition-all border-none bg-transparent cursor-pointer hover:scale-105 active:scale-95"
                                 >
                                     <span className="material-symbols-outlined text-[20px]">mode_comment</span>
-                                    <span className="text-sm">1.2k</span>
+                                    <span className="text-sm">{post?.commentsCount ?? post?.repliesCount ?? '1.2k'}</span>
                                 </button>
                             </div>
 
@@ -559,14 +575,18 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
 
                             <div className="flex items-center gap-1">
                                 <button
-                                    onClick={(e) => handleBookmarkClick(e)} // toggleBookmark(post?.id);
-                                    disabled={bookmarkMutation.isPending}
-                                    className={`p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer 
-                                        ${post?.bookmarked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
-                                        }`}
+                                    onClick={handleBookmarkClick}
+                                    disabled={isActionPending}
+                                    className={cn(
+                                        "p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer border-none bg-transparent",
+                                        post?.bookmarked ? "text-amber-500" : "text-text-secondary hover:text-text-primary"
+                                    )}
                                     title={post?.bookmarked ? 'Remove Bookmark' : 'Bookmark Pulse'}
                                 >
-                                    <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: bookmarkMutation.isPending ? "'FILL' 1" : "'FILL' 0" }}>
+                                    <span
+                                        className="material-symbols-outlined text-[18px]"
+                                        style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}
+                                    >
                                         bookmark
                                     </span>
                                 </button>
@@ -577,7 +597,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                             e.stopPropagation();
                                             handleToggleMenu();
                                         }}
-                                        className="p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer flex items-center justify-center"
+                                        className="p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer flex items-center justify-center border-none bg-transparent"
                                         title="More actions"
                                     >
                                         <span className="material-symbols-outlined text-text-secondary">more_horiz</span>
@@ -614,7 +634,11 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                     return (
                                         <span
                                             key={idx}
-                                            className="px-3 py-1 rounded-lg bg-surface-container-highest/50 text-primary-container font-bold text-[15px] border border-primary-container/10"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/timeline?tag=${encodeURIComponent(tagName)}`);
+                                            }}
+                                            className="px-3 py-1 rounded-lg bg-surface-container-high/60 hover:bg-primary-container/20 text-primary-container font-bold text-[14px] border border-primary-container/15 transition-all cursor-pointer hover:scale-102 active:scale-98"
                                         >
                                             &#35;{tagName}
                                         </span>
@@ -624,44 +648,60 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                         )}
 
                         {/* Engagement Button Bar Row */}
-                        <div className="mt-6 flex items-center gap-4 sm:gap-8 border-t border-white/5 pt-4 w-full min-w-0">
+                        <div className="mt-6 flex items-center justify-between gap-4 border-t border-outline-variant/30 pt-4 w-full min-w-0">
 
-                            {/* Like Button */}
-                            <button
-                                onClick={() => toggleLike(post?.id)}
-                                className={`flex items-center gap-1.5 hover:text-primary-container transition-colors shrink-0 ${post?.liked ? 'text-primary-container' : 'text-text-secondary'
-                                    }`}
-                            >
-                                <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
-                                    thumb_up
-                                </span>
-                                <span className="font-bold text-sm">{post?.likes}</span>
-                            </button>
+                            <div className="flex items-center gap-6">
+                                {/* Like Button */}
+                                <button
+                                    onClick={handleLikeClick}
+                                    disabled={isActionPending}
+                                    className={cn(
+                                        "flex items-center gap-1.5 font-bold text-sm transition-all cursor-pointer border-none bg-transparent hover:scale-105 active:scale-95 shrink-0",
+                                        post?.liked ? "text-primary-container font-extrabold" : "text-text-secondary hover:text-text-primary"
+                                    )}
+                                    title={post?.liked ? "Unlike post" : "Like post"}
+                                >
+                                    <span
+                                        className="material-symbols-outlined text-[20px]"
+                                        style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}
+                                    >
+                                        thumb_up
+                                    </span>
+                                    <span>{post?.likes ?? post?.likesCount ?? 0}</span>
+                                </button>
 
-                            {/* Share / Boost Button */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleReblog(post?.id);
-                                }}
-                                className={`flex items-center gap-1.5 hover:text-green-500 transition-colors shrink-0 ${post?.reblogged ? 'text-green-500 font-bold' : 'text-text-secondary'
-                                    }`}
-                                title="Boost Post"
-                            >
-                                <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: post?.reblogged ? "'wght' 700" : "'wght' 400" }}>
-                                    repeat
-                                </span>
-                                <span className="font-bold text-sm">{post?.shares || 0}</span>
-                            </button>
+                                {/* Share / Boost Button */}
+                                <button
+                                    onClick={handleReblogClick}
+                                    disabled={isActionPending}
+                                    className={cn(
+                                        "flex items-center gap-1.5 font-bold text-sm transition-all cursor-pointer border-none bg-transparent hover:scale-105 active:scale-95 shrink-0",
+                                        post?.reblogged ? "text-emerald-500 font-extrabold" : "text-text-secondary hover:text-text-primary"
+                                    )}
+                                    title={post?.reblogged ? "Undo boost" : "Boost post"}
+                                >
+                                    <span
+                                        className="material-symbols-outlined text-[20px]"
+                                        style={{ fontVariationSettings: post?.reblogged ? "'wght' 700" : "'wght' 400" }}
+                                    >
+                                        repeat
+                                    </span>
+                                    <span>{post?.shares ?? post?.reblogsCount ?? 0}</span>
+                                </button>
 
-                            {/* Comment Button */}
-                            <button
-                                onClick={() => navigate(`/post/${post?.id}`)}
-                                className="flex items-center gap-1.5 text-text-secondary hover:text-primary-container transition-colors shrink-0"
-                            >
-                                <span className="material-symbols-outlined text-[20px]">mode_comment</span>
-                                <span className="font-bold text-sm">{post?.commentsCount}</span>
-                            </button>
+                                {/* Comment Button */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/post/${post?.id}`);
+                                    }}
+                                    className="flex items-center gap-1.5 text-text-secondary hover:text-primary-container font-bold text-sm transition-all cursor-pointer border-none bg-transparent hover:scale-105 active:scale-95 shrink-0"
+                                    title="Comment on post"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">mode_comment</span>
+                                    <span>{post?.commentsCount ?? post?.repliesCount ?? 0}</span>
+                                </button>
+                            </div>
 
                             {post?.communityJoinable ? (
                                 <button
@@ -669,16 +709,31 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                         e.stopPropagation();
                                         setIsCircleJoined(!isCircleJoined);
                                     }}
-                                    className={`ml-auto px-3 py-1 sm:px-4 sm:py-1.5 rounded-full border font-bold text-[12px] transition-all whitespace-nowrap shrink-0 cursor-pointer ${isCircleJoined
-                                        ? 'bg-surface-container-high text-text-primary border-white/20'
-                                        : 'border-primary-container/30 text-primary-container hover:bg-primary-container hover:text-white'
-                                        }`}
+                                    className={cn(
+                                        "px-3.5 py-1.5 rounded-full border font-bold text-[12px] transition-all whitespace-nowrap shrink-0 cursor-pointer shadow-xs active:scale-95",
+                                        isCircleJoined
+                                            ? "bg-surface-container-high text-text-primary border-outline-variant"
+                                            : "border-primary-container/40 text-primary-container hover:bg-primary-container hover:text-white"
+                                    )}
                                 >
                                     {isCircleJoined ? '✓ Joined Circle' : 'Join Circle'}
                                 </button>
                             ) : (
-                                <button className="flex items-center gap-2 text-text-secondary hover:text-primary-container transition-colors ml-auto shrink-0">
-                                    <span className="material-symbols-outlined text-[20px]">bookmark_add</span>
+                                <button
+                                    onClick={handleBookmarkClick}
+                                    disabled={isActionPending}
+                                    className={cn(
+                                        "flex items-center gap-2 transition-colors ml-auto shrink-0 border-none bg-transparent cursor-pointer p-1.5 rounded-full hover:bg-surface-container-high",
+                                        post?.bookmarked ? "text-amber-500" : "text-text-secondary hover:text-text-primary"
+                                    )}
+                                    title={post?.bookmarked ? "Remove bookmark" : "Save to bookmarks"}
+                                >
+                                    <span
+                                        className="material-symbols-outlined text-[20px]"
+                                        style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}
+                                    >
+                                        bookmark_add
+                                    </span>
                                 </button>
                             )}
                         </div>

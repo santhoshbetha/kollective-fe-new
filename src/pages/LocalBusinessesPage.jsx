@@ -6,6 +6,8 @@ import { useAuthStore } from '../store/auth/useAuthStore';
 import { LocalBusinessesFeed } from '../features/businesses/LocalBusinessesFeed';
 import { ProposalsFeed } from '../features/businesses/ProposalsFeed';
 import { PostAdModal } from '../features/classifieds/PostAdModal';
+import { Filter, ChevronDown, Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export const LocalBusinessesPage = () => {
     const navigate = useNavigate();
@@ -13,6 +15,7 @@ export const LocalBusinessesPage = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDistance, setSelectedDistance] = useState('');
+    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
     // 🗺️ Location Selectors
     const userState = useStore((state) => state.userState);
@@ -120,6 +123,8 @@ export const LocalBusinessesPage = () => {
         );
     }
 
+    const hasActiveFilters = Boolean(searchQuery || activeCategory !== 'All' || selectedDistance);
+
     return (
         <div className="max-w-[1280px] mx-auto flex flex-col gap-12 pb-20 w-full relative">
             <div className="w-full flex flex-col gap-6">
@@ -150,8 +155,8 @@ export const LocalBusinessesPage = () => {
                     </div>
                 </div>
 
-                {/* Controls, Filters & Toggles */}
-                <div className="mb-12 space-y-6">
+                {/* Controls & Action Buttons */}
+                <div className="mb-6 space-y-6">
                     <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
                         <div className="flex p-1 bg-surface-container-low rounded-xl border border-white/5 w-full lg:w-auto">
                             <button
@@ -188,63 +193,145 @@ export const LocalBusinessesPage = () => {
                             </button>
                         </div>
                     </div>
+                </div>
 
-                    {/* Search Field & Distance Filter Row */}
-                    <div className="flex flex-col sm:flex-row gap-3 items-center">
-                        <div className="relative group flex-1 w-full">
-                            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary text-[22px]">search</span>
-                            <input
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-surface-container-low border border-white/10 rounded-2xl py-4 pl-12 pr-6 focus:outline-none focus:border-primary-container transition-all placeholder:text-text-text-secondary/40 text-text-primary text-lg"
-                                placeholder={activeTab === 'businesses' ? 'Search businesses...' : 'Search proposals...'}
-                                type="text"
-                            />
+                {/* Collapsible Search & Filter Accordion Card */}
+                <section className="mb-8 bg-surface-container border border-outline-variant rounded-card shadow-2xl overflow-hidden font-sans transition-all">
+                    {/* Accordion Trigger Header */}
+                    <button
+                        type="button"
+                        onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+                        className="w-full flex items-center justify-between px-6 py-4 focus:outline-none bg-transparent border-none text-left cursor-pointer hover:bg-surface-container-high/50 transition-colors"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-surface-container-low rounded-card flex items-center justify-center border border-outline-variant/60 shrink-0">
+                                <Filter className="w-5 h-5 text-primary" />
+                            </div>
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <span className="text-lg font-bold text-text-primary">
+                                    {activeTab === 'businesses' ? 'Find Local Businesses' : 'Find Business Proposals'}
+                                </span>
+                                {hasActiveFilters && (
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary-container/20 text-primary-container border border-primary-container/30">
+                                        Filters Active
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        <ChevronDown
+                            className={cn(
+                                "w-5 h-5 text-text-secondary transition-transform duration-300",
+                                isSearchExpanded && "rotate-180"
+                            )}
+                        />
+                    </button>
+
+                    {/* Expandable Filter Panel */}
+                    <div
+                        className={cn(
+                            "transition-all duration-300 ease-out overflow-hidden px-6",
+                            isSearchExpanded
+                                ? "max-h-[2000px] opacity-100 pb-8 border-t border-outline-variant/40 pt-6"
+                                : "max-h-0 opacity-0 py-0 border-t-0"
+                        )}
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            {/* Search Input */}
+                            <div className="space-y-2 flex flex-col">
+                                <label className="text-lg font-bold text-text-secondary uppercase tracking-widest">
+                                    {activeTab === 'businesses' ? 'Search Businesses' : 'Search Proposals'}
+                                </label>
+                                <div className="relative group">
+                                    <Search className="w-4 h-4 text-text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors group-focus-within:text-primary" />
+                                    <input
+                                        className="w-full bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 text-[16px] rounded-card pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/40 outline-none transition-all"
+                                        placeholder={activeTab === 'businesses' ? 'Search businesses by name, description...' : 'Search proposals...'}
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary p-0.5 rounded-md bg-transparent border-none cursor-pointer"
+                                            aria-label="Clear search text"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                                <p className="text-[14px] text-text-secondary/60 italic">
+                                    Search across business names, services, and descriptions
+                                </p>
+                            </div>
+
+                            {/* Distance Filter */}
+                            {hasAddressOrCoords ? (
+                                <div className="space-y-2 flex flex-col">
+                                    <label className="text-lg font-bold text-text-secondary uppercase tracking-widest">
+                                        Filter by Distance
+                                    </label>
+                                    <div className="relative group">
+                                        <select
+                                            value={selectedDistance}
+                                            onChange={(e) => setSelectedDistance(e.target.value)}
+                                            className="w-full bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 text-[16px] rounded-card px-4 py-3 text-text-primary outline-none transition-all cursor-pointer"
+                                        >
+                                            <option value="" className="bg-[#18181b] text-text-primary">All Distances</option>
+                                            {DISTANCE_OPTIONS.map((opt) => (
+                                                <option key={opt.value} value={opt.value} className="bg-[#18181b] text-text-primary">
+                                                    {opt.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <p className="text-[14px] text-text-secondary/60 italic">
+                                        Radius based on your address location
+                                    </p>
+                                </div>
+                            ) : hasState ? (
+                                <div className="space-y-2 flex flex-col">
+                                    <label className="text-lg font-bold text-text-secondary uppercase tracking-widest">
+                                        Location Scope
+                                    </label>
+                                    <div className="flex items-center gap-2 bg-primary-container/10 border border-primary-container/20 px-4 py-3 rounded-card text-sm font-bold text-primary-container">
+                                        <span className="material-symbols-outlined text-[18px]">location_on</span>
+                                        <span>Showing in {userState || currentUser?.state || currentUser?.origin_state}</span>
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
 
-                        {/* Search By Distance Dropdown (If Street Address / Coords provided) */}
-                        {hasAddressOrCoords ? (
-                            <div className="flex items-center gap-2 bg-surface-container-low border border-white/10 px-4 py-3.5 rounded-2xl text-xs font-bold text-text-primary shrink-0 w-full sm:w-auto justify-center">
-                                <span className="material-symbols-outlined text-primary-container text-[20px]">location_on</span>
-                                <span className="text-text-secondary text-xs font-bold">Distance:</span>
-                                <select
-                                    value={selectedDistance}
-                                    onChange={(e) => setSelectedDistance(e.target.value)}
-                                    className="bg-transparent text-text-primary font-bold text-xs focus:outline-none cursor-pointer"
-                                >
-                                    <option value="" className="bg-[#18181b] text-text-primary">All Distances</option>
-                                    {DISTANCE_OPTIONS.map((opt) => (
-                                        <option key={opt.value} value={opt.value} className="bg-[#18181b] text-text-primary">
-                                            {opt.label}
-                                        </option>
-                                    ))}
-                                </select>
+                        {/* Categories Selection */}
+                        <div className="mt-8">
+                            <label className="text-lg font-bold text-text-secondary uppercase tracking-widest block mb-4">
+                                Categories
+                            </label>
+                            <div className="flex flex-wrap items-center gap-2 w-full">
+                                {categories.map((cat) => {
+                                    const isActive = activeCategory === cat;
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={cat}
+                                            onClick={() => setActiveCategory(cat)}
+                                            className={cn(
+                                                "px-4 py-2 border rounded-full text-xs font-bold cursor-pointer transition-all shrink-0",
+                                                isActive
+                                                    ? "bg-primary-container border-primary-container text-white crimson-glow"
+                                                    : "bg-surface-container-low border-outline-variant text-text-secondary hover:border-primary-container hover:bg-surface-container-high hover:text-text-primary"
+                                            )}
+                                        >
+                                            {cat}
+                                        </button>
+                                    );
+                                })}
                             </div>
-                        ) : hasState ? (
-                            /* State Fallback Badge */
-                            <div className="flex items-center gap-1.5 bg-primary-container/10 border border-primary-container/20 px-4 py-3.5 rounded-2xl text-xs font-bold text-primary-container shrink-0 w-full sm:w-auto justify-center">
-                                <span className="material-symbols-outlined text-[18px]">location_on</span>
-                                <span>Showing in {userState || currentUser?.state || currentUser?.origin_state}</span>
-                            </div>
-                        ) : null}
+                        </div>
                     </div>
-
-                    {/* Categories Grid Selection */}
-                    <div className="flex flex-wrap gap-2">
-                        {categories.map((cat) => (
-                            <button
-                                key={cat}
-                                onClick={() => setActiveCategory(cat)}
-                                className={`px-5 py-2 rounded-full text-sm font-bold transition-all border cursor-pointer ${activeCategory === cat
-                                    ? 'bg-primary-container text-white border-primary-container crimson-glow'
-                                    : 'bg-surface-container-high border-white/5 hover:bg-surface-variant text-text-secondary hover:text-text-primary'
-                                    }`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                </section>
 
                 {/* Local Target Component Injection Layer */}
                 {activeTab === 'businesses' ? (

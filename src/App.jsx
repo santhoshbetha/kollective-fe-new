@@ -12,6 +12,7 @@ import { PostDetailsPage } from './pages/PostDetailsPage';
 import { EventsPage } from './pages/EventsPage';
 import { CreateEventPage } from './pages/CreateEventPage';
 import { EventDetailsPage } from './pages/EventDetailsPage';
+import { CalendarPage } from './pages/CalendarPage';
 import { LocalBusinessesPage } from './pages/LocalBusinessesPage';
 import { BusinessDetailsPage } from './pages/BusinessDetailsPage';
 import { PostBusinessPage } from './pages/PostBusinessPage';
@@ -83,6 +84,10 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 10, // 10 minutes
+      // refetchOnMount: false,
+      // refetchOnReconnect: false,
+      // refetchInterval: false,
     },
   },
 });
@@ -136,6 +141,7 @@ export default function App() {
 
                 {/* Events Flow */}
                 <Route path="/events" element={<EventsPage />} />
+                <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/events/create" element={<CreateEventPage />} />
                 <Route path="/events/:id" element={<EventDetailsPage />} />
 

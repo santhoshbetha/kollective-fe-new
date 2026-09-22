@@ -309,14 +309,14 @@ export const PostBusinessProposalPage = () => {
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary-container/10 blur-[40px] rounded-full"></div>
             <div className="flex items-center gap-3 mb-6 text-text-secondary">
               <span className="material-symbols-outlined">hub</span>
-              <h3 className="text-lgfont-bold uppercase tracking-wider">Collaboration Features</h3>
+              <h3 className="text-[20px] font-bold uppercase tracking-wider">Collaboration Features</h3>
             </div>
 
             <ul className="space-y-4">
               <li className="flex gap-3 items-start">
                 <span className="material-symbols-outlined text-primary-container text-[20px]">visibility</span>
                 <div>
-                  <p className="font-bold text-lg text-text-primary">Global Visibility</p>
+                  <p className="font-bold text-[18px] text-text-primary">Global Visibility</p>
                   <p className="text-[15px] text-text-secondary leading-normal mt-0.5">
                     Your proposal is indexed across all Kollective nodes for maximized exposure.
                   </p>
@@ -325,7 +325,7 @@ export const PostBusinessProposalPage = () => {
               <li className="flex gap-3 items-start">
                 <span className="material-symbols-outlined text-primary-container text-[20px]">groups</span>
                 <div>
-                  <p className="font-bold text-lg text-text-primary">Syndicate Matching</p>
+                  <p className="font-bold text-[18px] text-text-primary">Syndicate Matching</p>
                   <p className="text-[15px] text-text-secondary leading-normal mt-0.5">
                     Matches your proposal with active syndicates searching for matching categories.
                   </p>
@@ -334,7 +334,7 @@ export const PostBusinessProposalPage = () => {
               <li className="flex gap-3 items-start">
                 <span className="material-symbols-outlined text-primary-container text-[20px]">contract</span>
                 <div>
-                  <p className="font-bold text-lg text-text-primary">Smart Backing</p>
+                  <p className="font-bold text-[18px] text-text-primary">Smart Backing</p>
                   <p className="text-[15px] text-text-secondary leading-normal mt-0.5">
                     Automated mechanisms secure transparent and verifiable capital backing.
                   </p>
@@ -345,15 +345,15 @@ export const PostBusinessProposalPage = () => {
 
           {/* Priority Idea Suggestions Card */}
           <div className="p-6 rounded-2xl bg-gradient-to-b from-amber-500/10 to-primary-container/10 border border-amber-500/30 space-y-3">
-            <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-amber-400 font-bold text-[15px] uppercase tracking-wider">
               <span className="material-symbols-outlined text-base">rocket_launch</span>
               <span>Priority Anti-Monopoly Ideas</span>
             </div>
-            <h4 className="font-bold text-text-primary text-base">Needed Community Proposals</h4>
-            <p className="text-xs text-text-secondary leading-relaxed">
+            <h4 className="font-bold text-text-primary text-[15px]">Needed Community Proposals</h4>
+            <p className="text-[15px] text-text-secondary leading-relaxed">
               We strongly encourage proposals that establish people-centered alternatives to corporate giants:
             </p>
-            <ul className="space-y-2 text-xs text-text-secondary">
+            <ul className="space-y-2 text-[15px] text-text-secondary">
               <li className="flex items-start gap-2 bg-surface-container-low p-2.5 rounded-xl border border-white/5">
                 <span className="material-symbols-outlined text-primary-container text-sm shrink-0 mt-0.5">local_cafe</span>
                 <div>
@@ -374,19 +374,19 @@ export const PostBusinessProposalPage = () => {
           {/* Proposal Guidelines Checklist */}
           <div className="glass-panel rounded-2xl p-6 border border-white/5 space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="text-lg font-bold text-text-primary uppercase tracking-wider">Proposal Guidelines</h4>
+              <h4 className="text-xl font-bold text-text-primary uppercase tracking-wider">Proposal Guidelines</h4>
               <span className="material-symbols-outlined text-text-secondary text-[18px]">info</span>
             </div>
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <div className="flex items-center gap-2 text-[16px] text-text-secondary">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
                 Define target outcomes and timeline clearly.
               </div>
-              <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <div className="flex items-center gap-2 text-[16px] text-text-secondary">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
                 Specify transparent return mechanics.
               </div>
-              <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <div className="flex items-center gap-2 text-[16px] text-text-secondary">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
                 Highlight eco-social community value and people-first structure.
               </div>

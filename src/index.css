@@ -7,174 +7,176 @@
 
 :root {
   /* --- Brand Primary Palette & Base Tokens (Light Mode) --- */
-  --primary: #a10836;
-  --primary-container: #a10836;
-  --primary-fixed: #ffdad4;
-  --primary-fixed-dim: #ffb4a8;
+  --primary: #c80d44;
+  --primary-container: #c80d44;
+  --primary-fixed: #ffe4e6;
+  --primary-fixed-dim: #fecdd3;
   --on-primary: #ffffff;
   --on-primary-container: #ffffff;
-  --on-primary-fixed: #410000;
-  --on-primary-fixed-variant: #930000;
-  --inverse-primary: #ffb4a8;
+  --on-primary-fixed: #4c0519;
+  --on-primary-fixed-variant: #9f1239;
+  --inverse-primary: #fda4af;
 
   /* --- Secondary Accents & Muted Gold Tokens --- */
-  --secondary: #f8c62c;
-  --secondary-container: #e6c300;
-  --secondary-fixed: #ffdf92;
-  --secondary-fixed-dim: #f2c025;
+  --secondary: #d97706;
+  --secondary-container: #f59e0b;
+  --secondary-fixed: #fef3c7;
+  --secondary-fixed-dim: #fde68a;
   --on-secondary: #ffffff;
-  --on-secondary-container: #554100;
-  --on-secondary-fixed: #241a00;
-  --on-secondary-fixed-variant: #594400;
-  --gold-muted: #d4a017;
+  --on-secondary-container: #78350f;
+  --on-secondary-fixed: #451a03;
+  --on-secondary-fixed-variant: #78350f;
+  --gold-muted: #d97706;
 
   /* --- Tertiary Digital Accent Tokens --- */
-  --tertiary: #0052f9;
-  --tertiary-container: #dce1ff;
-  --tertiary-fixed: #dce1ff;
-  --tertiary-fixed-dim: #b7c4ff;
+  --tertiary: #2563eb;
+  --tertiary-container: #dbeafe;
+  --tertiary-fixed: #dbeafe;
+  --tertiary-fixed-dim: #bfdbfe;
   --on-tertiary: #ffffff;
-  --on-tertiary-container: #001551;
-  --on-tertiary-fixed: #001551;
-  --on-tertiary-fixed-variant: #0039b4;
+  --on-tertiary-container: #1e3a8a;
+  --on-tertiary-fixed: #1e3a8a;
+  --on-tertiary-fixed-variant: #1d4ed8;
 
   /* --- Error Framework --- */
-  --error: #a10836;
-  --error-container: #fce8e6;
+  --error: #dc2626;
+  --error-container: #fee2e2;
   --on-error: #ffffff;
-  --on-error-container: #690005;
+  --on-error-container: #991b1b;
 
   /* --- Semantic Interface Layers --- */
-  --background: #f8fafc;
+  --background: #f1f5f9;
   --on-background: #0f172a;
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --outline: #94a3b8;
+  --outline: #cbd5e1;
   --outline-variant: #e2e8f0;
 
   /* --- Surface Structure Levels --- */
   --surface: #ffffff;
   --surface-dim: #e2e8f0;
   --surface-bright: #ffffff;
-  --surface-variant: #f1f5f9;
+  --surface-variant: #f8fafc;
   --surface-ink: #ffffff;
-  --surface-tint: #a10836;
-  --surface-crimson-low: #fce8e6;
+  --surface-tint: #c80d44;
+  --surface-crimson-low: #fff1f2;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #ffffff;
+  --surface-container-low: #f8fafc;
   --surface-container: #ffffff;
   --surface-container-high: #f1f5f9;
-  --surface-container-highest: #cbd5e1;
-  --inverse-surface: #141414;
-  --inverse-on-surface: #e5e2e1;
+  --surface-container-highest: #e2e8f0;
+  --inverse-surface: #0f172a;
+  --inverse-on-surface: #f8fafc;
 }
+
 
 .dark {
   /* ==========================================================================
      Base shadcn / Tailwind v4 Tokens (Dark Mode)
      ========================================================================== */
-  --background: #060a0d;
-  --foreground: #eff2f5;
-  --card: #0a1016;
-  --card-foreground: #eff2f5;
-  --popover: #0a1016;
-  --popover-foreground: #eff2f5;
+  --background: #090d12;
+  --foreground: #f8fafc;
+  --card: #111823;
+  --card-foreground: #f8fafc;
+  --popover: #111823;
+  --popover-foreground: #f8fafc;
 
-  --primary: #db2d27;
+  --primary: #e11d48;
   --primary-foreground: #ffffff;
-  --secondary: #0076d2;
+  --secondary: #f59e0b;
   --secondary-foreground: #ffffff;
 
-  --muted: #151b21;
-  --muted-foreground: #7f878f;
-  --accent: #241f14;
-  --accent-foreground: #fac131;
+  --muted: #182230;
+  --muted-foreground: #94a3b8;
+  --accent: #2c2214;
+  --accent-foreground: #fbbf24;
 
-  --destructive: #cc272e;
-  --destructive-foreground: #eff2f5;
+  --destructive: #f43f5e;
+  --destructive-foreground: #f8fafc;
 
-  --border: #192026;
-  --input: #192026;
-  --ring: #0076d2;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #e11d48;
 
-  --chart-1: #ef6b9a;
-  --chart-2: #ff8255;
-  --chart-3: #cd9204;
-  --chart-4: #06ca85;
-  --chart-5: #05a9f6;
+  --chart-1: #fb7185;
+  --chart-2: #fb923c;
+  --chart-3: #facc15;
+  --chart-4: #34d399;
+  --chart-5: #38bdf8;
 
-  --sidebar: #100c0d;
-  --sidebar-foreground: #fef8fa;
-  --sidebar-primary: #868686;
-  --sidebar-primary-foreground: #1f1417;
-  --sidebar-accent: #3e2a2a;
-  --sidebar-accent-foreground: #fef8f8;
-  --sidebar-border: #2e2729;
-  --sidebar-ring: #868686;
+  --sidebar: #0b0f16;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #94a3b8;
+  --sidebar-primary-foreground: #090d12;
+  --sidebar-accent: #2a1219;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #e11d48;
 
   /* ==========================================================================
      Mapped Legacy / Material Design 3 Tokens (Dark Mode)
      ========================================================================== */
   /* Primary & Accents */
-  --primary-container: #8c1012;
-  --primary-fixed: #ffdad5;
-  --primary-fixed-dim: #ffb4aa;
-  --on-primary: #5f0003;
-  --on-primary-container: #ffdad5;
-  --on-primary-fixed: #410002;
-  --on-primary-fixed-variant: #930009;
-  --inverse-primary: #a71b19;
+  --primary-container: #c80d44;
+  --primary-fixed: #ffe4e6;
+  --primary-fixed-dim: #fecdd3;
+  --on-primary: #ffffff;
+  --on-primary-container: #ffffff;
+  --on-primary-fixed: #4c0519;
+  --on-primary-fixed-variant: #9f1239;
+  --inverse-primary: #fda4af;
 
-  --secondary-container: #004785;
-  --secondary-fixed: #d2e4ff;
-  --secondary-fixed-dim: #a1c9fd;
-  --on-secondary: #00315f;
-  --on-secondary-container: #d2e4ff;
-  --on-secondary-fixed: #001c3b;
-  --on-secondary-fixed-variant: #004785;
-  --gold-muted: #fac131;
+  --secondary-container: #d97706;
+  --secondary-fixed: #fef3c7;
+  --secondary-fixed-dim: #fde68a;
+  --on-secondary: #ffffff;
+  --on-secondary-container: #fef3c7;
+  --on-secondary-fixed: #451a03;
+  --on-secondary-fixed-variant: #78350f;
+  --gold-muted: #f59e0b;
 
   /* Tertiary / Digital Accent */
-  --tertiary: #fac131;
-  --tertiary-container: #5a3e00;
-  --tertiary-fixed: #ffdf9e;
-  --tertiary-fixed-dim: #e9c16c;
-  --on-tertiary: #3e2a00;
-  --on-tertiary-container: #ffdf9e;
-  --on-tertiary-fixed: #261900;
-  --on-tertiary-fixed-variant: #5a3e00;
+  --tertiary: #3b82f6;
+  --tertiary-container: #1e3a8a;
+  --tertiary-fixed: #dbeafe;
+  --tertiary-fixed-dim: #93c5fd;
+  --on-tertiary: #ffffff;
+  --on-tertiary-container: #dbeafe;
+  --on-tertiary-fixed: #1e3a8a;
+  --on-tertiary-fixed-variant: #1d4ed8;
 
   /* Errors & Destructive */
-  --error: #ffb4ab;
-  --error-container: #93000a;
-  --on-error: #690005;
-  --on-error-container: #ffdad6;
+  --error: #f87171;
+  --error-container: #991b1b;
+  --on-error: #ffffff;
+  --on-error-container: #fee2e2;
 
   /* Text & Boundaries */
   --on-background: var(--foreground);
-  --text-primary: var(--foreground);
-  --text-secondary: var(--muted-foreground);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
   --outline: rgba(255, 255, 255, 0.18);
   --outline-variant: rgba(255, 255, 255, 0.08);
 
   /* Surface Structure System */
-  --surface: #0a1016;
-  --surface-dim: #060a0d;
-  --surface-bright: #1b232c;
+  --surface: #0e141c;
+  --surface-dim: #090d12;
+  --surface-bright: #1c2635;
   --surface-variant: var(--muted);
   --surface-ink: var(--background);
-  --surface-tint: #ffb4aa;
-  --surface-crimson-low: #280a0c;
-  --surface-container-lowest: #040709;
-  --surface-container-low: #0a1016;
-  --surface-container: #10161d;
-  --surface-container-high: #151d26;
-  --surface-container-highest: #1e2833;
+  --surface-tint: #e11d48;
+  --surface-crimson-low: #2a0b12;
+  --surface-container-lowest: #06090d;
+  --surface-container-low: #0b1017;
+  --surface-container: #111823;
+  --surface-container-high: #182230;
+  --surface-container-highest: #212e3e;
   --on-surface: var(--foreground);
   --on-surface-variant: var(--muted-foreground);
-  --inverse-surface: #dfe2e4;
-  --inverse-on-surface: #10161d;
+  --inverse-surface: #f8fafc;
+  --inverse-on-surface: #111823;
 }
+
 
 @theme inline {
   /* New Semantic shadcn Colors */
@@ -351,8 +353,8 @@
 .glass-card {
   background: var(--surface-container);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03) !important;
 }
 
 .dark .glass-card {
@@ -364,41 +366,46 @@
 .glass-panel {
   background: var(--surface-container);
   border: 1px solid var(--outline-variant);
-  box-shadow: none !important;
+  box-shadow: 0 2px 8px 0 rgba(15, 23, 42, 0.04) !important;
 }
 
 .dark .glass-panel {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Soft shadows in light mode to make cards/panels pop */
+/* Crisp modern elevation shadows in light mode */
 html:not(.dark) .shadow-sm {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04) !important;
 }
 
 html:not(.dark) .shadow {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 2px 4px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.03) !important;
 }
 
 html:not(.dark) .shadow-md {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03) !important;
+  box-shadow: 0 4px 10px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04) !important;
 }
 
 html:not(.dark) .shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -4px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -4px rgba(15, 23, 42, 0.04) !important;
 }
 
 html:not(.dark) .shadow-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04) !important;
 }
 
 html:not(.dark) .shadow-2xl {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.12) !important;
 }
 
 .crimson-glow {
-  box-shadow: 0 0 20px rgba(204, 0, 0, 0.15);
+  box-shadow: 0 0 20px rgba(200, 13, 68, 0.2);
 }
+
+html:not(.dark) .crimson-glow {
+  box-shadow: 0 4px 16px rgba(200, 13, 68, 0.28) !important;
+}
+
 
 .voice-accent-glow {
   box-shadow: 0 0 20px rgba(212, 160, 23, 0.15);

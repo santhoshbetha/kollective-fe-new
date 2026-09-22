@@ -68,7 +68,7 @@ export const LandingPage = () => {
               style={{ fontSize: "36px", fontFamily: "Protest Riot, sans-serif" }}>
               Kollective
             </span>
-            <img src="/K99.png" alt="Kollective Logo" className="h-14 w-16" />
+            <img src="/Shield&WINGS.png" alt="Kollective Logo" className="h-18 w-18" />
             <span className="text-xl font-bold sm:inline-block  bg-[#CC033B] bg-clip-text text-transparent"
               style={{ fontSize: "36px", fontFamily: "Protest Riot, sans-serif" }}>
               Kollective
@@ -395,7 +395,7 @@ export const LandingPage = () => {
             </DialogHeader>
             <div className="py-4 space-y-3">
               <p className="text-text-secondary text-xl leading-relaxed font-bold">
-                Please log in to broadcast a post. 33
+                Please log in to broadcast a post.
               </p>
             </div>
             <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 border-t-0 p-0">

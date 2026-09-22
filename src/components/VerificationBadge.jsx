@@ -23,6 +23,7 @@ export const VerificationBadge = ({ type = 'citizen', size = 'sm', className = '
         sm: 'w-3.5 h-3.5',          // 14px static fallback
         md: 'w-[18px] h-[18px]',    // 18px static fallback
         lg: 'w-6 h-6',              // 24px static fallback
+        xl: 'w-8 h-8',              // 24px static fallback
     };
 
     const selectedSize = sizeClasses[size] || sizeClasses.dynamic;
