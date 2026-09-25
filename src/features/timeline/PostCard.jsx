@@ -13,6 +13,8 @@ import { ImageLightbox } from './ImageLightbox';
 import { usePostActions } from './usePostActions';
 import { useRsvpToAction } from '../../features/organize/useOrganizeFeature';
 import { usePostsStore } from '../../store/usePostsStore';
+import { useAuthStore } from '../../store/auth/useAuthStore';
+import { LoginPromptModal } from '../../components/LoginPromptModal';
 import { cn } from "@/lib/utils";
 
 import {
@@ -154,36 +156,134 @@ let activeMenuSetShowMenu = null;
 export function PostCard({ post: propPost, isLast = false, standalone = false }) {
     const storePost = usePostsStore((state) => propPost?.id ? state.entities[propPost.id] : null);
     const post = storePost || propPost;
+    const storeEntities = usePostsStore((state) => state.entities);
+
+    const currentUser = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+
+    const getDisplayPost = (rawPost) => {
+        if (!rawPost) return rawPost;
+        if (rawPost.reblog && typeof rawPost.reblog === 'object') return rawPost.reblog;
+        if (rawPost.reblog && typeof rawPost.reblog === 'string' && storeEntities[rawPost.reblog]) return storeEntities[rawPost.reblog];
+        if (rawPost.reblog_of_id && storeEntities[rawPost.reblog_of_id]) return storeEntities[rawPost.reblog_of_id];
+        if (rawPost.reblogOf && storeEntities[rawPost.reblogOf]) return storeEntities[rawPost.reblogOf];
+        return rawPost;
+    };
+
+    const displayPost = getDisplayPost(post);
+
+    const isSelfPost = () => {
+        const targetAuthor = displayPost?.author || post?.author;
+        if (!targetAuthor) return false;
+        const currentUserId = currentUser?.id || activeAccount?.id;
+        const currentUsername = currentUser?.username || activeAccount?.username;
+        const currentName = currentUser?.name || activeAccount?.name;
+
+        const authorId = targetAuthor.id;
+        const authorUsername = targetAuthor.username || (targetAuthor.handle ? targetAuthor.handle.replace('@', '') : null);
+        const authorName = targetAuthor.name;
+
+        if (currentUserId && authorId && String(currentUserId) === String(authorId)) return true;
+        if (currentUsername && authorUsername && currentUsername.toLowerCase() === authorUsername.toLowerCase()) return true;
+        if (currentName && authorName && currentName.toLowerCase() === authorName.toLowerCase()) return true;
+        return false;
+    };
+    const isSelf = isSelfPost();
+
+    const isRebloggedPost = !!(
+        post?.reblog ||
+        post?.reblog_of_id ||
+        post?.reblogOf ||
+        post?.isReblog
+    );
+
+    //console.log("post::", post);
+
+    const targetPostId = displayPost?.id || post?.id;
+    const isAlreadyReblogged = !!(post?.reblogged || post?.has_reblogged || displayPost?.reblogged || displayPost?.has_reblogged);
 
     const { toggleLike, toggleReblog, toggleBookmark, isActionPending } = usePostActions();
     const rsvpMutation = useRsvpToAction();
     const navigate = useNavigate();
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+    const [loginPromptMessage, setLoginPromptMessage] = useState("Please log in to interact with posts.");
     const [showMenu, setShowMenu] = useState(false);
     const [isActionJoined, setIsActionJoined] = useState(false);
     const [isCircleJoined, setIsCircleJoined] = useState(false);
     // 🎛️ Lightbox state parameters sandboxed per post card item
     const [carouselOpen, setCarouselOpen] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
-    const allImages = post?.images || (post?.image ? [post.image] : []);
+    const allImages = displayPost?.images || (displayPost?.image ? [displayPost.image] : (post?.images || (post?.image ? [post.image] : [])));
+
+    const triggerLoginPrompt = (message = "Please log in to interact with posts.") => {
+        setLoginPromptMessage(message);
+        setIsLoginPromptOpen(true);
+    };
 
     const handleLikeClick = (e) => {
         if (e) e.stopPropagation();
-        if (post?.id) {
-            toggleLike(post.id);
+        if (!isAuthenticated) {
+            triggerLoginPrompt("Please log in to like posts.");
+            return;
+        }
+        if (targetPostId) {
+            toggleLike(targetPostId);
         }
     };
 
     const handleReblogClick = (e) => {
         if (e) e.stopPropagation();
-        if (post?.id) {
-            toggleReblog(post.id);
+        if (isSelf || isAlreadyReblogged) return;
+        if (!isAuthenticated) {
+            triggerLoginPrompt("Please log in to reblog posts.");
+            return;
+        }
+        if (targetPostId) {
+            toggleReblog(targetPostId);
         }
     };
 
     const handleBookmarkClick = (e) => {
         if (e) e.stopPropagation();
-        if (post?.id) {
-            toggleBookmark(post.id);
+        if (isSelf) return;
+        if (!isAuthenticated) {
+            triggerLoginPrompt("Please log in to bookmark posts.");
+            return;
+        }
+        if (targetPostId) {
+            toggleBookmark(targetPostId);
+        }
+    };
+
+    const handleCommentClick = (e) => {
+        if (e) e.stopPropagation();
+        if (!isAuthenticated) {
+            triggerLoginPrompt("Please log in to comment on posts.");
+            return;
+        }
+        if (targetPostId) navigate(`/post/${targetPostId}`);
+    };
+
+    const handleJoinCircleClick = (e) => {
+        if (e) e.stopPropagation();
+        if (!isAuthenticated) {
+            triggerLoginPrompt("Please log in to join circles.");
+            return;
+        }
+        setIsCircleJoined(!isCircleJoined);
+    };
+
+    const handleJoinActionClick = (e) => {
+        if (e) e.stopPropagation();
+        if (!isAuthenticated) {
+            triggerLoginPrompt("Please log in to join actions.");
+            return;
+        }
+        const nextState = !isActionJoined;
+        setIsActionJoined(nextState);
+        if (nextState) {
+            rsvpMutation.mutate({ actionId: post?.actionId || 'action-1', status: 'Attending' });
         }
     };
 
@@ -235,8 +335,8 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
             setShowMenu(true);
         }
     };
-    const authorHandle = post?.author?.handle || `@${post?.author?.name?.toLowerCase().replace(/\s+/g, '')}@kollective.social`;
-    const domain = post?.domain || 'universeodon.com';
+    const authorHandle = displayPost?.author?.handle || post?.author?.handle || `@${(displayPost?.author?.name || post?.author?.name || 'user').toLowerCase().replace(/\s+/g, '')}@kollective.social`;
+    const domain = displayPost?.domain || post?.domain || 'universeodon.com';
 
     const handleCardClick = (e) => {
         // Avoid navigating if clicking interactive buttons/links
@@ -259,8 +359,10 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
             activeMenuSetShowMenu = null;
             return;
         }
-        navigate(`/post/${post?.id}`);
+        navigate(`/post/${displayPost?.id || post?.id}`);
     };
+
+    console.log("PostCard Post: ", post);
 
     // SYSTEM AI POST STYLE
     if (post?.isSystem) {
@@ -301,7 +403,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
         );
     }
 
-    if (post?.isVoice) {
+    if (post?.category === 'voice') {
         return (
             <>
                 <article
@@ -322,21 +424,6 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
 
                     {/* Top Right Actions */}
                     <div className="absolute top-3 right-4 flex items-center gap-2 z-20">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                toggleBookmark(post?.id);
-                            }}
-                            className={`p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer 
-                                        ${post?.bookmarked ? 'text-primary-container' : 'text-text-secondary hover:text-white'
-                                }`}
-                            title={post?.bookmarked ? 'Remove Bookmark' : 'Bookmark Pulse'}
-                        >
-                            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}>
-                                bookmark
-                            </span>
-                        </button>
-
                         <div className="relative menu-container-relative">
                             <button
                                 onClick={(e) => {
@@ -356,9 +443,9 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                         <div>
                             <UserHoverCard author={post?.author}>
                                 <div className="flex items-center gap-4 hover:opacity-85 transition-opacity">
-                                    <div className="w-12 h-12 rounded-full border-2 border-primary-container p-0.5">
-                                        <UserAvatar user={post?.author} className="w-full h-full" showStatus={false} />
-                                    </div>
+                                    <UserHoverCard author={post?.author}>
+                                        <UserAvatar user={post?.author} className="w-12 h-12" showStatus={false} />
+                                    </UserHoverCard>
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <h3 className="font-bold text-lg text-text-primary leading-tight">{post?.author.name}</h3>
@@ -436,7 +523,6 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                 </div>
                             </div>
                         )}
-
                         <div className="flex items-center justify-between pt-4 border-t border-outline-variant/30">
                             <div className="flex items-center gap-6">
                                 <button
@@ -457,23 +543,22 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                 </button>
                                 <button
                                     onClick={handleReblogClick}
-                                    disabled={isActionPending}
+                                    disabled={isActionPending || isAlreadyReblogged}
                                     className={cn(
-                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent cursor-pointer hover:scale-105 active:scale-95",
-                                        post?.reblogged ? "text-emerald-500 font-extrabold" : "text-text-secondary hover:text-text-primary"
+                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent",
+                                        isAlreadyReblogged
+                                            ? "opacity-60 cursor-not-allowed text-emerald-500 font-extrabold"
+                                            : "text-text-secondary hover:text-text-primary cursor-pointer hover:scale-105 active:scale-95"
                                     )}
-                                    title="Boost Voice"
+                                    title={isAlreadyReblogged ? "Already reblogged this post" : "Boost Voice"}
                                 >
-                                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: post?.reblogged ? "'wght' 700" : "'wght' 400" }}>
+                                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}>
                                         repeat
                                     </span>
-                                    <span className="text-sm">{post?.shares ?? post?.reblogsCount ?? 0}</span>
+                                    <span className="text-sm">{post?.shares ?? post?.reblogsCount ?? post?.reblogs_count ?? 0}</span>
                                 </button>
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/post/${post?.id}`);
-                                    }}
+                                    onClick={handleCommentClick}
                                     className="flex items-center gap-2 text-text-secondary hover:text-text-primary font-bold transition-all border-none bg-transparent cursor-pointer hover:scale-105 active:scale-95"
                                 >
                                     <span className="material-symbols-outlined text-[20px]">mode_comment</span>
@@ -481,16 +566,9 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                                 </button>
                             </div>
 
-                            {(post?.isVoice || post?.isAction || post?.id === 'strike-post-1') && (
+                            {(post?.category === 'voice' || post?.isAction || post?.id === 'strike-post-1') && (
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const nextState = !isActionJoined;
-                                        setIsActionJoined(nextState);
-                                        if (nextState) {
-                                            rsvpMutation.mutate({ actionId: post?.actionId || 'action-1', status: 'Attending' });
-                                        }
-                                    }}
+                                    onClick={handleJoinActionClick}
                                     className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer shadow-md active:scale-95 ${isActionJoined
                                         ? 'bg-surface-container-high text-primary-container border border-primary-container/30'
                                         : 'bg-primary-container text-white hover:brightness-110 crimson-glow'
@@ -511,6 +589,11 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                     setActiveIndex={setCarouselIndex}
                     onClose={() => setCarouselOpen(false)}
                 />
+                <LoginPromptModal
+                    isOpen={isLoginPromptOpen}
+                    onClose={() => setIsLoginPromptOpen(false)}
+                    message={loginPromptMessage}
+                />
             </>
         );
     }
@@ -524,46 +607,72 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                 ${standalone
                         ? 'glass-card rounded-[16px] border border-white/5 shadow-md'
                         : ''
-                    } ${showMenu ? 'z-30' : 'z-10'}`}
+                    } ${showMenu ? 'z-30' : 'z-10'} ${post?.isOptimistic ? 'opacity-60 pointer-events-none' : ''}`}
             >
+                {/* 🔄 Reblogged Header Indicator Banner */}
+                {isRebloggedPost && (
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-500 mb-3 px-1">
+                        <span className="material-symbols-outlined text-[18px]">repeat</span>
+                        <span>
+                            {post?.author?.name || post?.author?.username || post?.account?.display_name || post?.account?.username ? (
+                                <>
+                                    <span className="text-text-primary font-bold">
+                                        {post?.author?.name || post?.author?.username || post?.account?.display_name || post?.account?.username}
+                                    </span>{' '}
+                                    reblogged
+                                </>
+                            ) : (
+                                'Reblogged'
+                            )}
+                        </span>
+                    </div>
+                )}
+
                 <div className="flex gap-4 items-start relative z-10 w-full">
-                    <UserHoverCard author={post?.author}>
-                        <UserAvatar user={post?.author} className="w-12 h-12" showStatus={false} />
+                    <UserHoverCard author={displayPost?.author || post?.author}>
+                        <UserAvatar user={displayPost?.author || post?.author} className="w-12 h-12" showStatus={false} />
                     </UserHoverCard>
 
                     <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
                             <div className="min-w-0">
-                                <UserHoverCard author={post?.author}>
+                                <UserHoverCard author={displayPost?.author || post?.author}>
                                     <div className="hover:opacity-85 transition-opacity">
                                         <div className="flex items-center gap-1.5">
-                                            <span className="font-bold text-text-primary">{post?.author.name}</span>
-                                            {post?.author.role && (
+                                            <span className="font-bold text-text-primary">{displayPost?.author?.name || post?.author?.name}</span>
+                                            {(displayPost?.author?.role || post?.author?.role) && (
                                                 <span className="text-[12px] px-1.5 py-0.5 bg-surface-container-highest rounded text-text-secondary">
-                                                    {post?.author.role}
+                                                    {displayPost?.author?.role || post?.author?.role}
                                                 </span>
                                             )}
                                         </div>
                                         <span className="font-label-sm text-text-secondary">
-                                            {post?.author.handle || '@circle'} • {post?.time}
+                                            {displayPost?.author?.handle || post?.author?.handle || '@circle'} • {displayPost?.time || post?.time}
+                                            {post?.isOptimistic && (
+                                                <span className="ml-2 inline-flex items-center gap-1 text-xs text-primary-container font-mono font-bold animate-pulse">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-primary-container animate-ping" />
+                                                    Sending...
+                                                </span>
+                                            )}
                                         </span>
                                     </div>
                                 </UserHoverCard>
-                                {post?.author && (
+                                {(displayPost?.author || post?.author) && (
                                     <div className="mt-1.5 flex items-center gap-1.5 text-sm text-text-secondary">
-                                        {post?.author.type === 'organization' ?
+                                        {(displayPost?.author?.type || post?.author?.type) === 'organization' ?
                                             <>
                                                 <span>posted by </span>
                                                 <span
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        const username = post?.author?.handle?.replace('@', '');
+                                                        const targetAuthor = displayPost?.author || post?.author;
+                                                        const username = targetAuthor?.handle?.replace('@', '');
                                                         navigate(`/profile/${username}`, { state: { fromCard: true } });
                                                     }}
                                                     className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1"
                                                 >
-                                                    <img src={post?.author?.avatar || null} className="w-4 h-4 rounded-full object-cover" alt="" />
-                                                    {post?.author?.name}
+                                                    <img src={(displayPost?.author || post?.author)?.avatar || null} className="w-4 h-4 rounded-full object-cover" alt="" />
+                                                    {(displayPost?.author || post?.author)?.name}
                                                 </span>
                                             </>
                                             :
@@ -574,23 +683,6 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                             </div>
 
                             <div className="flex items-center gap-1">
-                                <button
-                                    onClick={handleBookmarkClick}
-                                    disabled={isActionPending}
-                                    className={cn(
-                                        "p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer border-none bg-transparent",
-                                        post?.bookmarked ? "text-amber-500" : "text-text-secondary hover:text-text-primary"
-                                    )}
-                                    title={post?.bookmarked ? 'Remove Bookmark' : 'Bookmark Pulse'}
-                                >
-                                    <span
-                                        className="material-symbols-outlined text-[18px]"
-                                        style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}
-                                    >
-                                        bookmark
-                                    </span>
-                                </button>
-
                                 <div className="relative menu-container-relative">
                                     <button
                                         onClick={(e) => {
@@ -609,26 +701,26 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
 
                         {/* 🏆 1. DECOUPLED RICH TEXT CONTENT SWITCHBOARD */}
                         {/* Handles server-tokens, content warnings, and embedded PollCards/EventCards */}
-                        {post?.contentWarning ? (
-                            <ContentWarningWrapper warning={post?.contentWarning}>
-                                <PostContent post={post} isFocus={false} />
+                        {displayPost?.contentWarning ? (
+                            <ContentWarningWrapper warning={displayPost?.contentWarning}>
+                                <PostContent post={displayPost} isFocus={false} />
                             </ContentWarningWrapper>
                         ) : (
-                            <PostContent post={post} isFocus={false} />
+                            <PostContent post={displayPost} isFocus={false} />
                         )}
 
                         {/* 🏆 2. DECOUPLED MOSAIC MEDIA INJECTION POINT */}
                         {/* Handles 1-4 grids blurring layers, and indicators overlays */}
                         <PostMedia
-                            post={post}
+                            post={displayPost}
                             setCarouselIndex={setCarouselIndex}
                             setCarouselOpen={setCarouselOpen}
                         />
 
                         {/* Tag Chips */}
-                        {post?.tags && post?.tags.length > 0 && (
+                        {displayPost?.tags && displayPost?.tags.length > 0 && (
                             <div className="mt-4 flex gap-2 flex-wrap">
-                                {post?.tags.map((tag, idx) => {
+                                {displayPost?.tags.map((tag, idx) => {
                                     const tagName = typeof tag === 'object' ? tag?.name || tag?.title || tag?.tag || '' : tag;
                                     if (!tagName) return null;
                                     return (
@@ -651,64 +743,70 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                         <div className="mt-6 flex items-center justify-between gap-4 border-t border-outline-variant/30 pt-4 w-full min-w-0">
 
                             <div className="flex items-center gap-6">
+                                {/* Comment Button */}
+                                <button
+                                    onClick={handleCommentClick}
+                                    className="flex items-center gap-1.5 text-text-secondary font-bold text-sm transition-all border-none bg-transparent shrink-0 hover:text-primary-container cursor-pointer hover:scale-105 active:scale-95"
+                                    title="Comment on post"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">
+                                        reply
+                                    </span>
+                                    <span>{displayPost?.commentsCount ?? displayPost?.repliesCount ?? post?.commentsCount ?? post?.repliesCount ?? 0}</span>
+                                </button>
+
+                                {/* Share / Boost Button */}
+                                <button
+                                    onClick={handleReblogClick}
+                                    disabled={isSelf || isActionPending || isAlreadyReblogged}
+                                    className={cn(
+                                        "flex items-center gap-1.5 font-bold text-sm transition-all border-none bg-transparent shrink-0",
+                                        isSelf
+                                            ? "opacity-40 cursor-not-allowed text-text-secondary/50"
+                                            : isAlreadyReblogged
+                                                ? "opacity-60 cursor-not-allowed text-emerald-500 font-extrabold"
+                                                : "text-text-secondary hover:text-text-primary cursor-pointer hover:scale-105 active:scale-95"
+                                    )}
+                                    title={
+                                        isSelf
+                                            ? "You cannot reblog your own post"
+                                            : isAlreadyReblogged
+                                                ? "Already reblogged this post"
+                                                : "Reblog post"
+                                    }
+                                >
+                                    <span
+                                        className="material-symbols-outlined text-[20px]"
+                                        style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}
+                                    >
+                                        repeat
+                                    </span>
+                                    <span>{displayPost?.shares ?? displayPost?.reblogsCount ?? post?.shares ?? post?.reblogsCount ?? 0}</span>
+                                </button>
+
                                 {/* Like Button */}
                                 <button
                                     onClick={handleLikeClick}
                                     disabled={isActionPending}
                                     className={cn(
                                         "flex items-center gap-1.5 font-bold text-sm transition-all cursor-pointer border-none bg-transparent hover:scale-105 active:scale-95 shrink-0",
-                                        post?.liked ? "text-primary-container font-extrabold" : "text-text-secondary hover:text-text-primary"
+                                        (displayPost?.liked || post?.liked) ? "text-primary-container font-extrabold" : "text-text-secondary hover:text-text-primary"
                                     )}
-                                    title={post?.liked ? "Unlike post" : "Like post"}
+                                    title={(displayPost?.liked || post?.liked) ? "Unlike post" : "Like post"}
                                 >
                                     <span
                                         className="material-symbols-outlined text-[20px]"
-                                        style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}
+                                        style={{ fontVariationSettings: (displayPost?.liked || post?.liked) ? "'FILL' 1" : "'FILL' 0" }}
                                     >
-                                        thumb_up
+                                        star
                                     </span>
-                                    <span>{post?.likes ?? post?.likesCount ?? 0}</span>
-                                </button>
-
-                                {/* Share / Boost Button */}
-                                <button
-                                    onClick={handleReblogClick}
-                                    disabled={isActionPending}
-                                    className={cn(
-                                        "flex items-center gap-1.5 font-bold text-sm transition-all cursor-pointer border-none bg-transparent hover:scale-105 active:scale-95 shrink-0",
-                                        post?.reblogged ? "text-emerald-500 font-extrabold" : "text-text-secondary hover:text-text-primary"
-                                    )}
-                                    title={post?.reblogged ? "Undo boost" : "Boost post"}
-                                >
-                                    <span
-                                        className="material-symbols-outlined text-[20px]"
-                                        style={{ fontVariationSettings: post?.reblogged ? "'wght' 700" : "'wght' 400" }}
-                                    >
-                                        repeat
-                                    </span>
-                                    <span>{post?.shares ?? post?.reblogsCount ?? 0}</span>
-                                </button>
-
-                                {/* Comment Button */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/post/${post?.id}`);
-                                    }}
-                                    className="flex items-center gap-1.5 text-text-secondary hover:text-primary-container font-bold text-sm transition-all cursor-pointer border-none bg-transparent hover:scale-105 active:scale-95 shrink-0"
-                                    title="Comment on post"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">mode_comment</span>
-                                    <span>{post?.commentsCount ?? post?.repliesCount ?? 0}</span>
+                                    <span>{displayPost?.likes ?? displayPost?.likesCount ?? post?.likes ?? post?.likesCount ?? 0}</span>
                                 </button>
                             </div>
 
                             {post?.communityJoinable ? (
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setIsCircleJoined(!isCircleJoined);
-                                    }}
+                                    onClick={handleJoinCircleClick}
                                     className={cn(
                                         "px-3.5 py-1.5 rounded-full border font-bold text-[12px] transition-all whitespace-nowrap shrink-0 cursor-pointer shadow-xs active:scale-95",
                                         isCircleJoined
@@ -721,18 +819,20 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                             ) : (
                                 <button
                                     onClick={handleBookmarkClick}
-                                    disabled={isActionPending}
+                                    disabled={isActionPending || isSelf}
                                     className={cn(
-                                        "flex items-center gap-2 transition-colors ml-auto shrink-0 border-none bg-transparent cursor-pointer p-1.5 rounded-full hover:bg-surface-container-high",
-                                        post?.bookmarked ? "text-amber-500" : "text-text-secondary hover:text-text-primary"
+                                        "flex items-center gap-2 transition-colors ml-auto shrink-0 border-none bg-transparent p-1.5 rounded-full",
+                                        isSelf
+                                            ? "opacity-40 cursor-not-allowed text-text-secondary/50"
+                                            : (displayPost?.bookmarked || post?.bookmarked) ? "text-amber-500 cursor-pointer hover:bg-surface-container-high" : "text-text-secondary hover:text-text-primary cursor-pointer hover:bg-surface-container-high"
                                     )}
-                                    title={post?.bookmarked ? "Remove bookmark" : "Save to bookmarks"}
+                                    title={isSelf ? "You cannot bookmark your own post" : (displayPost?.bookmarked || post?.bookmarked) ? "Remove bookmark" : "Save to bookmarks"}
                                 >
                                     <span
                                         className="material-symbols-outlined text-[20px]"
-                                        style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}
+                                        style={{ fontVariationSettings: (displayPost?.bookmarked || post?.bookmarked) ? "'FILL' 1" : "'FILL' 0" }}
                                     >
-                                        bookmark_add
+                                        bookmark
                                     </span>
                                 </button>
                             )}
@@ -748,6 +848,11 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                 activeIndex={carouselIndex}
                 setActiveIndex={setCarouselIndex}
                 onClose={() => setCarouselOpen(false)}
+            />
+            <LoginPromptModal
+                isOpen={isLoginPromptOpen}
+                onClose={() => setIsLoginPromptOpen(false)}
+                message={loginPromptMessage}
             />
         </>
     );

@@ -66,7 +66,7 @@ let posts = [
     likes: 342,
     commentsCount: 29,
     shares: 88,
-    isVoice: false,
+    catergory: 'post',
     time: '3h ago',
     category: 'All Activity',
     tags: ['#Video', '#Grid', '#Telemetry'],
@@ -88,7 +88,7 @@ let posts = [
     likes: 124,
     commentsCount: 24,
     shares: 42,
-    isVoice: false,
+    catergory: 'post',
     time: '2h ago',
     category: 'All Activity',
     tags: ['#Media', '#Decentralized', '#NY'],
@@ -115,7 +115,7 @@ let posts = [
     likes: 8400,
     commentsCount: 1200,
     shares: 2100,
-    isVoice: true,
+    catergory: 'voice',
     time: '2h ago',
     category: 'Voices',
     liked: false,
@@ -173,7 +173,7 @@ let posts = [
     likes: 245,
     commentsCount: 42,
     shares: 12,
-    isVoice: false,
+    catergory: 'post',
     time: '4h ago',
     category: 'Popular',
     liked: false,
@@ -197,7 +197,7 @@ let posts = [
     likes: 0,
     commentsCount: 0,
     shares: 0,
-    isVoice: false,
+    catergory: 'post',
     category: 'All Activity',
     comments: []
   },
@@ -219,7 +219,7 @@ let posts = [
     likes: 512,
     commentsCount: 89,
     shares: 34,
-    isVoice: false,
+    catergory: 'post',
     communityJoinable: true,
     time: '10h ago',
     category: 'Following',
@@ -229,7 +229,7 @@ let posts = [
   {
     id: 'renaissance-post',
     title: 'The Digital Renaissance: Why Decentralized Identity is our Final Frontier.',
-    text: 'We are standing at the precipice of a new era. The current structures of data ownership are failing us. It is no longer enough to simply "participate" in the digital economy—we must own the digital soul of our existence.',
+    text: 'Mock: We are standing at the precipice of a new era. The current structures of data ownership are failing us. It is no longer enough to simply "participate" in the digital economy—we must own the digital soul of our existence.',
     scope: 'World',
     author: {
       name: 'Julian Vane',
@@ -244,7 +244,7 @@ let posts = [
     likes: 12400,
     commentsCount: 842,
     shares: 2100,
-    isVoice: true,
+    catergory: 'voice',
     time: '2h ago',
     category: 'Voices',
     liked: false,
@@ -385,7 +385,15 @@ export const getPosts = async (params = {}) => {
 
   if (options.scope) {
     const scopeLower = options.scope.toLowerCase();
-    result = result.filter(p => (p.scope || 'local').toLowerCase() === scopeLower);
+    if (scopeLower === 'world') {
+      const userCountry = (options.country || 'us').toLowerCase();
+      result = result.filter(p => {
+        const pCountry = (p.origin_country || p.country || 'us').toLowerCase();
+        return pCountry !== userCountry;
+      });
+    } else {
+      result = result.filter(p => (p.scope || 'local').toLowerCase() === scopeLower);
+    }
   }
 
   if (options.tab && options.tab !== 'All Activity') {
@@ -730,6 +738,7 @@ let polls = [
     time: '2h ago',
     timeLeft: '2 days left',
     category: 'Technology',
+    scope: 'local',
     question: "What's the most important programming skill in 2025?",
     options: [
       { text: 'AI/ML Integration', votes: 4800 },
@@ -749,6 +758,8 @@ let polls = [
     time: '8h ago',
     timeLeft: 'Ended 3 days ago',
     category: 'Business',
+    scope: 'country',
+    country: 'us',
     question: "What's your preferred work arrangement?",
     options: [
       { text: 'Fully Remote', votes: 6723 },
@@ -768,6 +779,9 @@ let polls = [
     time: '5h ago',
     timeLeft: '5 days left',
     category: 'Science',
+    scope: 'world',
+    country: 'uk',
+    origin_country: 'uk',
     question: 'Which renewable energy source should governments prioritize?',
     options: [
       { text: 'Solar Power', votes: 11200 },
@@ -776,6 +790,26 @@ let polls = [
       { text: 'Hydroelectric', votes: 1591 }
     ],
     totalVotes: 21291,
+    voted: false,
+    votedIndex: null,
+    active: true
+  },
+  {
+    id: 'poll-4',
+    author: 'MetroAction',
+    authorAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCQNN0P3XlVnTIhrPCgSPxw3xMTUKxoCrIm8gPDQa1k5pfwxy3EIRkuVFuaUyuRB88yZ-5J-yHUv0PO8nGhi_ZpcjQtc6m7CEL-m3TuVim0DX-huo3tI8MYJS67MsASKXBYP5oox0RPJBg3XGnmavtmph1-Ljy1LQmTZlA8sKChCWypzu3L7QW29eETcmbNtLmLYOrdByBamv0CIQEZoVufbLeaBHrXDodOqgrka3m-BXd7lD4rIz5WfbhzJDm08u1QmIpJZeszyoc',
+    time: '1d ago',
+    timeLeft: '4 days left',
+    category: 'Infrastructure',
+    scope: 'state',
+    origin_state: 'CA',
+    question: 'Should the state legislature fund local high-speed rail mesh transit?',
+    options: [
+      { text: 'Yes, full expansion', votes: 5400 },
+      { text: 'Focus on regional buses', votes: 2100 },
+      { text: 'Maintain current budget', votes: 890 }
+    ],
+    totalVotes: 8390,
     voted: false,
     votedIndex: null,
     active: true
@@ -856,9 +890,35 @@ export const createProposal = async (prop) => {
   return newProp;
 };
 
-export const getPolls = async () => {
+export const getPolls = async (params = {}) => {
   await delay(LATENCY);
-  return [...polls];
+  const options = typeof params === 'string' ? { scope: params } : (params || {});
+  let result = [...polls];
+
+  if (options.scope && options.scope !== 'all') {
+    const scopeLower = options.scope.toLowerCase();
+    if (scopeLower === 'world') {
+      const userCountry = (options.country || 'us').toLowerCase();
+      result = result.filter(p => {
+        const pCountry = (p.origin_country || p.country || 'us').toLowerCase();
+        return pCountry !== userCountry;
+      });
+    } else {
+      result = result.filter(p => (p.scope || 'local').toLowerCase() === scopeLower);
+    }
+  }
+
+  if (options.status && options.status !== 'All') {
+    if (options.status === 'Active') {
+      result = result.filter(p => p.active !== false);
+    } else if (options.status === 'Ended') {
+      result = result.filter(p => p.active === false);
+    } else if (options.status === 'My Votes') {
+      result = result.filter(p => p.voted || p.user_voted || (p.votedIndex !== null && p.votedIndex !== undefined));
+    }
+  }
+
+  return result;
 };
 
 export const createPoll = async (poll) => {
@@ -1118,7 +1178,7 @@ export const filterEventsByDate = async ({ date, distance, state, latitude, long
           const formatted = `${year}-${month}-${day}`;
           if (formatted === date) return true;
         }
-      } catch (err) {}
+      } catch (err) { }
       return false;
     });
   }
@@ -1222,196 +1282,69 @@ export const addEventComment = async (eventId, commentText) => {
 };
 
 
-//// new mock code from google AI
-
-
 // Add this helper module structure inside your frontend mock data file
-export const getMockPostContext = (currentPostId) => {
-  // Common mock author accounts
-  const authors = {
-    rootUser: {
-      name: "Sovereign Dev",
-      handle: "@sov_dev",
-      avatar: "https://unsplash.com",
-      verified: true,
-      role: "Core Archon"
-    },
-    middleUser: {
-      name: "Grid Operator",
-      handle: "@grid_op",
-      avatar: "https://unsplash.com",
-      verified: false,
-      role: "Node Tech"
-    },
-    focusUser: {
-      name: "Cyber Rebel",
-      handle: "@cy_rebel",
-      avatar: "https://unsplash.com",
-      verified: true,
-      role: "Kollective"
-    },
-    replyUserA: {
-      name: "Alice Node",
-      handle: "@alice",
-      avatar: "https://unsplash.com",
-      verified: false,
-      role: "Citizen"
-    },
-    replyUserB: {
-      name: "Bob Crypt",
-      handle: "@bob_crypto",
-      avatar: "https://unsplash.com",
-      verified: false,
-      role: "Validator"
-    }
-  };
+export const getMockPostContext = (targetId) => {
+  // 1. Try finding in MOCK_POSTS_TABLE
+  let focusPost = MOCK_POSTS_TABLE.find(p => p.id === targetId);
 
-  return {
-    // 🔽 Ancestors Chain: Every post leading up to this one, sorted from top to bottom
-    ancestors: [
-      {
-        id: "post-root-100",
-        parentPostId: null,
-        author: authors.rootUser,
-        title: "The Sovereignty Manifesto Alpha",
-        text: "We are releasing the initial blueprint specifications for localized community grids today. Feedback on mesh topology routing profiles is welcome! #SovereignTech #Decentralize",
-        time: "2 hours ago",
-        likes: 342,
-        commentsCount: 18,
-        liked: true,
-        bookmarked: false
-      },
-      {
-        id: "post-reply-101",
-        parentPostId: "post-root-100",
-        author: authors.middleUser,
-        title: "", // Secondary replies usually drop the major title string feature
-        text: "@sov_dev Checked the parameters on District 9's allocation loop. If we run blind signature validations over low-bandwidth radios, won't validation frames drop?",
-        time: "1 hour ago",
-        likes: 54,
-        commentsCount: 4,
-        liked: false,
-        bookmarked: false
-      }
-    ],
+  // 2. Try finding in MOCK_POSTS feed list
+  if (!focusPost && typeof MOCK_POSTS !== 'undefined' && Array.isArray(MOCK_POSTS)) {
+    focusPost = MOCK_POSTS.find(p => p.id === targetId);
+  }
 
-    // 🎯 The Focused Post Card: This directly matches the current URL route :id
-    focus: {
-      id: currentPostId, // Dynamically maps to whatever id was passed in the URL parameters
-      parentPostId: "post-reply-101",
-      author: authors.focusUser,
-      title: "",
-      text: "@grid_op @sov_dev We can mitigate validation drops completely by introducing cryptographic voting pipeline tokens! It sandboxes verification checks ahead of time, caching telemetry profiles locally.",
-      time: "45 mins ago",
-      likes: 89,
+  // 3. Fallback: Construct a valid focusPost object for targetId
+  if (!focusPost) {
+    focusPost = {
+      id: targetId,
+      parentPostId: null,
+      author: { name: "Julian Thorne", handle: "@j_thorne", avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c", verified: true, role: "Lead Architect" },
+      title: "Sovereign Community Node Update",
+      text: "Exploring decentralized parameters, localized mesh coordination, and civic engagement pipelines across the Kollective network.",
+      time: "10m ago",
+      likes: 42,
       commentsCount: 2,
       liked: false,
-      bookmarked: true
-    },
-
-    // 🔼 Descendants Tree: Sub-threads responding directly beneath the focused post
-    descendants: [
-      {
-        id: "post-child-201",
-        parentPostId: currentPostId,
-        author: authors.replyUserA,
-        title: "",
-        text: "@cy_rebel This is an elegant design pattern. Are those pipeline validation tickets single-use tokens, or do they refresh on epoch layout loops?",
-        time: "30 mins ago",
-        likes: 12,
-        commentsCount: 0,
-        liked: false,
-        bookmarked: false,
-        images: ["https://lh3.googleusercontent.com/aida-public/AB6AXuCYIcLHxbcrouUkl8jiAso6nVAcQtR8x3Oq9gyuXmoxZbjPuS6iM4Gz7INuNhk8zIk125rQjbBO2U5_KP-sfpRV05uaWtTAKUy0iOdZ9yPetghCRjvFz7luny9PzV_NWzWqRUZGQIN61LrzwL8ufhHdsg-1-cmyKYI21dj9Ad3EcRIo53jlaSq5mVOV1wpwSo-a-9RbjfVX81EkrIVoDemafpo_rYC1swAQHuGCfeO4HzUi6D_X33r_a6LjQZzLIcXhmECGbjCOnHI"]
-      },
-      {
-        id: "post-child-202",
-        parentPostId: currentPostId,
-        author: authors.replyUserB,
-        title: "",
-        text: "@cy_rebel Count me in to help audit the Elixir schema indices for this token table. We need quick indexes to block malicious double-tap attempts.",
-        time: "12 mins ago",
-        likes: 7,
-        commentsCount: 0,
-        liked: false,
-        bookmarked: false
-      }
-    ]
-  };
-};
-
-// src/api/mockApi.js
-
-// 🗄️ 1. Define a flat, single-source-of-truth post registry (Exactly like an Elixir DB table)
-const MOCK_POSTS_TABLE = [
-  {
-    id: "post-root-100",
-    parentPostId: null,
-    author: { name: "Sovereign Dev", handle: "@sov_dev", avatar: "https://unsplash.com", verified: true, role: "Core Archon" },
-    title: "The Sovereignty Manifesto Alpha",
-    text: "We are releasing the initial blueprint specifications for localized community grids today. Feedback on mesh topology routing profiles is welcome! #SovereignTech #Decentralize",
-    time: "2 hours ago", likes: 342, commentsCount: 18, liked: true, bookmarked: false
-  },
-  {
-    id: "post-reply-101",
-    parentPostId: "post-root-100",
-    author: { name: "Grid Operator", handle: "@grid_op", avatar: "https://unsplash.com", verified: false, role: "Node Tech" },
-    title: "",
-    text: "@sov_dev Checked the parameters on District 9's allocation loop. If we run blind signature validations over low-bandwidth radios, won't validation frames drop?",
-    time: "1 hour ago", likes: 54, commentsCount: 4, liked: false, bookmarked: false
-  },
-  {
-    id: "post-child-200", // This was currentPostId in the previous hardcoded state
-    parentPostId: "post-reply-101",
-    author: { name: "Cyber Rebel", handle: "@cy_rebel", avatar: "https://unsplash.com", verified: true, role: "Kollective" },
-    title: "",
-    text: "@grid_op @sov_dev We can mitigate validation drops completely by introducing cryptographic voting pipeline tokens! It sandboxes verification checks ahead of time, caching telemetry profiles locally.",
-    time: "45 mins ago", likes: 89, commentsCount: 2, liked: false, bookmarked: true
-  },
-  {
-    id: "post-child-201",
-    parentPostId: "post-child-200", // 🔗 Points to Cyber Rebel as its parent!
-    author: { name: "Alice Node", handle: "@alice", avatar: "https://unsplash.com", verified: false, role: "Citizen" },
-    title: "",
-    text: "@cy_rebel This is an elegant design pattern. Are those pipeline validation tickets single-use tokens, or do they refresh on epoch layout loops?",
-    time: "30 mins ago", likes: 12, commentsCount: 1, liked: false, bookmarked: false,
-    images: ["https://lh3.googleusercontent.com/aida-public/AB6AXuCYIcLHxbcrouUkl8jiAso6nVAcQtR8x3Oq9gyuXmoxZbjPuS6iM4Gz7INuNhk8zIk125rQjbBO2U5_KP-sfpRV05uaWtTAKUy0iOdZ9yPetghCRjvFz7luny9PzV_NWzWqRUZGQIN61LrzwL8ufhHdsg-1-cmyKYI21dj9Ad3EcRIo53jlaSq5mVOV1wpwSo-a-9RbjfVX81EkrIVoDemafpo_rYC1swAQHuGCfeO4HzUi6D_X33r_a6LjQZzLIcXhmECGbjCOnHI"]
-  },
-  {
-    id: "post-sub-child-301",
-    parentPostId: "post-child-201", // 🔗 Points to Alice Node as its parent!
-    author: { name: "Bob Crypt", handle: "@bob_crypto", avatar: "https://unsplash.com", verified: false, role: "Validator" },
-    title: "",
-    text: "@alice Personally, I think single-use tokens are best for blocking malicious double-tap attempts.",
-    time: "5 mins ago", likes: 3, commentsCount: 0, liked: false, bookmarked: false,
-    images: ["https://lh3.googleusercontent.com/aida-public/AB6AXuCYIcLHxbcrouUkl8jiAso6nVAcQtR8x3Oq9gyuXmoxZbjPuS6iM4Gz7INuNhk8zIk125rQjbBO2U5_KP-sfpRV05uaWtTAKUy0iOdZ9yPetghCRjvFz7luny9PzV_NWzWqRUZGQIN61LrzwL8ufhHdsg-1-cmyKYI21dj9Ad3EcRIo53jlaSq5mVOV1wpwSo-a-9RbjfVX81EkrIVoDemafpo_rYC1swAQHuGCfeO4HzUi6D_X33r_a6LjQZzLIcXhmECGbjCOnHI"]
+      bookmarked: false
+    };
   }
-];
 
-// 🧠 2. The Dynamic Context Resolver Engine
-export const getMockPostContext2 = (targetId) => {
-  console.log("targetId", targetId);
-  const focusPost = MOCK_POSTS_TABLE.find(p => p.id === targetId);
-
-  // Guard clause: Return empty template if target isn't found
-  if (!focusPost) return { ancestors: [], focus: null, descendants: [] };
-
-  // 🔽 Build Ancestor Chain (Traverse backwards using parentPostId strings)
+  // 4. Build Ancestors Chain
   const ancestors = [];
   let currentParentId = focusPost.parentPostId;
-
-  while (currentParentId) {
+  let safetyCount = 0;
+  while (currentParentId && safetyCount < 10) {
+    safetyCount++;
     const parentNode = MOCK_POSTS_TABLE.find(p => p.id === currentParentId);
     if (parentNode) {
-      ancestors.unshift(parentNode); // Prepend to maintain top-to-bottom chronological order
+      ancestors.unshift(parentNode);
       currentParentId = parentNode.parentPostId;
     } else {
       currentParentId = null;
     }
   }
 
-  // 🔼 Build Descendants List (Find all entries pointing directly to the target)
-  const descendants = MOCK_POSTS_TABLE.filter(p => p.parentPostId === targetId);
+  // 5. Build Descendants List
+  let descendants = MOCK_POSTS_TABLE.filter(p => p.parentPostId === targetId);
+  if (descendants.length === 0 && focusPost.comments && Array.isArray(focusPost.comments)) {
+    descendants = focusPost.comments.map((c) => ({
+      id: c.id || `reply-${Math.random().toString(36).substr(2, 6)}`,
+      parentPostId: targetId,
+      author: c.author || {
+        name: c.userName || 'Citizen',
+        handle: `@${(c.userName || 'citizen').toLowerCase().replace(/\s+/g, '')}`,
+        avatar: c.userAvatar || '/default-avatar.jpg',
+        verified: false
+      },
+      title: '',
+      text: c.content || c.text || '',
+      time: c.time || c.timeAgo || 'Just now',
+      likes: c.likes || 0,
+      commentsCount: c.replies?.length || 0,
+      liked: false,
+      bookmarked: false,
+      images: c.images || (c.image ? [c.image] : [])
+    }));
+  }
 
   return {
     ancestors,

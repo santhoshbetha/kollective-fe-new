@@ -5,14 +5,19 @@ import { useProfilePostsQuery } from './useProfileFeature';
 import { PostCard } from '../timeline/PostCard';
 import { useProfileTimelineQuery } from './useProfileFeature';
 
+import { useAuthStore } from '../../store/auth/useAuthStore';
+import { processFeedPosts } from '../../utils/feedUtils';
+
 export function ProfileFeed({ username }) {
     const [activeTab, setActiveTab] = useState('Posts'); // 'Posts' | 'Media' | 'Voices'
-    //const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useProfilePostsQuery(username);
+    const currentUser = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
 
-    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useProfileTimelineQuery(username, streamMode);
+    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useProfileTimelineQuery(username, 'root_only');
 
     // Flatten our dynamic infinite query pages into a unified sequential array mapping
-    const allPosts = data?.pages.flatMap((page) => page.posts || []) || [];
+    const rawPosts = data?.pages.flatMap((page) => (Array.isArray(page) ? page : page.posts || page.data || [])) || [];
+    const allPosts = processFeedPosts(rawPosts, { currentUser, activeAccount, isProfilePage: true });
 
     // Filter content tokens inside local memory buckets symmetrically
     const filteredPosts = allPosts.filter((post) => {

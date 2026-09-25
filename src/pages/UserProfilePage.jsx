@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { usePostsQuery } from '../features/timeline/usePostsQuery';
@@ -7,7 +7,7 @@ import { TrendingWidget } from '../components/TrendingWidget';
 import { useStore } from '../store/useStore';
 import VerificationBadge from '../components/VerificationBadge';
 import { UserAvatar } from '../components/UserAvatar';
-import { useProfileQuery } from '../features/profile/useProfileFeature';
+import { useProfileQuery, useProfileTimelineQuery, useToggleFollowMutation } from '../features/profile/useProfileFeature';
 
 const profilesData = {
   alsweigart: {
@@ -41,7 +41,7 @@ const profilesData = {
         likes: 1240,
         commentsCount: 84,
         shares: 312,
-        isVoice: false,
+        catergory: 'post',
         time: '3h ago',
         category: 'All Activity',
         tags: ['#Python', '#programming', '#learning']
@@ -60,7 +60,7 @@ const profilesData = {
         likes: 856,
         commentsCount: 38,
         shares: 145,
-        isVoice: false,
+        catergory: 'post',
         time: '1d ago',
         category: 'Popular',
         tags: ['#CreativeCommons', '#EdTech']
@@ -79,7 +79,7 @@ const profilesData = {
         likes: 932,
         commentsCount: 29,
         shares: 110,
-        isVoice: false,
+        catergory: 'post',
         time: '2d ago',
         category: 'All Activity',
         tags: ['#CodingTips', '#PythonTip']
@@ -258,6 +258,17 @@ export const UserProfilePage = () => {
 
   const cleanUsername = (username || '').toLowerCase().replace('@', '');
   const { data: remoteProfile } = useProfileQuery(cleanUsername);
+  const { data: userTimelineData } = useProfileTimelineQuery(cleanUsername, activeTab === 'Posts' ? 'root_only' : 'all');
+  const toggleFollowMutation = useToggleFollowMutation(cleanUsername);
+
+  // Sync follow state from backend remoteProfile
+  useEffect(() => {
+    if (remoteProfile) {
+      const backendData = remoteProfile.data || remoteProfile.user || remoteProfile;
+      const followStatus = !!(backendData?.following || backendData?.relationship?.following);
+      setIsFollowing(followStatus);
+    }
+  }, [remoteProfile]);
 
   let profile = profilesData[cleanUsername];
 
@@ -266,7 +277,6 @@ export const UserProfilePage = () => {
   }
 
   if (!profile) {
-    // Generate fallback profile dynamically
     const formattedName = cleanUsername
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
@@ -276,13 +286,12 @@ export const UserProfilePage = () => {
       role: 'Citizen',
       avatar: '',
       banner: '',
-      bio: 'Active contributor to the decentralized community feed. Building sovereign local structures.',
-      postsCount: '42',
-      followingCount: '98',
-      followersCount: '2.5K',
+      bio: 'Active contributor to the decentralized community feed.',
+      postsCount: 0,
+      followingCount: 0,
+      followersCount: 0,
       metadata: [
-        { key: 'Website', value: 'kollective.social', verified: false, url: 'https://kollective.social' },
-        { key: 'Joined', value: 'Jun 2026', verified: false }
+        { key: 'Website', value: 'kollective.social', verified: false, url: 'https://kollective.social' }
       ],
       posts: []
     };
@@ -293,14 +302,39 @@ export const UserProfilePage = () => {
   // Merge backend remote profile data if available
   if (remoteProfile) {
     const backendData = remoteProfile.data || remoteProfile.user || remoteProfile;
-    profile = {
-      ...profile,
-      name: backendData.display_name || backendData.name || profile.name,
-      avatar: backendData.avatar_url || backendData.avatar || profile.avatar,
-      banner: backendData.cover_image_url || backendData.banner || backendData.header || profile.banner,
-      bio: backendData.bio || profile.bio,
-      location: backendData.location || profile.location,
-    };
+    if (backendData) {
+      profile = {
+        ...profile,
+        id: backendData.id || profile.id,
+        name: backendData.display_name || backendData.name || backendData.username || profile.name,
+        handle: `@${backendData.username || cleanUsername}`,
+        avatar: backendData.avatar_url || backendData.avatar || profile.avatar,
+        banner: backendData.cover_image_url || backendData.header_url || backendData.banner || backendData.header || profile.banner,
+        bio: backendData.bio || backendData.note || profile.bio,
+        location: backendData.location || profile.location,
+        postsCount: backendData.posts_count ?? backendData.note_count ?? profile.postsCount ?? 0,
+        followingCount: backendData.following_count ?? profile.followingCount ?? 0,
+        followersCount: backendData.followers_count ?? backendData.follower_count ?? profile.followersCount ?? 0,
+        badge_type: backendData.badge_type || profile.badge_type,
+        type: backendData.type || profile.type,
+      };
+
+      if (Array.isArray(backendData.fields) && backendData.fields.length > 0) {
+        profile.metadata = backendData.fields.map(f => ({
+          key: f.name || f.key,
+          value: f.value,
+          verified: !!(f.verified_at || f.verified),
+          url: typeof f.value === 'string' && f.value.startsWith('http') ? f.value : null
+        }));
+      } else if (Array.isArray(backendData.custom_fields) && backendData.custom_fields.length > 0) {
+        profile.metadata = backendData.custom_fields.map(f => ({
+          key: f.name || f.key,
+          value: f.value,
+          verified: !!(f.verified_at || f.verified),
+          url: typeof f.value === 'string' && f.value.startsWith('http') ? f.value : null
+        }));
+      }
+    }
   }
 
   if (isOwnProfile && profile) {
@@ -312,6 +346,9 @@ export const UserProfilePage = () => {
       bio: user.bio || profile.bio,
       location: user.location || profile.location,
       badge_type: user.badge_type || profile.badge_type,
+      followersCount: user.follower_count ?? user.followers_count ?? profile.followersCount,
+      followingCount: user.following_count ?? profile.followingCount,
+      postsCount: user.note_count ?? user.posts_count ?? profile.postsCount,
       orcid_id: profile.orcid_id || (user.badge_type?.toLowerCase() === 'scholar' || user.badge_type?.toLowerCase() === 'citizen' ? '0000-0002-1825-0001' : null),
       publication_count: profile.publication_count || 14,
       recent_publications: profile.recent_publications || [
@@ -336,23 +373,26 @@ export const UserProfilePage = () => {
   const isJournalist = profile && (profile.badge_type?.toLowerCase() === 'journalist' || profile.badge_type?.toLowerCase() === 'professionalteal' || !!profile.portfolio_url);
   const isOrg = profile && (profile.type === 'organization' || profile.badge_type?.toLowerCase() === 'organization' || profile.badge_type?.toLowerCase() === 'warned');
 
-  // Filter posts for this user
+  // Real backend profile posts query stream
+  const fetchedUserPosts = userTimelineData?.pages?.flatMap((page) => (Array.isArray(page) ? page : page?.posts || page?.data || [])) || [];
+
   const userFeedPosts = allPosts?.filter(
     (p) =>
-      p.author.name.toLowerCase() === profile.name.toLowerCase() ||
-      p.author.handle?.toLowerCase().replace('@', '') === cleanUsername
+      p.author?.name?.toLowerCase() === profile.name?.toLowerCase() ||
+      p.author?.handle?.toLowerCase().replace('@', '') === cleanUsername
   );
 
-  // Combine fixed mock posts with context posts
-  const combinedPosts = [...(profile.posts || []), ...userFeedPosts];
+  const combinedPosts = [...fetchedUserPosts, ...userFeedPosts, ...(profile.posts || [])];
 
-  // De-duplicate by ID
   const uniquePostsMap = new Map();
-  combinedPosts?.forEach(p => uniquePostsMap.set(p.id, p));
-  const finalUserPosts = Array.from(uniquePostsMap.values());
+  combinedPosts?.forEach(p => p && p.id && uniquePostsMap.set(p.id, p));
+  let finalUserPosts = Array.from(uniquePostsMap.values());
 
-  // Dynamic organization badge / link for Julian Thorne if setting allows
-  let displayMetadata = [...profile.metadata];
+  if (activeTab === 'Media') {
+    finalUserPosts = finalUserPosts.filter(p => p.images && p.images.length > 0);
+  }
+
+  let displayMetadata = Array.isArray(profile.metadata) ? [...profile.metadata] : [];
   if (cleanUsername === 'j_thorne' && showPersonalHandle) {
     if (!displayMetadata.some(m => m.key === 'Organization')) {
       displayMetadata.push({
@@ -363,6 +403,35 @@ export const UserProfilePage = () => {
       });
     }
   }
+
+  const handleToggleFollow = async () => {
+    if (!user) {
+      alert("Please log in to follow users.");
+      return;
+    }
+    if (isOwnProfile) return;
+
+    const targetId = profile.id || cleanUsername;
+    const nextState = !isFollowing;
+    setIsFollowing(nextState);
+
+    // Optimistically update follower count
+    if (typeof profile.followersCount === 'number') {
+      profile.followersCount = Math.max(0, profile.followersCount + (nextState ? 1 : -1));
+    }
+
+    try {
+      await toggleFollowMutation.mutateAsync({ targetId });
+    } catch (err) {
+      // Revert optimistic state on error
+      setIsFollowing(!nextState);
+      if (typeof profile.followersCount === 'number') {
+        profile.followersCount = Math.max(0, profile.followersCount + (nextState ? -1 : 1));
+      }
+      console.error("Failed to toggle follow status:", err);
+      alert(err?.message || "Failed to update follow status. Please try again.");
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto flex gap-16">
@@ -420,15 +489,27 @@ export const UserProfilePage = () => {
                 >
                   <span className="material-symbols-outlined text-[20px]">alternate_email</span>
                 </button>
-                <button
-                  onClick={() => setIsFollowing(!isFollowing)}
-                  className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-95 cursor-pointer ${isFollowing
-                    ? 'bg-surface-container-high border border-white/10 text-text-secondary'
-                    : 'bg-primary-container text-white crimson-glow hover:brightness-110 border-none'
-                    }`}
-                >
-                  {isFollowing ? 'Following ✓' : 'Follow'}
-                </button>
+                {isOwnProfile ? (
+                  <button
+                    onClick={() => navigate('/settings/profile')}
+                    className="px-6 py-2.5 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-95 cursor-pointer bg-surface-container-high border border-white/10 text-text-primary hover:bg-white/10"
+                  >
+                    Edit Profile
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleToggleFollow}
+                    disabled={toggleFollowMutation.isPending}
+                    className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-95 cursor-pointer ${isFollowing
+                      ? 'bg-surface-container-high border border-white/10 text-text-secondary hover:text-red-400 hover:border-red-500/30'
+                      : 'bg-primary-container text-white crimson-glow hover:brightness-110 border-none'
+                      } ${toggleFollowMutation.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  >
+                    {toggleFollowMutation.isPending
+                      ? (isFollowing ? 'Following...' : 'Unfollowing...')
+                      : (isFollowing ? 'Following ✓' : 'Follow')}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -619,15 +700,21 @@ export const UserProfilePage = () => {
             {/* Stats Row */}
             <div className="flex gap-8 border-t border-white/5 pt-4">
               <div className="flex gap-1.5 text-lg">
-                <span className="font-extrabold text-text-primary">{profile.postsCount}</span>
+                <span className="font-extrabold text-text-primary">
+                  {typeof profile.postsCount === 'number' ? profile.postsCount.toLocaleString() : profile.postsCount || 0}
+                </span>
                 <span className="text-text-secondary">posts</span>
               </div>
               <div className="flex gap-1.5 text-lg">
-                <span className="font-extrabold text-text-primary">{profile.followingCount}</span>
+                <span className="font-extrabold text-text-primary">
+                  {typeof profile.followingCount === 'number' ? profile.followingCount.toLocaleString() : profile.followingCount || 0}
+                </span>
                 <span className="text-text-secondary">following</span>
               </div>
               <div className="flex gap-1.5 text-lg">
-                <span className="font-extrabold text-text-primary">{profile.followersCount}</span>
+                <span className="font-extrabold text-text-primary">
+                  {typeof profile.followersCount === 'number' ? profile.followersCount.toLocaleString() : profile.followersCount || 0}
+                </span>
                 <span className="text-text-secondary">followers</span>
               </div>
             </div>

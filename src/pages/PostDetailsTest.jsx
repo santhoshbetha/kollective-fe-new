@@ -212,7 +212,7 @@ third part, there are more parts, please wait after this:
                                                         verified
                                                     </span>
                                                 )}
-                                                {post?.isVoice && (
+                                                {post?.category === 'voice' && (
                                                     <span className="bg-secondary/10 text-text-secondary text-[14px] px-2 py-0.5 rounded-full font-bold tracking-wider ml-1">
                                                         VOICE
                                                     </span>

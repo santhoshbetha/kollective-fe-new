@@ -126,4 +126,30 @@ export function useProfileTimelineQuery(username, currentMode) {
     });
 }
 
+// 🔀 Mutation: Toggles the follow status of a user account via backend API
+export function useToggleFollowMutation(username) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ targetId }) => {
+            const idToUse = targetId || username;
+            return apiFetch('/api/v1/relationships/toggle', {
+                method: 'POST',
+                body: JSON.stringify({
+                    target_id: idToUse,
+                    type: 'follow',
+                }),
+            });
+        },
+        onSuccess: (_res) => {
+            if (username) {
+                queryClient.invalidateQueries({ queryKey: ['profile', username] });
+            }
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.invalidateQueries({ queryKey: ['timeline'] });
+            queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+        },
+    });
+}
+
 

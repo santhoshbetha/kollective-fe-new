@@ -47,13 +47,13 @@ export function CalendarPage() {
             {/* Back Navigation Bar */}
             <div className="sticky top-[60px] z-30 bg-surface/90 backdrop-blur-md py-3 border-b dark:border-white/5 border-black/5 flex items-center justify-between">
                 <button
-                    onClick={() => navigate('/events')}
+                    onClick={() => navigate(-1)}
                     className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors font-bold text-sm group cursor-pointer border-none bg-transparent"
                 >
                     <span className="material-symbols-outlined text-lg transition-transform group-hover:-translate-x-1">
                         arrow_back
                     </span>
-                    <span>Back to Events</span>
+                    <span>Back</span>
                 </button>
             </div>
 

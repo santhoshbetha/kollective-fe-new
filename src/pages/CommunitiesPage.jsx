@@ -3,21 +3,22 @@ import React, { useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { CommunitiesFeed } from '../features/communities/CommunitiesFeed';
-import { TimelineFeed } from '../features/timeline/TimelineFeed';
+import { useCountry } from '../hooks/useCountry';
 
 export const CommunitiesPage = () => {
     // 🎛️ Pull dynamic geographic state settings natively out of your unified useStore
     const activeTab = useStore((state) => state.communitiesTab);
     const setActiveTab = useStore((state) => state.setCommunitiesTab);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const { countryCode, countryName } = useCountry();
 
-    const tabs = isAuthenticated ? ['Local', 'State', 'Country', 'World'] : ['Country', 'World'];
+    const tabs = isAuthenticated ? ['Local', 'State', countryName || 'Country', 'World'] : ['Country', 'World'];
 
     useEffect(() => {
         if (!isAuthenticated && (activeTab === 'Local' || activeTab === 'State')) {
-            setActiveTab('Country');
+            setActiveTab(countryName ? countryName : 'Country');
         }
-    }, [isAuthenticated, activeTab, setActiveTab]);
+    }, [isAuthenticated, activeTab, setActiveTab, countryName]);
 
     return (
         <div className="max-w-[1280px] mx-auto flex flex-col lg:flex-row gap-12">

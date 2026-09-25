@@ -1,9 +1,39 @@
 // src/features/polls/PollsFeed.jsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePollsQuery } from './usePollsFeature'; // Hook A pulling data
 import { PollCard } from './PollCard';
+import { useAuthStore } from '../../store/auth/useAuthStore';
 
-export function PollsFeed({ scope = 'all', searchQuery = '', filterTab = 'All', categoryFilter = 'All', country = null, endedPollsCallback }) {
+export function PollsFeed({
+    scope = 'all',
+    activeTab = 'Local',
+    searchQuery = '',
+    filterTab = 'All',
+    categoryFilter = 'All',
+    country = null,
+    endedPollsCallback
+}) {
+    const navigate = useNavigate();
+    const currentUser = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+
+    const userState = currentUser?.state || currentUser?.political_location?.state || activeAccount?.state;
+    const userStreetAddress =
+        currentUser?.street_address ||
+        currentUser?.street ||
+        currentUser?.address ||
+        currentUser?.district_l1 ||
+        currentUser?.district_l1_id ||
+        currentUser?.city_id ||
+        currentUser?.county ||
+        currentUser?.political_location?.street ||
+        currentUser?.political_location?.address ||
+        currentUser?.location ||
+        activeAccount?.street_address ||
+        activeAccount?.district_l1 ||
+        activeAccount?.district_l1_id;
+
     const { polls, pollsLoading } = usePollsQuery(scope, filterTab, country);
 
     // Filter Logic Matrix
@@ -72,12 +102,46 @@ export function PollsFeed({ scope = 'all', searchQuery = '', filterTab = 'All', 
                     <PollSkeleton />
                     <PollSkeleton />
                 </>
+            ) : activeTab === 'State' && !userState ? (
+                /* 🗺️ Prompt to set state */
+                <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-[#141414] flex flex-col items-center gap-4 my-2">
+                    <span className="material-symbols-outlined text-5xl text-amber-500 mb-1">map</span>
+                    <h3 className="font-bold text-text-primary text-xl">State Location Not Set</h3>
+                    <p className="text-text-secondary text-sm max-w-md leading-relaxed">
+                        Please set your state location in settings to view state-level community polls.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/settings')}
+                        className="mt-2 px-6 py-2.5 bg-primary-container text-white font-bold text-sm rounded-xl hover:brightness-110 transition-all cursor-pointer shadow-md"
+                    >
+                        Set State in Settings
+                    </button>
+                </div>
+            ) : activeTab === 'Local' && !userStreetAddress ? (
+                /* 📍 Prompt to set street address */
+                <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-[#141414] flex flex-col items-center gap-4 my-2">
+                    <span className="material-symbols-outlined text-5xl text-amber-500 mb-1">location_off</span>
+                    <h3 className="font-bold text-text-primary text-xl">Street Address Not Set</h3>
+                    <p className="text-text-secondary text-sm max-w-md leading-relaxed">
+                        Please set your street address in settings to view local neighborhood polls.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/settings')}
+                        className="mt-2 px-6 py-2.5 bg-primary-container text-white font-bold text-sm rounded-xl hover:brightness-110 transition-all cursor-pointer shadow-md"
+                    >
+                        Set Street Address in Settings
+                    </button>
+                </div>
             ) : filteredPolls?.length === 0 ? (
                 /* 🌌 Empty State Panel Container */
                 <div className="glass-card rounded-2xl p-12 text-center border border-white/5 bg-[#141414]">
                     <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">poll</span>
-                    <h3 className="font-bold text-text-primary mb-2 text-lg">No polls found</h3>
-                    <p className="text-text-secondary text-base">Be the first to introduce a consensus poll to the collective!</p>
+                    <h3 className="font-bold text-text-primary mb-2 text-lg">No polls found in {activeTab}</h3>
+                    <p className="text-text-secondary text-base">
+                        Be the first to introduce a consensus poll in this community!
+                    </p>
                 </div>
             ) : (
                 /* 🗳️ Poll Loop Mapping Block */

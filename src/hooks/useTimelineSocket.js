@@ -57,9 +57,9 @@ export function useTimelineSocket() {
 
             if (homeFeedTab === 'All Activity') {
                 matchesCurrentTab = true;
-            } else if (homeFeedTab === 'Voices' && newPost.type === 'voice') {
+            } else if (homeFeedTab === 'Voices' && (newPost.type === 'voice' || newPost.category === 'voice' || newPost.isVoice)) {
                 matchesCurrentTab = true;
-            } else if (homeFeedTab === 'Following' && newPost.isFollowing === true) {
+            } else if (homeFeedTab === 'Following' && (newPost.isFollowing === true || newPost.following === true)) {
                 matchesCurrentTab = true;
             } else if (homeFeedTab === 'Popular' && newPost.isPopular === true) {
                 matchesCurrentTab = true;

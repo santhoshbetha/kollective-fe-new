@@ -1,13 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useTrendingQuery } from '../features/trending/useTrendingQuery';
 import { useSuggestedCirclesQuery, useToggleJoinCircle } from '../features/communities/useCirclesFeature';
-import { useAuthStore } from '../store/auth/useAuthStore';
 
-export const TrendingWidget = () => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  // 🛡️ Always fallback to an empty array if queries are loading, failing, or undefined
-  const { trendingTopics = [] } = useTrendingQuery() || {};
-  const { suggestedCircles = [] } = useSuggestedCirclesQuery() || {};
+export const TrendingWidgetX = () => {
+  const { trendingTopics } = useTrendingQuery();
+  const { suggestedCircles } = useSuggestedCirclesQuery();
   const joinCircleMutation = useToggleJoinCircle();
 
   return (
@@ -24,20 +21,17 @@ export const TrendingWidget = () => {
           {trendingTopics.map((topic, i) => (
             <div key={i} className="cursor-pointer group">
               <div className="flex items-center justify-between text-text-secondary mb-1">
-                <span className="text-[15px] font-bold tracking-wider uppercase">{topic?.tag}</span>
+                <span className="text-[15px] font-bold tracking-wider uppercase">{topic.tag}</span>
                 <span className="material-symbols-outlined text-[16px] opacity-0 group-hover:opacity-100 transition-opacity">
                   more_horiz
                 </span>
               </div>
               <p className="font-bold text-text-primary group-hover:text-primary-container transition-colors">
-                {topic?.title}
+                {topic.title}
               </p>
-              <p className="text-[12px] text-text-secondary mt-1">{topic?.meta}</p>
+              <p className="text-[12px] text-text-secondary mt-1">{topic.meta}</p>
             </div>
           ))}
-          {trendingTopics.length === 0 && (
-            <p className="text-sm text-text-secondary text-center py-2">No trending topics</p>
-          )}
         </div>
         <button className="w-full mt-6 py-3 text-primary-container font-bold text-sm hover:bg-surface-container-high rounded-xl transition-all border border-transparent hover:border-outline-variant">
           Show more
@@ -49,37 +43,30 @@ export const TrendingWidget = () => {
         <h3 className="font-bold text-xl text-text-primary mb-6">Suggested Circles</h3>
         <div className="flex flex-col gap-5">
           {suggestedCircles.map((circle) => (
-            <div key={circle?.id} className="flex items-center gap-3 group">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${circle?.icon === 'policy'
+            <div key={circle.id} className="flex items-center gap-3 group">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${circle.icon === 'policy'
                 ? 'bg-gradient-to-br from-primary-container to-surface-crimson-low crimson-glow'
                 : 'bg-gradient-to-br from-secondary to-on-secondary text-on-secondary font-bold'
                 }`}>
                 <span className="material-symbols-outlined text-[20px]">
-                  {circle?.icon || 'group'}
+                  {circle.icon}
                 </span>
               </div>
               <div className="flex-1 overflow-hidden">
-                <p className="font-bold text-sm text-text-primary truncate">{circle?.name}</p>
-                <p className="text-[15px] text-text-secondary">{circle?.members}</p>
+                <p className="font-bold text-sm text-text-primary truncate">{circle.name}</p>
+                <p className="text-[15px] text-text-secondary">{circle.members}</p>
               </div>
               <button
-                onClick={() => isAuthenticated && joinCircleMutation.mutate(circle?.id)}
-                disabled={!isAuthenticated || joinCircleMutation.isPending}
-                title={!isAuthenticated ? 'Log in to join circles' : circle?.joined ? 'Joined circle' : 'Join circle'}
-                className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all ${!isAuthenticated
-                  ? 'opacity-40 cursor-not-allowed bg-surface-container-highest text-text-secondary'
-                  : circle?.joined
-                    ? 'bg-surface-container-highest text-text-primary hover:bg-surface-container-highest/80 active:scale-95 cursor-pointer'
-                    : 'bg-text-primary text-surface hover:bg-primary-container hover:text-white transition-colors active:scale-95 cursor-pointer'
+                onClick={() => joinCircleMutation.mutate(circle.id)}
+                className={`px-4 py-1.5 rounded-lg text-[12px] font-bold active:scale-95 transition-all ${circle.joined
+                  ? 'bg-surface-container-highest text-text-primary hover:bg-surface-container-highest/80'
+                  : 'bg-text-primary text-surface hover:bg-primary-container hover:text-white transition-colors'
                   }`}
               >
-                {circle?.joined ? 'Joined' : 'Join'}
+                {circle.joined ? 'Joined' : 'Join'}
               </button>
             </div>
           ))}
-          {suggestedCircles.length === 0 && (
-            <p className="text-sm text-text-secondary text-center py-2">No suggested circles</p>
-          )}
         </div>
       </div>
 

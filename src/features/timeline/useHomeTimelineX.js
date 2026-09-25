@@ -50,7 +50,7 @@ export function useHomeTimeline() {
     });
 }*/
 
-export function useHomeTimeline() {
+export function useHomeTimelineX() {
     const activeTab = useStore((state) => state.homeFeedTab);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const { countryCode, countryName } = useCountry();
@@ -59,23 +59,13 @@ export function useHomeTimeline() {
     return useInfiniteQuery({
         queryKey: ['timeline', 'home', activeTab, isAuthenticated, countryKey],
         queryFn: async ({ pageParam }) => {
-            let filterQuery = '';
-            let sortQuery = 'sort=newest';
-
-            if (activeTab === 'Voices') {
-                filterQuery = '&category=voice';
-            } else if (activeTab === 'Following') {
-                filterQuery = '&feed=following&filter=following';
-            } else if (activeTab === 'Popular') {
-                sortQuery = 'sort=top';
-            }
-
+            const categoryParam = activeTab === 'All Activity' ? '' : `&category=${encodeURIComponent(activeTab.toLowerCase())}`;
             const cursorParam = pageParam ? `&cursor=${pageParam}` : '';
             const detectedCountry = countryCode || countryName || 'US';
             const countryParam = (!isAuthenticated && detectedCountry)
                 ? `&country=${encodeURIComponent(detectedCountry)}&country_code=${encodeURIComponent(countryCode || 'US')}`
                 : '';
-            const path = `/posts?${sortQuery}${filterQuery}${countryParam}${cursorParam}`;
+            const path = `/posts?sort=newest${categoryParam}${countryParam}${cursorParam}`;
 
             let rawData;
             try {
@@ -93,6 +83,9 @@ export function useHomeTimeline() {
 
             const nextCursor = rawData?.next_cursor ?? rawData?.nextCursor ?? rawData?.nextPageId ?? null;
 
+            console.log("home timeline rawData", rawData);
+            console.log("home timeline posts", posts);
+            console.log("home timeline nextCursor", nextCursor);
             return { posts, nextCursor };
         },
         initialPageParam: null,

@@ -75,6 +75,12 @@ export const useStore = create(
     setCommunitiesTab: (tab) => set({ communitiesTab: tab }),
     setCommunitiesScroll: (scroll) => set({ communitiesScroll: scroll }),
 
+    // Polls State persistence
+    pollsTab: 'Local',
+    pollsScroll: 0,
+    setPollsTab: (tab) => set({ pollsTab: tab }),
+    setPollsScroll: (scroll) => set({ pollsScroll: scroll }),
+
     // Events State persistence
     eventsScroll: 0,
     setEventsScroll: (scroll) => set({ eventsScroll: scroll }),

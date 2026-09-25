@@ -102,6 +102,9 @@ export const LandingPage = () => {
             />
             <div className={`absolute inset-0 bg-gradient-to-b ${isLight ? 'from-background/20' : 'from-background'} via-transparent to-background`}></div>
           </div>
+          <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop relative z-10 text-center" hidden>
+            <img src="/Shield&WINGS.png" alt="Kollective Logo" className="h-64 w-64 m-auto" />
+          </div>
           <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop relative z-10 text-center">
             <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 ${isLight ? 'bg-primary text-on-primary border border-primary shadow-sm shadow-primary/20' : 'bg-surface-crimson-low border border-primary-container/30'}`}>
               <span className={`w-2 h-2 rounded-full animate-pulse ${isLight ? 'bg-on-primary' : 'bg-secondary'}`}></span>

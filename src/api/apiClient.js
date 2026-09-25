@@ -1,7 +1,7 @@
 // apiClient.js
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useTimelineBufferStore } from '../store/useTimelineBufferStore';
-import { getMockPostContext } from './mockApi';
+import queryClient from './queryClient';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1').replace(/\/$/, '');
 const API_HOST = API_BASE.replace(/\/api\/v1\/?$/, '');
@@ -37,11 +37,14 @@ export async function apiFetch(endpoint, options = {}, queryClient) {
     if (response.status === 401) {
         console.warn('Token revoked or expired. Initiating global logout.');
 
-        // Extract cleaning methods cleanly from non-React environments
-        const clearBuffer = useTimelineBufferStore.getState().clearBuffer;
+        // 1. Wipe out TanStack Query cache safely so no stale data leaks to the next session
+        if (queryClient && typeof queryClient.clear === 'function') {
+            queryClient.clear();
+        }
 
-        // Trigger the global tear-down sequence
-        useAuthStore.getState().executeGlobalLogout(queryClient, clearBuffer);
+        // 2. Clear buffers and tear down auth tokens
+        useTimelineBufferStore.getState().clearBuffer();
+        useAuthStore.getState().executeGlobalLogout();
 
         throw new Error('Session expired. Please log in again.');
     }
@@ -50,10 +53,17 @@ export async function apiFetch(endpoint, options = {}, queryClient) {
     let data = null;
 
     if (contentType.includes('application/json')) {
-        try {
-            data = await response.json();
-        } catch (e) {
-            data = null;
+        if (response.status === 204) {
+            data = {};
+        } else {
+            try {
+                data = await response.json();
+            } catch (e) {
+                if (!response.ok) {
+                    throw new Error(`Server returned invalid JSON with status ${response.status}`);
+                }
+                data = {};
+            }
         }
     } else {
         const text = await response.text();
@@ -64,7 +74,22 @@ export async function apiFetch(endpoint, options = {}, queryClient) {
     }
 
     if (!response.ok) {
-        const errorMessage = data?.message || data?.error || `Request failed with status ${response.status}`;
+        let errorMessage = data?.message || data?.error;
+        const errObj = data?.errors?.errors || data?.errors;
+        if (!errorMessage && errObj) {
+            if (typeof errObj === 'object') {
+                const parts = Object.entries(errObj).map(([field, msgs]) => {
+                    const formattedMsgs = Array.isArray(msgs) ? msgs.join(', ') : String(msgs);
+                    return `${field}: ${formattedMsgs}`;
+                });
+                if (parts.length > 0) errorMessage = parts.join('; ');
+            } else {
+                errorMessage = String(errObj);
+            }
+        }
+        if (!errorMessage) {
+            errorMessage = `Request failed with status ${response.status}`;
+        }
         const err = new Error(errorMessage);
         err.status = response.status;
         err.data = data;
@@ -75,20 +100,28 @@ export async function apiFetch(endpoint, options = {}, queryClient) {
 }
 
 export async function apiFetchPosts(url, options = {}) {
+    let timeoutId = null;
+    const controller = options.signal ? null : new AbortController();
+
     try {
-        const data = await apiFetch(url, options);
-        if (data && (data.ancestors || data.focus || data.descendants || data.data)) {
-            return data.data || data;
+        let fetchOptions = options;
+
+        // Apply automatic 10-second timeout to context endpoints if no signal is provided
+        if (url.includes('/context') && !options.signal) {
+            timeoutId = setTimeout(() => controller.abort(), 10000);
+            fetchOptions = { ...options, signal: controller.signal };
         }
-        return data;
-    } catch (err) {
-        if (url.includes('/posts/') && url.includes('/context')) {
-            const segments = url.split('/');
-            const postId = segments[segments.length - 2];
-            return getMockPostContext(postId);
+
+        // Pass the imported queryClient down to support security cache clearing
+        return await apiFetch(url, fetchOptions, queryClient);
+
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            console.error('Fetch request timed out');
         }
-        throw err;
+        throw error;
+    } finally {
+        if (timeoutId) clearTimeout(timeoutId); // Prevent memory leaks
     }
 }
-
 

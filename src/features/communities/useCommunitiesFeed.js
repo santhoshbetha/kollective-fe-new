@@ -7,6 +7,7 @@ import { usePostsStore } from '../../store/usePostsStore';
 import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
+/*
 export function useCommunitiesFeed() {
     const importFetchedPosts = usePostsStore((state) => state.importFetchedPosts);
     // Read the active geo-scoped tab out of your global useStore
@@ -34,11 +35,13 @@ export function useCommunitiesFeed() {
             try {
                 const res = await apiFetch(path);
                 if (res && (res.data || Array.isArray(res))) {
+                    console.log("community feed posts:::", res);
                     return res;
                 }
             } catch (err) {
                 console.warn('apiFetch failed for communities feed, falling back to mockApi getPosts', err);
             }
+            console.log("community mock feed posts");
             return api.getPosts({ scope, max_id: pageParam, country: detectedCountry });
         },
         initialPageParam: null,
@@ -49,6 +52,65 @@ export function useCommunitiesFeed() {
         refetchOnMount: false,
         refetchOnWindowFocus: false,
     });
-}
+}*/
 
+export function useCommunitiesFeed() {
+    // Read the active geo-scoped tab out of your global useStore
+    const activeTab = useStore((state) => state.communitiesTab); // 'Local' | 'State' | 'Country' | 'World'
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const { countryCode, countryName } = useCountry();
+    const countryKey = countryCode || countryName || 'US';
+
+    return useInfiniteQuery({
+        // 🚀 Sandbox the cache keys cleanly by geo-scope and detected country
+        queryKey: ['communities', 'feed', activeTab, isAuthenticated, countryKey],
+        queryFn: async ({ pageParam }) => {
+            let effectiveTab = activeTab || 'Local';
+            if (!isAuthenticated && (effectiveTab === 'Local' || effectiveTab === 'State')) {
+                effectiveTab = 'Country';
+            }
+
+            let scope = 'local';
+            if (effectiveTab === 'Local') {
+                scope = 'local';
+            } else if (effectiveTab === 'State') {
+                scope = 'state';
+            } else if (effectiveTab === 'World') {
+                scope = 'world';
+            } else {
+                scope = 'country';
+            }
+
+            const detectedCountry = countryCode || countryName || 'US';
+            const countryParam = `&country=${encodeURIComponent(detectedCountry)}&country_code=${encodeURIComponent(countryCode || 'US')}`;
+            const cursorParam = pageParam ? `&cursor=${pageParam}&max_id=${pageParam}` : '';
+            const path = `/posts?scope=${scope}${countryParam}${cursorParam}`;
+
+            let rawData;
+            try {
+                rawData = await apiFetch(path);
+            } catch (err) {
+                console.warn('apiFetch failed for communities feed, falling back to mockApi getPosts', err);
+                rawData = await api.getPosts({ scope, max_id: pageParam, country: detectedCountry });
+            }
+
+            // 🛡️ Standardize target structure: Always extract an explicit posts array
+            const posts = Array.isArray(rawData)
+                ? rawData
+                : (rawData?.data || rawData?.posts || rawData?.posts?.data || []);
+
+            // Handle fallbacks for dynamic page index or cursor structures from the mock vs. real backend
+            const nextCursor = rawData?.next_cursor ?? rawData?.nextCursor ?? rawData?.nextPageId ?? null;
+
+            return { posts, nextCursor };
+        },
+        initialPageParam: null,
+        // Predictable traversal using the standardized contract payload
+        getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
+        staleTime: 5 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+    });
+}
 

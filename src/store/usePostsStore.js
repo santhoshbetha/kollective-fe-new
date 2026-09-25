@@ -29,10 +29,20 @@ export const usePostsStore = create(
                         processPost(post.reblog);
                     }
 
-                    // 3. Merge post into normalized entities dictionary
+                    // 3. Merge post into normalized entities dictionary while preserving optimistic engagement flags
+                    const existing = state.entities[post.id] || {};
+                    const isReblogged = post.reblogged ?? post.has_reblogged ?? existing.reblogged ?? existing.has_reblogged ?? false;
+                    const isLiked = post.liked ?? post.has_liked ?? existing.liked ?? existing.has_liked ?? false;
+                    const isBookmarked = post.bookmarked ?? existing.bookmarked ?? false;
+
                     state.entities[post.id] = {
-                        ...state.entities[post.id],
+                        ...existing,
                         ...post,
+                        reblogged: isReblogged || existing.reblogged || existing.has_reblogged || false,
+                        has_reblogged: isReblogged || existing.reblogged || existing.has_reblogged || false,
+                        liked: isLiked || existing.liked || existing.has_liked || false,
+                        has_liked: isLiked || existing.liked || existing.has_liked || false,
+                        bookmarked: isBookmarked || existing.bookmarked || false,
                     };
                 };
 

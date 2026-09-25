@@ -2,6 +2,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import queryClient from '../../api/queryClient';
+import { useTimelineBufferStore } from '../useTimelineBufferStore';
 
 export const buildPersonalAccount = (user) => {
     if (!user) return null;
@@ -58,6 +60,8 @@ export const DEFAULT_MOCK_USER = {
     ]
 };
 
+
+
 export const useAuthStore = create(
     persist(
         immer((set, get) => ({
@@ -95,29 +99,16 @@ export const useAuthStore = create(
                         state.activeAccount = buildPersonalAccount(user);
                     }
 
-                    if (token) {
-                        localStorage.setItem('auth_token', token);
-                        localStorage.setItem('token', token);
-                    }
-                    if (user) {
-                        localStorage.setItem('auth_user', JSON.stringify(user));
-                    }
+                    // 💡 Removed manual localStorage sets. The `persist` partialize layer 
+                    // below handles everything automatically under 'kollective-auth-secure-matrix'
                 }),
 
             // 📌 Utility: Sets the currently active tenant/account and its assigned permissions
             setAuthContext: (token, activeAccount, permissions) =>
                 set((state) => {
-                    if (token) {
-                        state.token = token;
-                        localStorage.setItem('token', token);
-                        localStorage.setItem('auth_token', token);
-                    }
-                    if (activeAccount) {
-                        state.activeAccount = activeAccount;
-                    }
-                    if (permissions) {
-                        state.permissions = permissions;
-                    }
+                    if (token) state.token = token;
+                    if (activeAccount) state.activeAccount = activeAccount;
+                    if (permissions) state.permissions = permissions;
                 }),
 
             // 🔄 Mutates profile information on the current active account
@@ -128,7 +119,6 @@ export const useAuthStore = create(
                     }
                     if (state.activeAccount?.type === 'personal' && state.user) {
                         state.user = { ...state.user, ...profileData };
-                        localStorage.setItem('auth_user', JSON.stringify(state.user));
                     }
                 }),
 
@@ -154,8 +144,8 @@ export const useAuthStore = create(
                 }),
 
             // Action C: 🚪 THE UNIFIED SECURE LOGOUT LIFECYCLE FLUSH
-            // Wipes memory states, purges disk collections, and resets other sibling stores
-            executeLogout: (queryClient, clearBufferActions) => {
+            executeLogout: () => {
+                // 1. Wipe in-memory states safely via Immer
                 set((state) => {
                     state.token = null;
                     state.user = null;
@@ -163,21 +153,24 @@ export const useAuthStore = create(
                     state.authError = null;
                     state.permissions = [];
                     state.activeAccount = null;
+                    state.isLoggingOut = false;
+                    state.isLoggingIn = false;
                 });
 
-                localStorage.removeItem('token');
-                localStorage.removeItem('auth_token');
-                localStorage.removeItem('auth_user');
+                // 2. Clean out brother/sister timeline store buffers
+                const clearBuffer = useTimelineBufferStore.getState().clearBuffer;
+                if (typeof clearBuffer === 'function') clearBuffer();
 
-                if (clearBufferActions) clearBufferActions();
-                if (queryClient) {
-                    queryClient.clear();
-                }
+                // 3. Clear TanStack Query Cache instantly (no hook arguments required!)
+                queryClient.clear();
+
+                // 4. Force state persistence layer to thoroughly purge browser disk arrays
+                useAuthStore.persist.clearStorage();
             },
 
-            // Universal alias for layouts and hooks
-            executeGlobalLogout: (queryClient, clearBufferActions) => {
-                get().executeLogout(queryClient, clearBufferActions);
+            // Universal alias for layouts, scripts, and network interception hooks
+            executeGlobalLogout: () => {
+                get().executeLogout();
             },
 
             clearSession: () => {
@@ -199,42 +192,44 @@ export const useAuthStore = create(
 
             // 🔄 HYDRATION WATCHDOG TRIGGER
             onRehydrateStorage: () => (state) => {
-                if (state) {
-                    state.isHydrated = true;
-
-                    // 🛡️ ONLY seed mock data if we are NOT running in production
-                    // If using Vite, replace process.env.NODE_ENV !== 'production' with import.meta.env.DEV
+                setTimeout(() => {
+                    const currentState = state || useAuthStore.getState() || {};
+                    const updates = { isHydrated: true };
                     const isDev = import.meta.env.DEV;
 
                     if (isDev) {
                         // If app started fresh in dev/mock environment, seed default user
-                        if (!state.user && !state.token) {
-                            state.user = DEFAULT_MOCK_USER;
-                            state.token = 'mock-jwt-token-initial';
-                            state.isAuthenticated = true;
+                        if (!currentState.user && !currentState.token) {
+                            updates.user = { ...DEFAULT_MOCK_USER };
+                            updates.token = 'mock-jwt-token-initial';
+                            updates.isAuthenticated = true;
+                        } else if (currentState.user && (!currentState.user.memberships || currentState.user.memberships.length === 0)) {
+                            updates.user = {
+                                ...currentState.user,
+                                memberships: DEFAULT_MOCK_USER.memberships
+                            };
                         }
 
-                        // Backfill memberships if user has no memberships linked yet
-                        if (state.user && (!state.user.memberships || state.user.memberships.length === 0)) {
-                            state.user.memberships = DEFAULT_MOCK_USER.memberships;
-                        }
-
-                        if (!state.activeAccount && state.user) {
-                            state.activeAccount = buildPersonalAccount(state.user);
+                        // Base determination targeting sub-profile resolution layers
+                        const targetUser = updates.user || currentState.user;
+                        if (!currentState.activeAccount && targetUser) {
+                            updates.activeAccount = buildPersonalAccount(targetUser);
                         }
                     } else {
                         // 🌐 PRODUCTION LIFECYCLE SANITIZATION
-                        // If the user isn't authenticated, ensure context fields are explicitly flatlined
-                        if (!state.isAuthenticated || !state.token) {
-                            state.token = null;
-                            state.user = null;
-                            state.isAuthenticated = false;
-                            state.activeAccount = null;
-                            state.permissions = [];
+                        if (!currentState.isAuthenticated || !currentState.token) {
+                            updates.token = null;
+                            updates.user = null;
+                            updates.isAuthenticated = false;
+                            updates.activeAccount = null;
+                            updates.permissions = [];
                         }
                     }
-                }
+
+                    useAuthStore.setState(updates);
+                }, 0);
             },
         }
     )
 );
+

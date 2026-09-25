@@ -1,39 +1,54 @@
 // src/features/bookmarks/BookmarksFeed.jsx
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-import { useBookmarksQuery } from './useBookmarksQuery'; // 🚀 Pointing to your custom bookmarks infinite hook
+import { useBookmarksQuery } from './useBookmarksQuery';
 import { PostCard } from '../timeline/PostCard';
+import { usePostsStore } from '../../store/usePostsStore';
 
 export function BookmarksFeed({ activeFilter }) {
     // 🔄 TanStack Infinite Query Pull specifically sandboxed to bookmarks
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useBookmarksQuery();
 
-    // Flatten our infinite pages array layout into a single flat array map
-    const allPosts = data?.pages.flatMap((page) => page.posts || []) || [];
+    // Flatten our infinite pages array layout with memoization to maintain stable references
+    const rawPosts = useMemo(() => {
+        return data?.pages.flatMap((page) => page?.data || page?.posts || (Array.isArray(page) ? page : [])) || [];
+    }, [data?.pages]);
+
+    const storeEntities = usePostsStore((state) => state.entities);
+
+    useEffect(() => {
+        if (rawPosts.length > 0) {
+            usePostsStore.getState().importFetchedPosts(rawPosts);
+        }
+    }, [rawPosts]);
 
     // Filter bookmarked items based on semantic content string inspection matching
-    const filteredBookmarks = allPosts.filter((post) => {
-        // TanStack filter safety: Ensure the post is bookmarked first
-        if (!post?.bookmarked) return false;
-        if (activeFilter === 'All Categories') return true;
+    const filteredBookmarks = useMemo(() => {
+        const allPosts = rawPosts.map((p) => ({ ...p, ...(storeEntities[p.id] || {}) }));
 
-        // Use a clean local variable proxy fallback check to handle text or content variables safely
-        const contentText = (post?.content || post?.text || '').toLowerCase();
+        return allPosts.filter((post) => {
+            // TanStack filter safety: Ensure the post is bookmarked first
+            if (post?.bookmarked === false) return false;
+            if (activeFilter === 'All Categories') return true;
 
-        if (activeFilter === 'Manifestos') {
-            return contentText.includes('sovereign') ||
-                contentText.includes('sovereignty') ||
-                contentText.includes('reclamation');
-        }
+            // Use a clean local variable proxy fallback check to handle text or content variables safely
+            const contentText = (post?.content || post?.text || '').toLowerCase();
 
-        if (activeFilter === 'Strategy') {
-            return contentText.includes('report') ||
-                contentText.includes('negotiations') ||
-                post?.tags?.some(tag => tag.toLowerCase().includes('governance'));
-        }
+            if (activeFilter === 'Manifestos') {
+                return contentText.includes('sovereign') ||
+                    contentText.includes('sovereignty') ||
+                    contentText.includes('reclamation');
+            }
 
-        return true;
-    });
+            if (activeFilter === 'Strategy') {
+                return contentText.includes('report') ||
+                    contentText.includes('negotiations') ||
+                    post?.tags?.some(tag => tag.toLowerCase().includes('governance'));
+            }
+
+            return true;
+        });
+    }, [rawPosts, storeEntities, activeFilter]);
 
     if (status === 'pending') {
         return <div className="text-center py-12 text-text-secondary font-medium">Retrieving saved archive...</div>;
@@ -62,7 +77,7 @@ export function BookmarksFeed({ activeFilter }) {
 
     return (
         /* 🏆 Custom Outer Frame Styling Shield Container */
-        <div className="flex flex-col border border-[#262626] bg-[#141414] rounded-[16px] overflow-hidden shadow-2xl">
+        <div className="flex flex-col border border-[#262626] bg-[#141414] overflow-hidden shadow-2xl">
             <Virtuoso
                 useWindowScroll
                 data={filteredBookmarks}

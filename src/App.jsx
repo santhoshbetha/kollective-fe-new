@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Toaster } from 'sonner';
 import { PhoenixSocketProvider } from './context/PhoenixSocketContext';
 import { LandingPage } from './pages/LandingPage';
 import { HomePage } from './pages/HomePage';
@@ -77,20 +79,7 @@ import { AlertProvider } from './context/AlertContext';
 import { useAuthStore } from './store/auth/useAuthStore';
 import { KollectiveSpinner } from './components/ui/KollectiveSpinner';
 import { TopProgressBar } from './components/ui/TopProgressBar';
-
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 10, // 10 minutes
-      // refetchOnMount: false,
-      // refetchOnReconnect: false,
-      // refetchInterval: false,
-    },
-  },
-});
+import queryClient from './api/queryClient';
 
 export default function App() {
   // ⚡ ATOMIC OBSERVATION: Tracks initialization states cleanly
@@ -99,6 +88,13 @@ export default function App() {
   const isLoggingIn = useAuthStore((state) => state.isLoggingIn);
   const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
   const executeLogout = useAuthStore((state) => state.executeLogout);
+
+  // 🛡️ Failsafe: Ensure store hydration flag is unlocked even if onRehydrateStorage fired early
+  React.useEffect(() => {
+    if (!useAuthStore.getState().isHydrated) {
+      useAuthStore.setState({ isHydrated: true });
+    }
+  }, []);
 
   // 🏗️ Atomic Render Gate: Only open doors after hydration truth
   // Show a global splash screen while checking localStorage, preventing UI flashing
@@ -247,6 +243,12 @@ export default function App() {
           </Routes>
         </BrowserRouter>
       </AlertProvider>
+
+      {/* Global Toast Notifications Container */}
+      <Toaster position="top-right" richColors />
+
+      {/* TanStack Query Devtools (hidden in production by default)*/}
+      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
     </QueryClientProvider>
   );
 }

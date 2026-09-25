@@ -95,9 +95,13 @@ export function usePostActions() {
         },
     });
 
-    // 2. Toggle Reblog (Boost) Mutation
+    // 2. Toggle Reblog (Boost) Mutation - Limited to one reblog per user per post
     const reblogMutation = useMutation({
         mutationFn: async (postId) => {
+            const currentPost = usePostsStore.getState().entities[postId];
+            if (currentPost?.reblogged || currentPost?.has_reblogged) {
+                return currentPost;
+            }
             try {
                 return await apiFetch(`/posts/${postId}/reblog`, { method: 'POST' });
             } catch (err) {
@@ -109,33 +113,36 @@ export function usePostActions() {
             await queryClient.cancelQueries({ queryKey });
             const previousTimeline = queryClient.getQueryData(queryKey);
 
+            const currentPost = usePostsStore.getState().entities[postId];
+            if (currentPost?.reblogged || currentPost?.has_reblogged) {
+                return { previousTimeline };
+            }
+
             updatePostEntity(postId, (post) => {
-                const isReblogged = !post.reblogged;
-                const newCount = isReblogged
-                    ? (post.reblogsCount || post.reblogs_count || 0) + 1
-                    : Math.max(0, (post.reblogsCount || post.reblogs_count || 1) - 1);
+                if (post.reblogged || post.has_reblogged) return post;
+                const newCount = (post.reblogsCount || post.reblogs_count || post.shares || 0) + 1;
                 return {
                     ...post,
-                    reblogged: isReblogged,
-                    has_reblogged: isReblogged,
+                    reblogged: true,
+                    has_reblogged: true,
                     reblogsCount: newCount,
                     reblogs_count: newCount,
+                    shares: newCount,
                 };
             });
 
             queryClient.setQueryData(queryKey, (oldData) =>
                 updatePostsInCache(oldData, (post) => {
                     if (post.id === postId) {
-                        const isReblogged = !post.reblogged;
-                        const newCount = isReblogged
-                            ? (post.reblogsCount || post.reblogs_count || 0) + 1
-                            : Math.max(0, (post.reblogsCount || post.reblogs_count || 1) - 1);
+                        if (post.reblogged || post.has_reblogged) return post;
+                        const newCount = (post.reblogsCount || post.reblogs_count || post.shares || 0) + 1;
                         return {
                             ...post,
-                            reblogged: isReblogged,
-                            has_reblogged: isReblogged,
+                            reblogged: true,
+                            has_reblogged: true,
                             reblogsCount: newCount,
                             reblogs_count: newCount,
+                            shares: newCount,
                         };
                     }
                     return post;
@@ -148,7 +155,7 @@ export function usePostActions() {
             if (context?.previousTimeline) queryClient.setQueryData(queryKey, context.previousTimeline);
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey: ['timeline'] });
         },
     });
 
@@ -187,7 +194,11 @@ export function usePostActions() {
 
     return {
         toggleLike: (id) => likeMutation.mutate(id),
-        toggleReblog: (id) => reblogMutation.mutate(id),
+        toggleReblog: (id) => {
+            const currentPost = usePostsStore.getState().entities[id];
+            if (currentPost?.reblogged || currentPost?.has_reblogged) return;
+            reblogMutation.mutate(id);
+        },
         toggleBookmark: (id) => bookmarkMutation.mutate(id),
         isActionPending: likeMutation.isPending || reblogMutation.isPending || bookmarkMutation.isPending,
     };

@@ -1,16 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PollsFeed } from '../features/polls/PollsFeed';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useCountry } from '../hooks/useCountry';
+import { useStore } from '../store/useStore';
 
 export const PollsPage = () => {
     const navigate = useNavigate();
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const { countryCode, countryName } = useCountry();
 
-    // Dual-Axis Scope & Filter State
-    const [activeScope, setActiveScope] = useState(isAuthenticated ? 'local' : 'country');
+    // Geographic tabs navigation identical to Communities Page
+    const activeTab = useStore((state) => state.pollsTab) || (isAuthenticated ? 'Local' : (countryName || 'Country'));
+    const setActiveTab = useStore((state) => state.setPollsTab);
+
+    const tabs = isAuthenticated
+        ? ['Local', 'State', countryName || 'Country', 'World']
+        : [countryName || 'Country', 'World'];
+
+    useEffect(() => {
+        if (!isAuthenticated && (activeTab === 'Local' || activeTab === 'State')) {
+            setActiveTab(countryName ? countryName : 'Country');
+        }
+    }, [isAuthenticated, activeTab, setActiveTab, countryName]);
+
+    // Map active geographic tab to query scope
+    let effectiveScope = 'local';
+    if (activeTab === 'Local') {
+        effectiveScope = 'local';
+    } else if (activeTab === 'State') {
+        effectiveScope = 'state';
+    } else if (activeTab === 'World') {
+        effectiveScope = 'world';
+    } else {
+        effectiveScope = 'country';
+    }
+
+    // Sub-filters & Search State
     const [searchQuery, setSearchQuery] = useState('');
     const [filterTab, setFilterTab] = useState('All'); // 'All' | 'Active' | 'Ended' | 'My Votes'
     const [categoryFilter, setCategoryFilter] = useState('All');
@@ -23,13 +49,6 @@ export const PollsPage = () => {
         const s = String(percent);
         return s.includes('13') ? percent + 1 : percent;
     };
-
-    const scopeTabs = [
-        ...(isAuthenticated ? [{ id: 'local', label: 'Local' }] : []),
-        ...(isAuthenticated ? [{ id: 'state', label: 'State' }] : []),
-        { id: 'country', label: countryName ? countryName : 'Country' },
-        { id: 'world', label: 'World' },
-    ];
 
     const statusTabs = ['All', 'Active', 'Ended', ...(isAuthenticated ? ['My Votes'] : [])];
 
@@ -59,20 +78,23 @@ export const PollsPage = () => {
                     )}
                 </section>
 
-                {/* 📍 Primary Geographic Scope Navigation Tabs */}
-                <div className="flex items-center gap-2 border-b border-white/10 pb-2 overflow-x-auto">
-                    {scopeTabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveScope(tab.id)}
-                            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer whitespace-nowrap border ${activeScope === tab.id
-                                ? 'bg-primary-container text-white border-primary-container shadow-md crimson-glow'
-                                : 'bg-surface-container-low text-text-secondary hover:text-white border-white/5 hover:bg-surface-container-high'
-                                }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+                {/* 📍 Geographic Tabs Navigation Selection Row (Identical to Communities Page) */}
+                <div className="flex gap-3 overflow-x-auto py-0 px-1 no-scrollbar border-b border-white/5 mb-0">
+                    {tabs.map((tab) => {
+                        const isActive = activeTab === tab;
+                        return (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-6 py-2 rounded-full font-bold text-label-md transition-all duration-200 whitespace-nowrap cursor-pointer border ${isActive
+                                    ? 'bg-primary-container text-white border-primary-container crimson-glow'
+                                    : 'bg-surface-container-high text-text-secondary hover:text-text-primary border-white/5 hover:border-white/10'
+                                    }`}
+                            >
+                                {tab}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Filter/Search Control Bar Panel */}
@@ -123,7 +145,8 @@ export const PollsPage = () => {
 
                 {/* LOAD DECOUPLED VIRTUAL STATE INNER DATA GRID CONTAINER */}
                 <PollsFeed
-                    scope={activeScope}
+                    scope={effectiveScope}
+                    activeTab={activeTab}
                     searchQuery={searchQuery}
                     filterTab={filterTab}
                     categoryFilter={categoryFilter}

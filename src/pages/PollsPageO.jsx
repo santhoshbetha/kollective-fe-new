@@ -117,7 +117,9 @@ export const PollsPageO = () => {
             <div className="glass-card rounded-2xl p-12 text-center border border-white/5">
               <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">poll</span>
               <h3 className="font-bold text-text-primary mb-2 text-lg">No polls found</h3>
-              <p className="text-text-secondary text-base">Be the first to introduce a consensus poll to the collective!</p>
+              <p className="text-text-secondary text-base">
+                Be the first to introduce a consensus poll to the kollective!
+              </p>
             </div>
           ) : (
             filteredPolls?.map((poll) => (

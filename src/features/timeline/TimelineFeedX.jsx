@@ -1,5 +1,5 @@
 // src/features/timeline/TimelineFeed.jsx
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Virtuoso } from 'react-virtuoso';
 import PullToRefresh from 'react-simple-pull-to-refresh';
@@ -12,7 +12,7 @@ import { usePostsStore } from '../../store/usePostsStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { processFeedPosts } from '../../utils/feedUtils';
 
-export function TimelineFeed() {
+export function TimelineFeedX() {
     const queryClient = useQueryClient();
     const { data: activeFilters } = useFiltersQuery();
     const currentUser = useAuthStore((state) => state.user);
@@ -20,8 +20,6 @@ export function TimelineFeed() {
 
     // 🎛️ Read the active tab out of your global Zustand store
     const activeTab = useStore((state) => state.homeFeedTab);
-
-    const followingCount = currentUser?.following_count ?? currentUser?.followingCount ?? activeAccount?.following_count ?? activeAccount?.followingCount ?? 0;
 
     // 🔄 Fetch the infinite scroll data for this specific active tab
     /* const {
@@ -76,45 +74,23 @@ export function TimelineFeed() {
     const unreadCount = bufferedPosts?.length || 0;
 
     // Safely map across the standardized contract
-    //  const allPosts = data?.pages?.flatMap((page) => page?.posts || []) || [];
+    //const allPosts = data?.pages?.flatMap((page) => page?.posts || []) || [];
+    const allPosts = data?.pages.flatMap((page) => (Array.isArray(page) ? page : page.data || page.posts || [])) || [];
 
     // Safely execute synchronization updates inside the React loop lifecycle
-    // useEffect(() => {
-    //    if (allPosts.length > 0) {
-    //        usePostsStore.getState().importFetchedPosts(allPosts);
-    //     }
-    // }, [allPosts]);
-
-    // 1. Process items directly using useMemo to force a reference change when data changes
-    const filteredPosts = useMemo(() => {
-        const allPosts = data?.pages?.flatMap((page) => page?.posts || []) || [];
-
-        // Ensure processFeedPosts returns a shallow copy [...result] 
-        const processed = processFeedPosts(allPosts, {
-            currentUser,
-            activeAccount,
-            activeFilters,
-            isProfilePage: false,
-        });
-
-        if (activeTab === 'Voices') {
-            return processed.filter(
-                (p) => p.category === 'voice' || p.category === 'voices' || p.isVoice || p.type === 'voice'
-            );
-        }
-
-        return processed;
-    }, [data?.pages, currentUser, activeAccount, activeFilters, activeTab]);
-
-    // 2. Safely sync background store as a fire-and-forget side effect (DO NOT READ FROM THIS FOR THIS RENDER)
     useEffect(() => {
-        const allPosts = data?.pages?.flatMap((page) => page?.posts || []) || [];
         if (allPosts.length > 0) {
             usePostsStore.getState().importFetchedPosts(allPosts);
         }
-    }, [data?.pages]);
+    }, [allPosts]);
 
-    //console.log("allPosts:::", allPosts);
+    const filteredPosts = processFeedPosts(allPosts, {
+        currentUser,
+        activeAccount,
+        activeFilters,
+        isProfilePage: false,
+    });
+
     console.log("data:::", data);
     console.log("filteredPosts:::", filteredPosts);
     console.log("status:::", status);
@@ -211,108 +187,42 @@ export function TimelineFeed() {
                     </button>
                 )}
 
-                {activeTab === 'Following' && followingCount === 0 ? (
-                    /* 👤 Following Tab Prompt when user follows 0 accounts */
-                    <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-[#141414] flex flex-col items-center gap-3">
-                        <span className="material-symbols-outlined text-4xl text-amber-500 mb-1">person_add</span>
-                        <h3 className="font-bold text-text-primary text-lg">No followed users yet</h3>
-                        <p className="text-text-secondary text-sm max-w-md leading-relaxed">
-                            You are not following anyone yet. Discover creators, journalists, and circles across the feed to see their pulses here!
-                        </p>
-                    </div>
-                ) : filteredPosts?.length === 0 ? (
+                {filteredPosts?.length === 0 ? (
                     /* 🌌 Empty State Panel Container */
-                    <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-[#141414] flex flex-col items-center gap-3">
-                        <span className="material-symbols-outlined text-4xl text-text-secondary mb-1">
-                            {activeTab === 'Following' ? 'group_off' : 'feed'}
-                        </span>
-                        <h3 className="font-bold text-text-primary text-lg">
-                            {activeTab === 'Following' ? 'No recent pulses from followed users' : 'No pulses found'}
-                        </h3>
-                        <p className="text-text-secondary text-sm max-w-md leading-relaxed">
-                            {activeTab === 'Following'
-                                ? "The creators you follow haven't posted recently."
-                                : `No activity under the "${activeTab}" category yet. Be the first to share your voice!`}
+                    <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-[#141414]">
+                        <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">feed</span>
+                        <h3 className="font-bold text-text-primary mb-2 text-lg">No pulses found</h3>
+                        <p className="text-text-secondary text-sm">
+                            No activity under the "{activeTab}" category yet. Be the first to share your voice!
                         </p>
                     </div>
                 ) : (
                     /* 🏆 Your Custom Structured List Border Wrapping Shell */
                     <div className="flex flex-col border border-[#262626] bg-transparent overflow-hidden shadow-2xl">
-                        {unreadCount > 0 && (
-                            <div className="sticky top-[88px] z-30 w-full flex justify-center mb-4 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
-                                <button
-                                    onClick={() => {
-                                        // 1. Fetch the items hidden inside the query client buffer cache array
-                                        const bufferKey = ['timeline', 'home', activeTab, 'buffer'];
-                                        const bufferedData = queryClient.getQueryData(bufferKey) || [];
-
-                                        if (bufferedData.length > 0) {
-                                            // 2. Prep them to prepend or overwrite your active global state layer
-                                            usePostsStore.getState().importFetchedPosts(bufferedData);
-
-                                            // 3. Wipe out the staging query buffer back to an empty array target state
-                                            queryClient.setQueryData(bufferKey, []);
-
-                                            // 4. Force a hard re-sync scroll top layout alignment back to the view crown
-                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                        }
-                                    }}
-                                    className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 bg-primary-container text-white text-sm font-bold rounded-full shadow-lg hover:brightness-110 active:scale-95 transition-all border border-white/10"
-                                >
-                                    <span className="material-symbols-outlined text-[18px] animate-bounce">
-                                        arrow_upward
-                                    </span>
-                                    <span>View {unreadCount} new {unreadCount === 1 ? 'pulse' : 'pulses'}</span>
-                                </button>
-                            </div>
-                        )}
                         <Virtuoso
                             useWindowScroll
                             data={filteredPosts}
                             computeItemKey={(index, post) => post?.id || index}
                             initialItemCount={filteredPosts.length > 0 ? Math.min(filteredPosts.length, 4) : 0}
-
-                            /* 
-                               🚀 Fluidity Trick: Tell Virtuoso to render hidden content 400px *ahead* 
-                               of the viewport bottom. This will fire endReached early, pulling data 
-                               before the user reaches the absolute bottom.
-                            */
-                            increaseViewportBy={400}
-
                             endReached={() => {
-                                if (hasNextPage && !isFetchingNextPage) {
-                                    fetchNextPage();
-                                }
+                                if (hasNextPage && !isFetchingNextPage) fetchNextPage();
                             }}
-
-                            // Keep overscan low/moderate if increaseViewportBy is active to manage DOM weight
-                            overscan={200}
-
+                            overscan={400}
                             itemContent={(index, post) => (
                                 <PostCard key={post?.id || index} post={post} isLast={index === filteredPosts.length - 1} />
                             )}
                             components={{
-                                Footer: () => (
-                                    <>
-                                        {isFetchingNextPage && (
-                                            <div className="py-12 flex flex-col items-center gap-4 border-t border-white/5 bg-[#141414]">
-                                                <div className="w-8 h-8 rounded-full border-2 border-t-primary-container border-white/10 animate-spin"></div>
-                                                <p className="text-text-secondary text-sm font-bold uppercase tracking-widest">
-                                                    Loading older pulses
-                                                </p>
-                                            </div>
-                                        )}
-                                        {!hasNextPage && filteredPosts.length > 0 && (
-                                            <div className="py-8 text-center bg-[#141414]">
-                                                <p className="text-xs text-text-secondary uppercase tracking-wider italic opacity-60">
-                                                    You've caught up with everything.
-                                                </p>
-                                            </div>
-                                        )}
-                                    </>
+                                Footer: () => isFetchingNextPage && (
+                                    <div className="py-12 flex flex-col items-center gap-4 border-t border-white/5 bg-[#141414]">
+                                        <div className="w-8 h-8 rounded-full border-2 border-t-primary-container border-white/10 animate-spin"></div>
+                                        <p className="text-text-secondary text-sm font-bold uppercase tracking-widest">
+                                            Loading older pulses
+                                        </p>
+                                    </div>
                                 )
                             }}
                         />
+
                     </div>
                 )}
             </div>

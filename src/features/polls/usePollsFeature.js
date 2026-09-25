@@ -8,25 +8,26 @@ export function usePollsQuery(scope = 'all', status = 'All', country = null) {
     const { data, isPending } = useQuery({
         queryKey: ['polls', 'stream', scope, status, country],
         queryFn: async () => {
+            let path = `/polls/stream?scope=${encodeURIComponent(scope)}`;
+            if (status && status !== 'All') {
+                path += `&status=${encodeURIComponent(status)}`;
+            }
+            if (country) {
+                path += `&country=${encodeURIComponent(country)}`;
+            }
+
             try {
-                let path = `/polls/stream?scope=${encodeURIComponent(scope)}`;
-                if (status && status !== 'All') {
-                    path += `&status=${encodeURIComponent(status)}`;
-                }
-                if (country) {
-                    path += `&country=${encodeURIComponent(country)}`;
-                }
                 const res = await apiFetch(path);
-                return res?.data || res?.polls || res;
+                return res?.polls || res?.data || res;
             } catch (err) {
                 console.warn('Backend polls query failed, falling back to mockApi', err);
-                return api.getPolls();
+                return api.getPolls({ scope, status, country });
             }
         },
     });
 
     return {
-        polls: Array.isArray(data) ? data : (data?.polls || []),
+        polls: Array.isArray(data) ? data : (data?.polls || data?.data || []),
         pollsLoading: isPending,
     };
 }
