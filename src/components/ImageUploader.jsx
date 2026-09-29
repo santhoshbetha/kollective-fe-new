@@ -1,3 +1,4 @@
+// src/components/ImageUploader.jsx
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { cn } from '../lib/utils';
 import { Upload, Trash2, Edit2, ZoomIn, ZoomOut, RotateCcw, Check, X, Image as ImageIcon } from 'lucide-react';
@@ -5,7 +6,7 @@ import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/Dialog';
 
 /**
- * ImageUploader component for Kollective99
+ * ImageUploader component for Kollective
  * Supports drag & drop file upload, previewing, cropping with aspect ratio & zoom, and image removal.
  */
 export function ImageUploader({
@@ -32,7 +33,9 @@ export function ImageUploader({
 
     const inputRef = useRef(null);
     const canvasRef = useRef(null);
-    const imgRef = useRef(null);
+
+    // 🚀 SPEED OPTIMIZATION REF: Caches the image instance context *before* the modal renders
+    const cachedImageInstanceRef = useRef(null);
 
     // Sync incoming value prop with previewImage state
     useEffect(() => {
@@ -55,10 +58,16 @@ export function ImageUploader({
 
         const reader = new FileReader();
         reader.onload = () => {
-            setRawImage(reader.result);
-            setZoom(1);
-            setCropOffset({ x: 0, y: 0 });
-            setIsCropDialogOpen(true);
+            // 🚀 THE LAUNCH SPEED FIX: Pre-cache the structural image instance asynchronously *before* popping the modal
+            const img = new Image();
+            img.onload = () => {
+                cachedImageInstanceRef.current = img;
+                setRawImage(reader.result);
+                setZoom(1);
+                setCropOffset({ x: 0, y: 0 });
+                setIsCropDialogOpen(true); // Modal opens instantly because file reading is already complete
+            };
+            img.src = reader.result;
         };
         reader.readAsDataURL(file);
     };
@@ -100,41 +109,23 @@ export function ImageUploader({
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
     }, [zoom, cropOffset]);
 
-    // Draw preview whenever rawImage, zoom, or cropOffset changes
+    // Hardware-accelerated canvas update loop
     useEffect(() => {
-        if (!isCropDialogOpen || !rawImage) return;
+        if (!isCropDialogOpen || !rawImage || !cachedImageInstanceRef.current) return;
 
         let animationFrameId;
-        let timeoutId;
 
-        const render = (img) => {
-            animationFrameId = requestAnimationFrame(() => {
-                drawOnCanvas(img);
-            });
-        };
-
-        if (imgRef.current && imgRef.current.src === rawImage && imgRef.current.complete) {
-            render(imgRef.current);
-            // Backup render after modal animation completes
-            timeoutId = setTimeout(() => render(imgRef.current), 50);
-        } else {
-            const img = new Image();
-            img.onload = () => {
-                imgRef.current = img;
-                render(img);
-                timeoutId = setTimeout(() => render(img), 50);
-            };
-            img.src = rawImage;
-        }
+        // ⚡ Offload canvas rendering to the hardware-accelerated display refresh cycle
+        animationFrameId = requestAnimationFrame(() => {
+            drawOnCanvas(cachedImageInstanceRef.current);
+        });
 
         return () => {
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
-            if (timeoutId) clearTimeout(timeoutId);
         };
-    }, [isCropDialogOpen, rawImage, drawOnCanvas]);
+    }, [isCropDialogOpen, rawImage, zoom, cropOffset, drawOnCanvas]);
 
-
-    // Canvas pan handlers
+    // Canvas mouse/touch drag panning handlers
     const handleCanvasMouseDown = (e) => {
         setIsDraggingCanvas(true);
         setDragStart({ x: e.clientX - cropOffset.x, y: e.clientY - cropOffset.y });
@@ -153,12 +144,11 @@ export function ImageUploader({
     };
 
     const handleApplyCrop = () => {
-        if (!rawImage) return;
+        if (!rawImage || !cachedImageInstanceRef.current) return;
 
-        const img = imgRef.current || new Image();
-        if (!img.src) img.src = rawImage;
+        const img = cachedImageInstanceRef.current;
 
-        // Create clean export canvas
+        // Create a separate offscreen export canvas to render final crisp pixels
         const exportCanvas = document.createElement('canvas');
         const targetWidth = aspectRatio > 1 ? 1200 : 400;
         const targetHeight = targetWidth / aspectRatio;
@@ -179,7 +169,7 @@ export function ImageUploader({
             const drawX = (previewWidth - drawWidth) / 2 + cropOffset.x;
             const drawY = (previewHeight - drawHeight) / 2 + cropOffset.y;
 
-            // Map preview coordinates to export canvas coordinates
+            // Map preview scaling coordinates directly to high-res export target dimensions
             const ratioX = targetWidth / previewWidth;
             const ratioY = targetHeight / previewHeight;
 
@@ -199,14 +189,15 @@ export function ImageUploader({
         if (e) e.stopPropagation();
         setPreviewImage('');
         setRawImage(null);
+        cachedImageInstanceRef.current = null;
         if (onChange) onChange('');
         if (onImageRemove) onImageRemove();
     };
 
-    // Render logic for different modes (avatar vs banner)
+    // Render logic for different modes: Avatar layout vs Banner
     if (mode === 'avatar') {
         return (
-            <div className={cn("relative flex items-center gap-6", className)}>
+            <div className={cn("relative flex items-center gap-6 text-left", className)}>
                 <input
                     ref={inputRef}
                     type="file"
@@ -219,7 +210,7 @@ export function ImageUploader({
                     onClick={() => inputRef.current?.click()}
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
-                    className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-[#141414] bg-surface-container shadow-xl cursor-pointer group shrink-0"
+                    className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white dark:border-[#141414] bg-surface-container shadow-xl cursor-pointer group shrink-0 select-none"
                 >
                     {previewImage ? (
                         <img src={previewImage} alt="Avatar preview" className="w-full h-full object-cover" />
@@ -236,14 +227,14 @@ export function ImageUploader({
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <h4 className="font-headline-md text-lg font-bold text-text-primary">{label}</h4>
-                    <p className="text-xs text-text-secondary">{description || "Square format (400x400). Max limit 5MB."}</p>
-                    <div className="flex items-center gap-2 mt-1">
+                <div className="flex flex-col gap-2 font-sans">
+                    <h4 className="font-extrabold text-lg text-text-primary tracking-tight">{label}</h4>
+                    <p className="text-md text-text-secondary font-medium">{description || "Square format (400x400). Max limit 5MB."}</p>
+                    <div className="flex items-center gap-2 mt-1 select-none text-xs font-bold uppercase tracking-wider">
                         <Button
                             type="button"
                             onClick={() => inputRef.current?.click()}
-                            className="px-4 py-1.5 bg-primary-container hover:bg-primary-container/90 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer"
+                            className="px-4 py-2 bg-primary-container hover:opacity-95 text-white font-bold rounded-xl shadow-md cursor-pointer border-none"
                         >
                             Upload Photo
                         </Button>
@@ -252,24 +243,23 @@ export function ImageUploader({
                                 type="button"
                                 variant="outline"
                                 onClick={handleClearImage}
-                                className="px-3 py-1.5 border border-red-500/30 text-red-400 hover:bg-red-500/10 font-bold text-xs rounded-xl cursor-pointer"
+                                className="px-3 py-2 bg-transparent border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 font-bold rounded-xl cursor-pointer"
                             >
                                 Remove
                             </Button>
                         )}
                     </div>
-                    {error && <p className="text-xs text-red-400 font-semibold">{error}</p>}
+                    {error && <p className="text-xs text-rose-400 font-semibold mt-1 font-sans">{error}</p>}
                 </div>
 
-                {/* CROP DIALOG */}
                 {renderCropModal()}
             </div>
         );
     }
 
-    // Default 'banner' / header image uploader mode
+    // Default 'banner' / header panoramic image uploader mode
     return (
-        <div className={cn("w-full flex flex-col gap-2", className)}>
+        <div className={cn("w-full flex flex-col gap-2 text-left", className)}>
             <input
                 ref={inputRef}
                 type="file"
@@ -283,7 +273,7 @@ export function ImageUploader({
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 style={{ aspectRatio: aspectRatio }}
-                className="relative w-full bg-surface-container rounded-2xl border-2 border-dashed border-white/10 overflow-hidden group cursor-pointer hover:border-primary-container/50 transition-all select-none shadow-inner"
+                className="relative w-full bg-surface-container rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 overflow-hidden group cursor-pointer hover:border-primary-container/50 transition-all select-none shadow-inner"
             >
                 {previewImage ? (
                     <>
@@ -292,7 +282,7 @@ export function ImageUploader({
                             <Button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
-                                className="px-4 py-2 bg-primary-container text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer"
+                                className="px-4 py-2 bg-primary-container text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer border-none"
                             >
                                 <Edit2 className="w-4 h-4" />
                                 <span>Change Banner</span>
@@ -300,7 +290,7 @@ export function ImageUploader({
                             <Button
                                 type="button"
                                 onClick={handleClearImage}
-                                className="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer"
+                                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer border-none"
                             >
                                 <Trash2 className="w-4 h-4" />
                                 <span>Remove</span>
@@ -313,15 +303,15 @@ export function ImageUploader({
                             <Upload className="w-6 h-6" />
                         </div>
                         <div>
-                            <span className="text-sm font-bold text-text-primary block">{label}</span>
-                            <span className="text-xs text-text-secondary">Drag & drop or click to upload (1500x500 banner format)</span>
+                            <span className="text-sm font-bold text-text-primary block font-sans tracking-tight">{label}</span>
+                            <span className="text-xs text-text-secondary font-sans font-medium">Drag &amp; drop or click to upload (1500x500 banner format)</span>
                         </div>
                     </div>
                 )}
             </div>
-            {error && <p className="text-xs text-red-400 font-semibold mt-1">{error}</p>}
+            {error && <p className="text-xs text-rose-400 font-semibold mt-1 font-sans">{error}</p>}
 
-            {/* CROP DIALOG */}
+            {/* HIGH-PERFORMANCE INTUITIVE CROP DIALOG MODAL FRAME */}
             {renderCropModal()}
         </div>
     );
@@ -329,21 +319,21 @@ export function ImageUploader({
     function renderCropModal() {
         return (
             <Dialog open={isCropDialogOpen} onOpenChange={setIsCropDialogOpen}>
-                <DialogContent className="max-w-lg bg-[#141414] text-white border border-white/10 rounded-2xl p-6 shadow-2xl">
-                    <DialogHeader className="border-b border-white/10 pb-4 p-0 bg-transparent flex flex-row items-center justify-between">
-                        <DialogTitle className="text-lg font-bold text-text-primary flex items-center gap-2">
-                            <ImageIcon className="w-5 h-5 text-primary-container" />
-                            <span>Crop & Position Image</span>
+                <DialogContent className="max-w-lg bg-white dark:bg-[#141414] text-text-primary dark:text-white border border-black/10 dark:border-white/10 rounded-2xl p-6 shadow-2xl font-sans text-left">
+                    <DialogHeader className="border-b border-black/5 dark:border-white/10 pb-4 p-0 bg-transparent flex flex-row items-center justify-between">
+                        <DialogTitle className="text-lg font-black text-text-primary dark:text-white flex items-center gap-2 tracking-tight">
+                            <ImageIcon className="w-5 h-5 text-primary-container shrink-0" />
+                            <span>Crop &amp; Position Image</span>
                         </DialogTitle>
                     </DialogHeader>
 
                     <div className="py-4 flex flex-col items-center gap-4">
-                        <p className="text-xs text-text-secondary self-start">
-                            Drag image to position, use the slider to adjust zoom scale.
+                        <p className="text-xs text-text-secondary font-medium self-start">
+                            Drag image inside the boundaries below to position, then use the slider to adjust zoom scale features.
                         </p>
 
-                        {/* Interactive Canvas Stage */}
-                        <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden border border-white/10 cursor-grab active:cursor-grabbing flex items-center justify-center">
+                        {/* Hardware-Accelerated Panning Canvas Canvas Stage Area Box */}
+                        <div className="relative w-full aspect-video bg-neutral-950 rounded-xl overflow-hidden border border-black/5 dark:border-white/10 cursor-grab active:cursor-grabbing flex items-center justify-center select-none">
                             <canvas
                                 ref={canvasRef}
                                 width={480}
@@ -356,45 +346,44 @@ export function ImageUploader({
                             />
                         </div>
 
-                        {/* Zoom Controls */}
-                        <div className="w-full flex items-center gap-3 bg-surface-container-low p-3 rounded-xl border border-white/5">
+                        {/* Range Zoom Sliders Components Bar Row */}
+                        <div className="w-full flex items-center gap-3 bg-surface-container-low p-3 rounded-xl border border-black/5 dark:border-white/5 select-none">
                             <ZoomOut className="w-4 h-4 text-text-secondary shrink-0" />
                             <input
                                 type="range"
                                 min="1"
                                 max="3"
-                                step="0.05"
+                                step="0.02"
                                 value={zoom}
                                 onChange={(e) => setZoom(parseFloat(e.target.value))}
-                                className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-primary-container"
+                                className="w-full h-1 bg-black/10 dark:bg-white/20 rounded-lg appearance-none cursor-pointer accent-primary-container outline-none"
                             />
                             <ZoomIn className="w-4 h-4 text-text-secondary shrink-0" />
                             <button
                                 type="button"
                                 onClick={() => { setZoom(1); setCropOffset({ x: 0, y: 0 }); }}
-                                className="p-1 hover:text-primary-container text-text-secondary transition-colors cursor-pointer bg-transparent border-none"
-                                title="Reset Zoom"
+                                className="p-1 hover:text-primary-container text-text-secondary transition-colors cursor-pointer bg-transparent border-none outline-none"
+                                title="Reset Zoom Vectors"
                             >
                                 <RotateCcw className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
 
-                    <DialogFooter className="flex flex-row justify-end gap-3 pt-2 border-t-0 p-0">
+                    <DialogFooter className="flex flex-row justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/5 p-0 uppercase font-mono font-bold text-xs select-none">
                         <Button
                             type="button"
-                            variant="outline"
                             onClick={() => setIsCropDialogOpen(false)}
-                            className="px-5 py-2.5 bg-surface-container-high hover:bg-white/10 text-text-secondary font-bold text-xs rounded-xl border border-white/10 cursor-pointer"
+                            className="px-5 py-2.5 bg-surface-container-high dark:bg-[#222] hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary dark:text-text-secondary hover:text-text-primary rounded-xl border border-black/10 dark:border-white/10 cursor-pointer text-xs font-bold font-mono outline-none"
                         >
                             Cancel
                         </Button>
                         <Button
                             type="button"
                             onClick={handleApplyCrop}
-                            className="px-6 py-2.5 bg-primary-container hover:bg-primary-container/90 text-white font-bold text-xs rounded-xl shadow-lg cursor-pointer"
+                            className="px-6 py-2.5 bg-primary-container text-white rounded-xl shadow-lg cursor-pointer text-xs font-black font-mono border-none outline-none crimson-glow"
                         >
-                            Apply & Save
+                            Apply &amp; Save
                         </Button>
                     </DialogFooter>
                 </DialogContent>

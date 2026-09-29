@@ -5,51 +5,59 @@ import { useAuthStore } from '../store/auth/useAuthStore';
 const PhoenixSocketContext = createContext(null);
 
 export const PhoenixSocketProvider = ({ children }) => {
+    // Listen to authentication states to react dynamically to logins/logouts
     const user = useAuthStore((state) => state.user);
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
     const [socket, setSocket] = useState(null);
     const [channel, setChannel] = useState(null);
     //const [juryAlert, setJuryAlert] = useState(null);
 
     useEffect(() => {
-        // Guard: only run if we have a valid logged in user handle
-        if (!user || !user.handle) {
-            setSocket(null);
-            setChannel(null);
-            //setJuryAlert(null);
-            return;
-        }
-
-        const userId = user.handle.replace('@', '');
-        const userJwt = localStorage.getItem("user_token") || "mock-jwt-token";
-
         let phoenixSocket = null;
         let userChannel = null;
 
         try {
             const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/socket';
 
+            // 🚀 ADVANCED GUEST ACCESS STRATEGY:
+            // Dynamically load the token on connection if authenticated.
+            // If they are a guest visitor, pass an empty string—your Elixir UserSocket 
+            // connect/2 function can catch this to assign a guest socket room safely!
             phoenixSocket = new Socket(wsUrl, {
-                params: { token: userJwt },
-                reconnectAfterMs: () => 15000 // Slow down reconnection retries in mock environment
+                params: {
+                    token: isAuthenticated ? (localStorage.getItem("user_token") || "") : ""
+                },
+                // Back-off physics configuration multiplier for unstable networks
+                reconnectAfterMs: (tries) => [1000, 2000, 5000, 10000][tries - 1] || 10000
             });
 
             phoenixSocket.connect();
             setSocket(phoenixSocket);
 
-            userChannel = phoenixSocket.channel(`user:${userId}`, {});
-            userChannel.join()
-                .receive('ok', () => console.log(`Connected mock socket channel: user:${userId}`))
-                .receive('error', resp => console.warn('Phoenix channel join warning (expected in mock environment)', resp));
+            // 🚀 AUTHENTICATED NOTIFICATION LANE:
+            // Only mount and subscribe to private push notification channels if a user is logged in
+            if (isAuthenticated && user?.handle) {
+                const userId = user.handle.replace('@', '');
+                userChannel = phoenixSocket.channel(`user:${userId}`, {});
 
-            //userChannel.on('new_notification', (payload) => {
-            //    if (payload.type === 'JURY_DUTY_ASSIGNED') {
-            //        setJuryAlert(payload);
-            //    }
-            //});
+                userChannel.join()
+                    .receive('ok', () => console.log(`Connected secure sync channel: user:${userId}`))
+                    .receive('error', resp => console.error('Private sync channel connection rejected:', resp));
 
-            setChannel(userChannel);
+                //userChannel.on('new_notification', (payload) => {
+                //    if (payload.type === 'JURY_DUTY_ASSIGNED') {
+                //        setJuryAlert(payload);
+                //    }
+                //});
+                setChannel(userChannel);
+            } else {
+                // Wipe channels clean if unauthenticated visitor context is loaded
+                setChannel(null);
+            }
+
         } catch (e) {
-            console.warn("Phoenix socket initialization bypassed:", e);
+            console.error("Phoenix socket initialization execution bypassed:", e);
         }
 
         // --- DEMO SIMULATED NOTIFICATION ---
@@ -63,16 +71,16 @@ export const PhoenixSocketProvider = ({ children }) => {
         //    });
         //}, 8000);
 
+        // Cleanup cycle hooks protect memory limits against memory leaks
         return () => {
-            //clearTimeout(timer);
             if (userChannel) {
-                try { userChannel.leave(); } catch (err) { }
+                try { userChannel.leave(); } catch (err) { console.error(err); }
             }
             if (phoenixSocket) {
-                try { phoenixSocket.disconnect(); } catch (err) { }
+                try { phoenixSocket.disconnect(); } catch (err) { console.error(err); }
             }
         };
-    }, [user]);
+    }, [user, isAuthenticated]); // Re-fire safely whenever authentication profiles shift
 
     return (
         <PhoenixSocketContext.Provider value={{ socket, channel, /*juryAlert, setJuryAlert */ }}>

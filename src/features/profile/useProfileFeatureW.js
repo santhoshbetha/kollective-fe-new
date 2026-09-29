@@ -3,13 +3,10 @@ import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tansta
 import { apiFetch } from '../../api/apiClient';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import * as api from '../../api/mockApi';
-
-import { usePostsStore } from '../../store/usePostsStore';
-
 import { useAccountsStore } from '../../store/useAccountsStore';
 
 // 👤 Query: Fetches a single user profile record cleanly by their specific node handle index
-export function useProfileQuery(username) {
+export function useProfileQueryX(username) {
     return useQuery({
         queryKey: ['profile', username],
         queryFn: async () => {
@@ -28,7 +25,7 @@ const getNextCursor = (lastPage) =>
     lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined;
 
 // 🗳️ Infinite Query: Pulls a flat, virtualized feed of posts created strictly by this profile
-export function useProfilePostsQuery(username) {
+export function useProfilePostsQueryX(username) {
     return useInfiniteQuery({
         queryKey: ['profile', username, 'posts'],
         queryFn: async ({ pageParam = null }) => {
@@ -66,7 +63,7 @@ export function useUpdateProfileMutation(username) {
     });
 }
 
-export function useUpdateUser() {
+export function useUpdateUserX() {
     const queryClient = useQueryClient();
     const setSession = useAuthStore((state) => state.setSession);
     const token = useAuthStore((state) => state.token);

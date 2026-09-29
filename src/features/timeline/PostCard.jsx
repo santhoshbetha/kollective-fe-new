@@ -1,5 +1,5 @@
 // src/features/timeline/PostCard.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserHoverCard } from '../../components/UserHoverCard';
 import { UserAvatar } from '../../components/UserAvatar';
@@ -14,7 +14,10 @@ import { usePostActions } from './usePostActions';
 import { useRsvpToAction } from '../../features/organize/useOrganizeFeature';
 import { usePostsStore } from '../../store/usePostsStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
+import { useToggleBookmark } from '../../features/bookmarks/useToggleBookmark';
 import { LoginPromptModal } from '../../components/LoginPromptModal';
+import { getReplyCount, getReblogCount, getLikeCount } from '../../utils/postHelpers';
+import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 import {
@@ -153,13 +156,19 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
 let activeMenuPostId = null;
 let activeMenuSetShowMenu = null;
 
-export function PostCard({ post: propPost, isLast = false, standalone = false }) {
+export const PostCard = React.memo(function PostCard({
+    post: propPost,
+    isLast = false,
+    standalone = false
+}) {
     const storePost = usePostsStore((state) => propPost?.id ? state.entities[propPost.id] : null);
     const post = storePost || propPost;
     const storeEntities = usePostsStore((state) => state.entities);
 
     const currentUser = useAuthStore((state) => state.user);
     const activeAccount = useAuthStore((state) => state.activeAccount);
+
+    const toggleBookmarkMutation = useToggleBookmark();
 
     const getDisplayPost = (rawPost) => {
         if (!rawPost) return rawPost;
@@ -171,8 +180,12 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
     };
 
     const displayPost = getDisplayPost(post);
+    const author = displayPost?.author || post?.author;
 
-    const isSelfPost = () => {
+    const reblogsCount = getReblogCount(post);
+    const likesCount = getLikeCount(post);
+
+    const isSelfPost = useMemo(() => {
         const targetAuthor = displayPost?.author || post?.author;
         if (!targetAuthor) return false;
         const currentUserId = currentUser?.id || activeAccount?.id;
@@ -187,20 +200,48 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
         if (currentUsername && authorUsername && currentUsername.toLowerCase() === authorUsername.toLowerCase()) return true;
         if (currentName && authorName && currentName.toLowerCase() === authorName.toLowerCase()) return true;
         return false;
-    };
-    const isSelf = isSelfPost();
+    }, [displayPost?.author, post?.author, currentUser?.id, activeAccount?.id, currentUser?.username, activeAccount?.username, currentUser?.name, activeAccount?.name]);
 
-    const isRebloggedPost = !!(
-        post?.reblog ||
-        post?.reblog_of_id ||
-        post?.reblogOf ||
-        post?.isReblog
-    );
+    const isSelf = isSelfPost;
 
-    //console.log("post::", post);
+    const isRebloggedPost = useMemo(() => {
+        return !!(
+            post?.reblog ||
+            post?.reblog_of_id ||
+            post?.reblogOf ||
+            post?.isReblog
+        );
+    }, [post?.reblog, post?.reblog_of_id, post?.reblogOf, post?.isReblog]);
 
     const targetPostId = displayPost?.id || post?.id;
     const isAlreadyReblogged = !!(post?.reblogged || post?.has_reblogged || displayPost?.reblogged || displayPost?.has_reblogged);
+
+    const targetData = isRebloggedPost
+        ? (post.reblog || {})  // Real source content for bookmarking logic
+        : post;
+    console.log("targetData", targetData);
+
+    // Derive active saved state parameters cleanly from incoming data matrices
+    // 🚀 THE DEEP DEBUG FIX: Force the individual card to explicitly subscribe 
+    // to its own dynamic entity slice in the Zustand store memory.
+    // const livePost = usePostsStore(
+    //     React.useCallback((state) => state.entities[targetPostId] || post, [targetPostId, post])
+    // );
+    //const isBookmarked = Boolean(livePost?.bookmarked || livePost?.isBookmarked || livePost?.rsvp === 'Interested');
+    const isLiked = Boolean(
+        targetData?.liked ||
+        targetData?.has_liked ||
+        post?.liked ||
+        post?.has_liked
+    );
+    const isBookmarked = Boolean(
+        targetData?.bookmarked ||
+        targetData?.isBookmarked ||
+        post?.bookmarked ||
+        post?.isBookmarked
+    );
+    //console.log('PostCard isBookmarked', isBookmarked);
+    //console.log('PostCard livePost', livePost);
 
     const { toggleLike, toggleReblog, toggleBookmark, isActionPending } = usePostActions();
     const rsvpMutation = useRsvpToAction();
@@ -214,6 +255,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
     // 🎛️ Lightbox state parameters sandboxed per post card item
     const [carouselOpen, setCarouselOpen] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
+
     const allImages = displayPost?.images || (displayPost?.image ? [displayPost.image] : (post?.images || (post?.image ? [post.image] : [])));
 
     const triggerLoginPrompt = (message = "Please log in to interact with posts.") => {
@@ -228,7 +270,12 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
             return;
         }
         if (targetPostId) {
-            toggleLike(targetPostId);
+            //toggleLike(targetPostId);
+            toggleLike({
+                postId: post.id,
+                reblogId: isRebloggedPost ? post.reblog.id : null,
+                isCurrentlyLiked: isLiked
+            });
         }
     };
 
@@ -251,8 +298,14 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
             triggerLoginPrompt("Please log in to bookmark posts.");
             return;
         }
+
         if (targetPostId) {
-            toggleBookmark(targetPostId);
+            //toggleBookmark(targetPostId);
+            toggleBookmark({
+                postId: post.id, // Wrapper post ID
+                reblogId: isRebloggedPost ? post.reblog.id : null, // Target inner ID
+                isCurrentlyBookmarked: isBookmarked
+            });
         }
     };
 
@@ -287,7 +340,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
         }
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (!showMenu) return;
 
         const handleOutsideClick = (e) => {
@@ -310,7 +363,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
         };
     }, [showMenu, post?.id]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         return () => {
             if (activeMenuPostId === post?.id) {
                 activeMenuPostId = null;
@@ -335,10 +388,22 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
             setShowMenu(true);
         }
     };
+
+    // ⚡ Top-Scope Unification: Safe payload normalization
+    const videoSource = typeof post?.video === 'string'
+        ? post.video
+        : post?.video?.url || post?.videoUrl;
+
+    const authorRole = post?.author?.role || 'Journalist';
+    const commentsDisplayCount = getReplyCount(displayPost) || getReplyCount(post);
+    const handleMenuToggleClick = (e) => {
+        e.stopPropagation();
+        handleToggleMenu();
+    };
     const authorHandle = displayPost?.author?.handle || post?.author?.handle || `@${(displayPost?.author?.name || post?.author?.name || 'user').toLowerCase().replace(/\s+/g, '')}@kollective.social`;
     const domain = displayPost?.domain || post?.domain || 'universeodon.com';
 
-    const handleCardClick = (e) => {
+    const handleCardClick = useCallback((e) => {
         // Avoid navigating if clicking interactive buttons/links
         if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) {
             return;
@@ -360,9 +425,9 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
             return;
         }
         navigate(`/post/${displayPost?.id || post?.id}`);
-    };
+    }, [navigate, displayPost?.id, post?.id]);
 
-    console.log("PostCard Post: ", post);
+    console.log("PostCard Post 22 : ", post);
 
     // SYSTEM AI POST STYLE
     if (post?.isSystem) {
@@ -408,180 +473,202 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
             <>
                 <article
                     onClick={handleCardClick}
-                    className={`relative p-0 hover:bg-white/[0.01] border-b ${isLast ? 'border-transparent' : 'border-black/20 dark:border-white/20'} transition-all group cursor-pointer 
-                ${standalone
-                            ? 'glass-card rounded-[16px] border-20 border-primary-container/40 crimson-glow overflow-hidden'
-                            : ''
-                        } ${showMenu ? 'z-30' : 'z-10'}`}
+                    // Replace Line 12 in Part 2 layout frame code block with this:
+                    className={cn(
+                        "relative p-0 border-b border-[#262626] transition-all group cursor-pointer bg-[#0e1117] hover:bg-[#131720]  bg-[#111720]X hover:bg-[#161f2b]X",
+                        /* 
+                        🚀 THE ATTENTION RAIL: Adds a solid 3px crimson stripe on the left edge.
+                        This frames the Voice post instantly without breaking the scroll axis line.
+                        */
+                        "border-l-[3px] border-l-primary-container",
+                        standalone ? "glass-card rounded-2xl border border-primary-container/30 crimson-glow shadow-[inset_0_0_12px_rgba(211,47,47,0.08)] overflow-hidden" : "",
+                        showMenu ? "z-30" : "z-10"
+                    )}
+
                 >
-                    {/* Voice Badge */}
-                    <div className="absolute top-0 left-0 bg-primary-container text-white px-4 py-1.5 flex items-center gap-2 rounded-br-xl z-20">
+                    {/* 📣 Absolute Positioning Category Badge Overlay */}
+                    <div className="absolute top-0 left-0 bg-primary-container text-white px-4 py-1.5 flex items-center gap-2 rounded-br-xl z-20 shadow-md">
                         <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                             campaign
                         </span>
-                        <span className="font-bold text-[15px] uppercase tracking-widest">VOICE</span>
+                        <span className="font-bold text-xs uppercase tracking-widest font-mono">VOICE</span>
                     </div>
 
-                    {/* Top Right Actions */}
+                    {/* 🛠️ More Actions Kebab Context Layout Anchor */}
                     <div className="absolute top-3 right-4 flex items-center gap-2 z-20">
-                        <div className="relative menu-container-relative">
+                        <div className="relative">
                             <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleMenu();
-                                }}
-                                className="p-2 rounded-full backdrop-blur-md text-text-secondary hover:text-white focus:outline-none transition-all cursor-pointer flex items-center justify-center"
+                                onClick={handleMenuToggleClick}
+                                className="p-2 rounded-full backdrop-blur-md bg-black/40 hover:bg-black/60 text-text-secondary hover:text-white transition-all cursor-pointer flex items-center justify-center border border-white/5"
                                 title="More actions"
                             >
                                 <span className="material-symbols-outlined text-[18px]">more_horiz</span>
                             </button>
-                            {renderMenu(post, showMenu, setShowMenu, authorHandle, domain, navigate)}
+                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle)}
                         </div>
                     </div>
 
-                    <div className="p-8 flex flex-col gap-6">
-                        <div>
-                            <UserHoverCard author={post?.author}>
-                                <div className="flex items-center gap-4 hover:opacity-85 transition-opacity">
-                                    <UserHoverCard author={post?.author}>
-                                        <UserAvatar user={post?.author} className="w-12 h-12" showStatus={false} />
-                                    </UserHoverCard>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="font-bold text-lg text-text-primary leading-tight">{post?.author.name}</h3>
-                                            <span className="material-symbols-outlined text-[#008080] text-[18px]" hidden
-                                                style={{ fontVariationSettings: "'FILL' 1" }}>
-                                                verified
-                                            </span>
-                                            <VerificationBadge type="journalist" size='lg' />
-                                        </div>
+                    {/* Editorial Padding Content Arena */}
+                    <div className="p-8 flex flex-col gap-6 pt-14">
 
-                                        <p className="font-label-sm text-text-secondary">{post?.author.role} • {post?.time}</p>
+                        {/* Header Context Section */}
+                        <div className="flex flex-col gap-3">
+                            <UserHoverCard author={post?.author}>
+                                <div className="flex items-center gap-4 hover:opacity-90 transition-opacity">
+                                    <UserAvatar user={post?.author} className="w-12 h-12" showStatus={false} />
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-bold text-base md:text-lg text-text-primary leading-tight">
+                                                {post?.author?.name}
+                                            </h3>
+                                            <VerificationBadge type="journalist" size="lg" />
+                                        </div>
+                                        <p className="text-xs md:text-sm text-text-secondary font-medium">
+                                            {authorRole} • {post?.time || 'Just now'}
+                                        </p>
                                     </div>
                                 </div>
                             </UserHoverCard>
-                            {post?.author && (
-                                <div className="mt-3 ml-16 flex items-center gap-1.5 text-sm text-text-secondary">
+
+                            {/* Co-author attribution layouts if organization accounts manage it */}
+                            {post?.author?.type === 'organization' && (
+                                <div className="mt-1 ml-16 flex items-center gap-1.5 text-xs text-text-secondary">
                                     <span>posted by</span>
-                                    <span
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const username = post?.author.handle.replace('@', '');
-                                            navigate(`/profile/${username}`, { state: { fromCard: true } });
-                                        }}
-                                        className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1.5"
-                                    >
-                                        <UserAvatar user={post?.author} className="w-5 h-5" showStatus={false} />
-                                        {post?.author.name}
+                                    <span className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1">
+                                        {post?.author?.name}
                                     </span>
                                 </div>
                             )}
                         </div>
 
+                        {/* Content Core Body Elements */}
                         <div className="flex flex-col gap-3">
-                            <h2 className="text-3xl font-extrabold text-text-primary tracking-tight leading-tight group-hover:text-primary-container transition-colors duration-300">
+                            <h2 className="text-2xl md:text-3xl font-black text-text-primary tracking-tight leading-tight group-hover:text-primary-container transition-colors duration-300">
                                 {post?.title}
                             </h2>
+
                             {post?.contentWarning ? (
-                                <ContentWarningWrapper warning={post?.contentWarning}>
-                                    <p className="font-body-lg text-xl text-text-primary/90 leading-relaxed">
+                                <ContentWarningWrapper warning={post.contentWarning}>
+                                    <p className="font-body-lg text-base md:text-lg text-text-primary/90 leading-relaxed font-normal">
                                         {post?.text}
                                     </p>
                                 </ContentWarningWrapper>
                             ) : (
-                                <p className="font-body-lg text-xl text-text-primary/90 leading-relaxed">
+                                <p className="font-body-lg text-base md:text-lg text-text-primary/90 leading-relaxed font-normal">
                                     {post?.text}
                                 </p>
                             )}
                         </div>
 
-                        {post?.video || post?.videoUrl ? (
+                        {/* Integrated Rich Media Injection Switchboard Block */}
+                        {videoSource ? (
                             <KollectiveVideoPlayer
-                                src={typeof post?.video === 'string' ? post.video : post?.video?.url || post?.videoUrl}
+                                src={videoSource}
                                 poster={post?.videoPoster || post?.image}
                                 isGif={post?.isGif}
                                 title={post?.title}
                             />
-                        ) : post?.image && (
+
+                        ) : post?.image ? (
                             <div
                                 className="relative aspect-[16/9] rounded-xl overflow-hidden border border-white/5 cursor-pointer"
                                 onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }}
                             >
                                 <img
-                                    alt="Strike Visual"
-                                    className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700"
-                                    src={post?.image}
+                                    alt={post?.imageMeta || "Editorial Voice Visual"}
+                                    className="w-full h-full object-cover group-hover:scale-[1.015] transition-transform duration-700"
+                                    src={post.image}
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/77 via-black/10 to-transparent" />
+
+                                {/* Avatar Stack & Image Meta Overlay Context Row */}
                                 <div className="absolute bottom-4 left-6 flex items-center gap-3">
                                     <div className="flex -space-x-2">
-                                        <div className="w-7 h-7 rounded-full border-2 border-surface-ink bg-gray-500"></div>
-                                        <div className="w-7 h-7 rounded-full border-2 border-surface-ink bg-gray-600"></div>
-                                        <div className="w-7 h-7 rounded-full border-2 border-surface-ink bg-gray-700"></div>
+                                        <div className="w-6 h-6 rounded-full border border-surface-ink bg-white/10 backdrop-blur-xs flex items-center justify-center text-[10px] text-white/40">1</div>
+                                        <div className="w-6 h-6 rounded-full border border-surface-ink bg-white/10 backdrop-blur-xs flex items-center justify-center text-[10px] text-white/40">2</div>
+                                        <div className="w-6 h-6 rounded-full border border-surface-ink bg-white/10 backdrop-blur-xs flex items-center justify-center text-[10px] text-white/40">3</div>
                                     </div>
-                                    <span className="text-[12px] font-bold text-white shadow-sm">{post?.imageMeta}</span>
+                                    {post?.imageMeta && (
+                                        <span className="text-[11px] font-bold text-white/80 bg-black/40 px-2 py-0.5 rounded backdrop-blur-md border border-white/5 shadow-sm">
+                                            {post.imageMeta}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
-                        )}
-                        <div className="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+                        ) : null}
+
+                        {/* Action Bar Engagement Matrix Row Footer */}
+                        <div className="flex items-center justify-between pt-4 border-t border-white/5 text-text-secondary">
                             <div className="flex items-center gap-6">
+
+                                {/* Standard Response Bubble Action button */}
                                 <button
-                                    onClick={handleLikeClick}
-                                    disabled={isActionPending}
-                                    className={cn(
-                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent cursor-pointer hover:scale-105 active:scale-95",
-                                        post?.liked ? "text-primary-container font-extrabold" : "text-text-secondary hover:text-text-primary"
-                                    )}
-                                    title={post?.liked ? "Unlike Voice" : "Like Voice"}
+                                    onClick={(e) => { e.stopPropagation(); handleCommentClick(); }}
+                                    className="flex items-center gap-2 font-bold transition-all border-none bg-transparent cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95"
+                                    title="Comment"
                                 >
-                                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
-                                        favorite
-                                    </span>
-                                    <span className="text-sm">
-                                        {post?.likes ?? post?.likesCount ?? 0}
+                                    <span className="material-symbols-outlined text-[18px]">reply</span>
+                                    <span className="text-xs md:text-sm">
+                                        {commentsDisplayCount.toLocaleString()}
                                     </span>
                                 </button>
+
+                                {/* Reblog/Boost action button */}
                                 <button
-                                    onClick={handleReblogClick}
+                                    onClick={(e) => { e.stopPropagation(); handleReblogClick(); }}
                                     disabled={isActionPending || isAlreadyReblogged}
                                     className={cn(
-                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent",
-                                        isAlreadyReblogged
-                                            ? "opacity-60 cursor-not-allowed text-emerald-500 font-extrabold"
-                                            : "text-text-secondary hover:text-text-primary cursor-pointer hover:scale-105 active:scale-95"
+                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent cursor-pointer",
+                                        isAlreadyReblogged ? "text-emerald-500 font-extrabold cursor-default opacity-80" : "hover:text-text-primary hover:scale-105 active:scale-95"
                                     )}
-                                    title={isAlreadyReblogged ? "Already reblogged this post" : "Boost Voice"}
+                                    title="Boost"
                                 >
-                                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}>
+                                    <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}>
                                         repeat
                                     </span>
-                                    <span className="text-sm">{post?.shares ?? post?.reblogsCount ?? post?.reblogs_count ?? 0}</span>
+                                    <span className="text-xs md:text-sm">
+                                        {reblogsCount.toLocaleString()}
+                                    </span>
                                 </button>
+
+                                {/* Heart / Endorsement Tracker button */}
                                 <button
-                                    onClick={handleCommentClick}
-                                    className="flex items-center gap-2 text-text-secondary hover:text-text-primary font-bold transition-all border-none bg-transparent cursor-pointer hover:scale-105 active:scale-95"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleLikeClick();
+                                    }}
+                                    disabled={isActionPending}
+                                    className={cn(
+                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95",
+                                        post?.liked ? "text-primary-container font-extrabold" : ""
+                                    )}
+                                    title={post?.liked ? "Unlike" : "Like"}
                                 >
-                                    <span className="material-symbols-outlined text-[20px]">mode_comment</span>
-                                    <span className="text-sm">{post?.commentsCount ?? post?.repliesCount ?? '1.2k'}</span>
+                                    <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
+                                        star
+                                    </span>
+                                    <span>
+                                        {likesCount.toLocaleString()}
+                                    </span>
                                 </button>
                             </div>
 
-                            {(post?.category === 'voice' || post?.isAction || post?.id === 'strike-post-1') && (
-                                <button
-                                    onClick={handleJoinActionClick}
-                                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer shadow-md active:scale-95 ${isActionJoined
-                                        ? 'bg-surface-container-high text-primary-container border border-primary-container/30'
-                                        : 'bg-primary-container text-white hover:brightness-110 crimson-glow'
-                                        }`}
-                                >
-                                    {isActionJoined ? '✓ Joined Action' : 'Join the Action'}
-                                </button>
-                            )}
+                            {/* Interactive Campaign/Action Button Core Interface */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleJoinActionClick(); }}
+                                className={cn(
+                                    "px-5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all cursor-pointer shadow-md active:scale-95 border",
+                                    isActionJoined
+                                        ? "bg-white/5 text-primary-container border-white/10"
+                                        : "bg-primary-container text-white border-transparent hover:brightness-110 crimson-glow"
+                                )}
+                            >
+                                {isActionJoined ? '✓ Joined Action' : 'Join the Action'}
+                            </button>
                         </div>
                     </div>
                 </article>
-
-                {/* 🏆 3. FULLSCREEN MEDIA OVERLAY CANVAS LIGHTBOX */}
+                {/* Lightbox Modals & Identity Overlay elements */}
                 <ImageLightbox
                     isOpen={carouselOpen}
                     images={allImages}
@@ -589,6 +676,7 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
                     setActiveIndex={setCarouselIndex}
                     onClose={() => setCarouselOpen(false)}
                 />
+
                 <LoginPromptModal
                     isOpen={isLoginPromptOpen}
                     onClose={() => setIsLoginPromptOpen(false)}
@@ -603,281 +691,284 @@ export function PostCard({ post: propPost, isLast = false, standalone = false })
         <>
             <div
                 onClick={handleCardClick}
-                className={`p-4 hover:bg-white/[0.01]X border-b border-[#262626] ${isLast ? 'border-transparent' : 'border-black/20 dark:border-white/20'} transition-all group cursor-pointer relative  
-                ${standalone
-                        ? 'glass-card rounded-[16px] border border-white/5 shadow-md'
-                        : ''
-                    } ${showMenu ? 'z-30' : 'z-10'} ${post?.isOptimistic ? 'opacity-60 pointer-events-none' : ''}`}
+                className={cn(
+                    "p-5 border-b border-[#262626] transition-all group relative bg-[#141414] cursor-pointer",
+                    isLast ? "border-transparent" : "border-black/20 dark:border-white/10",
+                    standalone ? "glass-card rounded-2xl border border-white/5 shadow-lg" : "",
+                    showMenu ? "z-30" : "z-10",
+                    post?.isOptimistic ? "opacity-60 pointer-events-none" : ""
+                )}
             >
-                {/* 🔄 Reblogged Header Indicator Banner */}
+                {/* 🔄 Reblogged Context Top Banner */}
                 {isRebloggedPost && (
                     <div className="flex items-center gap-2 text-xs font-bold text-emerald-500 mb-3 px-1">
-                        <span className="material-symbols-outlined text-[18px]">repeat</span>
-                        <span>
-                            {post?.author?.name || post?.author?.username || post?.account?.display_name || post?.account?.username ? (
-                                <>
-                                    <span className="text-text-primary font-bold">
-                                        {post?.author?.name || post?.author?.username || post?.account?.display_name || post?.account?.username}
-                                    </span>{' '}
-                                    reblogged
-                                </>
-                            ) : (
-                                'Reblogged'
-                            )}
+                        <span className="material-symbols-outlined text-[16px]">repeat</span>
+                        <span className="truncate">
+                            <span className="text-text-primary hover:underline cursor-pointer">
+                                {post?.author?.name || post?.account?.display_name || 'Someone'}
+                            </span>{" "}
+                            reblogged
                         </span>
                     </div>
                 )}
 
-                <div className="flex gap-4 items-start relative z-10 w-full">
-                    <UserHoverCard author={displayPost?.author || post?.author}>
-                        <UserAvatar user={displayPost?.author || post?.author} className="w-12 h-12" showStatus={false} />
-                    </UserHoverCard>
-
-                    <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start">
-                            <div className="min-w-0">
-                                <UserHoverCard author={displayPost?.author || post?.author}>
-                                    <div className="hover:opacity-85 transition-opacity">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="font-bold text-text-primary">{displayPost?.author?.name || post?.author?.name}</span>
-                                            {(displayPost?.author?.role || post?.author?.role) && (
-                                                <span className="text-[12px] px-1.5 py-0.5 bg-surface-container-highest rounded text-text-secondary">
-                                                    {displayPost?.author?.role || post?.author?.role}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span className="font-label-sm text-text-secondary">
-                                            {displayPost?.author?.handle || post?.author?.handle || '@circle'} • {displayPost?.time || post?.time}
-                                            {post?.isOptimistic && (
-                                                <span className="ml-2 inline-flex items-center gap-1 text-xs text-primary-container font-mono font-bold animate-pulse">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-primary-container animate-ping" />
-                                                    Sending...
-                                                </span>
-                                            )}
+                <div className="flex flex-col gap-3 w-full">
+                    <div className="flex items-center gap-3 w-full">
+                        <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-[#1A1616]">
+                            <UserHoverCard author={author}>
+                                <UserAvatar user={author} className="w-10 h-10" showStatus={false} />
+                            </UserHoverCard>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <UserHoverCard author={author}>
+                                <div className="flex flex-col min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-bold text-text-primary text-sm md:text-base hover:underline truncate">
+                                            {author?.name}
                                         </span>
+                                        {author?.role && (
+                                            <span className="text-[10px] px-1.5 py-0.5 font-bold uppercase tracking-wider bg-surface-container-highest border border-white/5 rounded text-text-secondary">
+                                                {author.role}
+                                            </span>
+                                        )}
                                     </div>
-                                </UserHoverCard>
-                                {(displayPost?.author || post?.author) && (
-                                    <div className="mt-1.5 flex items-center gap-1.5 text-sm text-text-secondary">
-                                        {(displayPost?.author?.type || post?.author?.type) === 'organization' ?
-                                            <>
-                                                <span>posted by </span>
-                                                <span
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        const targetAuthor = displayPost?.author || post?.author;
-                                                        const username = targetAuthor?.handle?.replace('@', '');
-                                                        navigate(`/profile/${username}`, { state: { fromCard: true } });
-                                                    }}
-                                                    className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1"
-                                                >
-                                                    <img src={(displayPost?.author || post?.author)?.avatar || null} className="w-4 h-4 rounded-full object-cover" alt="" />
-                                                    {(displayPost?.author || post?.author)?.name}
-                                                </span>
-                                            </>
-                                            :
-                                            <></>
-                                        }
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex items-center gap-1">
-                                <div className="relative menu-container-relative">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleToggleMenu();
-                                        }}
-                                        className="p-1.5 hover:bg-white/5 rounded-full transition-colors focus:outline-none cursor-pointer flex items-center justify-center border-none bg-transparent"
-                                        title="More actions"
-                                    >
-                                        <span className="material-symbols-outlined text-text-secondary">more_horiz</span>
-                                    </button>
-                                    {renderMenu(post, showMenu, setShowMenu, authorHandle, domain, navigate)}
+                                    <span className="text-xs text-text-secondary font-mono truncate mt-0.5">
+                                        {authorHandle} • {displayPost?.time || "Just now"}
+                                        {post?.isOptimistic && (
+                                            <span className="ml-2 inline-flex items-center gap-1 font-bold text-primary-container animate-pulse">
+                                                Sending...
+                                            </span>
+                                        )}
+                                    </span>
                                 </div>
-                            </div>
+                            </UserHoverCard>
+
+                            {/* Organization Secondary Sub-Attribution Banner */}
+                            {author?.type === 'organization' && (
+                                <div className="mt-2 flex items-center gap-1.5 text-xs text-text-secondary bg-white/[0.02] border border-white/5 px-2.5 py-1 rounded-lg w-fit">
+                                    <span>posted by</span>
+                                    <span className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1">
+                                        {author.name}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
-                        {/* 🏆 1. DECOUPLED RICH TEXT CONTENT SWITCHBOARD */}
-                        {/* Handles server-tokens, content warnings, and embedded PollCards/EventCards */}
+                        {/* Dropdown Context Navigation Target */}
+                        <div className="relative shrink-0">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleToggleMenu(); }}
+                                className="p-2 hover:bg-white/5 rounded-full text-text-secondary hover:text-text-primary transition-colors flex items-center justify-center border-none bg-transparent cursor-pointer"
+                                title="More actions"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">
+                                    more_horiz
+                                </span>
+                            </button>
+                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle)}
+                        </div>
+                    </div>
+
+                    {/* 🏆 DECOUPLED CONTENT WRAPPERS */}
+                    <div className="text-sm md:text-base text-text-primary leading-relaxed break-words mt-1">
                         {displayPost?.contentWarning ? (
-                            <ContentWarningWrapper warning={displayPost?.contentWarning}>
+                            <ContentWarningWrapper warning={displayPost.contentWarning}>
                                 <PostContent post={displayPost} isFocus={false} />
                             </ContentWarningWrapper>
                         ) : (
                             <PostContent post={displayPost} isFocus={false} />
                         )}
+                    </div>
 
-                        {/* 🏆 2. DECOUPLED MOSAIC MEDIA INJECTION POINT */}
-                        {/* Handles 1-4 grids blurring layers, and indicators overlays */}
-                        <PostMedia
-                            post={displayPost}
-                            setCarouselIndex={setCarouselIndex}
-                            setCarouselOpen={setCarouselOpen}
-                        />
+                    {/* 🏆 SINGLE IMAGE INJECTION MODULE POINT */}
+                    {(allImages.length > 0 || videoSource) && (
+                        <div className="mt-3">
+                            <PostMedia
+                                post={displayPost}
+                                setCarouselIndex={setCarouselIndex}
+                                setCarouselOpen={setCarouselOpen}
+                            />
+                        </div>
+                    )}
 
-                        {/* Tag Chips */}
-                        {displayPost?.tags && displayPost?.tags.length > 0 && (
-                            <div className="mt-4 flex gap-2 flex-wrap">
-                                {displayPost?.tags.map((tag, idx) => {
-                                    const tagName = typeof tag === 'object' ? tag?.name || tag?.title || tag?.tag || '' : tag;
-                                    if (!tagName) return null;
-                                    return (
-                                        <span
-                                            key={idx}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigate(`/timeline?tag=${encodeURIComponent(tagName)}`);
-                                            }}
-                                            className="px-3 py-1 rounded-lg bg-surface-container-high/60 hover:bg-primary-container/20 text-primary-container font-bold text-[14px] border border-primary-container/15 transition-all cursor-pointer hover:scale-102 active:scale-98"
-                                        >
-                                            &#35;{tagName}
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        {/* Engagement Button Bar Row */}
-                        <div className="mt-6 flex items-center justify-between gap-4 border-t border-outline-variant/30 pt-4 w-full min-w-0">
-
-                            <div className="flex items-center gap-6">
-                                {/* Comment Button */}
-                                <button
-                                    onClick={handleCommentClick}
-                                    className="flex items-center gap-1.5 text-text-secondary font-bold text-sm transition-all border-none bg-transparent shrink-0 hover:text-primary-container cursor-pointer hover:scale-105 active:scale-95"
-                                    title="Comment on post"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">
-                                        reply
-                                    </span>
-                                    <span>{displayPost?.commentsCount ?? displayPost?.repliesCount ?? post?.commentsCount ?? post?.repliesCount ?? 0}</span>
-                                </button>
-
-                                {/* Share / Boost Button */}
-                                <button
-                                    onClick={handleReblogClick}
-                                    disabled={isSelf || isActionPending || isAlreadyReblogged}
-                                    className={cn(
-                                        "flex items-center gap-1.5 font-bold text-sm transition-all border-none bg-transparent shrink-0",
-                                        isSelf
-                                            ? "opacity-40 cursor-not-allowed text-text-secondary/50"
-                                            : isAlreadyReblogged
-                                                ? "opacity-60 cursor-not-allowed text-emerald-500 font-extrabold"
-                                                : "text-text-secondary hover:text-text-primary cursor-pointer hover:scale-105 active:scale-95"
-                                    )}
-                                    title={
-                                        isSelf
-                                            ? "You cannot reblog your own post"
-                                            : isAlreadyReblogged
-                                                ? "Already reblogged this post"
-                                                : "Reblog post"
-                                    }
-                                >
+                    {/* Tag Chips Array Mapping Row Layout */}
+                    {displayPost?.tags && displayPost.tags.length > 0 && (
+                        <div className="mt-4 flex gap-1.5 flex-wrap">
+                            {displayPost.tags.map((tag, idx) => {
+                                const name = typeof tag === 'object' ? tag?.name || tag?.tag || '' : tag;
+                                if (!name) return null;
+                                return (
                                     <span
-                                        className="material-symbols-outlined text-[20px]"
-                                        style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}
+                                        key={idx}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/timeline?tag=${encodeURIComponent(name)}`);
+                                        }}
+                                        className="px-2.5 py-1 rounded-lg bg-white/[0.03] hover:bg-primary-container/20 text-primary-container font-semibold text-xs border border-white/5 transition-all cursor-pointer"
                                     >
-                                        repeat
+                                        #{name}
                                     </span>
-                                    <span>{displayPost?.shares ?? displayPost?.reblogsCount ?? post?.shares ?? post?.reblogsCount ?? 0}</span>
-                                </button>
+                                );
+                            })}
+                        </div>
+                    )}
 
-                                {/* Like Button */}
-                                <button
-                                    onClick={handleLikeClick}
-                                    disabled={isActionPending}
-                                    className={cn(
-                                        "flex items-center gap-1.5 font-bold text-sm transition-all cursor-pointer border-none bg-transparent hover:scale-105 active:scale-95 shrink-0",
-                                        (displayPost?.liked || post?.liked) ? "text-primary-container font-extrabold" : "text-text-secondary hover:text-text-primary"
-                                    )}
-                                    title={(displayPost?.liked || post?.liked) ? "Unlike post" : "Like post"}
-                                >
-                                    <span
-                                        className="material-symbols-outlined text-[20px]"
-                                        style={{ fontVariationSettings: (displayPost?.liked || post?.liked) ? "'FILL' 1" : "'FILL' 0" }}
-                                    >
-                                        star
-                                    </span>
-                                    <span>{displayPost?.likes ?? displayPost?.likesCount ?? post?.likes ?? post?.likesCount ?? 0}</span>
-                                </button>
-                            </div>
+                    {/* Engagement Action Button Toolbar Row */}
+                    <div className="mt-5 flex items-center justify-between gap-4 border-t border-white/5 pt-4 w-full min-w-0 text-text-secondary">
+                        <div className="flex items-center gap-6">
 
-                            {post?.communityJoinable ? (
-                                <button
-                                    onClick={handleJoinCircleClick}
-                                    className={cn(
-                                        "px-3.5 py-1.5 rounded-full border font-bold text-[12px] transition-all whitespace-nowrap shrink-0 cursor-pointer shadow-xs active:scale-95",
-                                        isCircleJoined
-                                            ? "bg-surface-container-high text-text-primary border-outline-variant"
-                                            : "border-primary-container/40 text-primary-container hover:bg-primary-container hover:text-white"
-                                    )}
+                            {/* Comment Navigation Action button */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleCommentClick(); }}
+                                className="flex items-center gap-1.5 font-bold text-xs hover:text-primary-container transition-colors bg-transparent border-none cursor-pointer"
+                                title="Comment on post"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">
+                                    reply
+                                </span>
+                                <span>{(getReplyCount(displayPost) || getReplyCount(post)).toLocaleString()}</span>
+                            </button>
+
+                            {/* Share / Reblog Sync Action button */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleReblogClick(); }}
+                                disabled={isSelf || isActionPending || isAlreadyReblogged}
+                                className={cn(
+                                    "flex items-center gap-1.5 font-bold text-xs transition-colors border-none bg-transparent cursor-pointer",
+                                    isSelf ? "opacity-30 cursor-not-allowed" :
+                                        isAlreadyReblogged ? "text-emerald-500 font-extrabold cursor-default" : "hover:text-emerald-500"
+                                )}
+                                title={isSelf ? "Own post" : isAlreadyReblogged ? "Reblogged" : "Reblog"}
+                            >
+                                <span
+                                    className="material-symbols-outlined text-[18px]"
+                                    style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}
                                 >
-                                    {isCircleJoined ? '✓ Joined Circle' : 'Join Circle'}
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={handleBookmarkClick}
-                                    disabled={isActionPending || isSelf}
-                                    className={cn(
-                                        "flex items-center gap-2 transition-colors ml-auto shrink-0 border-none bg-transparent p-1.5 rounded-full",
-                                        isSelf
-                                            ? "opacity-40 cursor-not-allowed text-text-secondary/50"
-                                            : (displayPost?.bookmarked || post?.bookmarked) ? "text-amber-500 cursor-pointer hover:bg-surface-container-high" : "text-text-secondary hover:text-text-primary cursor-pointer hover:bg-surface-container-high"
-                                    )}
-                                    title={isSelf ? "You cannot bookmark your own post" : (displayPost?.bookmarked || post?.bookmarked) ? "Remove bookmark" : "Save to bookmarks"}
-                                >
-                                    <span
-                                        className="material-symbols-outlined text-[20px]"
-                                        style={{ fontVariationSettings: (displayPost?.bookmarked || post?.bookmarked) ? "'FILL' 1" : "'FILL' 0" }}
-                                    >
-                                        bookmark
-                                    </span>
-                                </button>
-                            )}
+                                    repeat
+                                </span>
+                                <span>{reblogsCount.toLocaleString()}</span>
+                            </button>
+
+                            {/* Like Sync Engagement Action button */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleLikeClick();
+                                }}
+                                disabled={isActionPending}
+                                className={cn(
+                                    "flex items-center gap-1.5 font-bold text-xs transition-colors bg-transparent border-none cursor-pointer",
+                                    (displayPost?.liked || post?.liked) ? "text-primary-container font-extrabold" : "hover:text-white"
+                                )}
+                                title="Like"
+                            >
+                                <span className="material-symbols-outlined text-[18px]"
+                                    style={{ fontVariationSettings: (displayPost?.liked || post?.liked) ? "'FILL' 1" : "'FILL' 0" }}>
+                                    star
+                                </span>
+                                <span>{likesCount.toLocaleString()}</span>
+                            </button>
                         </div>
 
+                        {/* Context Action layout toggle section */}
+                        {post?.communityJoinable ? (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleJoinCircleClick(); }}
+                                className={cn(
+                                    "px-3.5 py-1.5 rounded-xl border font-bold text-[11px] transition-all whitespace-nowrap cursor-pointer",
+                                    isCircleJoined ? "bg-white/5 text-text-primary border-white/10" : "border-primary-container/40 text-primary-container hover:bg-primary-container hover:text-white"
+                                )}
+                            >
+                                {isCircleJoined ? '✓ Joined Circle' : 'Join Circle'}
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleBookmarkClick}
+                                disabled={isActionPending || isSelf}
+                                className={cn(
+                                    "flex items-center justify-center p-1.5 rounded-full transition-colors border-none bg-transparent ml-auto",
+                                    isSelf ? "opacity-30 cursor-not-allowed" :
+                                        (displayPost?.bookmarked || post?.bookmarked) ? "text-amber-500 hover:bg-white/5" : "hover:text-text-primary hover:bg-white/5"
+                                )}
+                                title="Bookmark"
+                            >
+                                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: (displayPost?.bookmarked || post?.bookmarked) ? "'FILL' 1" : "'FILL' 0" }}>
+                                    bookmark
+                                </span>
+                            </button>
+                        )}
                     </div>
                 </div>
+
+
+                {/* 🏆 FULLSCREEN IMAGE CAROUSEL CANVASES */}
+                <ImageLightbox
+                    isOpen={carouselOpen}
+                    images={allImages}
+                    activeIndex={carouselIndex}
+                    setActiveIndex={setCarouselIndex}
+                    onClose={() => setCarouselOpen(false)}
+                />
+                <LoginPromptModal
+                    isOpen={isLoginPromptOpen}
+                    onClose={() => setIsLoginPromptOpen(false)}
+                    message={loginPromptMessage}
+                />
             </div>
-            {/* 🏆 3. FULLSCREEN MEDIA OVERLAY CANVAS LIGHTBOX */}
-            <ImageLightbox
-                isOpen={carouselOpen}
-                images={allImages}
-                activeIndex={carouselIndex}
-                setActiveIndex={setCarouselIndex}
-                onClose={() => setCarouselOpen(false)}
-            />
-            <LoginPromptModal
-                isOpen={isLoginPromptOpen}
-                onClose={() => setIsLoginPromptOpen(false)}
-                message={loginPromptMessage}
-            />
         </>
     );
-}
-
-const ContentWarningWrapper = ({ warning, children }) => {
-    const [show, setShow] = useState(false);
+}, (prevProps, nextProps) => {
+    // Precise state shallow matching to bails out extra rendering loads
     return (
-        <div className="mt-3 p-4 bg-surface-crimson-low/10 rounded-xl border border-primary-container/20 space-y-3">
+        prevProps.post?.id === nextProps.post?.id &&
+        prevProps.post?.liked === nextProps.post?.liked &&
+        prevProps.post?.bookmarked === nextProps.post?.bookmarked &&
+        getReblogCount(prevProps.post) === getReblogCount(nextProps.post) &&
+        getLikeCount(prevProps.post) === getLikeCount(nextProps.post) &&
+        getReplyCount(prevProps.post) === getReplyCount(nextProps.post) &&
+        prevProps.isCircleJoined === nextProps.isCircleJoined &&
+        prevProps.isActionPending === nextProps.isActionPending &&
+        prevProps.showMenu === nextProps.showMenu &&
+        prevProps.isLast === nextProps.isLast
+    );
+});
+
+export const ContentWarningWrapper = ({ warning, children }) => {
+    const [show, setShow] = useState(false);
+
+    return (
+        <div
+            /* 
+               🚀 THE UX FIX: Stop any clicking/text-selection actions inside this 
+               warning box from accidentally triggering a parent row navigation card swipe!
+            */
+            onClick={(e) => e.stopPropagation()}
+            className="mt-3 p-4 bg-surface-crimson-low/10 rounded-xl border border-primary-container/20 space-y-3 select-text"
+        >
             <div className="flex items-center justify-between gap-4">
-                <span className="flex items-center gap-2 text-sm font-bold text-primary font-mono uppercase tracking-wider">
-                    <span className="material-symbols-outlined text-[16px] text-primary">warning</span>
-                    Content Warning: {warning}
+                <span className="flex items-center gap-2 text-xs md:text-sm font-bold text-primary font-mono uppercase tracking-wider">
+                    <span className="material-symbols-outlined text-[16px] text-primary select-none">
+                        warning
+                    </span>
+                    <span className="truncate max-w-[180px] sm:max-w-[300px]" title={warning}>
+                        CW: {warning}
+                    </span>
                 </span>
+
                 <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setShow(!show);
-                    }}
-                    className="px-3.5 py-1.5 bg-surface-container text-text-primary rounded-lg text-sm font-bold hover:bg-primary-container hover:text-white transition-all cursor-pointer"
+                    type="button" // Guard explicitly against structural forms down-stream
+                    onClick={() => setShow(!show)}
+                    className="px-3.5 py-1.5 bg-surface-container text-text-primary rounded-lg text-xs md:text-sm font-bold hover:bg-primary-container hover:text-white transition-all cursor-pointer whitespace-nowrap"
                 >
                     {show ? 'Hide Details' : 'Show Details'}
                 </button>
             </div>
-            {show && <div className="pt-3 border-t border-white/5">{children}</div>}
+
+            {show && (
+                <div className="pt-3 border-t border-white/5 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {children}
+                </div>
+            )}
         </div>
     );
 };

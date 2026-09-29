@@ -89,8 +89,8 @@ export function CommunitiesFeed() {
             if (!old) return old;
             return {
                 ...old,
-                pages: old.pages.map((p, idx) =>
-                    idx === 0 ? { ...p, posts: [...bufferedPosts, ...p.posts] } : p
+                pages: old.pages.map((page, idx) => // 👈 Ensure this says "page"
+                    idx === 0 ? { ...page, posts: [...bufferedPosts, ...page.posts] } : page // 👈 Ensure this maps "page"
                 ),
             };
         });
@@ -128,15 +128,17 @@ export function CommunitiesFeed() {
     return (
         <PullToRefresh
             onRefresh={handleRefreshGesture}
-            pullingContent="" // Disables default plain text headers to preserve clean UI
+            pullingContent=""
             backgroundColor="transparent"
             maxPullDownDistance={90}
         >
-            <div className="w-full flex flex-col h-full">
-                {/* 🔔 Dynamic scope-bound staging update banner */}
+            <div className="w-full flex flex-col p-4">
+
+                {/* 🔔 Dynamic real-time staging banner alert */}
                 {unreadCount > 0 && (
                     <button
-                        className="unread-banner w-full bg-primary-container text-white border border-primary-container crimson-glow font-bold py-3.5 px-4 rounded-xl mb-6 transition-all hover:brightness-110 flex items-center justify-center gap-2 shadow-md animate-in fade-in slide-in-from-top duration-200 cursor-pointer"
+                        type="button"
+                        className="unread-banner w-full bg-primary-container text-white border border-primary-container crimson-glow font-bold py-3.5 px-4 rounded-xl mb-6 transition-all hover:brightness-110 flex items-center justify-center gap-2 shadow-md animate-in fade-in slide-in-from-top duration-200 cursor-pointer border-none"
                         onClick={handleFlushBuffer}
                     >
                         <span className="material-symbols-outlined text-[18px]">distance</span>
@@ -144,8 +146,9 @@ export function CommunitiesFeed() {
                     </button>
                 )}
 
+                {/* 🗺️ Location Gate A: State Context Verification Prompt */}
+                {/* 🗺️ Prompt to set state */}
                 {activeTab === 'State' && !userState ? (
-                    /* 🗺️ Prompt to set state */
                     <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-[#141414] flex flex-col items-center gap-4 my-2">
                         <span className="material-symbols-outlined text-5xl text-amber-500 mb-1">map</span>
                         <h3 className="font-bold text-text-primary text-xl">State Location Not Set</h3>
@@ -155,12 +158,13 @@ export function CommunitiesFeed() {
                         <button
                             type="button"
                             onClick={() => navigate('/settings')}
-                            className="mt-2 px-6 py-2.5 bg-primary-container text-white font-bold text-sm rounded-xl hover:brightness-110 transition-all cursor-pointer shadow-md"
+                            className="mt-2 px-6 py-2.5 bg-primary-container text-white font-bold text-sm rounded-xl hover:brightness-110 transition-all cursor-pointer shadow-md border-none"
                         >
                             Set State in Settings
                         </button>
                     </div>
                 ) : activeTab === 'Local' && !userStreetAddress ? (
+                    /* 📍 Location Gate B: Local Address Verification Prompt */
                     /* 📍 Prompt to set street address */
                     <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-[#141414] flex flex-col items-center gap-4 my-2">
                         <span className="material-symbols-outlined text-5xl text-amber-500 mb-1">location_off</span>
@@ -171,44 +175,30 @@ export function CommunitiesFeed() {
                         <button
                             type="button"
                             onClick={() => navigate('/settings')}
-                            className="mt-2 px-6 py-2.5 bg-primary-container text-white font-bold text-sm rounded-xl hover:brightness-110 transition-all cursor-pointer shadow-md"
+                            className="mt-2 px-6 py-2.5 bg-primary-container text-white font-bold text-sm rounded-xl hover:brightness-110 transition-all cursor-pointer shadow-md border-none"
                         >
                             Set Street Address in Settings
                         </button>
                     </div>
                 ) : filteredPosts?.length === 0 ? (
-                    /* 🌌 Empty State Panel Container */
-                    <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-[#141414]">
-                        <span className="material-symbols-outlined text-4xl text-text-secondary mb-4">distance</span>
-                        <h3 className="font-bold text-text-primary mb-2 text-lg">No geographic updates</h3>
-                        <p className="text-text-secondary text-sm">
+                    /* 🌌 Empty State Regional Fallback Container */
+                    <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-[#141414] flex flex-col items-center gap-2">
+                        <span className="material-symbols-outlined text-4xl text-text-secondary mb-2">distance</span>
+                        <h3 className="font-bold text-text-primary text-lg">No geographic updates</h3>
+                        <p className="text-text-secondary text-sm max-w-md leading-relaxed">
                             No active concerning issues reported for the "{activeTab}" level yet.
                         </p>
                     </div>
                 ) : (
-                    /* 🏆 Custom List Border Wrapping Shell */
-                    <div className="flex flex-col border border-[#262626] bg-transparent overflow-hidden shadow-2xl">
-                        {/* 📡 Floating/Sticky Staging Buffer Interceptor Banner */}
+                    /* 🏆 Performant Viewport Boundary Shell Container */
+                    <div className="flex flex-col border border-[#262626] bg-transparent overflow-hidden shadow-2xl relative">
+
+                        {/* Sticky top tracking floating bubble shortcut button pill wrapper */}
                         {unreadCount > 0 && (
                             <div className="sticky top-[88px] z-30 w-full flex justify-center mb-4 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
                                 <button
-                                    onClick={() => {
-                                        // 1. Fetch the items hidden inside the query client buffer cache array
-                                        const bufferKey = ['communities', 'feed', activeTab, 'buffer'];
-                                        const bufferedData = queryClient.getQueryData(bufferKey) || [];
-
-                                        if (bufferedData.length > 0) {
-                                            // 2. Prep them to prepend or overwrite your active global state layer
-                                            usePostsStore.getState().importFetchedPosts(bufferedData);
-
-                                            // 3. Wipe out the staging query buffer back to an empty array target state
-                                            queryClient.setQueryData(bufferKey, []);
-
-                                            // 4. Force a hard re-sync scroll top layout alignment back to the view crown
-                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                        }
-                                    }}
-                                    className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 bg-primary-container text-white text-sm font-bold rounded-full shadow-lg hover:brightness-110 active:scale-95 transition-all border border-white/10"
+                                    onClick={handleFlushBuffer}
+                                    className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 bg-primary-container text-white text-sm font-bold rounded-full shadow-lg hover:brightness-110 active:scale-95 transition-all border border-white/10 cursor-pointer"
                                 >
                                     <span className="material-symbols-outlined text-[18px] animate-bounce">
                                         arrow_upward
@@ -217,54 +207,52 @@ export function CommunitiesFeed() {
                                 </button>
                             </div>
                         )}
+
                         <Virtuoso
                             useWindowScroll
                             data={filteredPosts}
-
                             /* 
                                ⚠️ CRITICAL FIX: Always compute keys based on the item id rather than index. 
                                This prevents violent layout repaints and enables hardware acceleration on scroll.
                             */
                             computeItemKey={(index, post) => post?.id || index}
-
                             // Smooth loading optimization
-                            initialItemCount={filteredPosts.length > 0 ? Math.min(filteredPosts.length, 4) : 0}
+                            initialItemCount={filteredPosts.length > 0 ? Math.min(filteredPosts.length, 5) : 0}
 
                             /* 
                                🚀 Fluidity Secret: Render hidden content 400px *ahead* of the viewport bottom. 
                                This fires endReached early so data arrives before the user stops scrolling.
                             */
                             increaseViewportBy={400}
+                            // Balanced overscan bounds to match pre-rendering window adjustments
+                            overscan={200}
 
                             endReached={() => {
                                 if (hasNextPage && !isFetchingNextPage) {
                                     fetchNextPage();
                                 }
                             }}
-
-                            // Balanced overscan bounds to match pre-rendering window adjustments
-                            overscan={200}
-
                             itemContent={(index, post) => (
-                                <PostCard key={post?.id || index} post={post} isLast={index === filteredPosts.length - 1} />
+                                <PostCard
+                                    post={post}
+                                    isLast={index === filteredPosts.length - 1}
+                                />
                             )}
                             components={{
                                 Footer: () => (
                                     <>
-                                        {/* 🔄 Spinning loader for active background operations */}
                                         {isFetchingNextPage && (
                                             <div className="py-12 flex flex-col items-center gap-4 border-t border-white/5 bg-[#141414]">
-                                                <div className="w-8 h-8 rounded-full border-2 border-t-primary-container border-white/10 animate-spin"></div>
-                                                <p className="text-text-secondary text-sm font-bold uppercase tracking-widest">
-                                                    Loading older geographic pulses
+                                                <div className="w-6 h-6 rounded-full border-2 border-t-primary-container border-white/10 animate-spin"></div>
+                                                <p className="text-text-secondary text-xs font-bold uppercase tracking-widest font-mono">
+                                                    Synchronizing older pagination parameters...
                                                 </p>
                                             </div>
                                         )}
-                                        {/* 🛑 Elegant termination flag when no further data exists */}
                                         {!hasNextPage && filteredPosts.length > 0 && (
-                                            <div className="py-8 text-center border-t border-white/5 bg-[#141414]">
-                                                <p className="text-xs text-text-secondary uppercase tracking-wider italic opacity-60">
-                                                    No older pulses found in this region.
+                                            <div className="py-8 text-center bg-[#141414] border-t border-white/5">
+                                                <p className="text-xs text-text-secondary font-mono uppercase tracking-wider italic opacity-40">
+                                                    // GEOGRAPHIC_STREAM_END: All regional entries synced.
                                                 </p>
                                             </div>
                                         )}
@@ -272,7 +260,6 @@ export function CommunitiesFeed() {
                                 )
                             }}
                         />
-
                     </div>
                 )}
             </div>

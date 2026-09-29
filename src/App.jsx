@@ -70,6 +70,7 @@ import { DeadlineManagerPage } from './pages/campaigns/DeadlineManagerPage';
 import CandidacyReviewPanel from './pages/admin/CandidacyReviewPanel';
 
 // Guard & Layout Wrappers
+import { PublicOnlyRoute } from './components/PublicOnlyRoute';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { MainLayout } from './components/MainLayout';
 import { ProfilePage } from './pages/ProfilePage';
@@ -115,10 +116,13 @@ export default function App() {
           <TopProgressBar />
           <Routes>
             {/* 🌍 1. PUBLIC ROUTES (No Auth Required) */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/create-account" element={<SignupPage />} />
-            <Route path="/signupo" element={<SignupPageO />} />
+            <Route element={<PublicOnlyRoute />}>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/create-account" element={<SignupPage />} />
+              <Route path="/signupo" element={<SignupPageO />} />
+            </Route>
+
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
 
@@ -169,12 +173,11 @@ export default function App() {
                 <Route path="/settings/filters" element={<FiltersPage />} />
 
                 {/* 👤 Profile Ecosystem Directory */}
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/@:username" element={<ProfilePage />} />
                 <Route path="/profile/:username" element={<UserProfilePage />} />
 
                 <Route path="/profile-demo" element={<ProfilePageDemo />} />
-
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/@:username" element={<ProfilePage />} />
                 <Route path="/@:username/likes" element={<AccountLikesPage />} />
                 <Route path="/@:username/media" element={<AccountGalleryPage />} />
                 <Route path="/accounts/:id/network" element={<NetworkPage />} />

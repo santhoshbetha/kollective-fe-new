@@ -60,8 +60,6 @@ export const DEFAULT_MOCK_USER = {
     ]
 };
 
-
-
 export const useAuthStore = create(
     persist(
         immer((set, get) => ({

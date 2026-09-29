@@ -1,20 +1,52 @@
-// src/features/timeline/KollectiveVideoPlayer.jsx
 import React, { useState, useRef, useEffect } from 'react';
+import { useAudioSettingsStore } from '../../store/useAudioSettingsStore';
 
-export function KollectiveVideoPlayer({ src, poster, isGif = false, title = '', className = '' }) {
+export function KollectiveVideoPlayer({
+    src,
+    poster,
+    isGif = false,
+    title = '',
+    className = ''
+}) {
     const videoRef = useRef(null);
     const progressRef = useRef(null);
+    const containerRef = useRef(null);
+    const controlsTimeoutRef = useRef(null);
 
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(isGif);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
     const [showControls, setShowControls] = useState(true);
     const [hasError, setHasError] = useState(false);
-    const controlsTimeoutRef = useRef(null);
 
-    // Sync muted property directly on the DOM element for cross-browser consistency
+    // 🚀 THE GLOBAL SYNC ACCENT: Bind local parameters directly to your global media store state
+    const isGlobalMuted = useAudioSettingsStore((state) => state.isGlobalMuted);
+    const setGlobalMuted = useAudioSettingsStore((state) => state.setGlobalMuted);
+
+    // GIFs are structurally always muted, otherwise follow the global timeline state preference
+    const isMuted = isGif ? true : isGlobalMuted;
+
+    // Keep intersection observers active from before to pause elements scrolling off screen
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || isGif) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (!entry.isIntersecting && videoRef.current && !videoRef.current.paused) {
+                    videoRef.current.pause();
+                    setIsPlaying(false);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [isGif]);
+
+    // Track state variations synchronously across direct browser raw DOM node layers
     useEffect(() => {
         if (videoRef.current) {
             videoRef.current.muted = isMuted;
@@ -27,6 +59,8 @@ export function KollectiveVideoPlayer({ src, poster, isGif = false, title = '', 
         const secs = Math.floor(timeInSeconds % 60);
         return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     };
+
+    const progressPercentage = duration ? (currentTime / duration) * 100 : 0;
 
     const togglePlay = (e) => {
         if (e) {
@@ -45,16 +79,16 @@ export function KollectiveVideoPlayer({ src, poster, isGif = false, title = '', 
                         setHasError(false);
                     })
                     .catch((err) => {
-                        console.warn('Unmuted playback blocked or failed, attempting muted fallback:', err);
-                        video.muted = true;
-                        setIsMuted(true);
+                        console.warn('Playback blocked. Falling back to muted state stream:', err);
+                        // Force global timeline volume state down on failure block
+                        setGlobalMuted(true);
                         video.play()
                             .then(() => {
                                 setIsPlaying(true);
                                 setHasError(false);
                             })
                             .catch((err2) => {
-                                console.error('Video play failed:', err2);
+                                console.error('Video canvas layer critical fault:', err2);
                                 setHasError(true);
                             });
                     });
@@ -72,22 +106,11 @@ export function KollectiveVideoPlayer({ src, poster, isGif = false, title = '', 
             e.stopPropagation();
             e.preventDefault();
         }
-        if (!videoRef.current) return;
+        if (isGif) return; // GIFs cannot trigger global sound alterations
 
-        const newMuteState = !isMuted;
-        videoRef.current.muted = newMuteState;
-        setIsMuted(newMuteState);
-    };
-
-    const handleTimeUpdate = () => {
-        if (!videoRef.current) return;
-        setCurrentTime(videoRef.current.currentTime);
-    };
-
-    const handleLoadedMetadata = () => {
-        if (!videoRef.current) return;
-        setDuration(videoRef.current.duration);
-        setHasError(false);
+        // 🚀 THE ACTIONS FIX: Update the global Zustand store to flip volume tracks on all cards!
+        const nextVolumeState = !isGlobalMuted;
+        setGlobalMuted(nextVolumeState);
     };
 
     const handleSeek = (e) => {
@@ -103,16 +126,14 @@ export function KollectiveVideoPlayer({ src, poster, isGif = false, title = '', 
             e.stopPropagation();
             e.preventDefault();
         }
-        if (!videoRef.current) return;
+        const video = videoRef.current;
+        if (!video) return;
 
         if (document.fullscreenElement) {
             document.exitFullscreen().catch((err) => console.log(err));
         } else {
-            if (videoRef.current.requestFullscreen) {
-                videoRef.current.requestFullscreen();
-            } else if (videoRef.current.webkitRequestFullscreen) {
-                videoRef.current.webkitRequestFullscreen();
-            }
+            if (video.requestFullscreen) video.requestFullscreen();
+            else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
         }
     };
 
@@ -125,24 +146,15 @@ export function KollectiveVideoPlayer({ src, poster, isGif = false, title = '', 
             }, 2500);
         }
     };
-
-    useEffect(() => {
-        return () => {
-            if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-        };
-    }, []);
-
-    const progressPercentage = duration ? (currentTime / duration) * 100 : 0;
-
     return (
         <div
+            ref={containerRef}
             className={`relative w-full aspect-video bg-[#0d0d0d] rounded-2xl overflow-hidden border border-white/10 shadow-lg group select-none ${className}`}
             onClick={togglePlay}
             onMouseEnter={() => { setIsHovered(true); setShowControls(true); }}
             onMouseLeave={() => { setIsHovered(false); if (isPlaying) setShowControls(false); }}
             onMouseMove={handleMouseMove}
         >
-            {/* HTML5 Video element */}
             <video
                 ref={videoRef}
                 src={src}
@@ -151,71 +163,60 @@ export function KollectiveVideoPlayer({ src, poster, isGif = false, title = '', 
                 loop={isGif}
                 playsInline
                 preload="metadata"
-                onClick={togglePlay}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
-                onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={handleLoadedMetadata}
+                onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime || 0)}
+                onLoadedMetadata={() => { setDuration(videoRef.current?.duration || 0); setHasError(false); }}
                 onEnded={() => setIsPlaying(false)}
-                onError={(err) => {
-                    console.error('Video error loading URL:', src, err);
-                    setHasError(true);
-                }}
+                onError={() => setHasError(true)}
                 className="w-full h-full object-cover cursor-pointer"
             />
 
-            {/* Error Overlay Fallback */}
+            {/* Error Canvas Backdrop Layer */}
             {hasError && (
-                <div className="absolute inset-0 z-30 bg-black/90 flex flex-col items-center justify-center p-4 text-center gap-2">
-                    <span className="material-symbols-outlined text-rose-500 text-3xl">videocam_off</span>
+                <div className="absolute inset-0 z-30 bg-black/95 flex flex-col items-center justify-center p-4 text-center gap-2">
+                    <span className="material-symbols-outlined text-rose-500 text-2xl">videocam_off</span>
                     <p className="text-xs font-bold text-white">Video stream unavailable</p>
-                    <p className="text-[11px] text-text-secondary truncate max-w-full px-4">{src}</p>
                 </div>
             )}
 
-            {/* 🏷️ MASTODON BADGES (GIF vs Video indicator) */}
-            {isGif ? (
-                <div className="absolute top-3 left-3 z-20 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/10 font-mono font-black text-[11px] text-white tracking-widest uppercase pointer-events-none">
+            {/* Top Info Pill Badges Context row */}
+            {!hasError && (isGif ? (
+                <div className="absolute top-3 left-3 z-20 px-2 py-0.5 rounded bg-black/70 border border-white/10 font-mono font-black text-[10px] text-white tracking-widest uppercase">
                     GIF
                 </div>
-            ) : (
-                !isPlaying && duration > 0 && (
-                    <div className="absolute top-3 left-3 z-20 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md border border-white/10 font-mono font-bold text-xs text-white tracking-wider flex items-center gap-1.5 pointer-events-none">
-                        <span className="material-symbols-outlined text-[14px] text-primary-container">videocam</span>
-                        <span>{formatTime(duration)}</span>
-                    </div>
-                )
-            )}
+            ) : (!isPlaying && duration > 0 && (
+                <div className="absolute top-3 left-3 z-20 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm border border-white/10 font-mono font-bold text-xs text-white tracking-wider flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px] text-primary-container">videocam</span>
+                    <span>{formatTime(duration)}</span>
+                </div>
+            )))}
 
-            {/* ⏯️ BIG CENTER PLAY OVERLAY BUTTON (Mastodon Style) */}
+            {/* Big Centered Play Trigger overlay display */}
             {(!isPlaying || isHovered) && !hasError && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none transition-opacity duration-200">
                     <button
                         type="button"
                         onClick={togglePlay}
-                        className={`w-16 h-16 rounded-full bg-black/60 hover:bg-primary-container/90 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-2xl transition-all duration-200 transform pointer-events-auto cursor-pointer ${
-                            !isPlaying ? 'scale-100 opacity-100' : 'scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100'
-                        }`}
-                        title={isPlaying ? 'Pause Video' : 'Play Video'}
+                        className={`w-14 h-14 rounded-full bg-black/60 hover:bg-primary-container/90 backdrop-blur-sm border border-white/20 text-white flex items-center justify-center shadow-2xl transition-all pointer-events-auto cursor-pointer ${!isPlaying ? 'scale-100 opacity-100' : 'scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100'
+                            }`}
                     >
-                        <span className="material-symbols-outlined text-[36px] ml-1">
+                        <span className="material-symbols-outlined text-[30px] ml-0.5">
                             {isPlaying ? 'pause' : 'play_arrow'}
                         </span>
                     </button>
                 </div>
             )}
 
-            {/* 🎛️ MASTODON CUSTOM CONTROLS OVERLAY BAR */}
+            {/* Custom Control Action Overlay Bar */}
             {!hasError && (
                 <div
-                    className={`absolute bottom-0 inset-x-0 z-20 p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent transition-opacity duration-300 flex flex-col gap-2 ${
-                        showControls || !isPlaying ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                    }`}
+                    className={`absolute bottom-0 inset-x-0 z-20 p-3 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 flex flex-col gap-2 ${showControls || !isPlaying ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                        }`}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Scrubbing timeline range slider */}
                     {!isGif && (
-                        <div className="relative w-full flex items-center group/scrubber">
+                        <div className="relative w-full flex items-center">
                             <input
                                 ref={progressRef}
                                 type="range"
@@ -224,65 +225,32 @@ export function KollectiveVideoPlayer({ src, poster, isGif = false, title = '', 
                                 step="0.1"
                                 value={currentTime}
                                 onChange={handleSeek}
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-primary-container hover:h-2 transition-all"
+                                className="w-full h-1 bg-white/20 rounded appearance-none cursor-pointer accent-primary-container"
                                 style={{
-                                    background: `linear-gradient(to right, var(--color-primary-container, #d32f2f) ${progressPercentage}%, rgba(255, 255, 255, 0.2) ${progressPercentage}%)`
+                                    background: `linear-gradient(to right, #d32f2f ${progressPercentage}%, rgba(255, 255, 255, 0.2) ${progressPercentage}%)`
                                 }}
                             />
                         </div>
                     )}
 
-                    {/* Control buttons & metadata row */}
                     <div className="flex items-center justify-between gap-3 text-white">
                         <div className="flex items-center gap-3">
-                            {/* Play/Pause toggle */}
-                            <button
-                                type="button"
-                                onClick={togglePlay}
-                                className="p-1 hover:text-primary-container transition-colors cursor-pointer bg-transparent border-none flex items-center"
-                                title={isPlaying ? 'Pause' : 'Play'}
-                            >
-                                <span className="material-symbols-outlined text-[24px]">
-                                    {isPlaying ? 'pause' : 'play_arrow'}
-                                </span>
+                            <button type="button" onClick={togglePlay} className="p-1 hover:text-primary-container transition-colors bg-transparent border-none cursor-pointer flex items-center">
+                                <span className="material-symbols-outlined text-[22px]">{isPlaying ? 'pause' : 'play_arrow'}</span>
                             </button>
-
-                            {/* Mute/Unmute toggle */}
-                            <button
-                                type="button"
-                                onClick={toggleMute}
-                                className="p-1 hover:text-primary-container transition-colors cursor-pointer bg-transparent border-none flex items-center"
-                                title={isMuted ? 'Unmute' : 'Mute'}
-                            >
-                                <span className="material-symbols-outlined text-[22px]">
-                                    {isMuted ? 'volume_off' : 'volume_up'}
-                                </span>
+                            <button type="button" onClick={toggleMute} className="p-1 hover:text-primary-container transition-colors bg-transparent border-none cursor-pointer flex items-center">
+                                <span className="material-symbols-outlined text-[20px]">{isMuted ? 'volume_off' : 'volume_up'}</span>
                             </button>
-
-                            {/* Time indicator */}
                             {!isGif && (
-                                <span className="text-xs font-mono text-text-secondary/90 font-medium">
+                                <span className="text-xs font-mono text-text-secondary font-medium">
                                     {formatTime(currentTime)} / {formatTime(duration)}
                                 </span>
                             )}
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            {/* Title preview if provided */}
-                            {title && (
-                                <span className="text-xs font-medium text-text-secondary truncate max-w-[160px] hidden sm:inline">
-                                    {title}
-                                </span>
-                            )}
-
-                            {/* Fullscreen button */}
-                            <button
-                                type="button"
-                                onClick={toggleFullscreen}
-                                className="p-1 hover:text-primary-container transition-colors cursor-pointer bg-transparent border-none flex items-center"
-                                title="Fullscreen"
-                            >
+                        <div className="flex items-center gap-3 min-w-0">
+                            {title && <span className="text-xs font-medium text-text-secondary truncate max-w-[140px] hidden sm:inline">{title}</span>}
+                            <button type="button" onClick={toggleFullscreen} className="p-1 hover:text-primary-container transition-colors bg-transparent border-none cursor-pointer flex items-center">
                                 <span className="material-symbols-outlined text-[20px]">fullscreen</span>
                             </button>
                         </div>
@@ -292,3 +260,16 @@ export function KollectiveVideoPlayer({ src, poster, isGif = false, title = '', 
         </div>
     );
 }
+
+/*
+Why this architecture is highly optimal for feeds:
+
+- Seamless Timeline Flow: 
+When a user scrolls to a video and clicks unmute, 
+they don't have to keep repeating that action for every subsequent video as they read down through their community or home timeline feeds.
+
+- Browser Compliance: 
+By forcing setGlobalMuted(true) as a fallback handler directly on browser promise execution errors, 
+your component respects standard programmatic audio security layers automatically.
+
+*/

@@ -1,3 +1,5 @@
+import { keyframes } from 'framer-motion';
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -101,6 +103,17 @@ export default {
         organization: '#DAA520', // Premium Gold
         journalist: '#008080',   // Professional Teal
         citizen: '#1D9BF0',      // Classic Blue
+      },
+      keyframes: {
+        'thread-flow': {
+          '0%': { transform: 'translateY(-100%)', opacity: '0' },
+          '20%': { opacity: '0.6' },
+          '80%': { opacity: '0.6' },
+          '100%': { transform: 'translateY(200%)', opacity: '0' },
+        },
+      },
+      animation: {
+        'thread-pulse': 'thread-flow 3s cubic-bezier(0.4, 0, 0.2, 1) infinite',
       }
     },
   },

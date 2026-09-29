@@ -1,6 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useEventsQuery, useToggleEventInterest, useToggleEventAttendance, useAddEventComment, useEventCommentsQuery, useLikeEventComment } from '../features/events/useEventsFeature';
+import {
+  useEventsQuery,
+  useToggleEventInterest,
+  useToggleEventAttendance,
+  useAddEventComment,
+  useEventCommentsQuery,
+  useLikeEventComment
+} from '../features/events/useEventsFeature';
 import { EventDateBadge, AttendeeStack } from '../features/events/EventComponents';
 import { getDisplayLocation, getOrganizerName } from '../utils/eventUtils';
 import { CategoryGraphic } from '../components/CategoryGraphic';
@@ -475,7 +482,7 @@ export const EventDetailsPage = () => {
                       const authorAvatar = comment.author?.avatar_url || comment.author?.avatar || comment.authorAvatar;
                       const commentTextDisplay = comment.content || comment.text || '';
                       const commentImageUrl = comment.image_url || comment.imageUrl || comment.image;
-                      const likesCount = comment.likes_count ?? comment.likes ?? 0;
+                      const likes_count = comment.likes_count ?? comment.likes ?? 0;
                       const isReplying = replyParentId === comment.id;
                       const isSelf = isSelfComment(comment);
 
@@ -536,7 +543,7 @@ export const EventDetailsPage = () => {
                                   <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: comment.has_liked ? "'FILL' 1" : "'FILL' 0" }}>
                                     favorite
                                   </span>
-                                  {likesCount}
+                                  {likes_count}
                                 </button>
                                 <button
                                   disabled={isSelf}

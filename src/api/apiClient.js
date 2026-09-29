@@ -1,17 +1,26 @@
-// apiClient.js
+// src/api/apiClient.js
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useTimelineBufferStore } from '../store/useTimelineBufferStore';
 import queryClient from './queryClient';
 
+//const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1').replace(/\/\$/, '');
+//const API_HOST = API_BASE.replace(/\/api\/v1\/?\$/, '');
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1').replace(/\/$/, '');
 const API_HOST = API_BASE.replace(/\/api\/v1\/?$/, '');
 
-export async function apiFetch(endpoint, options = {}, queryClient) {
+
+/**
+ * 🏆 MASTER APICLIENT FETCH CONFIGURATION MATRIX
+ * Integrates your exact absolute endpoint mappings and response parsing hooks
+ * with centralized persistent Zustand credential signers and context filters.
+ */
+export async function apiFetch(endpoint, options = {}, incomingQueryClient) {
     const { token, activeAccount } = useAuthStore.getState();
     let url = endpoint || '';
 
+    // 1️⃣ Normalize absolute and host-relative request path destinations
     if (url.startsWith('http://') || url.startsWith('https://')) {
-        // Already absolute URL
+        // Already absolute URL path matrix target
     } else if (url.startsWith('/api/v1')) {
         url = `${API_BASE}${url.replace('/api/v1', '')}`;
     } else if (url.startsWith('/api/')) {
@@ -22,33 +31,49 @@ export async function apiFetch(endpoint, options = {}, queryClient) {
     }
 
     const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+
+    // 2️⃣ Merge content markers, custom headers, and persistent credential tokens
     const headers = {
         ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         ...(options.headers || {}),
         ...(token ? {
             'Authorization': `Bearer ${token}`,
-            'X-Active-Account-Id': activeAccount?.id || ''
+            'X-Active-Account-Id': activeAccount?.id || '',
+            // 🚀 INTERCEPTOR SYNC: Maps organization workspace contextual header targets smoothly
+            ...(activeAccount?.type === 'organization' ? { 'X-Workspace-Context-ID': activeAccount.id } : {})
         } : {})
     };
 
     const response = await fetch(url, { ...options, headers });
 
-    // 🚨 GLOBAL INTERCEPTION: Detect Revoked Token
-    if (response.status === 401) {
-        console.warn('Token revoked or expired. Initiating global logout.');
+    // 3️⃣ 🚨 GLOBAL RECOVERY INTERCEPTION: Catch systemic credential drops or token revocations
+    if (response.status === 401 || response.status === 403) {
+        console.warn('Token revoked or session expired. Initiating global logout evacuation.');
 
-        // 1. Wipe out TanStack Query cache safely so no stale data leaks to the next session
-        if (queryClient && typeof queryClient.clear === 'function') {
-            queryClient.clear();
+        // A. Safely clear local TanStack Query cache instances to protect user data leaking
+        const targetQueryClient = incomingQueryClient || queryClient;
+        if (targetQueryClient && typeof targetQueryClient.clear === 'function') {
+            targetQueryClient.clear();
         }
 
-        // 2. Clear buffers and tear down auth tokens
-        useTimelineBufferStore.getState().clearBuffer();
-        useAuthStore.getState().executeGlobalLogout();
+        // B. Evacuate timeline timeline buffer memory streams
+        if (useTimelineBufferStore?.getState()?.clearBuffer) {
+            useTimelineBufferStore.getState().clearBuffer();
+        }
+
+        // C. Trigger multi-store secure destruction routines inside persistent store slices
+        const authState = useAuthStore.getState();
+        if (typeof authState.executeGlobalLogout === 'function') {
+            authState.executeGlobalLogout();
+        } else if (typeof authState.terminateAuthSession === 'function') {
+            // Fallback backup hook connection reference
+            authState.terminateAuthSession();
+        }
 
         throw new Error('Session expired. Please log in again.');
     }
 
+    // 4️⃣ Execute response body payload mapping and error text extraction loops
     const contentType = response.headers.get('content-type') || '';
     let data = null;
 
@@ -72,10 +97,11 @@ export async function apiFetch(endpoint, options = {}, queryClient) {
         }
         return text;
     }
-
+    // 5️⃣ Process comprehensive error payload string formatting parameters
     if (!response.ok) {
         let errorMessage = data?.message || data?.error;
         const errObj = data?.errors?.errors || data?.errors;
+
         if (!errorMessage && errObj) {
             if (typeof errObj === 'object') {
                 const parts = Object.entries(errObj).map(([field, msgs]) => {
@@ -87,9 +113,11 @@ export async function apiFetch(endpoint, options = {}, queryClient) {
                 errorMessage = String(errObj);
             }
         }
+
         if (!errorMessage) {
             errorMessage = `Request failed with status ${response.status}`;
         }
+
         const err = new Error(errorMessage);
         err.status = response.status;
         err.data = data;
@@ -99,6 +127,10 @@ export async function apiFetch(endpoint, options = {}, queryClient) {
     return data;
 }
 
+/**
+ * 🚀 SPECIALIZED TIMEOUT POST UTILITY DISPATCHER
+ * Wraps outgoing posts stream metrics inside automated context abort loops
+ */
 export async function apiFetchPosts(url, options = {}) {
     let timeoutId = null;
     const controller = options.signal ? null : new AbortController();
@@ -112,16 +144,15 @@ export async function apiFetchPosts(url, options = {}) {
             fetchOptions = { ...options, signal: controller.signal };
         }
 
-        // Pass the imported queryClient down to support security cache clearing
+        // Pass the imported queryClient down to support structural security cache clearing
         return await apiFetch(url, fetchOptions, queryClient);
 
     } catch (error) {
         if (error.name === 'AbortError') {
-            console.error('Fetch request timed out');
+            console.error('Fetch timeline context data request timed out across the network layer');
         }
         throw error;
     } finally {
-        if (timeoutId) clearTimeout(timeoutId); // Prevent memory leaks
+        if (timeoutId) clearTimeout(timeoutId); // Prevent memory leaks across fast component re-renders
     }
 }
-

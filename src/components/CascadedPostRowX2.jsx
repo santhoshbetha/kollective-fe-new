@@ -10,6 +10,7 @@ import { useAuthStore } from '../store/auth/useAuthStore';
 import { UserHoverCard } from '../components/UserHoverCard';
 import { UserAvatar } from './UserAvatar';
 import { usePostActions } from '../features/timeline/usePostActions';
+import { getReblogCount } from '../utils/postHelpers';
 import cn from 'clsx';
 
 // 🛑 HOOK IS GONE FROM HERE: Moved strictly into state attributes passed down
@@ -64,7 +65,7 @@ export function CascadedPostRowX2({
 
     const postActions = usePostActions();
     const isAlreadyReblogged = !!(post?.reblogged || post?.has_reblogged);
-    const reblogsCount = post?.shares ?? post?.reblogsCount ?? post?.reblogs_count ?? 0;
+    const reblogsCount = getReblogCount(post);
 
     const handleReblogClick = (e) => {
         if (e) e.stopPropagation();

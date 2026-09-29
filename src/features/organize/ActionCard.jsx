@@ -1,12 +1,17 @@
-import React, { useState } from "react";
+// src/features/organize/ActionCard.jsx
+import React from "react";
 import { useRsvpToAction } from "./useOrganizeFeature";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils"; // Adjust to your local helper path
 
 export const ActionCard = ({ action, setToastMessage }) => {
     const rsvpMutation = useRsvpToAction();
     const navigate = useNavigate();
-    const [isAttending, setIsAttending] = useState(action?.rsvp === 'Attending');
-    const [isInterested, setIsInterested] = useState(action?.rsvp === 'Interested');
+
+    // 🚀 REFACTOR LOCK: Read fields directly from source data instead of stale local state overrides
+    const currentRsvp = String(action?.user_rsvp_status || action?.userStatus || action?.rsvp || '').toLowerCase();
+    const isAttending = currentRsvp === 'attending' || currentRsvp === 'going';
+    const isInterested = currentRsvp === 'interested';
 
     const triggerToast = (msg) => {
         if (setToastMessage) {
@@ -17,102 +22,106 @@ export const ActionCard = ({ action, setToastMessage }) => {
         }
     };
 
+    // Color Badges Taxonomy Maps
     const typeBadgeStyles = action?.type === 'Protest'
-        ? 'bg-red-500/20 text-red-400 border-red-500/30'
+        ? 'bg-red-500/10 text-red-400 border-red-500/20'
         : action?.type === 'Town Hall'
-            ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-            : 'bg-primary-container/20 text-primary-container border-primary-container/30';
+            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+            : 'bg-primary-container/10 text-primary-container border-primary-container/20';
 
     return (
         <article
-            key={action?.id}
-            className="glass-card rounded-xl p-4 sm:p-5 relative overflow-hidden group border border-white/10 hover:border-primary-container/30 transition-all duration-300 bg-surface-container-low/90 hover:bg-surface-container-low shadow-md hover:shadow-xl flex flex-col justify-between gap-3"
+            className="rounded-xl p-4 sm:p-5 relative overflow-hidden group border border-white/5 transition-all duration-300 bg-[#141414] hover:bg-[#1c1b1b] shadow-md flex flex-col justify-between gap-3 text-left min-h-[220px]"
         >
             <div className="absolute top-0 right-0 w-28 h-28 bg-primary-container/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-primary-container/10 transition-colors pointer-events-none"></div>
 
             <div>
-                {/* Header Row */}
-                <div className="flex justify-between items-center mb-2.5">
-                    <span className={`px-2.5 py-0.5 border text-[14px] font-bold uppercase tracking-wider rounded-md ${typeBadgeStyles}`}>
+                {/* Header Badge Row */}
+                <div className="flex justify-between items-center mb-3 select-none font-mono">
+                    <span className={cn("px-2.5 py-0.5 border text-[10px] font-bold uppercase tracking-wider rounded", typeBadgeStyles)}>
                         {action?.type || 'Action'}
                     </span>
                     <button
+                        type="button"
                         onClick={(e) => {
                             e.stopPropagation();
+                            navigator.clipboard.writeText(`${window.location.origin}/organize/${action?.id}`);
                             triggerToast('Link copied to clipboard!');
                         }}
-                        className="text-text-secondary/70 hover:text-primary-container cursor-pointer transition-colors p-1"
-                        title="Share Action"
+                        className="text-text-secondary/60 hover:text-white cursor-pointer transition-colors p-1 bg-transparent border-none outline-none flex items-center"
+                        title="Share Action Node"
                     >
-                        <span className="material-symbols-outlined text-[18px]">share</span>
+                        <span className="material-symbols-outlined text-base">share</span>
                     </button>
                 </div>
 
-                {/* Title */}
+                {/* Proposal Title Endpoint Link */}
                 <h3
                     onClick={() => navigate(`/organize/${action?.id}`)}
-                    className="text-base sm:text-2xl font-bold text-text-primary hover:text-primary-container transition-colors line-clamp-1 cursor-pointer tracking-tight mb-2"
+                    className="text-lg font-black text-white hover:text-primary-container transition-colors line-clamp-1 cursor-pointer tracking-tight mb-2 outline-none"
                 >
                     {action?.title}
                 </h3>
 
-                {/* Metadata List */}
-                <div className="space-y-1.5 text-[16px] text-text-secondary/80">
+                {/* Metadata List Block */}
+                <div className="space-y-1.5 text-xs text-text-secondary font-medium">
                     <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-primary-container text-[15px] shrink-0">calendar_today</span>
-                        <span className="line-clamp-1 font-medium">{action?.time}</span>
+                        <span className="material-symbols-outlined text-primary-container text-base shrink-0 select-none">calendar_today</span>
+                        <span className="truncate">{action?.time}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-primary-container text-[15px] shrink-0">location_on</span>
-                        <span className="line-clamp-1 font-medium">{action?.location}</span>
+                        <span className="material-symbols-outlined text-primary-container text-base shrink-0 select-none">location_on</span>
+                        <span className="truncate">{action?.location}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-primary-container text-[15px] shrink-0">person</span>
-                        <span className="line-clamp-1">
-                            Organized by <span className="text-primary-container hover:underline cursor-pointer font-bold">{action?.organizer}</span>
+                        <span className="material-symbols-outlined text-primary-container text-base shrink-0 select-none">person</span>
+                        <span className="truncate">
+                            Organized by <span className="text-primary-container hover:underline cursor-pointer font-bold font-mono">{action?.organizer}</span>
                         </span>
                     </div>
                 </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2.5 pt-2 border-t border-white/5 mt-1">
+            {/* RSVP Interacting Selection Buttons Row */}
+            <div className="flex items-center gap-2.5 pt-3 border-t border-white/5 mt-1 font-mono text-[10px] select-none">
                 <button
+                    type="button"
                     onClick={() => {
-                        const newStatus = isAttending ? 'None' : 'Attending';
-                        setIsAttending(!isAttending);
-                        if (!isAttending) setIsInterested(false);
-                        rsvpMutation.mutate({ actionId: action?.id, status: newStatus });
-                        triggerToast(newStatus === 'Attending' ? 'Marked as Attending!' : 'RSVP Cancelled');
+                        const targetStatus = isAttending ? 'None' : 'Attending';
+                        rsvpMutation.mutate({ actionId: action?.id, status: targetStatus });
+                        triggerToast(targetStatus === 'Attending' ? 'Marked as Attending!' : 'RSVP Cancelled');
                     }}
-                    className={`flex-1 py-2 rounded-lg font-extrabold text-xs transition-all uppercase tracking-wider cursor-pointer border-none flex items-center justify-center gap-1.5 active:scale-95 ${isAttending
-                        ? 'bg-primary-container text-white shadow-md shadow-primary-container/20'
-                        : 'bg-surface-container-high text-text-secondary hover:bg-surface-container-highest hover:text-text-primary'
-                        }`}
+                    className={cn(
+                        "flex-1 py-2 rounded-lg font-bold transition-all uppercase tracking-wider cursor-pointer border-none flex items-center justify-center gap-1.5 active:scale-95 outline-none",
+                        isAttending
+                            ? "bg-primary-container text-white shadow-sm font-extrabold crimson-glow"
+                            : "bg-[#0d1117] border border-white/5 text-text-secondary hover:text-white hover:border-white/10"
+                    )}
                 >
-                    <span className="material-symbols-outlined text-[14px]">
+                    <span className="material-symbols-outlined text-sm">
                         {isAttending ? 'check_circle' : 'event_available'}
                     </span>
-                    {isAttending ? 'Attending ✓' : 'Attend'}
+                    <span>{isAttending ? 'Attending ✓' : 'Attend'}</span>
                 </button>
 
                 <button
+                    type="button"
                     onClick={() => {
-                        const newStatus = isInterested ? 'None' : 'Interested';
-                        setIsInterested(!isInterested);
-                        if (!isInterested) setIsAttending(false);
-                        rsvpMutation.mutate({ actionId: action?.id, status: newStatus });
-                        triggerToast(newStatus === 'Interested' ? 'Marked as Interested!' : 'RSVP Cancelled');
+                        const targetStatus = isInterested ? 'None' : 'Interested';
+                        rsvpMutation.mutate({ actionId: action?.id, status: targetStatus });
+                        triggerToast(targetStatus === 'Interested' ? 'Marked as Interested!' : 'RSVP Cancelled');
                     }}
-                    className={`flex-1 py-2 rounded-lg font-extrabold text-xs transition-all uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${isInterested
-                        ? 'bg-secondary text-on-secondary shadow-md'
-                        : 'bg-surface-container-high/60 text-text-secondary hover:bg-surface-container-high hover:text-text-primary border border-white/5'
-                        }`}
+                    className={cn(
+                        "flex-1 py-2 rounded-lg font-bold transition-all uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 outline-none border",
+                        isInterested
+                            ? "bg-amber-500/10 border-amber-500/30 text-amber-400 font-extrabold"
+                            : "bg-[#0d1117] border-white/5 text-text-secondary hover:text-white hover:border-white/10"
+                    )}
                 >
-                    <span className="material-symbols-outlined text-[14px]">
+                    <span className="material-symbols-outlined text-sm">
                         {isInterested ? 'star' : 'star_outline'}
                     </span>
-                    {isInterested ? 'Interested ✓' : 'Interested'}
+                    <span>{isInterested ? 'Interested ✓' : 'Interested'}</span>
                 </button>
             </div>
         </article>

@@ -42,7 +42,7 @@ export function PostContent({ post, isFocus }) {
                 className={`text-text-primary/90 leading-relaxed transition-all relative ${isTruncated && !isExpanded ? 'max-h-[240px] overflow-hidden' : 'max-h-none'
                     }`}
             >
-                <p className={isFocus ? 'text-lg text-text-primary' : 'text-md'}>
+                <p className={isFocus ? 'text-xl text-text-primary' : 'text-lg'}>
                     {renderTextTokens(post?.text)}
                 </p>
 

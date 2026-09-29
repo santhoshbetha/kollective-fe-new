@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TrendingWidget } from '../components/TrendingWidget';
 import { ImageCarouselModal } from '../components/ImageCarouselModal';
@@ -12,6 +12,7 @@ import { EmojiSelector } from '../components/EmojiSelector';
 import { useThread } from '../hooks/useThread';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { LoginPromptModal } from '../components/LoginPromptModal';
+import { getReplyCount } from '../utils/postHelpers';
 import { ModernLargeThreadContainer } from '../components/ModernLargeThreadContainer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter } from '../components/ui/Dialog';
 
@@ -166,7 +167,7 @@ export const PostDetailsPage = () => {
     });
 
     // 🎯 SUBMISSION BALLOT MUTATION: Dispatches flat response elements natively near the view
-    const replyMutation = useMutation({
+    const replyMutationX2 = useMutation({
         mutationFn: async (payload) => {
             return apiFetchPosts(`/api/v1/posts/${currentPostId}/reply`, {
                 method: 'POST',
@@ -290,6 +291,205 @@ export const PostDetailsPage = () => {
                 title: 'Reply Published',
                 message: 'Your reply has been broadcasted successfully!'
             });
+
+            // Reset the form tracker pointer back to focal center layout anchors
+            setActiveReplyPostId(focusPost?.id);
+        },
+
+        // 🏁 Step 4: Always refetch/validate silently in background to keep data exact
+        onSettled: (data, error, payload, context) => {
+            if (context?.threadKey) {
+                queryClient.invalidateQueries({
+                    queryKey: context.threadKey,
+                    refetchType: 'none' // Silently validates cache without cutting off UI elements
+                });
+            }
+        }
+    });
+
+    /*
+        To make sure your Elixir backend knows exactly which specific post node inside the thread tree
+        is being replied to (whether it's the root post or a deep sub-reply), we need to modify the payload dynamically.
+        
+        By injecting the activeReplyPostId as the parent_id parameter directly into the payload, 
+        the backend can perfectly attach the comment node to the correct ancestry line.
+        
+        Note: This is a comment, not a reply. 
+        
+        Because of your robust optimistic update, we will also inject parent_id into the temporary 
+        mock post object so your frontend layout indicators (ThreadLine branching) render cleanly 
+        on screen immediately.
+    */
+    const replyMutation = useMutation({
+        mutationFn: async (payload) => {
+            // 🚀 THE PAYLOAD FIX: Dynamically append the target parent_id into the POST body array
+            const enrichedPayload = {
+                ...payload,
+                parent_id: activeReplyPostId || currentPostId
+            };
+
+            return apiFetchPosts(`/api/v1/posts/${currentPostId}/reply`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(enrichedPayload),
+            });
+        },
+
+        // 🚀 Step 1: Fire instantly when mutate() is executed
+        onMutate: async (payload) => {
+            const threadKey = ['post', currentPostId, 'thread'];
+
+            // Cancel outgoing refetches so they don't overwrite our optimistic update
+            await queryClient.cancelQueries({ queryKey: threadKey });
+
+            // Snapshot the current cache value to use for rollback on failure
+            const previousThreadData = queryClient.getQueryData(threadKey);
+
+            // Generate a mock, temporary post structure matching Elixir API conventions
+            const tempId = `temp-${Date.now()}`;
+            const optimisticReply = {
+                id: tempId,
+                body: payload.body || payload.text || commentText, // Fallback to current input if needed
+
+                /* 
+                   🚀 OPTIMISTIC INDENTATION ACCENT: Pass the true parent pointer to your local 
+                   mock structure so tree rails can evaluate depths correctly during submission delays.
+                */
+                parent_id: activeReplyPostId || currentPostId,
+
+                inserted_at: new Date().toISOString(),
+                created_at: new Date().toISOString(),
+                isOptimistic: true,
+                account: activeAccount || currentUser || {},
+                likes: 0,
+                replies_count: 0
+            };
+
+            // Pre-sync Zustand entity dictionary index table so components can format it
+            usePostsStore.getState().importFetchedPosts([optimisticReply]);
+
+            const targetParentId = activeReplyPostId || currentPostId;
+            if (targetParentId) {
+                usePostsStore.getState().updatePostEntity(targetParentId, (existing) => {
+                    if (!existing) return existing;
+                    const nextCount = getReplyCount(existing) + 1;
+                    return {
+                        ...existing,
+                        replies_count: nextCount,
+                        commentsCount: nextCount,
+                        repliesCount: nextCount,
+                    };
+                });
+            }
+
+            // Inject the optimistic comment directly into the cached array list
+            queryClient.setQueryData(threadKey, (oldData) => {
+                if (!oldData) return oldData;
+
+                const currentDescendants = Array.isArray(oldData.descendants) ? oldData.descendants : [];
+
+                const updatedFocus = (oldData.focus && (oldData.focus.id === targetParentId || !activeReplyPostId)) ? {
+                    ...oldData.focus,
+                    replies_count: getReplyCount(oldData.focus) + 1,
+                    commentsCount: getReplyCount(oldData.focus) + 1,
+                    repliesCount: getReplyCount(oldData.focus) + 1,
+                } : oldData.focus;
+
+                const updatedDescendants = currentDescendants.map((desc) => {
+                    if (desc.id === targetParentId) {
+                        const count = getReplyCount(desc) + 1;
+                        return { ...desc, replies_count: count, commentsCount: count, repliesCount: count };
+                    }
+                    return desc;
+                });
+
+                return {
+                    ...oldData,
+                    focus: updatedFocus,
+                    descendants: [...updatedDescendants, optimisticReply],
+                    ...(oldData._raw ? {
+                        _raw: {
+                            ...oldData._raw,
+                            focus: updatedFocus,
+                            descendants: [...(oldData._raw.descendants || []), optimisticReply]
+                        }
+                    } : {})
+                };
+            });
+
+            // Clear local input view elements instantly for a fast UI snap feel
+            setCommentText('');
+            setCommentCwText('');
+            setCommentImage(null);
+            setShowEmojiDropdown(false);
+            setShowCommentCwInput(false);
+            setIsCommentExpanded(false);
+
+            // Return context containing the rollback snapshot
+            return { previousThreadData, threadKey, tempId };
+        },
+
+        // 🛡️ Step 2: Roll back to exact state if the network fails
+        onError: (error, payload, context) => {
+            console.error("Failed to post reply:", error);
+
+            if (context?.threadKey && context?.previousThreadData) {
+                // Restore snapshot
+                queryClient.setQueryData(context.threadKey, context.previousThreadData);
+            }
+
+            let errorDetails = "Failed to broadcast reply. Please try again.";
+            if (error?.data?.error) errorDetails = error.data.error;
+            else if (error?.data?.message) errorDetails = error.data.message;
+            else if (error?.message) errorDetails = error.message;
+
+            setFeedbackModal({
+                type: 'error',
+                title: 'Broadcast Failed',
+                message: errorDetails
+            });
+        },
+
+        // 🎉 Step 3: Swap out the temporary object with the actual backend confirmation payload
+        onSuccess: (res, payload, context) => {
+            const replyData = res?.data || res;
+
+            if (replyData && replyData.id && context?.threadKey) {
+                // Import the official backend post object into the store
+                usePostsStore.getState().importFetchedPosts([replyData]);
+
+                queryClient.setQueryData(context.threadKey, (oldData) => {
+                    if (!oldData) return oldData;
+
+                    // Swap the matching temporary item pointer with the validated production ID
+                    const currentDescendants = Array.isArray(oldData.descendants) ? oldData.descendants : [];
+                    const updatedDescendants = currentDescendants.map(item =>
+                        item.id === context.tempId ? replyData : item
+                    );
+
+                    return {
+                        ...oldData,
+                        descendants: updatedDescendants,
+                        ...(oldData._raw ? {
+                            _raw: {
+                                ...oldData._raw,
+                                descendants: (oldData._raw.descendants || []).map(item =>
+                                    item.id === context.tempId ? replyData : item
+                                )
+                            }
+                        } : {})
+                    };
+                });
+            }
+
+            setFeedbackModal({
+                type: 'success',
+                title: 'Reply Published',
+                message: 'Your reply has been broadcasted successfully!'
+            });
+
+            // 🚀 Reset the form tracker pointer back to null / closed state safely
+            setActiveReplyPostId(null);
         },
 
         // 🏁 Step 4: Always refetch/validate silently in background to keep data exact
@@ -305,6 +505,7 @@ export const PostDetailsPage = () => {
 
     const ancestors = threadContext?.ancestors || [];
     const rawDescendants = threadContext?.descendants || [];
+
     const focusPost = threadContext?.focus || storePost || (currentPostId ? {
         id: currentPostId,
         author: { name: "Julian Thorne", handle: "@j_thorne", avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c", verified: true },
@@ -314,6 +515,10 @@ export const PostDetailsPage = () => {
         likes: 42,
         commentsCount: 2
     } : null);
+
+    console.log("PostDetailsPage: threadContext?.focus", threadContext?.focus);
+    console.log("PostDetailsPage: storePost", storePost);
+    console.log("PostDetailsPage: focusPost", focusPost);
 
     const currentUser = useAuthStore((state) => state.user);
     const activeAccount = useAuthStore((state) => state.activeAccount);
@@ -334,6 +539,14 @@ export const PostDetailsPage = () => {
         return false;
     };
     const isFocusPostSelf = isFocusSelf();
+    const [activeReplyPostId, setActiveReplyPostId] = useState(null); // Defaults to the main focus post
+
+    //  useEffect(() => {
+    //      if (focusPost?.id) {
+    //          setActiveReplyPostId(focusPost.id);
+    //      }
+    //  }, [focusPost?.id]);
+
     const descendants = (rawDescendants && Array.isArray(rawDescendants) && rawDescendants.length > 0)
         ? rawDescendants
         : (focusPost?.comments && Array.isArray(focusPost.comments)
@@ -375,6 +588,7 @@ export const PostDetailsPage = () => {
         }
         if (!commentText.trim() && !commentImage) return;
 
+        // Trigger mutation payload matching backend column assignments
         replyMutation.mutate({
             text: commentText.trim(),
             content_warning: showCommentCwInput ? commentCwText.trim() : undefined,
@@ -382,7 +596,7 @@ export const PostDetailsPage = () => {
         });
     };
 
-    const handleReplyClick = (authorName) => {
+    const handleReplyClickX = (authorName) => {
         const rawHandle = authorName ? `@${authorName.toLowerCase().replace(/\s+/g, '')} ` : '';
         setCommentText((prev) => prev.includes(rawHandle) ? prev : `${rawHandle}${prev}`);
         setIsCommentExpanded(true);
@@ -395,9 +609,47 @@ export const PostDetailsPage = () => {
         }, 50);
     };
 
-    console.log("ancestors:", ancestors);
-    console.log("focusPost:", focusPost);
-    console.log("descendants:", descendants);
+    const handleReplyClickNew = useCallback((authorName, postId) => {
+        // 🚀 Set the target ID where the inline input form should explicitly mount
+        setActiveReplyPostId(postId);
+
+        // Pre-populate the textarea with the handle mention parameter securely
+        setCommentText(`@${authorName} `);
+        setIsCommentExpanded(true);
+
+        // Optional: Smooth focus alignment anchor
+        setTimeout(() => {
+            document.getElementById('comment-textarea')?.focus();
+        }, 50);
+    }, []);
+
+    const handleReplyClick = useCallback((authorName, postId) => {
+        if (!postId) return;
+
+        console.log('activeReplyPostId', activeReplyPostId);
+        console.log('postId', postId);
+
+        // If the clicked box is already open, close it cleanly
+        if (activeReplyPostId === postId) {
+            setActiveReplyPostId(null);
+            setIsCommentExpanded(false);
+            setCommentText('');
+            return;
+        }
+
+        console.log('authorName', authorName);
+
+        // Otherwise, open it for the new post target as normal
+        // Otherwise, lock focus down onto the newly selected post target node row
+        setActiveReplyPostId(postId);
+        setCommentText(`@${authorName} `);
+        setIsCommentExpanded(true);
+
+        setTimeout(() => {
+            document.getElementById('comment-textarea')?.focus();
+        }, 50);
+    }, [activeReplyPostId]); // Ensure activeReplyPostId is in the dependency array so the toggle logic reads live values!
+
 
     return (
         <div className="max-w-[1280px] mx-auto flex flex-col lg:flex-row gap-12 pb-20 w-full">
@@ -427,6 +679,8 @@ export const PostDetailsPage = () => {
                     )}
 
                     <ModernLargeThreadContainer
+                        currentUser={currentUser}
+                        activeAccount={activeAccount}
                         ancestors={ancestors}
                         focusPost={focusPost}
                         descendants={descendants}
@@ -450,170 +704,10 @@ export const PostDetailsPage = () => {
                         replyMutation={replyMutation}
                         showEmojiDropdown={showEmojiDropdown}
                         setShowEmojiDropdown={setShowEmojiDropdown}
+                        activeReplyPostId={activeReplyPostId}
+                        setActiveReplyPostId={setActiveReplyPostId}
                     />
 
-                    {/* 🔽 LAYOUT MARKS A: Ancestors (Context lines positioned above the focus) */}
-                    <div hidden>
-                        {ancestors.map((item, idx) => (
-                            <CascadedPostRow
-                                key={item.id}
-                                post={item}
-                                isAncestor
-                                hasNextReply={idx < ancestors.length}
-                                onClick={(id) => navigate(`/post/${id}`)}
-                                onReplyClick={handleReplyClick}
-                                onLike={(id) => {
-                                    if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-                                    postActions.toggleLike(id);
-                                }}
-                                onBookmark={(id) => {
-                                    if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-                                    postActions.toggleBookmark(id);
-                                }}
-                                onReblog={(id) => {
-                                    if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-                                    postActions.toggleReblog(id);
-                                }}
-                            />
-                        ))}
-
-                        {/* 🎯 LAYOUT MARKS B: The Focus Card element itself */}
-                        {focusPost && (
-                            <CascadedPostRow
-                                post={focusPost}
-                                isFocus
-                                onReplyClick={handleReplyClick}
-                                onLike={(id) => {
-                                    if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-                                    postActions.toggleLike(id);
-                                }}
-                                onBookmark={(id) => {
-                                    if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-                                    postActions.toggleBookmark(id);
-                                }}
-                                onReblog={(id) => {
-                                    if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-                                    postActions.toggleReblog(id);
-                                }}
-                            />
-                        )}
-
-                        {/* 🗳️ LAYOUT MARKS C: Inline Response Form Element */}
-                        {!isFocusPostSelf ? (
-                            <form onSubmit={handleCommentSubmit} className="p-6 bg-[#111111] border-b border-[#262626] flex flex-col gap-4 relative">
-                                {showCommentCwInput && (
-                                    <input
-                                        type="text"
-                                        placeholder="Content Warning label..."
-                                        value={commentCwText}
-                                        onChange={(e) => setCommentCwText(e.target.value)}
-                                        className="w-full bg-surface-container-lowest border border-white/10 rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-container"
-                                    />
-                                )}
-                                <textarea
-                                    id="comment-textarea"
-                                    value={commentText}
-                                    onFocus={() => setIsCommentExpanded(true)}
-                                    onChange={(e) => setCommentText(e.target.value)}
-                                    placeholder="Publish your response parameters..."
-                                    className={`w-full bg-surface-container-lowest border border-white/10 rounded-xl p-4 text-lg text-text-primary placeholder:text-text-secondary/30 focus:outline-none resize-none leading-relaxed transition-all duration-300 ${isCommentExpanded ? 'h-40 md:h-48 shadow-lg border-primary-container/40' : 'h-24'
-                                        }`}
-                                />
-
-                                {commentImage && (
-                                    <div className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10 group">
-                                        <img src={commentImage} alt="Attachment Preview" className="w-full h-full object-cover" />
-                                        <button
-                                            type="button"
-                                            onClick={() => setCommentImage(null)}
-                                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 hover:bg-black text-white text-xs flex items-center justify-center border-none cursor-pointer"
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                )}
-
-                                <input
-                                    type="file"
-                                    ref={commentFileInputRef}
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={handleCommentFileChange}
-                                />
-
-                                <div className="flex justify-between items-center relative">
-                                    <div className="flex items-center gap-3 relative">
-                                        <button
-                                            type="button"
-                                            onClick={() => commentFileInputRef.current?.click()}
-                                            className="p-1.5 rounded-full hover:bg-white/5 text-text-secondary hover:text-primary-container transition-colors cursor-pointer bg-transparent border-none flex items-center justify-center"
-                                            title="Attach Image"
-                                        >
-                                            <span className="material-symbols-outlined text-[20px]">attachment</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowEmojiDropdown(!showEmojiDropdown)}
-                                            className="p-1.5 rounded-full hover:bg-white/5 text-text-secondary hover:text-primary-container transition-colors cursor-pointer bg-transparent border-none flex items-center justify-center"
-                                            title="Add Emoji"
-                                        >
-                                            <span className="material-symbols-outlined text-[20px]">sentiment_satisfied</span>
-                                        </button>
-
-                                        {showEmojiDropdown && (
-                                            <EmojiSelector
-                                                onSelect={(emoji) => setCommentText((prev) => prev + emoji)}
-                                                onClose={() => setShowEmojiDropdown(false)}
-                                            />
-                                        )}
-
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCommentCwInput(!showCommentCwInput)}
-                                            className="text-xs font-bold text-text-secondary hover:text-text-primary bg-transparent border-none cursor-pointer ml-2"
-                                        >
-                                            {showCommentCwInput ? 'Remove CW' : 'Add CW'}
-                                        </button>
-                                    </div>
-
-                                    <button
-                                        type="submit"
-                                        disabled={replyMutation.isPending || (!commentText.trim() && !commentImage)}
-                                        className="bg-primary-container text-white font-bold text-xs px-5 py-2.5 rounded-xl hover:brightness-110 active:scale-95 cursor-pointer disabled:opacity-40"
-                                    >
-                                        {replyMutation.isPending ? 'Broadcasting...' : 'Broadcast Reply'}
-                                    </button>
-                                </div>
-                            </form>
-                        ) : (
-                            <div className="p-4 bg-[#111111] border-b border-[#262626] text-center text-xs text-text-secondary/60 font-mono">
-                                You cannot reply to your own post
-                            </div>
-                        )}
-
-                        {/* 🔼 LAYOUT MARKS D: Descendants (Responses sub-trees compiled underneath) */}
-                        {descendants.map((item) => (
-                            <CascadedPostRow
-                                key={item.id}
-                                post={item}
-                                onClick={(id) => navigate(`/post/${id}`)}
-                                onReplyClick={handleReplyClick}
-                                onLike={(id) => {
-                                    if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-                                    postActions.toggleLike(id);
-                                }}
-                                onBookmark={(id) => {
-                                    if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-                                    postActions.toggleBookmark(id);
-                                }}
-                                onReblog={(id) => {
-                                    if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-                                    postActions.toggleReblog(id);
-                                }}
-                            />
-                        ))}
-                    </div>
                 </div>
             </div>
 

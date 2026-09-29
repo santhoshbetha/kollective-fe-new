@@ -1,0 +1,217 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useStore } from '../../store/useStore';
+import { usePostsStore } from '../../store/usePostsStore';
+import { apiFetch } from '../../api/apiClient';
+import * as api from '../../api/mockApi';
+
+function updatePostsInCacheX(oldData, updater) {
+    if (!oldData) return oldData;
+
+    if (oldData.pages) {
+        return {
+            ...oldData,
+            pages: oldData.pages.map((page) => {
+                const postsList = Array.isArray(page) ? page : (page?.posts || []);
+                const updatedPosts = postsList.map(updater);
+                return Array.isArray(page) ? updatedPosts : { ...page, posts: updatedPosts };
+            }),
+        };
+    }
+
+    if (Array.isArray(oldData)) {
+        return oldData.map(updater);
+    }
+
+    if (oldData.posts) {
+        return { ...oldData, posts: oldData.posts.map(updater) };
+    }
+
+    return oldData;
+}
+
+export function usePostActionsX() {
+    const queryClient = useQueryClient();
+    const activeTab = useStore((state) => state.homeFeedTab);
+    const queryKey = ['timeline', 'home', activeTab];
+    const updatePostEntity = usePostsStore((state) => state.updatePostEntity);
+
+    // 1. Toggle Like Mutation
+    const likeMutation = useMutation({
+        mutationFn: async (postId) => {
+            try {
+                return await apiFetch(`/posts/${postId}/like`, { method: 'POST' });
+            } catch (err) {
+                console.warn('Backend like post failed, falling back to mockApi', err);
+                return await api.toggleLike(postId);
+            }
+        },
+        onMutate: async (postId) => {
+            await queryClient.cancelQueries({ queryKey });
+            const previousTimeline = queryClient.getQueryData(queryKey);
+
+            // Synchronize normalized Zustand post entity store
+            updatePostEntity(postId, (post) => {
+                const isLiked = !post.liked;
+                const newLikes = isLiked
+                    ? (post.likes || post.likes_count || 0) + 1
+                    : Math.max(0, (post.likes || post.likes_count || 1) - 1);
+                return {
+                    ...post,
+                    liked: isLiked,
+                    has_liked: isLiked,
+                    likes: newLikes,
+                    likes_count: newLikes,
+                };
+            });
+
+            queryClient.setQueryData(queryKey, (oldData) =>
+                updatePostsInCache(oldData, (post) => {
+                    if (post.id === postId) {
+                        const isLiked = !post.liked;
+                        const newLikes = isLiked
+                            ? (post.likes || post.likes_count || 0) + 1
+                            : Math.max(0, (post.likes || post.likes_count || 1) - 1);
+                        return {
+                            ...post,
+                            liked: isLiked,
+                            has_liked: isLiked,
+                            likes: newLikes,
+                            likes_count: newLikes,
+                        };
+                    }
+                    return post;
+                })
+            );
+
+            return { previousTimeline };
+        },
+        onError: (err, id, context) => {
+            if (context?.previousTimeline) queryClient.setQueryData(queryKey, context.previousTimeline);
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey });
+        },
+    });
+
+    // 2. Toggle Reblog (Boost) Mutation - Limited to one reblog per user per post
+    const reblogMutation = useMutation({
+        mutationFn: async (postId) => {
+            const currentPost = usePostsStore.getState().entities[postId];
+            if (currentPost?.reblogged || currentPost?.has_reblogged) {
+                return currentPost;
+            }
+            try {
+                const res = await apiFetch(`/posts/${postId}/reblog`, { method: 'POST' });
+                return res?.data || res;
+            } catch (err) {
+                console.warn('Backend reblog post failed, falling back to mockApi', err);
+                return await api.toggleReblog(postId);
+            }
+        },
+        onMutate: async (postId) => {
+            await queryClient.cancelQueries({ queryKey });
+            const previousTimeline = queryClient.getQueryData(queryKey);
+
+            const currentPost = usePostsStore.getState().entities[postId];
+            if (currentPost?.reblogged || currentPost?.has_reblogged) {
+                return { previousTimeline };
+            }
+
+            updatePostEntity(postId, (post) => {
+                if (post.reblogged || post.has_reblogged) return post;
+                const newCount = (post.reblogsCount || post.reblogs_count || post.shares || 0) + 1;
+                return {
+                    ...post,
+                    reblogged: true,
+                    has_reblogged: true,
+                    reblogsCount: newCount,
+                    reblogs_count: newCount,
+                    shares: newCount,
+                };
+            });
+
+            queryClient.setQueryData(queryKey, (oldData) =>
+                updatePostsInCache(oldData, (post) => {
+                    if (post.id === postId) {
+                        if (post.reblogged || post.has_reblogged) return post;
+                        const newCount = (post.reblogsCount || post.reblogs_count || post.shares || 0) + 1;
+                        return {
+                            ...post,
+                            reblogged: true,
+                            has_reblogged: true,
+                            reblogsCount: newCount,
+                            reblogs_count: newCount,
+                            shares: newCount,
+                        };
+                    }
+                    return post;
+                })
+            );
+
+            return { previousTimeline };
+        },
+        onSuccess: (data, postId) => {
+            if (data && data.id) {
+                updatePostEntity(data.id, (post) => ({
+                    ...post,
+                    ...data,
+                    reblogged: data.reblogged ?? true,
+                    has_reblogged: data.has_reblogged ?? true,
+                    reblogsCount: data.reblogsCount ?? data.reblogs_count ?? data.shares ?? (post.reblogsCount || 0) + 1,
+                    reblogs_count: data.reblogs_count ?? data.reblogsCount ?? data.shares ?? (post.reblogs_count || 0) + 1,
+                    shares: data.shares ?? data.reblogs_count ?? data.reblogsCount ?? (post.shares || 0) + 1,
+                }));
+            }
+        },
+        onError: (err, id, context) => {
+            if (context?.previousTimeline) queryClient.setQueryData(queryKey, context.previousTimeline);
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['timeline'] });
+        },
+    });
+
+    // 3. Toggle Bookmark Mutation
+    const bookmarkMutation = useMutation({
+        mutationFn: async (postId) => {
+            try {
+                return await apiFetch(`/posts/${postId}/bookmark`, { method: 'POST' });
+            } catch (err) {
+                console.warn('Backend bookmark post failed, falling back to mockApi', err);
+                return await api.toggleBookmark(postId);
+            }
+        },
+        onMutate: async (postId) => {
+            await queryClient.cancelQueries({ queryKey });
+            const previousTimeline = queryClient.getQueryData(queryKey);
+
+            updatePostEntity(postId, (post) => ({ ...post, bookmarked: !post.bookmarked }));
+
+            queryClient.setQueryData(queryKey, (oldData) =>
+                updatePostsInCache(oldData, (post) =>
+                    post.id === postId ? { ...post, bookmarked: !post.bookmarked } : post
+                )
+            );
+
+            return { previousTimeline };
+        },
+        onError: (err, id, context) => {
+            if (context?.previousTimeline) queryClient.setQueryData(queryKey, context.previousTimeline);
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey: ['timeline', 'bookmarks'] }); // Sync private bookmarks tab
+        },
+    });
+
+    return {
+        toggleLike: (id) => likeMutation.mutate(id),
+        toggleReblog: (id) => {
+            const currentPost = usePostsStore.getState().entities[id];
+            if (currentPost?.reblogged || currentPost?.has_reblogged) return;
+            reblogMutation.mutate(id);
+        },
+        toggleBookmark: (id) => bookmarkMutation.mutate(id),
+        isActionPending: likeMutation.isPending || reblogMutation.isPending || bookmarkMutation.isPending,
+    };
+}

@@ -1,10 +1,8 @@
 // src/features/profile/ProfileFeed.jsx
 import React, { useState } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-import { useProfilePostsQuery } from './useProfileFeature';
 import { PostCard } from '../timeline/PostCard';
 import { useProfileTimelineQuery } from './useProfileFeature';
-
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { processFeedPosts } from '../../utils/feedUtils';
 

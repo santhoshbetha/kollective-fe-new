@@ -1,6 +1,8 @@
 // src/features/settings/AuditLogs.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { ShieldAlert, RefreshCw, CheckCircle2, Trash2, UserPlus, History } from 'lucide-react';
+import { cn } from "@/lib/utils"; // Adjust to your layout utility helper directory path
 
 export default function AuditLogs({ activeOrgId }) {
     const [logs, setLogs] = useState([]);
@@ -24,70 +26,81 @@ export default function AuditLogs({ activeOrgId }) {
         if (activeOrgId) fetchLogs();
     }, [activeOrgId]);
 
-    // Helper to safely format action strings into readable text
     const formatAction = (action) => {
         return (action || '').replace(/_/g, ' ').toUpperCase();
     };
 
     if (loading) {
         return (
-            <div className="p-8 text-center text-text-secondary">
-                <div className="w-6 h-6 border-2 border-primary-container border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                <p className="text-xs font-semibold">Loading audit trails...</p>
+            <div className="p-12 text-center text-text-secondary max-w-4xl mx-auto flex flex-col items-center justify-center gap-3 font-sans">
+                <RefreshCw className="w-7 h-7 text-primary-container animate-spin" />
+                <p className="text-sm font-bold uppercase tracking-wider animate-pulse">Syncing organizational records...</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold rounded-xl flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">error</span>
-                Error: {error}
+            <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-semibold rounded-xl flex items-center gap-2.5 max-w-4xl mx-auto animate-in slide-in-from-top-2 duration-150 font-sans">
+                <ShieldAlert className="w-5 h-5 shrink-0" />
+                <span>Error: {error}</span>
             </div>
         );
     }
-
     return (
-        <div className="space-y-6">
-            <div>
-                <h2 className="text-xl font-black text-text-primary tracking-tight">Organization Audit Trail</h2>
-                <p className="text-xs text-text-secondary mt-0.5">Review security, moderation, and team adjustments across your community node.</p>
+        <div className="space-y-6 text-left font-sans animate-in fade-in duration-200 w-full">
+            {/* Expanded Content Headers */}
+            <div className="border-b dark:border-white/5 border-black/5 pb-4 select-none">
+                <h2 className="text-2xl font-black text-text-primary tracking-tight">Organization Audit Trail</h2>
+                <p className="text-sm text-text-secondary mt-0.5 font-medium">Review security, moderation, and team adjustments across your community node.</p>
             </div>
 
-            <div className="bg-surface-container-low border border-white/10 rounded-2xl overflow-hidden shadow-sm">
-                <ul className="divide-y divide-white/5">
+            <div className="bg-surface-container-low border dark:border-white/10 border-black/5 rounded-2xl overflow-hidden shadow-xl">
+                <ul className="divide-y dark:divide-white/5 divide-black/5">
                     {logs.length === 0 ? (
-                        <li className="p-8 text-center text-xs text-text-secondary/60 italic">No actions recorded in the active audit window.</li>
+                        <li className="p-12 text-center text-sm font-medium text-text-secondary/50 italic flex flex-col items-center justify-center gap-2 select-none">
+                            <History className="w-8 h-8 opacity-40 mb-1" />
+                            <span>No actions recorded in the active audit window bounds.</span>
+                        </li>
                     ) : (
                         logs.map((log) => {
                             const isOverride = log.metadata?.is_admin_override;
+                            const isDelete = String(log.action).toLowerCase().includes('delete');
+                            const isInvite = String(log.action).toLowerCase().includes('invite');
 
                             return (
-                                <li key={log.id} className={`p-4 hover:bg-surface-container-high/30 transition ${isOverride ? 'bg-amber-500/5' : ''}`}>
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                        <div className="flex flex-col">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-bold text-sm text-text-primary">
+                                <li key={log.id} className={cn(
+                                    "p-5 hover:bg-white/[0.005] transition-all duration-150",
+                                    isOverride ? 'bg-amber-500/[0.02] border-l-2 border-l-amber-500/40' : ''
+                                )}>
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                        <div className="flex flex-col min-w-0">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="font-extrabold text-base text-text-primary tracking-tight">
                                                     {log.actor?.name || (log.actor?.username ? `@${log.actor.username}` : (log.performed_by || '@system'))}
                                                 </span>
-                                                <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider ${
-                                                    String(log.action).toLowerCase().includes('delete')
-                                                        ? 'bg-red-500/20 text-red-400'
-                                                        : String(log.action).toLowerCase().includes('invite')
-                                                        ? 'bg-primary-container/20 text-primary-container'
-                                                        : 'bg-surface-container-highest text-text-secondary'
-                                                }`}>
-                                                    {formatAction(log.action)}
+
+                                                <span className={cn(
+                                                    "px-2.5 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider font-mono border flex items-center gap-1 select-none",
+                                                    isDelete
+                                                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                                                        : isInvite
+                                                            ? 'bg-primary-container/10 border-primary-container/20 text-primary-container'
+                                                            : 'bg-surface-container border-white/5 text-text-secondary'
+                                                )}>
+                                                    {isDelete && <Trash2 className="w-3 h-3" />}
+                                                    {isInvite && <UserPlus className="w-3 h-3" />}
+                                                    <span>{formatAction(log.action)}</span>
                                                 </span>
 
                                                 {isOverride && (
-                                                    <span className="bg-amber-400/20 text-amber-300 px-2 py-0.5 text-[10px] font-bold rounded uppercase">
+                                                    <span className="bg-amber-400/10 border border-amber-400/20 text-amber-400 px-2.5 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider font-mono select-none">
                                                         Admin Moderation
                                                     </span>
                                                 )}
                                             </div>
 
-                                            <p className="text-xs text-text-secondary mt-1">
+                                            <div className="text-sm text-text-secondary font-medium leading-relaxed mt-2">
                                                 {log.details ? (
                                                     <span>{log.details}</span>
                                                 ) : (
@@ -96,15 +109,15 @@ export default function AuditLogs({ activeOrgId }) {
                                                     </span>
                                                 )}
                                                 {log.metadata?.deleted_post_body_preview && (
-                                                    <span className="italic text-text-secondary/70 block mt-1 bg-surface-container-lowest/60 p-2 rounded-lg border border-white/5 text-[11px]">
+                                                    <blockquote className="italic text-text-secondary/70 block mt-2 bg-[#1b1b1b] p-3 rounded-xl border dark:border-white/5 border-black/5 text-sm font-serif">
                                                         "{log.metadata.deleted_post_body_preview}..."
-                                                    </span>
+                                                    </blockquote>
                                                 )}
-                                            </p>
+                                            </div>
                                         </div>
 
-                                        <div className="text-right flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2">
-                                            <span className="text-[11px] text-text-secondary/60">
+                                        <div className="text-right flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 shrink-0">
+                                            <span className="text-xs font-mono font-medium text-text-secondary/50 select-none">
                                                 {new Date(log.inserted_at).toLocaleString()}
                                             </span>
                                             {(log.action === 'post_deleted' || log.metadata?.can_restore) && (
@@ -122,33 +135,75 @@ export default function AuditLogs({ activeOrgId }) {
     );
 }
 
-// Inline Sub-component for triggering Restoration
+/**
+ * 🔄 UPGRADED RECOVERY ELEMENT MODULE: Handles non-blocking execution inline safely
+ */
 function RestoreButton({ postId, onRestoreSuccess }) {
     const [restoring, setRestoring] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [feedback, setFeedback] = useState(null);
 
     const handleRestore = async () => {
-        if (!window.confirm("Are you sure you want to restore this post to the public feed?")) return;
         try {
             setRestoring(true);
+            setFeedback(null);
             await api.post(`/posts/${postId}/restore`);
-            alert("Post restored successfully!");
-            if (onRestoreSuccess) onRestoreSuccess();
+            setFeedback({ type: 'success', text: 'Post recovered.' });
+            setTimeout(() => {
+                if (onRestoreSuccess) onRestoreSuccess();
+            }, 1500);
         } catch (err) {
-            alert(err.response?.data?.error || err.message || "Error restoring item.");
+            setFeedback({ type: 'error', text: err.response?.data?.error || 'Recovery dropped.' });
+            setTimeout(() => setFeedback(null), 3000);
         } finally {
             setRestoring(false);
+            setShowConfirm(false);
         }
     };
+
+    if (feedback) {
+        return (
+            <span className={cn(
+                "text-xs font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg animate-in fade-in duration-100",
+                feedback.type === 'success' ? "text-emerald-400 bg-emerald-500/10" : "text-rose-400 bg-rose-500/10"
+            )}>
+                {feedback.text}
+            </span>
+        );
+    }
+
+    if (showConfirm) {
+        return (
+            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase font-bold tracking-wider select-none animate-in slide-in-from-right-2 duration-150">
+                <button
+                    type="button"
+                    onClick={handleRestore}
+                    disabled={restoring}
+                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg border-none cursor-pointer"
+                >
+                    Confirm
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setShowConfirm(false)}
+                    disabled={restoring}
+                    className="px-2.5 py-1.5 bg-[#222] border border-white/5 text-text-secondary hover:text-white rounded-lg cursor-pointer"
+                >
+                    Cancel
+                </button>
+            </div>
+        );
+    }
 
     return (
         <button
             type="button"
-            onClick={handleRestore}
+            onClick={() => setShowConfirm(true)}
             disabled={restoring}
-            className="text-xs bg-surface-container-high hover:bg-surface-container-highest text-text-primary font-bold py-1 px-2.5 border border-white/10 rounded-lg shadow-sm disabled:opacity-50 cursor-pointer flex items-center gap-1"
+            className="text-xs bg-surface-container-high hover:bg-surface-container-highest text-text-primary font-bold py-1.5 px-3 border dark:border-white/10 border-black/5 rounded-xl shadow-md disabled:opacity-40 cursor-pointer flex items-center gap-1.5 transition-all select-none outline-none font-sans font-extrabold uppercase tracking-wide text-[10px]"
         >
-            <span className="material-symbols-outlined text-[14px]">restore</span>
-            {restoring ? 'Restoring...' : 'Undelete'}
+            <RefreshCw className="w-3.5 h-3.5 text-primary-container" />
+            <span>Undelete</span>
         </button>
     );
 }

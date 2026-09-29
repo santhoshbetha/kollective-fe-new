@@ -1,10 +1,17 @@
 // src/features/events/useEventsFeature.js
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+    useQuery,
+    useInfiniteQuery,
+    useMutation,
+    useQueryClient
+} from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 import { normalizeEvent } from '../../utils/eventUtils';
 
-// Hook A: Replaces events and eventsLoading
+/**
+ * 📡 Hook A: Pulls a flat, comprehensive listing of upcoming community events
+ */
 export function useEventsQuery() {
     const { data, isPending } = useQuery({
         queryKey: ['events', 'list'],
@@ -30,7 +37,48 @@ export function useEventsQuery() {
     };
 }
 
-// Hook to filter events by date, distance, or state via POST call
+export function useEventsInfiniteQuery() {
+    return useInfiniteQuery({
+        queryKey: ['events', 'list'],
+        queryFn: async ({ pageParam }) => {
+            const cursorParam = pageParam ? `?cursor=${pageParam}` : '';
+            try {
+                const res = await apiFetch(`/events${cursorParam}`);
+                if (res && (res.data || Array.isArray(res))) {
+                    return res;
+                }
+            } catch (err) {
+                console.warn('apiFetch failed for events query, falling back to mockApi', err);
+            }
+            return api.getEvents({ max_id: pageParam });
+        },
+        initialPageParam: null,
+        getNextPageParam: (lastPage) =>
+            lastPage?.next_cursor ?? lastPage?.nextCursor ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
+    });
+}
+
+
+/**
+ * 🚀 UPGRADED INFINITE QUERY: Cursor-based paginated events loader
+ * Seamlessly hooks your structural calendars straight into your React Virtuoso scrollers.
+ */
+export function useInfiniteEventsQuery(scope = 'all') {
+    return useInfiniteQuery({
+        queryKey: ['events', 'infinite', scope],
+        queryFn: async ({ pageParam = null }) => {
+            const cursorQuery = pageParam ? `?cursor=${pageParam}` : '';
+            const res = await apiFetch(`/events/paginated${cursorQuery}`);
+            return res?.data || res; // Expects shape: { events: [...], next_cursor: "ULID" }
+        },
+        getNextPageParam: (lastPage) => lastPage?.next_cursor || undefined,
+        initialPageParam: null,
+    });
+}
+
+/**
+ * 🎛️ Hook: Filters active events by date, distance, or scope via secure POST queries
+ */
 export function useFilterEvents() {
     return useMutation({
         mutationFn: async (filterPayload) => {
@@ -54,8 +102,40 @@ export function useFilterEvents() {
     });
 }
 
+/**
+ * 🪐 HELPER: Reusable, deep structural cache updating macro
+ * Sanitizes both standalone list queries and paginated page parameters concurrently
+ */
+const performCacheUpdate = (queryClient, partialMatchKey, targetId, transformer) => {
+    queryClient.setQueriesData({ queryKey: partialMatchKey }, (oldCacheData) => {
+        if (!oldCacheData) return oldCacheData;
 
-// Hook B: Replaces toggleEventInterest
+        const mutateNode = (item) => item.id === targetId ? transformer(item) : item;
+        const mutateArray = (arr) => Array.isArray(arr) ? arr.map(mutateNode) : arr;
+
+        if (Array.isArray(oldCacheData)) return mutateArray(oldCacheData);
+
+        if (oldCacheData.pages) {
+            return {
+                ...oldCacheData,
+                pages: oldCacheData.pages.map((page) => {
+                    const list = Array.isArray(page) ? page : (page?.events || page?.data || []);
+                    const updated = mutateArray(list);
+                    return Array.isArray(page) ? updated : { ...page, events: updated };
+                })
+            };
+        }
+
+        if (oldCacheData.data) return { ...oldCacheData, data: mutateArray(oldCacheData.data) };
+        if (oldCacheData.events) return { ...oldCacheData, events: mutateArray(oldCacheData.events) };
+
+        return oldCacheData;
+    });
+};
+
+/**
+ * ⚡ Hook B: Toggles a user's interest ('Interested' status indicator flag)
+ */
 export function useToggleEventInterest(defaultEventId) {
     const queryClient = useQueryClient();
 
@@ -80,42 +160,32 @@ export function useToggleEventInterest(defaultEventId) {
         },
         onMutate: async (eventId) => {
             const targetId = eventId || defaultEventId;
+
+            // 🚀 CACHE FIX: Cancel matching queries cleanly before modifying state
             await queryClient.cancelQueries({ queryKey: ['events'] });
 
-            const updateItem = (item) => {
-                if (item.id === targetId) {
-                    const nextInterested = !item.isInterested;
-                    return {
-                        ...item,
-                        isInterested: nextInterested,
-                        interestedCount: nextInterested
-                            ? (item.interestedCount || 0) + 1
-                            : Math.max(0, (item.interestedCount || 1) - 1)
-                    };
-                }
-                return item;
-            };
-
-            const updateCache = (old) => {
-                if (!old) return old;
-                if (Array.isArray(old)) return old.map(updateItem);
-                if (old.data && Array.isArray(old.data)) return { ...old, data: old.data.map(updateItem) };
-                if (old.events && Array.isArray(old.events)) return { ...old, events: old.events.map(updateItem) };
-                return old;
-            };
-
-            queryClient.setQueriesData({ queryKey: ['events'] }, updateCache);
+            performCacheUpdate(queryClient, ['events'], targetId, (item) => {
+                const nextInterested = !item.isInterested;
+                return {
+                    ...item,
+                    isInterested: nextInterested,
+                    interestedCount: nextInterested
+                        ? (item.interestedCount || 0) + 1
+                        : Math.max(0, (item.interestedCount || 1) - 1)
+                };
+            });
         },
         onSettled: (data, error, variables) => {
             const targetId = variables || defaultEventId;
             queryClient.invalidateQueries({ queryKey: ['events'] });
-            queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
             queryClient.invalidateQueries({ queryKey: ['event', targetId] });
         },
     });
 }
 
-// Hook D: Replaces toggleEventAttendance
+/**
+ * 🎫 Hook D: Toggles a user's direct active attendance ('Going' / RSVP joining matrix)
+ */
 export function useToggleEventAttendance(defaultEventId) {
     const queryClient = useQueryClient();
 
@@ -140,40 +210,34 @@ export function useToggleEventAttendance(defaultEventId) {
             const targetId = eventId || defaultEventId;
             await queryClient.cancelQueries({ queryKey: ['events'] });
 
-            const updateItem = (item) => {
-                if (item.id === targetId) {
-                    const nextAttending = !item.isAttending;
-                    return {
-                        ...item,
-                        isAttending: nextAttending,
-                        attendeesCount: nextAttending
-                            ? (item.attendeesCount || 0) + 1
-                            : Math.max(0, (item.attendeesCount || 1) - 1)
-                    };
-                }
-                return item;
-            };
-
-            const updateCache = (old) => {
-                if (!old) return old;
-                if (Array.isArray(old)) return old.map(updateItem);
-                if (old.data && Array.isArray(old.data)) return { ...old, data: old.data.map(updateItem) };
-                if (old.events && Array.isArray(old.events)) return { ...old, events: old.events.map(updateItem) };
-                return old;
-            };
-
-            queryClient.setQueriesData({ queryKey: ['events'] }, updateCache);
+            performCacheUpdate(queryClient, ['events'], targetId, (item) => {
+                const nextAttending = !item.isAttending;
+                return {
+                    ...item,
+                    isAttending: nextAttending,
+                    attendeesCount: nextAttending
+                        ? (item.attendeesCount || 0) + 1
+                        : Math.max(0, (item.attendeesCount || 1) - 1)
+                };
+            });
         },
         onSettled: (data, error, variables) => {
             const targetId = variables || defaultEventId;
             queryClient.invalidateQueries({ queryKey: ['events'] });
-            queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
             queryClient.invalidateQueries({ queryKey: ['event', targetId] });
         },
     });
 }
 
-// Hook E: Replaces addEventComment
+/**
+ * 💬 Hook E: Dispatches discussion comments into an event's feed room
+ */
+/**
+ * 💬 Upgraded Mutation: Dispatches a discussion comment into an event's feed room
+ * Replaces both broken duplicates with a uniform, multi-cache invalidation matrix.
+ * 
+ * @param {string} defaultEventId - The contextual current event ID bounding the workspace
+ */
 export function useAddEventComment(defaultEventId) {
     const queryClient = useQueryClient();
 
@@ -182,6 +246,7 @@ export function useAddEventComment(defaultEventId) {
             let targetId = defaultEventId;
             let text = '';
             let parentId = null;
+            let imageUrl = null; // 🚀 SYNTAX FIX: Declared variable to prevent un-scoped runtime memory leaks
 
             if (typeof payload === 'string') {
                 text = payload;
@@ -197,28 +262,43 @@ export function useAddEventComment(defaultEventId) {
                 const res = await apiFetch(`/events_comments/${targetId}/comment`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, content: text, parent_id: parentId, image_url: imageUrl })
+                    body: JSON.stringify({
+                        text,
+                        content: text,
+                        parent_id: parentId,
+                        image_url: imageUrl
+                    })
                 });
                 if (res) result = res?.data || res;
             } catch (err) {
                 console.warn('Backend addEventComment failed, falling back to mockApi:', err);
             }
+
             if (!result && typeof api.addEventComment === 'function') {
                 result = await api.addEventComment(targetId, text, { parent_id: parentId, image_url: imageUrl });
             }
+
             return result;
         },
+
+        // 🚀 THE REAL-TIME HANDSHAKE FIX:
+        // Clear specific details subkeys concurrently to reflect the new comment instantly
         onSuccess: (data, payload) => {
             const targetId = (typeof payload === 'object' && payload?.eventId) ? payload.eventId : defaultEventId;
+
             queryClient.invalidateQueries({ queryKey: ['events'] });
-            queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
             queryClient.invalidateQueries({ queryKey: ['event', targetId] });
+
+            // 🎯 Clear both possible discussion subkeys so the comments list updates live
+            queryClient.invalidateQueries({ queryKey: ['event', targetId, 'details'] });
             queryClient.invalidateQueries({ queryKey: ['event_comments', targetId] });
         },
     });
 }
 
-// Hook F: Fetches discussion comments for an event
+/**
+ * 📡 Hook F: Fetches internal discussion subkey logs for a single target event
+ */
 export function useEventCommentsQuery(eventId) {
     return useQuery({
         queryKey: ['event_comments', eventId],
@@ -237,7 +317,9 @@ export function useEventCommentsQuery(eventId) {
     });
 }
 
-// Hook G: Likes a specific event comment
+/**
+ * ❤️ Hook G: Likes a specific discussion message comment node inline
+ */
 export function useLikeEventComment(eventId) {
     const queryClient = useQueryClient();
 
@@ -260,4 +342,33 @@ export function useLikeEventComment(eventId) {
     });
 }
 
+/**
+ * 🎫 Mutation: Dispatches a new community event layout to your Elixir storage layer
+ */
+export function useCreateEvent() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (eventData) => {
+            const payload = eventData.event ? eventData : { event: eventData };
+
+            // Call your live Phoenix REST endpoints
+            const res = await apiFetch('/events', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+            return res?.data || res;
+        },
+
+        // 🚀 THE CACHE INVALIDATION FIX:
+        // Wipe all variations of your event lists to display the new item instantly
+        onSuccess: () => {
+            // Drops the legacy non-paginated events cache list
+            queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
+
+            // 🎯 Drops your brand new paginated infinite scroller caches completely
+            queryClient.invalidateQueries({ queryKey: ['events', 'infinite'] });
+        },
+    });
+}
 

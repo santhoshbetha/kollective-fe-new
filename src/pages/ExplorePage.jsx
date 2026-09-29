@@ -26,7 +26,7 @@ export const ExplorePage = () => {
     return (
         <div className="max-w-[1280px] mx-auto px-4 md:px-0 flex flex-col gap-6 w-full">
             {/* Context Header & Scope Banner */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-white/5 pb-6">
                 <div>
                     <div className="flex items-center gap-3 mb-1">
                         <h1 className="font-display-lg text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight">Explore Kollective</h1>

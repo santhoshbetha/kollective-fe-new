@@ -91,7 +91,6 @@ export const MainLayout = () => {
         ...(isAuthenticated ? [{ name: 'Settings', path: '/settings', icon: 'settings' }] : []),
     ];
 
-
     const adminNavItems = [];
     if (user && (user.role === 'root_admin' || user.role === 'admin')) {
         adminNavItems.push({ name: 'Root Desk', path: '/admin/root', icon: 'shield_person' });
@@ -151,7 +150,6 @@ export const MainLayout = () => {
                         })}
                     </nav>
 
-
                     {/* Create Button & User Card */}
                     <div className="mt-auto">
                         <Button
@@ -168,7 +166,7 @@ export const MainLayout = () => {
                             <div
                                 onClick={() => {
                                     const username = (activeAccount?.handle || user.handle || 'user').replace('@', '');
-                                    navigate(`/profile/${username}`, { state: { fromCard: true } });
+                                    navigate(`/profile/@${username}`, { state: { fromCard: true } });
                                 }}
                                 className="mt-6 p-3.5 bg-surface-container-low rounded-xl border border-white/5 flex items-center gap-3 cursor-pointer hover:bg-surface-container-high/40 transition-colors"
                             >

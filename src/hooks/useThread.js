@@ -40,13 +40,13 @@ export function useThread(currentPostId) {
             if (data.isPlaceholder) return data;
 
             const ancestors = Array.isArray(data.ancestors)
-                ? data.ancestors.map((p) => (p?.id ? { ...p, ...(entities[p.id] || {}) } : p))
+                ? data.ancestors.map((p) => (p?.id ? { ...(entities[p.id] || {}), ...p } : p))
                 : [];
             const focus = data.focus
-                ? (data.focus?.id ? { ...data.focus, ...(entities[data.focus.id] || {}) } : data.focus)
+                ? (data.focus?.id ? { ...(entities[data.focus.id] || {}), ...data.focus } : data.focus)
                 : null;
             const descendants = Array.isArray(data.descendants)
-                ? data.descendants.map((p) => (p?.id ? { ...p, ...(entities[p.id] || {}) } : p))
+                ? data.descendants.map((p) => (p?.id ? { ...(entities[p.id] || {}), ...p } : p))
                 : [];
 
             return { ancestors, focus, descendants, _raw: data };

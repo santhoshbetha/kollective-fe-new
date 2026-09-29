@@ -3,7 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
-export function useEventsQuery() {
+export function useEventsInfiniteQuery() {
     return useInfiniteQuery({
         queryKey: ['events', 'list'],
         queryFn: async ({ pageParam }) => {

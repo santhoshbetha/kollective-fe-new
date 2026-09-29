@@ -2,11 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuthStore } from '../store/auth/useAuthStore';
+import { Mail, Check, X, AlertCircle, CheckCircle2, Inbox } from 'lucide-react';
+import { cn } from "@/lib/utils"; // Adjust to your local helper utils directory path
 
 export default function InvitationsList() {
     const [invitations, setInvitations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [actionStatus, setActionStatus] = useState({ type: null, text: '' });
+
     const user = useAuthStore((state) => state.user);
     const setSession = useAuthStore((state) => state.setSession);
     const token = useAuthStore((state) => state.token);
@@ -19,7 +23,7 @@ export default function InvitationsList() {
             setInvitations(res.data?.data || []);
         } catch (err) {
             console.error('Failed to load invitations:', err);
-            setError(err.response?.data?.error || 'Failed to load invitations.');
+            setError(err.response?.data?.error || 'Failed to sync pending organization records.');
         } finally {
             setLoading(false);
         }
@@ -29,7 +33,7 @@ export default function InvitationsList() {
         fetchInvitations();
     }, []);
 
-    // Utility helper to check if a specific invitation timestamp crosses the 7-day limit
+    // Utility helper checking if a specific invitation timestamp crosses the 7-day threshold limit
     const isExpired = (insertedAtString) => {
         if (!insertedAtString) return false;
         const createdDate = new Date(insertedAtString);
@@ -40,6 +44,7 @@ export default function InvitationsList() {
 
     const handleAction = async (id, action) => {
         try {
+            setActionStatus({ type: null, text: '' });
             const response = await api.post(`/invitations/${id}/${action}`);
             const acceptedOrg = response.data?.organization || response.data?.data?.organization;
 
@@ -59,103 +64,145 @@ export default function InvitationsList() {
             }
 
             setInvitations(prev => prev.filter(invite => invite.id !== id));
-            alert(`Invitation successfully ${action === 'accept' ? 'accepted' : 'declined'}.`);
+
+            // 🚀 UPGRADE: Inline feedback messaging notification block instead of thread-freezing engine alert()
+            setActionStatus({
+                type: 'success',
+                text: `Invitation successfully ${action === 'accept' ? 'accepted and added to your active user workspace profiles' : 'declined and cleared'}.`
+            });
+            setTimeout(() => setActionStatus({ type: null, text: '' }), 5000);
         } catch (err) {
-            alert(err.response?.data?.error || `Error processing ${action} request.`);
+            setActionStatus({
+                type: 'error',
+                text: err.response?.data?.error || `Error processing the requested ${action} operation execution.`
+            });
         }
     };
 
     if (loading) {
         return (
-            <div className="p-8 text-center text-text-secondary">
-                <div className="w-6 h-6 border-2 border-primary-container border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                <p className="text-xs font-semibold">Loading organization invitations...</p>
+            <div className="p-12 text-center text-text-secondary max-w-2xl mx-auto flex flex-col items-center justify-center gap-3 font-sans">
+                <div className="w-8 h-8 border-2 border-primary-container border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm font-bold uppercase tracking-wider animate-pulse">Syncing team invites registries...</p>
             </div>
         );
     }
-
     return (
-        <div className="bg-surface-container rounded-2xl border border-white/10 shadow-xl p-6 max-w-2xl mx-auto">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/5">
-                <div>
-                    <h2 className="text-xl font-black text-text-primary tracking-tight">Pending Organization Invites</h2>
-                    <p className="text-xs text-text-secondary mt-0.5">Review and accept invitations to collaborate with organizations</p>
+        <div className="bg-surface-container rounded-2xl border dark:border-white/10 border-black/5 shadow-2xl p-6 sm:p-8 max-w-2xl mx-auto text-left font-sans animate-in fade-in duration-200">
+            {/* Header Block Section */}
+            <div className="flex items-center justify-between mb-6 pb-4 border-b dark:border-white/5 border-black/5 select-none">
+                <div className="space-y-0.5">
+                    <h2 className="text-2xl font-black text-text-primary tracking-tight">Organization Invitations</h2>
+                    <p className="text-sm text-text-secondary font-medium">Review and accept invitations to collaborate with sovereign organizations</p>
                 </div>
-                <span className="material-symbols-outlined text-primary-container text-[24px]">
-                    mail
-                </span>
+                <Mail className="w-6 h-6 text-primary-container shrink-0 hidden sm:block" />
             </div>
 
+            {/* Error Feedback Display Banners */}
             {error && (
-                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold rounded-xl flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">error</span>
-                    {error}
+                <div className="mb-5 p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-semibold rounded-xl flex items-center gap-2.5 animate-in slide-in-from-top-2 duration-150">
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                    <span>{error}</span>
+                </div>
+            )}
+
+            {/* Dynamic Operations Action Status Banners */}
+            {actionStatus.type && (
+                <div className={cn(
+                    "mb-5 p-4 rounded-xl border flex items-start gap-3 text-sm font-bold animate-in slide-in-from-top-2 duration-150",
+                    actionStatus.type === 'success'
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                        : "bg-rose-500/10 border-rose-500/20 text-rose-400"
+                )}>
+                    {actionStatus.type === 'success' ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
+                    <span>{actionStatus.text}</span>
                 </div>
             )}
 
             {invitations.length === 0 ? (
-                <div className="text-center py-10 rounded-xl bg-surface-container-low/50 border border-white/5">
-                    <span className="material-symbols-outlined text-text-secondary/40 text-[40px] mb-2">
-                        mark_email_read
-                    </span>
-                    <p className="text-sm font-semibold text-text-secondary">No pending invitations</p>
-                    <p className="text-xs text-text-secondary/60 mt-1">When an organization invites you to join their roster, it will appear here.</p>
+                /* Empty Inbox States Card */
+                <div className="text-center py-14 rounded-2xl bg-surface-container-low/50 border dark:border-white/5 border-black/5 select-none animate-in fade-in duration-200 flex flex-col items-center justify-center">
+                    <Inbox className="w-12 h-12 text-text-secondary/30 mb-3" />
+                    <p className="text-lg font-black text-text-primary tracking-tight">Clear Roster Registry</p>
+                    <p className="text-sm font-medium text-text-secondary/60 max-w-sm mt-1 px-4 leading-relaxed">
+                        No pending team invitations found. When an organization grants you workspace credentials, it will populate here instantly.
+                    </p>
                 </div>
             ) : (
-                <ul className="divide-y divide-white/5">
+                /* Lists Nodes Map */
+                <ul className="divide-y dark:divide-white/5 divide-black/5">
                     {invitations.map((invite) => {
                         const expired = isExpired(invite.inserted_at);
                         const org = invite.organization || {};
 
                         return (
-                            <li key={invite.id} className={`py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${expired ? 'opacity-50' : ''}`}>
-                                <div className="flex items-center gap-3">
+                            <li
+                                key={invite.id}
+                                className={cn(
+                                    "py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200",
+                                    expired ? "opacity-40" : "hover:bg-white/[0.005] px-1 rounded-xl"
+                                )}
+                            >
+                                <div className="flex items-center gap-4 min-w-0">
+                                    {/* Upscaled Corporate / Organizers Icon Avatars */}
                                     <img
                                         src={org.avatar || '/default-org.jpg'}
                                         alt={org.name || 'Organization'}
-                                        className="w-10 h-10 rounded-xl object-cover border border-white/10 flex-shrink-0"
+                                        className="w-14 h-14 rounded-xl object-cover border dark:border-white/10 border-black/5 flex-shrink-0 bg-surface-container-high shadow-inner"
                                     />
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <p className={`font-bold text-sm text-text-primary ${expired ? 'line-through text-text-secondary' : ''}`}>
-                                                {org.name || 'Organization'}
+                                    <div className="min-w-0 space-y-0.5">
+                                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                                            <p className={cn(
+                                                "font-black text-base text-text-primary tracking-tight",
+                                                expired && "line-through text-text-secondary"
+                                            )}>
+                                                {org.name || 'Anonymous Org'}
                                             </p>
                                             {org.handle && (
-                                                <span className="text-xs text-text-secondary">
+                                                <span className="text-sm text-text-secondary font-medium font-mono">
                                                     {org.handle}
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="text-xs text-text-secondary flex items-center gap-1.5 mt-0.5">
-                                            <span>Role offered:</span>
-                                            <span className="capitalize font-bold text-amber-300 bg-amber-400/15 px-1.5 py-0.2 rounded text-[11px]">
+
+                                        <div className="flex items-center flex-wrap gap-2 text-xs font-medium text-text-secondary pt-0.5 select-none">
+                                            <span>Offered Role Slot:</span>
+                                            <span className="capitalize font-bold text-amber-400 dark:text-amber-300 bg-amber-400/10 dark:bg-amber-400/15 border border-amber-400/20 px-2.5 py-0.5 rounded-md text-[10px] uppercase font-mono tracking-wider">
                                                 {invite.role || 'contributor'}
                                             </span>
-                                            {expired && <span className="text-red-400 font-bold ml-1">(Expired)</span>}
-                                        </p>
+                                            {expired && (
+                                                <span className="text-rose-400 font-extrabold uppercase tracking-wide font-mono text-[10px] bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                                    <X className="w-3 h-3" /> Expired
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 self-end sm:self-center">
+                                {/* Responsive Operations Control Row Blocks */}
+                                <div className="flex items-center gap-2 self-end sm:self-center select-none font-mono text-[10px] uppercase font-bold tracking-wider">
                                     {expired ? (
                                         <button
+                                            type="button"
                                             onClick={() => handleAction(invite.id, 'decline')}
-                                            className="bg-surface-container-high hover:bg-surface-container-highest text-text-secondary hover:text-text-primary font-bold text-xs px-3.5 py-1.5 rounded-xl transition border border-white/5 cursor-pointer"
+                                            className="bg-surface-container-high hover:bg-surface-container-highest text-text-secondary hover:text-white font-bold px-4 py-2 rounded-xl transition border dark:border-white/5 border-black/5 cursor-pointer outline-none active:scale-95"
                                         >
                                             Dismiss
                                         </button>
                                     ) : (
                                         <>
                                             <button
+                                                type="button"
                                                 onClick={() => handleAction(invite.id, 'accept')}
-                                                className="bg-primary-container hover:brightness-110 text-white font-bold text-xs px-4 py-1.5 rounded-xl shadow-md transition cursor-pointer flex items-center gap-1"
+                                                className="bg-primary-container text-white font-extrabold px-4 py-2 rounded-xl shadow-md cursor-pointer flex items-center gap-1.5 border-none outline-none transition-all hover:brightness-105 active:scale-95 crimson-glow"
                                             >
-                                                <span className="material-symbols-outlined text-[16px]">check</span>
-                                                Accept
+                                                <Check className="w-3.5 h-3.5 stroke-[3px]" />
+                                                <span>Accept</span>
                                             </button>
                                             <button
+                                                type="button"
                                                 onClick={() => handleAction(invite.id, 'decline')}
-                                                className="bg-surface-container-high hover:bg-surface-container-highest text-text-secondary hover:text-text-primary font-bold text-xs px-3.5 py-1.5 rounded-xl border border-white/5 transition cursor-pointer"
+                                                className="bg-surface-container-high hover:bg-surface-container-highest text-text-secondary hover:text-white font-bold px-4 py-2 rounded-xl border dark:border-white/5 border-black/5 transition cursor-pointer outline-none active:scale-95"
                                             >
                                                 Decline
                                             </button>

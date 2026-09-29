@@ -1,14 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import { ImageCarouselModal } from './ImageCarouselModal';
-import { ThreadLine } from '../features/timeline/ThreadLine';
+import React, { useState, useMemo, useCallback } from 'react';
 import { PostContent } from '../features/timeline/PostContent';
 import { PostMedia } from '../features/timeline/PostMedia';
 import { ImageLightbox } from '../features/timeline/ImageLightbox';
 import { usePostsStore } from '../store/usePostsStore';
 import { useAuthStore } from '../store/auth/useAuthStore';
+import { usePostActions } from '../features/timeline/usePostActions';
 import { UserHoverCard } from '../components/UserHoverCard';
 import { UserAvatar } from './UserAvatar';
-import { usePostActions } from '../features/timeline/usePostActions';
+
+import { resolveUserPersona } from '../utils/accountMapper';
+import { getReplyCount, getReblogCount } from '../utils/postHelpers';
+import { ThreadLine } from '../features/timeline/ThreadLine';
 import cn from 'clsx';
 
 export const CascadedPostRow = React.memo(function CascadedPostRow({
@@ -30,6 +32,9 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
     const currentUser = useAuthStore((state) => state.user);
     const activeAccount = useAuthStore((state) => state.activeAccount);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+    // ⚡ Compute the semantic persona token once per render boundary cycle
+    const userPersona = useMemo(() => resolveUserPersona(post?.author), [post?.author]);
 
     // Memoize the self-post calculation to avoid recalculating on typing renders
     const isSelf = useMemo(() => {
@@ -61,16 +66,9 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
         if (!isFocus && onClick && post?.id) onClick(post.id);
     };
 
-    const handleRowClickN = (e) => {
-        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.cursor-pointer')) {
-            return;
-        }
-        if (!isFocus && onClick && post?.id) onClick(post.id);
-    };
-
     const postActions = usePostActions();
     const isAlreadyReblogged = !!(post?.reblogged || post?.has_reblogged);
-    const reblogsCount = post?.shares ?? post?.reblogsCount ?? post?.reblogs_count ?? 0;
+    const reblogsCount = getReblogCount(post);
 
     const handleReblogClick = (e) => {
         if (e) e.stopPropagation();
@@ -84,6 +82,11 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
         }
     };
 
+    console.log("CascadedPostRow: post", post)
+
+    // Determine verification role channel type
+    //const channelType = post?.author?.type === 'organization' ? 'organization' : post?.author?.verified ? 'journalist' : 'standard';
+    //const authorType = post?.author?.type || 'standard'; // 'journalist' | 'activist' | 'scholar' | 'standard'
     return (
         <div
             onClick={handleRowClick}
@@ -93,87 +96,102 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
                 post?.isOptimistic ? "opacity-60 pointer-events-none" : ""
             )}
         >
-            {/* 🏆 DECOUPLED THREAD RAIL SYSTEM */}
-            {isAncestor && hasNextReply && <ThreadLine type="ancestor" depth={depth} />}
-            {depth === 1 && <ThreadLine type="l-branch" depth={depth} />}
-            {depth > 1 && <ThreadLine type="sub-reply-top" depth={depth} />}
-            {depth > 0 && hasNextReply && <ThreadLine type="descendant-child" depth={depth} />}
+            {/* 🏆 DECOUPLED THREAD RAIL SYSTEM (Maintained outside the content columns) */}
+            {isAncestor && hasNextReply && <ThreadLine type="ancestor" depth={depth} userType={userPersona} />}
+            {depth === 1 && <ThreadLine type="l-branch" depth={depth} userType={userPersona} />}
+            {depth > 1 && <ThreadLine type="sub-reply-top" depth={depth} userType={userPersona} />}
+            {depth > 0 && hasNextReply && <ThreadLine type="descendant-child" depth={depth} userType={userPersona} />}
 
-            <div className="flex gap-4 z-10 relative">
-                <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-[#1A1616]">
-                    <UserHoverCard author={post?.author}>
-                        <UserAvatar user={post?.author} className="w-12 h-12" showStatus={false} />
-                    </UserHoverCard>
+            {/* 🚀 THE ARCHITECTURAL FIX: Split into a distinct Left Rail lane and Right Content lane */}
+            <div
+                className={cn(
+                    "flex items-start gap-4 z-10 relative w-full",
+                    // Nest indentation steps control the outer column margin grid properties
+                    depth > 1 ? "pl-[88px]" : depth === 1 ? "pl-[32px]" : "pl-0"
+                )}
+            >
+                {/* COLUMN 1: LEFT RAIL LANE (Strictly holds the Avatar. Lines fall exactly through this axis) */}
+                <div className="w-12 flex flex-col items-center shrink-0">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden bg-[#1A1616] border border-white/10 shadow-md">
+                        <UserHoverCard author={post?.author}>
+                            <UserAvatar user={post?.author} className="w-11 h-11" showStatus={false} />
+                        </UserHoverCard>
+                    </div>
                 </div>
 
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1.5 gap-2">
+                {/* COLUMN 2: RIGHT CONTENT LANE (Unified vertical alignment axis for all copy, media & bars) */}
+                <div className="flex-1 min-w-0 flex flex-col gap-3">
+                    {/* Header Metadata Meta */}
+                    <div className="flex items-center justify-between gap-4 w-full">
                         <div className="flex flex-col min-w-0">
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-bold text-text-primary text-sm md:text-base hover:underline truncate">
                                     {post?.author?.name}
                                 </span>
-                                {post?.author?.verified && (
-                                    <span className="material-symbols-outlined text-[16px] text-text-secondary flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>
-                                        verified
-                                    </span>
+                                {userPersona !== 'citizen' && (
+                                    <VerificationBadge type={userPersona} size="sm" />
                                 )}
                             </div>
-                            <span className="text-xs md:text-sm text-text-secondary font-mono truncate">
-                                {authorHandle}
+                            <span className="text-xs text-text-secondary font-mono truncate">
+                                {authorHandle} • {post?.time || 'Just now'}
                             </span>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 pb-6">
+
+                        <div className="shrink-0 self-start">
                             {post?.isOptimistic ? (
-                                <span className="flex items-center gap-1.5 text-xs text-primary-container font-mono font-bold animate-pulse">
-                                    <span className="w-2 h-2 rounded-full bg-primary-container animate-ping" />
+                                <span className="text-xs text-primary-container font-mono font-bold animate-pulse">
                                     Sending...
                                 </span>
-                            ) : (
-                                <span className="text-xs md:text-sm text-text-secondary">
-                                    {post?.time || 'Just now'}
-                                </span>
-                            )}
+                            ) : null}
                         </div>
                     </div>
 
+                    {/* Content Core Body (Perfect layout symmetry alignment path) */}
                     {isFocus && post?.title && (
-                        <h2 className="font-headline-lg text-2xl font-bold mb-4 text-text-primary tracking-tight leading-snug">
+                        <h2 className="font-headline-lg text-xl md:text-2xl font-bold text-text-primary tracking-tight leading-snug mt-0.5">
                             {post?.title}
                         </h2>
                     )}
 
-                    <PostContent post={post} isFocus={isFocus} />
+                    <div className="text-sm md:text-base text-text-primary/95 leading-relaxed break-words w-full">
+                        <PostContent post={post} isFocus={isFocus} />
+                    </div>
 
                     {/* Mosaic Media Layout Container */}
                     {allImages.length > 0 && (
-                        <div className="mt-3 rounded-xl overflow-hidden border border-white/5 shadow-inner">
+                        <div className="w-full rounded-xl overflow-hidden border border-white/5 shadow-inner mt-1">
                             {allImages.length === 1 ? (
                                 <div className="aspect-[16/9] w-full overflow-hidden">
-                                    <img src={allImages[0]} alt="Attached media asset" className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
+                                    <img src={allImages} alt="Attached media asset" className="w-full h-full object-cover hover:scale-[1.015] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
                                 </div>
                             ) : allImages.length === 2 ? (
                                 <div className="grid grid-cols-2 gap-2 aspect-[16/9] w-full overflow-hidden">
-                                    <img src={allImages[0]} alt="Attached media asset" className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
-                                    <img src={allImages[1]} alt="Attached media asset" className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(1); setCarouselOpen(true); }} />
+                                    <img src={allImages} alt="Attached media asset" className="w-full h-full object-cover hover:scale-[1.015] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
+                                    <img src={allImages} alt="Attached media asset" className="w-full h-full object-cover hover:scale-[1.015] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(1); setCarouselOpen(true); }} />
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 grid-rows-2 gap-2 aspect-[16/9] w-full overflow-hidden">
                                     {allImages.slice(0, 4).map((img, i) => (
-                                        <img key={i} src={img} alt="Attached asset mosaic grid item" className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(i); setCarouselOpen(true); }} />
+                                        <img key={i} src={img} alt="Attached asset mosaic grid item" className="w-full h-full object-cover hover:scale-[1.015] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(i); setCarouselOpen(true); }} />
                                     ))}
                                 </div>
                             )}
                         </div>
                     )}
-                    {/* Action Toolbar buttons panel */}
-                    <div className="pt-4 flex items-center gap-8 text-text-secondary">
+
+                    {/* Row 4: Engagement Actions Panel Toolbars */}
+                    <div className="pt-3.5 flex items-center gap-8 text-text-secondary border-t border-white/5 w-full">
                         <button
                             type="button"
                             disabled={isSelf}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (!isSelf && onReplyClick) onReplyClick(post?.author?.name);
+                                if (!isSelf && onReplyClick) {
+                                    onReplyClick(
+                                        post?.author?.name,
+                                        post?.id
+                                    );
+                                }
                             }}
                             title={isSelf ? "You cannot reply to your own post" : "Reply"}
                             className={cn(
@@ -182,10 +200,9 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
                             )}
                         >
                             <span className="material-symbols-outlined text-[18px]">reply</span>
-                            <span>{post?.commentsCount || post?.replies_count || 0}</span>
+                            <span>{getReplyCount(post).toLocaleString()}</span>
                         </button>
 
-                        {/* Share / Reblog Button */}
                         <button
                             type="button"
                             disabled={isSelf || isAlreadyReblogged}
@@ -224,20 +241,22 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
                                 isSelf ? "opacity-40 cursor-not-allowed text-text-secondary/50" : post?.bookmarked ? "text-amber-500 cursor-pointer" : "hover:text-amber-500 cursor-pointer"
                             )}
                         >
-                            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}>bookmark</span>
+                            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}>
+                                bookmark
+                            </span>
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* Modal Lightbox Carousels overlay point */}
-            <ImageCarouselModal
+            <ImageLightbox
                 isOpen={carouselOpen}
                 onClose={() => setCarouselOpen(false)}
                 images={allImages}
-                imageAlts={post?.imageAlts || []}
-                initialIndex={carouselIndex}
-                post={post}
+                activeIndex={carouselIndex}
+                setActiveIndex={setCarouselIndex}
+
             />
         </div>
     );
@@ -250,8 +269,9 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
         prevProps.post?.reblogged === nextProps.post?.reblogged &&
         prevProps.post?.isOptimistic === nextProps.post?.isOptimistic &&
         prevProps.post?.likes === nextProps.post?.likes &&
-        prevProps.post?.commentsCount === nextProps.post?.commentsCount &&
+        getReplyCount(prevProps.post) === getReplyCount(nextProps.post) &&
         prevProps.isFocus === nextProps.isFocus &&
-        prevProps.hasNextReply === nextProps.hasNextReply
+        prevProps.hasNextReply === nextProps.hasNextReply &&
+        prevProps.depth === nextProps.depth
     );
 });

@@ -1,29 +1,41 @@
 import React from 'react';
 
 /**
- * Reusable Google Font Shield Verification Badge
- * @param {string} type - Options: 'activist', 'organization', 'journalist', 'citizen'
- * @param {string} className - Additional Tailwind utility modifiers
+ * Reusable Unified Network Identity Verification Badge
+ * @param {string} type - Options: 'activist', 'scholar', 'journalist', 'voice', 'organization', 'citizen', 'warned'
+ * @param {string} size - Options: 'dynamic', 'sm', 'md', 'lg', 'xl'
+ * @param {string} className - Additional Tailwind utility class layout overrides
  */
 export const VerificationBadge = ({ type = 'citizen', size = 'sm', className = '' }) => {
-    const typeClasses = {
-        activist: '#E32636',     // Signal Red
-        organization: '#DAA520', // Premium Gold
-        journalist: '#008080',   // Professional Teal
-        scholar: '#107C41',      // Deep Emerald Green (Academic Proof)
-        citizen: '#1D9BF0',      // Classic Blue
-        warned: '#F4D000',       // Warning Yellow
+
+    // 🎨 SYNCED THEME MATRIX: Matches the exact branding palettes of your attentive ThreadLines
+    const typeColors = {
+        // Activist: Grassroots high-urgency bright amber/orange
+        activist: '#f59e0b',
+        // Scholar: Prestigious academic violet/indigo
+        scholar: '#818cf8',
+        // Journalist / Voice: Core Kollective primary brand alert crimson
+        journalist: '#d32f2f',
+        voice: '#d32f2f',
+        // Organization: Premium high-contrast clean cyan/teal
+        organization: '#06b6d4',
+        // Citizen / Standard: Balanced classic blue structure
+        citizen: '#1d9bf0',
+        // Warning: Moderation yellow flag alert boundaries
+        warned: '#eab308',
     };
 
-    const selectedType = typeClasses[type] || typeClasses.citizen;
+    // 🛡️ FIX: Safe extraction ensuring all valid keys match correctly
+    const normalizedType = type?.toLowerCase() || 'citizen';
+    const selectedColor = typeColors[normalizedType] || typeColors.citizen;
 
     const sizeClasses = {
-        // ⬇️ DYNAMIC EM MATRIX: 1em matches the parent line's current font-size exactly
+        // ⬇️ DYNAMIC MATRIX: Scaled seamlessly inside header fonts
         dynamic: 'w-[1em] h-[1em]',
-        sm: 'w-3.5 h-3.5',          // 14px static fallback
-        md: 'w-[18px] h-[18px]',    // 18px static fallback
-        lg: 'w-6 h-6',              // 24px static fallback
-        xl: 'w-8 h-8',              // 24px static fallback
+        sm: 'w-3.5 h-3.5',       // 14px static footprint
+        md: 'w-4 h-4',           // 16px static footprint
+        lg: 'w-5 h-5',           // 20px static headline footprint
+        xl: 'w-6 h-6',           // 24px maximum profile scale footprint
     };
 
     const selectedSize = sizeClasses[size] || sizeClasses.dynamic;
@@ -31,17 +43,15 @@ export const VerificationBadge = ({ type = 'citizen', size = 'sm', className = '
     return (
         <span
             className={`
-            inline-flex items-center justify-center select-none shrink-0 align-middle
-            ${selectedSize}
-            
-            /* Apply the specific activist-coded color utility */
-            ${className}
-        `}
-            title={`Verified ${type}`}
-            aria-label={`Verified ${type}`}
-            style={{ color: selectedType }}
+                inline-flex items-center justify-center select-none shrink-0 align-middle transition-colors duration-200
+                ${selectedSize}
+                ${className}
+            `}
+            title={`Verified ${normalizedType}`}
+            aria-label={`Verified ${normalizedType}`}
+            style={{ color: selectedColor }}
         >
-            {/* 📐 Isolated Google Fonts Material Symbols Vector Graphic */}
+            {/* 📐 Isolated Google Fonts Material Shield Graphic Asset */}
             <svg
                 className="w-full h-full fill-current"
                 viewBox="0 -960 960 960"
@@ -54,4 +64,3 @@ export const VerificationBadge = ({ type = 'citizen', size = 'sm', className = '
 };
 
 export default VerificationBadge;
-

@@ -33,9 +33,9 @@ export function useLikePost() {
                         return {
                             ...post,
                             liked: isNowLiked,
-                            likesCount: isNowLiked
-                                ? (post.likesCount || 0) + 1
-                                : Math.max(0, (post.likesCount || 1) - 1),
+                            likes_count: isNowLiked
+                                ? (post.likes_count || 0) + 1
+                                : Math.max(0, (post.likes_count || 1) - 1),
                         };
                     }
                     return post;
