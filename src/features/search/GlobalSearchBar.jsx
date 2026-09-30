@@ -77,7 +77,7 @@ export function GlobalSearchBar() {
 
                     {!isPending && !hasResults && (
                         <div className="py-6 text-center font-mono text-[10px] text-text-secondary/40 select-none uppercase tracking-widest">
-                            // no_matching_records_found
+                            NO_matching_records_found
                         </div>
                     )}
 

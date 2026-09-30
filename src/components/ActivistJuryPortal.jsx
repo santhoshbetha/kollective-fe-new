@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import BallotBooth from './BallotBooth';
+import BallotBooth from './ballots/BallotBooth';
 
 const ActivistJuryPortal = ({ activeApplicationId, userAuthToken, handleExit }) => {
     const { applicationId } = useParams();

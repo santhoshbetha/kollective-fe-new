@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useProfileQuery } from '../features/profile/useProfileFeature';
 import { ProfileFeed } from '../features/profile/ProfileFeed';
 import { useAuthStore } from '../store/auth/useAuthStore';
-import { UserAvatar } from '../components/UserAvatar';
+import { UserAvatar } from '../components/accounts/UserAvatar';
 
 export const ProfilePage = () => {
     const { username } = useParams();

@@ -84,13 +84,13 @@ export const OrganizePage = () => {
                         /* ⏰ Sync Status Spinner Loader */
                         <div className="py-12 flex flex-col items-center gap-4 font-mono text-xs text-text-secondary/40 select-none">
                             <div className="w-6 h-6 rounded-full border-2 border-t-primary-container border-white/10 animate-spin"></div>
-                            <p className="uppercase tracking-widest animate-pulse">// SYNCING_FRONT_LINES...</p>
+                            <p className="uppercase tracking-widest animate-pulse">SYNCING_FRONT_LINES...</p>
                         </div>
                     ) : filteredActions.length === 0 ? (
                         /* 🌌 Empty State Feed Result Panel */
                         <div className="py-16 text-center text-text-secondary/40 bg-[#141414] border border-white/5 rounded-2xl p-8 font-mono text-xs select-none">
                             <span className="material-symbols-outlined text-4xl opacity-30 mb-3 block text-primary-container">campaign</span>
-              // NO_ACTIVE_MOBILIZATIONS_FOUND_IN_THIS_GEO_SCOPE
+                            NO_ACTIVE_MOBILIZATIONS_FOUND_IN_THIS_GEO_SCOPE
                         </div>
                     ) : (
                         /* 🎨 PERFORMANCE GRID LAYER: Virtuoso virtualization engine running responsive columns */
@@ -121,7 +121,7 @@ export const OrganizePage = () => {
                                 )),
                                 Footer: () => (
                                     <div className="py-8 text-center border-t border-white/5 font-mono text-[10px] text-text-secondary/20 select-none uppercase tracking-wider mt-6">
-                    // action_directory_matrix_rendered_cleanly
+                                        action_directory_matrix_rendered_cleanly
                                     </div>
                                 )
                             }}

@@ -3,7 +3,7 @@ import React from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { useRelationshipsQuery, useRelationshipMutations } from './useRelationshipsFeature';
 
-import { UserAvatar } from '../../components/UserAvatar';
+import { UserAvatar } from '../../components/accounts/UserAvatar';
 
 export function RelationshipList({ accountId, type }) {
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useRelationshipsQuery({ id: accountId, type });

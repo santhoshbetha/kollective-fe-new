@@ -5,9 +5,8 @@ import { Virtuoso } from 'react-virtuoso';
 import PullToRefresh from 'react-simple-pull-to-refresh';
 import { useStore } from '../../store/useStore';
 import { useCommunitiesFeed } from './useCommunitiesFeed';
-import { PostCard } from '../timeline/PostCard';
+import { PostCard } from '../../components/posts/PostCard';
 import { usePostsStore } from '../../store/usePostsStore';
-
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { processFeedPosts } from '../../utils/feedUtils';
 

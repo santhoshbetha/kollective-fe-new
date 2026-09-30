@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { useBookmarksQuery } from './useBookmarksQuery';
-import { PostCard } from '../timeline/PostCard';
+import { PostCard } from '../../components/posts/PostCard';
 import { usePostsStore } from '../../store/usePostsStore';
 import { Bookmark, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from "@/lib/utils"; // Adjust to match local helper paths
@@ -56,7 +56,7 @@ export function BookmarksFeed({ activeFilter = 'All Categories' }) {
         return (
             <div className="py-12 flex flex-col items-center gap-4 font-mono text-xs text-text-secondary/40 select-none text-left">
                 <RefreshCw className="w-5 h-5 animate-spin text-primary-container" />
-                <p className="uppercase tracking-widest animate-pulse">// SYNCING_SAVED_ARCHIVES...</p>
+                <p className="uppercase tracking-widest animate-pulse">SYNCING_SAVED_ARCHIVES...</p>
             </div>
         );
     }
@@ -65,7 +65,7 @@ export function BookmarksFeed({ activeFilter = 'All Categories' }) {
         return (
             <div className="py-12 text-center text-rose-400 border border-white/5 bg-[#141414] rounded-2xl font-mono text-xs select-none uppercase tracking-wider flex items-center justify-center gap-2 max-w-xl mx-auto">
                 <AlertCircle className="w-4 h-4 text-rose-500" />
-                <span>// ERROR_CRITICAL_FAILED_TO_SYNCHRONIZE_SAVED_BOOKMARKS</span>
+                <span>ERROR_CRITICAL_FAILED_TO_SYNCHRONIZE_SAVED_BOOKMARKS</span>
             </div>
         );
     }
@@ -117,7 +117,7 @@ export function BookmarksFeed({ activeFilter = 'All Categories' }) {
                         /* ⏳ Infinite Page Append loading row block spinner */
                         <div className="py-8 flex flex-col items-center gap-3 border-t border-white/5 bg-[#141414] font-mono text-[10px] text-text-secondary/40 select-none">
                             <div className="w-5 h-5 rounded-full border-2 border-t-primary-container border-white/10 animate-spin"></div>
-                            <p className="uppercase tracking-widest animate-pulse">// RETRIEVING_OLDER_ARCHIVE_LAYERS...</p>
+                            <p className="uppercase tracking-widest animate-pulse">RETRIEVING_OLDER_ARCHIVE_LAYERS...</p>
                         </div>
                     )
                 }}

@@ -1,7 +1,7 @@
 // src/features/profile/ProfileFeed.jsx
 import React, { useState } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-import { PostCard } from '../timeline/PostCard';
+import { PostCard } from '../../components/posts/PostCard';
 import { useProfileTimelineQuery } from './useProfileFeature';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { processFeedPosts } from '../../utils/feedUtils';

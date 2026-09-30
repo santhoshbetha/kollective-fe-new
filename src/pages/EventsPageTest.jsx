@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToggleEventInterest, useEventsQuery } from '../features/events/useEventsFeature';
 import { useStore } from '../store/useStore';
-import { EventCard } from '../features/events/EventCard';
+import { EventCard } from '../components/events/EventCard';
 
 export const EventsPage = () => {
     const navigate = useNavigate();

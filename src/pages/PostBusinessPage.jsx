@@ -109,7 +109,7 @@ export function PostBusinessPage() {
         }
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmitX = async (e) => {
         if (e) e.preventDefault();
         if (!formData.name.trim() || !formData.description.trim()) {
             triggerToast('Please fill out the business name and description.', 'error');
@@ -190,6 +190,84 @@ export function PostBusinessPage() {
             setIsSubmitting(false);
         }
     };
+
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
+        if (!formData.name.trim() || !formData.description.trim()) {
+            triggerToast('Please fill out the business name and description.', 'error');
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        // Compute formatting values dynamically 
+        const computedHours = `${formatTimeDisplay(startTime)} - ${formatTimeDisplay(endTime)}`;
+
+        const businessData = {
+            name: formData.name.trim(),
+            category: formData.category,
+            legalStructure: formData.legalStructure,
+            legal_structure: formData.legalStructure,
+            description: formData.description.trim(),
+            address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip}`,
+            street: formData.address,
+            city: formData.city,
+            state: formData.state,
+            zip: formData.zip,
+            email: formData.email,
+            phone: formData.phone,
+            website: formData.website || 'kollective.social',
+            established: parseInt(formData.established, 10) || new Date().getFullYear(),
+            year_established: parseInt(formData.established, 10) || new Date().getFullYear(),
+            employees: formData.employees,
+            number_of_employees: parseInt(formData.employees, 10) || 5,
+            hours: computedHours,
+            business_hours: computedHours,
+
+            // 🚀 BE PIPELINE SHIFT: Pass the raw local media source string directly.
+            // The backend transaction will intercept this value and optimize it asynchronously.
+            image: formData.image,
+            profile_image_url: formData.image,
+
+            services: selectedTags,
+            tags: selectedTags,
+            owner: user?.username || 'anonymous',
+            ownerAvatar: user?.avatar_url || '',
+            rating: 5.0,
+            reviewsCount: 0,
+            verified: false,
+            open: true,
+            metadata: {
+                business_hours: computedHours,
+                hours: computedHours,
+                services: selectedTags,
+                tags: selectedTags,
+                employee_range: formData.employees,
+                established: parseInt(formData.established, 10) || new Date().getFullYear(),
+                rating: 5.0,
+                reviews_count: 0,
+                owner_handle: user?.username || 'anonymous',
+                owner_avatar: user?.avatar_url || '',
+                image_url: formData.image
+            }
+        };
+
+        createBusinessMutation.mutate(businessData, {
+            onSuccess: () => {
+                triggerToast('Enterprise successfully registered!', 'success');
+                setTimeout(() => {
+                    setIsSubmitting(false);
+                    navigate('/businesses');
+                }, 1200);
+            },
+            onError: (err) => {
+                setIsSubmitting(false);
+                triggerToast(err?.message || 'Failed to register business.', 'error');
+            }
+        });
+    };
+
+
     return (
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-8 relative space-y-8 bg-[#090d12]X">
             {/* 🥞 Embedded Floating Toast Notification */}

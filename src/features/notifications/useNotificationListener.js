@@ -15,7 +15,9 @@ export function useNotificationListener() {
         if (!accountId) return;
 
         // 1. Initialize Phoenix socket client connections
-        const token = useAuthStore.getState().token || localStorage.getItem('jwt_auth_token');
+        const token = useAuthStore.getState().token || localStorage.getItem('jwt_auth_token') || localStorage.getItem('auth_token');
+        if (!token || token === 'null' || token === 'undefined') return;
+
         const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/socket';
         const socket = new Socket(wsUrl, { params: { token } });
         socket.connect();

@@ -18,7 +18,7 @@ export function NotificationsFeed() {
         return (
             <div className="max-w-3xl mx-auto py-20 flex flex-col items-center justify-center gap-4 font-mono text-xs text-text-secondary/40 select-none">
                 <div className="w-6 h-6 rounded-full border-2 border-t-primary-container border-white/10 animate-spin"></div>
-                <p className="uppercase tracking-widest animate-pulse">// ACCESSING_ALERT_REGISTRIES...</p>
+                <p className="uppercase tracking-widest animate-pulse"> ACCESSING_ALERT_REGISTRIES...</p>
             </div>
         );
     }
@@ -77,7 +77,7 @@ export function NotificationsFeed() {
                         /* ⏳ Infinite Page Append Loading Row Blocks */
                         <div className="py-8 flex flex-col items-center gap-3 border-t border-white/5 font-mono text-[10px] text-text-secondary/30 select-none">
                             <div className="w-5 h-5 rounded-full border-2 border-t-primary-container border-white/10 animate-spin"></div>
-                            <p className="uppercase tracking-widest animate-pulse">// RETRIEVING_OLDER_LOGS...</p>
+                            <p className="uppercase tracking-widest animate-pulse"> RETRIEVING_OLDER_LOGS...</p>
                         </div>
                     )
                 }}

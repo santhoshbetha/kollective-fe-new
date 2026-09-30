@@ -4,10 +4,11 @@ import { useAuthStore } from '../store/auth/useAuthStore';
 import { useLogout } from '../store/auth/useLogout';
 import { useStore } from '../store/useStore';
 //import { useTimelineSocket } from '../hooks/useTimelineSocket';
-import { CreatePostModal } from './CreatePostModal';
-import AccountSwitcher from './AccountSwitcher';
-import { UserAvatar } from './UserAvatar';
+import { CreatePostModal } from './modals/CreatePostModal';
+import AccountSwitcher from './accounts/AccountSwitcher';
+import { UserAvatar } from './accounts/UserAvatar';
 import { useNotificationListener } from '../features/notifications/useNotificationListener';
+import { useSocket } from '../context/PhoenixSocketContext';
 import {
     Dialog,
     DialogContent,
@@ -41,6 +42,9 @@ export const MainLayout = () => {
     // 📡 Real-time persistent Elixir channel push listener connection
     //useTimelineSocket();
     useNotificationListener();
+
+    // 🔔 Real-time socket notification state
+    const { unreadCount, latestNotification, setLatestNotification } = useSocket();
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
@@ -310,9 +314,13 @@ export const MainLayout = () => {
                                 </span>
                             </button>
 
-                            <div onClick={() => navigate('/notifications')} className="relative cursor-pointer text-text-secondary hover:text-white transition-colors">
+                            <div onClick={() => navigate('/notifications')} className="relative cursor-pointer text-text-secondary hover:text-white transition-colors p-1 flex items-center justify-center">
                                 <span className="material-symbols-outlined text-[22px]">notifications</span>
-                                <span className="absolute top-0 right-0 w-2 h-2 bg-primary-container rounded-full border-2 border-surface"></span>
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-black rounded-full h-4 w-4 flex items-center justify-center font-mono">
+                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                    </span>
+                                )}
                             </div>
 
                             <div onClick={() => navigate('/calendar')} className={`cursor-pointer transition-colors ${currentPath === '/calendar' ? 'text-primary-container' : 'text-text-secondary hover:text-white'}`} title="My Schedule Calendar">
@@ -452,6 +460,32 @@ export const MainLayout = () => {
                     </div>
                 </div>
             ) */}
+            {/* 🍞 Real-Time Floating Popup Toast Alerts Wrapper */}
+            {latestNotification && (
+                <div className="fixed bottom-6 right-6 z-[9999] bg-white dark:bg-[#141414] border border-black/10 dark:border-white/10 p-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-4 max-w-sm text-left">
+                    <img
+                        src={latestNotification.actor_avatar || latestNotification.user?.avatar || "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png"}
+                        className="w-9 h-9 rounded-full object-cover shrink-0"
+                        alt="Actor avatar"
+                        onError={(e) => { e.target.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'; }}
+                    />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-xs text-text-primary dark:text-white font-bold leading-tight truncate">
+                            @{latestNotification.actor_name || latestNotification.user?.name || "Someone"} sent a pulse alert!
+                        </p>
+                        <p className="text-[11px] text-text-secondary truncate italic mt-0.5">
+                            {latestNotification.preview || latestNotification.message || latestNotification.description || "Interacted with your profile"}
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setLatestNotification(null)}
+                        className="text-text-secondary hover:text-text-primary cursor-pointer border-none bg-transparent outline-none p-1 text-sm"
+                        title="Dismiss notification"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

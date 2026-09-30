@@ -7,7 +7,7 @@ import { CalendarHeader } from './CalendarHeader';
 import { CalendarBodyMonth } from './CalendarBodyMonth';
 import { CalendarBodyWeek } from './CalendarBodyWeek';
 import { CalendarBodyDay } from './CalendarBodyDay';
-import { EventDetailsModal } from './EventDetailsModal';
+import { EventDetailsModal } from '../../components/modals/EventDetailsModal';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 
 export function CalendarView() {

@@ -8,7 +8,7 @@ import { AppPreferencesForm } from '../features/preferences/AppPreferencesForm';
 import { EmailSettingsForm, PasswordSettingsForm, DangerZoneSettingsForm } from '../features/settings/SettingsSubForms';
 import InvitationsList from './InvitationsList';
 import SettingsDashboard from '../features/settings/SettingsDashboard';
-import { UserAvatar } from '../components/UserAvatar';
+import { UserAvatar } from '../components/accounts/UserAvatar';
 import { ArrowLeft, User, Mail, Lock, ShieldAlert, Settings, Network, Grid } from 'lucide-react'; // Hardware-accelerated fallbacks
 import { cn } from "@/lib/utils";
 

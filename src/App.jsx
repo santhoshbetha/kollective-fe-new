@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'sonner';
-import { PhoenixSocketProvider } from './context/PhoenixSocketContext';
 import { LandingPage } from './pages/LandingPage';
 import { HomePage } from './pages/HomePage';
 import { CommunitiesPage } from './pages/CommunitiesPage';
@@ -29,7 +28,6 @@ import SettingsDashboard from './features/settings/SettingsDashboard';
 import { MutesPage } from './pages/MutesPage';
 import { BlocksPage } from './pages/BlocksPage';
 import { FiltersPage } from './pages/FiltersPage';
-import { SettingsPageO } from './pages/SettingsPageO';
 import { EditProfilePage } from './pages/EditProfilePage';
 import { BookmarksPage } from './pages/BookmarksPage';
 import { NotificationsPage } from './pages/NotificationsPage';
@@ -76,6 +74,7 @@ import { MainLayout } from './components/MainLayout';
 import { ProfilePage } from './pages/ProfilePage';
 import { ProfileEditPage } from './pages/ProfileEditPage';
 import { AlertProvider } from './context/AlertContext';
+import { PhoenixSocketProvider } from './context/PhoenixSocketContext';
 
 import { useAuthStore } from './store/auth/useAuthStore';
 import { KollectiveSpinner } from './components/ui/KollectiveSpinner';
@@ -109,9 +108,10 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AlertProvider>
-        {isLoggingIn && <KollectiveSpinner variant="fullscreen" size="lg" text="Authenticating Credentials..." />}
-        {isLoggingOut && <KollectiveSpinner variant="fullscreen" size="lg" text="Securing Session & Logging Out..." />}
+      <PhoenixSocketProvider>
+        <AlertProvider>
+          {isLoggingIn && <KollectiveSpinner variant="fullscreen" size="lg" text="Authenticating Credentials..." />}
+          {isLoggingOut && <KollectiveSpinner variant="fullscreen" size="lg" text="Securing Session & Logging Out..." />}
         <BrowserRouter>
           <TopProgressBar />
           <Routes>
@@ -164,7 +164,6 @@ export default function App() {
 
                 {/* Account Management */}
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/settingso" element={<SettingsPageO />} />
                 <Route path="/settings/invitations" element={<InvitationsList />} />
                 <Route path="/settings/organization" element={<SettingsDashboard />} />
                 <Route path="/settings/profile" element={<EditProfilePage />} />
@@ -246,6 +245,7 @@ export default function App() {
           </Routes>
         </BrowserRouter>
       </AlertProvider>
+      </PhoenixSocketProvider>
 
       {/* Global Toast Notifications Container */}
       <Toaster position="top-right" richColors />

@@ -209,7 +209,7 @@ export function CreateActionPage() {
                                             value={formData.title}
                                             onChange={(e) => handleInputChange('title', e.target.value)}
                                         />
-                                        {errors.title && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none">// {errors.title}</p>}
+                                        {errors.title && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.title}</p>}
                                     </div>
 
                                     <div>
@@ -224,7 +224,7 @@ export function CreateActionPage() {
                                             value={formData.description}
                                             onChange={(e) => handleInputChange('description', e.target.value)}
                                         />
-                                        {errors.description && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none">// {errors.description}</p>}
+                                        {errors.description && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.description}</p>}
                                     </div>
                                 </div>
                             </div>
@@ -269,7 +269,7 @@ export function CreateActionPage() {
                                                     value={formData.venue}
                                                     onChange={(e) => handleInputChange('venue', e.target.value)}
                                                 />
-                                                {errors.venue && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none">// {errors.venue}</p>}
+                                                {errors.venue && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.venue}</p>}
                                             </div>
                                             <div>
                                                 <label className="block font-bold text-xs text-text-secondary uppercase tracking-wider mb-2 font-mono">Full Address</label>
@@ -293,7 +293,7 @@ export function CreateActionPage() {
                                                     value={formData.meetingLink}
                                                     onChange={(e) => handleInputChange('meetingLink', e.target.value)}
                                                 />
-                                                {errors.meetingLink && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none">// {errors.meetingLink}</p>}
+                                                {errors.meetingLink && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.meetingLink}</p>}
                                             </div>
                                             <div className="p-4 rounded-xl bg-primary-container/[0.02] border border-primary-container/20 flex gap-3 text-xs select-none">
                                                 <span className="material-symbols-outlined text-primary-container text-base">shield_person</span>
@@ -312,7 +312,7 @@ export function CreateActionPage() {
                                                 className={errors.date ? 'border-red-500' : 'border-white/10'}
                                                 placeholder="Select date"
                                             />
-                                            {errors.date && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none">// {errors.date}</p>}
+                                            {errors.date && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.date}</p>}
                                         </div>
                                         <div>
                                             <label className="block font-bold text-xs text-text-secondary uppercase tracking-wider mb-2 font-mono">Start Time</label>
@@ -322,7 +322,7 @@ export function CreateActionPage() {
                                                 value={formData.time}
                                                 onChange={(e) => handleInputChange('time', e.target.value)}
                                             />
-                                            {errors.time && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none">// {errors.time}</p>}
+                                            {errors.time && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.time}</p>}
                                         </div>
                                     </div>
                                 </div>

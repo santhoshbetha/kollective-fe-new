@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSuggestionsQuery, useSuggestionFollowMutation } from '../features/suggestions/useSuggestionsFeature';
 
-import { UserAvatar } from '../components/UserAvatar';
+import { UserAvatar } from '../components/accounts/UserAvatar';
 
 export const SuggestionsPage = () => {
     const navigate = useNavigate();

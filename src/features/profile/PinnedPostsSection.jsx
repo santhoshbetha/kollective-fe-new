@@ -1,7 +1,7 @@
 // src/features/profile/PinnedPostsSection.jsx
 import React from 'react';
 import { usePinnedPostsQuery, useUnpinPostMutation } from './usePinnedPostsFeature';
-import { PostCard } from '../timeline/PostCard';
+import { PostCard } from '../../components/posts/PostCard';
 
 export function PinnedPostsSection({ accountId, isOwnProfile }) {
     const { data: pinnedPosts, isPending, isError } = usePinnedPostsQuery(accountId);

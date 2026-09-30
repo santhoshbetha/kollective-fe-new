@@ -28,8 +28,8 @@ export const InlineFormTransition = ({ show, onAnimationComplete, children }) =>
         <div
             onAnimationEnd={handleAnimationEnd}
             className={`w-full overflow-hidden transition-all duration-300 ease-out ${show
-                    ? "animate-in fade-in slide-in-from-top-4 duration-300 max-h-[500px] opacity-100 scale-100"
-                    : "animate-out fade-out slide-out-to-top-4 duration-200 max-h-0 opacity-0 scale-[0.98]"
+                ? "animate-in fade-in slide-in-from-top-4 duration-300 max-h-[500px] opacity-100 scale-100"
+                : "animate-out fade-out slide-out-to-top-4 duration-200 max-h-0 opacity-0 scale-[0.98]"
                 }`}
         >
             {children}

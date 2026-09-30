@@ -107,7 +107,6 @@ const PRESET_COVERS = [
         url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLyIUm-ffCTttHnuM7rD5R7cEVQwQZwSvj1Z5OAaqLt0klmRC4Pd5B7RpDg5uhfR3V5AkJhs5x_JZtkJtbKBBQ7YMzTYCFvgZ9H4nTT0dSRsyTtMY0Aps1bHurYbf6_9hjpP2_kRTdJjnowvPXIGVVCx8M4nyWg8Zqxo4qrqmJ1D-JMsX7AQvJAy3OlWlRDfIzZKZsfD0VUBrktjTpkaWlwt-MWHcU15-2BsvJoumYTTHgqWHhbdqwCRM3b0oMEMbX6iwlkVnlM74'
     }
 ];
-
 export function CreateEventPage() {
     const navigate = useNavigate();
     const createEventMutation = useCreateEvent();
@@ -155,7 +154,7 @@ export function CreateEventPage() {
 
             const displayDate = `${new Date(startDate).toLocaleDateString('en-US', {
                 weekday: 'long', month: 'short', day: 'numeric',
-            })} • ${startTime} ${endTime ? `- ${endTime}` : ''}`;
+            })} • ${startTime} ${endTime ? `- \${endTime}` : ''}`;
 
             let start_time = null;
             try {
@@ -188,7 +187,7 @@ export function CreateEventPage() {
                 end_time,
                 date: formattedDate,
                 displayDate,
-                time: `${startTime} ${endTime ? `- ${endTime}` : ''}`,
+                time: `${startTime} ${endTime ? `- \${endTime}` : ''}`,
                 location: location.trim(),
                 location_name: location.trim(),
                 street: location.trim(),
@@ -216,17 +215,16 @@ export function CreateEventPage() {
             setIsSubmitting(false);
         }
     };
-
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 relative space-y-8 isolate font-sans bg-[#090d12]X">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 relative space-y-8 isolate font-sans bg-white dark:bg-[#090d12] text-text-primary transition-colors">
             {/* Embedded Floating Toast Notification */}
             {toastMessage && (
                 <div className={cn(
                     "fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-in fade-in duration-200",
-                    toastMessage.type === 'success' ? "bg-green-600 text-white" : "bg-[#a10836] text-white"
+                    toastMessage.type === 'success' ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"
                 )}>
                     <span>{toastMessage.msg}</span>
-                    <button type="button" onClick={() => setToastMessage(null)} className="bg-transparent border-none text-white cursor-pointer ml-2">
+                    <button type="button" onClick={() => setToastMessage(null)} className="bg-transparent border-none text-white cursor-pointer ml-2 outline-none">
                         <X className="w-3.5 h-3.5" />
                     </button>
                 </div>
@@ -237,40 +235,40 @@ export function CreateEventPage() {
                 <button
                     type="button"
                     onClick={() => navigate('/events')}
-                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-white transition-colors group cursor-pointer border-none bg-transparent font-mono outline-none"
+                    className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-text-secondary hover:text-text-primary transition-colors group cursor-pointer border-none bg-transparent font-mono outline-none"
                 >
-                    <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                    <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1 stroke-[2.5px]" />
                     <span>Back to Events</span>
                 </button>
             </div>
 
             {/* Headline Header & Cover Image Preview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center border-b border-white/5 pb-8">
-                <div className="md:col-span-2 space-y-3 text-left">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-container/10 border border-white/5 text-primary-container font-mono font-bold text-[10px] uppercase tracking-widest">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center border-b border-black/5 dark:border-white/5 pb-8">
+                <div className="md:col-span-2 space-y-3 text-left select-none">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-container/10 border border-primary-container/20 text-primary-container font-mono font-bold text-[10px] uppercase tracking-widest">
                         <Sparkles className="w-3.5 h-3.5" /> Create New Node Manifest
                     </span>
-                    <h2 className="text-3xl font-black tracking-tight text-white font-headline-lg">
+                    <h2 className="text-3xl font-black tracking-tight text-text-primary dark:text-white">
                         Share Your Event
                     </h2>
-                    <p className="text-sm text-text-secondary leading-relaxed max-w-xl font-medium">
+                    <p className="text-lg text-text-secondary leading-relaxed max-w-xl font-medium">
                         Bring your community together for shared experiences, common causes, and revolutionary gatherings across the decentralized network feed.
                     </p>
                 </div>
 
-                <div className="w-full max-w-sm mx-auto bg-[#141414] border border-white/5 p-3 rounded-2xl shadow-xl flex flex-col gap-3">
-                    <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase tracking-wider text-text-secondary">
-                        <span className="flex items-center gap-1"><UploadCloud className="w-3.5 h-3.5 text-primary-container" /> Aspect Preview</span>
+                <div className="w-full max-w-sm mx-auto bg-black/[0.01] dark:bg-[#141414] border border-black/10 dark:border-white/5 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+                    <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase tracking-wider text-text-secondary select-none">
+                        <span className="flex items-center gap-1.5"><UploadCloud className="w-4 h-4 text-primary-container" /> Aspect Preview</span>
                         <button
                             type="button"
                             onClick={() => setShowImagePicker(!showImagePicker)}
-                            className="text-primary-container hover:underline bg-transparent border-none cursor-pointer"
+                            className="text-primary-container font-black hover:opacity-85 bg-transparent border-none cursor-pointer outline-none"
                         >
                             {showImagePicker ? 'Close Presets' : 'Templates'}
                         </button>
                     </div>
 
-                    <div className="aspect-video w-full relative rounded-xl overflow-hidden bg-black/40 border border-white/5 group">
+                    <div className="aspect-video w-full relative rounded-xl overflow-hidden bg-black/[0.02] dark:bg-black/40 border border-black/10 dark:border-white/5 group">
                         <ImageUploader
                             mode="banner"
                             aspectRatio={16 / 9}
@@ -282,15 +280,15 @@ export function CreateEventPage() {
                     </div>
 
                     {showImagePicker && (
-                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+                        <div className="grid grid-cols-2 gap-2 pt-3 border-t border-black/5 dark:border-white/5 animate-in slide-in-from-top-2 duration-150">
                             {PRESET_COVERS.map((preset) => (
                                 <button
                                     key={preset.id}
                                     type="button"
                                     onClick={() => setCoverImage(preset.url)}
                                     className={cn(
-                                        "relative aspect-video rounded-lg overflow-hidden border transition-all cursor-pointer group p-0 bg-black/40",
-                                        coverImage === preset.url ? "border-primary-container ring-1 ring-primary-container" : "border-white/10 hover:border-white/30"
+                                        "relative aspect-video rounded-lg overflow-hidden border transition-all cursor-pointer group p-0 bg-black/40 outline-none",
+                                        coverImage === preset.url ? "border-primary-container ring-1 ring-primary-container" : "border-black/10 dark:border-white/10 hover:border-white/30"
                                     )}
                                 >
                                     <img src={preset.url} alt={preset.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -303,26 +301,23 @@ export function CreateEventPage() {
                     )}
                 </div>
             </div>
-
             {/* Master Event Form */}
-            <form onSubmit={handleCreate} className="space-y-6">
-                {/* Event Details: Title & Description */}
-                <section className="bg-[#141414] border border-white/5 rounded-2xl p-5 sm:p-6 space-y-5 text-left">
-                    <div className="flex items-center gap-2 pb-2 border-b border-white/5">
-                        <div className="w-8 h-8 rounded-xl bg-primary-container/10 text-primary-container flex items-center justify-center shrink-0">
+            <form onSubmit={handleCreate} className="space-y-6 font-sans">
+                {/* Event Details: Title & Description Card */}
+                <section className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 rounded-2xl p-5 sm:p-6 space-y-5 text-left transition-colors">
+                    <div className="flex items-center gap-2 pb-2 border-b border-black/5 dark:border-white/5 select-none">
+                        <div className="w-8 h-8 rounded-xl bg-primary-container/10 text-primary-container flex items-center justify-center shrink-0 shadow-inner">
                             <Type className="w-4 h-4" />
                         </div>
-                        <h4 className="font-bold text-white text-sm uppercase tracking-wider font-mono">Event Details</h4>
+                        <h4 className="font-extrabold text-text-primary dark:text-white text-sm uppercase tracking-wider font-mono">Event Details</h4>
                     </div>
 
                     <div className="space-y-4">
-                        {/* Title Input */}
-                        <div className="space-y-1.5 font-mono">
-                            <div className="flex items-center justify-between">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
-                                    Event Title <span className="text-primary-container">*</span>
-                                </label>
-                            </div>
+                        {/* Title Input Row */}
+                        <div className="space-y-1.5 font-mono text-left">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">
+                                Event Title <span className="text-primary-container font-black">*</span>
+                            </label>
                             <div className="relative">
                                 <Type className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/50" />
                                 <input
@@ -330,19 +325,19 @@ export function CreateEventPage() {
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     maxLength={100}
-                                    className="w-full bg-[#0d1117] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/40 focus:border-primary-container focus:outline-none transition-all font-sans font-medium"
+                                    className="w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary focus:border-primary-container focus:outline-none transition-colors font-sans font-semibold"
                                     placeholder="e.g. Climate Action Townhall 2026..."
                                     required
                                 />
                             </div>
-                            <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[9px]">
-                                <span className="font-bold text-text-secondary uppercase tracking-wider mr-1">Ideas:</span>
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[9px] select-none">
+                                <span className="font-black text-text-secondary uppercase tracking-wider mr-1">Ideas:</span>
                                 {['Community Workshop', 'Tech Summit', 'Townhall Gathering', 'Action Rally'].map((chip) => (
                                     <button
-                                        key={chip}
+                                        key={`title-chip-${chip}`}
                                         type="button"
                                         onClick={() => !title && setTitle(chip)}
-                                        className="font-bold px-2 py-0.5 rounded-full bg-white/[0.02] border border-white/5 text-text-secondary hover:text-white hover:border-primary-container cursor-pointer transition-all"
+                                        className="font-bold px-2 py-0.5 rounded-full bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/5 text-text-secondary hover:text-text-primary dark:hover:text-white hover:border-primary-container cursor-pointer transition-colors outline-none"
                                     >
                                         + {chip}
                                     </button>
@@ -350,11 +345,11 @@ export function CreateEventPage() {
                             </div>
                         </div>
 
-                        {/* Description Textarea */}
-                        <div className="space-y-1.5 font-mono">
-                            <div className="flex items-center justify-between">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
-                                    Description <span className="text-primary-container">*</span>
+                        {/* Description Textarea Row */}
+                        <div className="space-y-1.5 font-mono text-left">
+                            <div className="flex items-center justify-between select-none">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary">
+                                    Description <span className="text-primary-container font-black">*</span>
                                 </label>
                                 <div className="flex items-center gap-1">
                                     {[
@@ -363,10 +358,10 @@ export function CreateEventPage() {
                                         { label: '+ FAQ', text: '\n\n❓ FAQ:\n• Parking available on-site' }
                                     ].map((tool) => (
                                         <button
-                                            key={tool.label}
+                                            key={`desc-tool-${tool.label}`}
                                             type="button"
                                             onClick={() => setDescription((prev) => prev + tool.text)}
-                                            className="font-bold px-2 py-0.5 rounded border border-white/5 bg-white/[0.02] text-text-secondary hover:text-white hover:border-primary-container cursor-pointer text-[9px] transition-all"
+                                            className="font-bold px-2 py-0.5 rounded border border-black/10 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] text-text-secondary hover:text-text-primary dark:hover:text-white hover:border-primary-container cursor-pointer text-[9px] transition-colors outline-none"
                                         >
                                             {tool.label}
                                         </button>
@@ -380,54 +375,55 @@ export function CreateEventPage() {
                                     onChange={(e) => setDescription(e.target.value)}
                                     rows={5}
                                     maxLength={2000}
-                                    className="w-full bg-[#0d1117] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/40 focus:border-primary-container focus:outline-none transition-all font-sans font-medium resize-none"
+                                    className="w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary focus:border-primary-container focus:outline-none transition-colors font-sans font-medium resize-none leading-relaxed placeholder:text-text-secondary/30"
                                     placeholder="Describe your event parameters, agenda, topics, speakers, and instructions for attendees..."
                                     required
                                 />
                             </div>
-                            <div className="flex justify-between items-center text-[9px] font-mono text-text-secondary/60">
-                                <span>Clear details improve attendee engagement</span>
-                                <span className={cn(description.length > 1800 ? "text-amber-400 font-bold" : "")}>{description.length}/2000</span>
+                            <div className="flex justify-between items-center text-[9px] font-mono text-text-secondary/60 select-none">
+                                <span>Clear details improve attendee engagement metrics</span>
+                                <span className={cn(description.length > 1800 ? "text-amber-500 font-bold" : "")}>{description.length}/2000</span>
                             </div>
                         </div>
                     </div>
                 </section>
+                {/* Classification & Schedule Split Section Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start font-sans">
 
-                {/* Classification & Schedule Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Classification Dropdowns */}
-                    <section className="bg-[#141414] border border-white/5 rounded-2xl p-5 sm:p-6 space-y-4">
-                        <div className="flex items-center gap-2 pb-2 border-b border-white/5">
-                            <div className="w-8 h-8 rounded-xl bg-primary-container/10 text-primary-container flex items-center justify-center shrink-0">
+                    {/* Classification Grid Card */}
+                    <section className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 rounded-2xl p-5 sm:p-6 space-y-4 h-full transition-colors">
+                        <div className="flex items-center gap-2 pb-2 border-b border-black/5 dark:border-white/5 select-none">
+                            <div className="w-8 h-8 rounded-xl bg-primary-container/10 text-primary-container flex items-center justify-center shrink-0 shadow-inner">
                                 <Sparkles className="w-4 h-4" />
                             </div>
-                            <h4 className="font-bold text-white text-sm uppercase tracking-wider font-mono text-left">Event Classification</h4>
+                            <h4 className="font-extrabold text-text-primary dark:text-white text-sm uppercase tracking-wider font-mono text-left">Event Classification</h4>
                         </div>
 
                         <div className="space-y-4 text-left">
+                            {/* Attendance Format Mode Selector */}
                             <div className="space-y-1.5 select-none font-mono">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Event Format</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Event Format</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[
                                         { id: 'In-Person', label: 'In-Person', icon: MapPin },
                                         { id: 'Online', label: 'Online', icon: Globe },
                                         { id: 'Hybrid', label: 'Hybrid', icon: Layers }
                                     ].map((item) => {
-                                        const Icon = item.icon;
+                                        const FormatIcon = item.icon;
                                         const active = formatType === item.id;
                                         return (
                                             <button
-                                                key={item.id}
+                                                key={`format-switch-${item.id}`}
                                                 type="button"
                                                 onClick={() => setFormatType(item.id)}
                                                 className={cn(
-                                                    "flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border transition-all cursor-pointer text-[10px] font-bold",
+                                                    "flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border transition-all cursor-pointer text-[10px] font-bold outline-none",
                                                     active
-                                                        ? "bg-primary-container/15 border-primary-container text-primary-container shadow-sm"
-                                                        : "bg-[#0d1117] border-white/5 text-text-secondary hover:text-text-primary hover:bg-white/[0.02]"
+                                                        ? "bg-primary-container/15 border-primary-container text-primary-container shadow-sm shadow-primary-container/10"
+                                                        : "bg-black/[0.01] dark:bg-[#0d1117] border-black/10 dark:border-white/5 text-text-secondary hover:text-text-primary dark:hover:text-white"
                                                 )}
                                             >
-                                                <Icon className="w-3.5 h-3.5" />
+                                                <FormatIcon className="w-4 h-4 shrink-0" />
                                                 <span>{item.label}</span>
                                             </button>
                                         );
@@ -435,35 +431,36 @@ export function CreateEventPage() {
                                 </div>
                             </div>
 
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary font-mono select-none">Category</label>
+                            {/* Dropdown Category popovers */}
+                            <div className="space-y-1.5 font-mono">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">Category Selection</label>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <button
                                             type="button"
-                                            className="w-full bg-[#0d1117] border border-white/10 rounded-xl px-4 py-2.5 text-text-primary focus:border-primary-container transition-all outline-none text-xs flex items-center justify-between cursor-pointer font-medium"
+                                            className="w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container transition-colors outline-none text-xs flex items-center justify-between cursor-pointer font-sans font-semibold text-left"
                                         >
                                             <span className="truncate flex items-center gap-2">
                                                 <Tag className="w-4 h-4 text-primary-container shrink-0" />
-                                                <span>{category || "Select category"}</span>
+                                                <span className="text-text-primary dark:text-white">{category || "Select category"}</span>
                                             </span>
                                             <ChevronDown className="w-4 h-4 text-text-secondary shrink-0 ml-1" />
                                         </button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-64 p-1 border border-white/10 bg-[#141414] shadow-2xl rounded-2xl max-h-60 overflow-y-auto custom-scrollbar z-50" align="start">
-                                        <div className="flex flex-col gap-0.5 p-1 select-none">
+                                    <PopoverContent className="w-64 p-1 border border-black/10 dark:border-white/10 bg-white dark:bg-[#141414] shadow-2xl rounded-2xl max-h-60 overflow-y-auto custom-scrollbar z-50" align="start">
+                                        <div className="flex flex-col gap-0.5 p-1 select-none font-sans font-bold">
                                             {CATEGORIES.map((cat) => (
                                                 <button
-                                                    key={cat}
+                                                    key={`cat-dropdown-opt-${cat}`}
                                                     type="button"
                                                     onClick={() => setCategory(cat)}
                                                     className={cn(
-                                                        "w-full px-3 py-2 text-xs font-bold text-left rounded-xl transition-all cursor-pointer border-none flex items-center justify-between font-sans",
-                                                        category === cat ? "bg-primary-container text-white" : "text-text-primary hover:bg-white/5"
+                                                        "w-full px-3 py-2.5 text-xs text-left rounded-xl transition-all cursor-pointer border-none flex items-center justify-between outline-none",
+                                                        category === cat ? "bg-primary-container text-white shadow-sm" : "text-text-primary dark:text-white hover:bg-black/5 dark:hover:bg-white/5"
                                                     )}
                                                 >
                                                     <span className="truncate">{cat}</span>
-                                                    {category === cat && <Check className="w-3.5 h-3.5 text-white shrink-0 ml-1" />}
+                                                    {category === cat && <Check className="w-3.5 h-3.5 text-white shrink-0 ml-1 stroke-[2.5px]" />}
                                                 </button>
                                             ))}
                                         </div>
@@ -472,36 +469,36 @@ export function CreateEventPage() {
                             </div>
                         </div>
                     </section>
-
-                    {/* Timing Schedules */}
-                    <section className="bg-[#141414] border border-white/5 rounded-2xl p-5 sm:p-6 space-y-4">
-                        <div className="flex items-center gap-2 pb-2 border-b border-white/5">
-                            <div className="w-8 h-8 rounded-xl bg-primary-container/10 text-primary-container flex items-center justify-center shrink-0">
+                    {/* Timing Schedules Section Layout Card */}
+                    <section className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 rounded-2xl p-5 sm:p-6 space-y-4 h-full transition-colors">
+                        <div className="flex items-center gap-2 pb-2 border-b border-black/5 dark:border-white/5 select-none">
+                            <div className="w-8 h-8 rounded-xl bg-primary-container/10 text-primary-container flex items-center justify-center shrink-0 shadow-inner">
                                 <CalendarIcon className="w-4 h-4" />
                             </div>
-                            <h4 className="font-bold text-white text-sm uppercase tracking-wider font-mono text-left">Timing Schedules</h4>
+                            <h4 className="font-extrabold text-text-primary dark:text-white text-sm uppercase tracking-wider font-mono text-left">Timing Schedules</h4>
                         </div>
 
                         <div className="space-y-4 text-left">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary font-mono select-none">Start Date *</label>
+                                {/* Start Date Selector */}
+                                <div className="space-y-1.5 font-mono">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">Start Date *</label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <button
                                                 type="button"
                                                 className={cn(
-                                                    "w-full bg-[#0d1117] border border-white/10 rounded-xl px-4 py-2.5 text-text-primary focus:border-primary-container transition-all outline-none text-xs flex items-center justify-between cursor-pointer font-medium",
-                                                    !startDate && "text-text-secondary/40"
+                                                    "w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container transition-colors outline-none text-xs flex items-center justify-between cursor-pointer font-sans font-semibold text-left",
+                                                    !startDate && "text-text-secondary/30"
                                                 )}
                                             >
                                                 <span className="truncate">
                                                     {startDate ? format(parseDateString(startDate), "PPP") : "Pick start date"}
                                                 </span>
-                                                <CalendarIcon className="w-4 h-4 text-text-secondary shrink-0 ml-1" />
+                                                <CalendarIcon className="w-4 h-4 text-text-secondary shrink-0 ml-1 opacity-70" />
                                             </button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0 border border-white/10 bg-[#141414] shadow-2xl rounded-2xl z-50" align="start">
+                                        <PopoverContent className="w-auto p-0 border border-black/10 dark:border-white/10 bg-white dark:bg-[#141414] shadow-2xl rounded-2xl z-50" align="start">
                                             <ShadcnCalendar
                                                 mode="single"
                                                 selected={parseDateString(startDate)}
@@ -511,33 +508,35 @@ export function CreateEventPage() {
                                         </PopoverContent>
                                     </Popover>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary font-mono select-none">Start Time *</label>
+
+                                {/* Start Time Dropdown */}
+                                <div className="space-y-1.5 font-mono">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">Start Time *</label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <button
                                                 type="button"
                                                 className={cn(
-                                                    "w-full bg-[#0d1117] border border-white/10 rounded-xl px-4 py-2.5 text-text-primary focus:border-primary-container transition-all outline-none text-xs flex items-center justify-between cursor-pointer font-medium",
-                                                    !startTime && "text-text-secondary/40"
+                                                    "w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container transition-colors outline-none text-xs flex items-center justify-between cursor-pointer font-sans font-semibold text-left",
+                                                    !startTime && "text-text-secondary/30"
                                                 )}
                                             >
                                                 <span className="truncate">
                                                     {startTime ? formatTimeDisplay(startTime) : "Pick start time"}
                                                 </span>
-                                                <Clock className="w-4 h-4 text-text-secondary shrink-0 ml-1" />
+                                                <Clock className="w-4 h-4 text-text-secondary shrink-0 ml-1 opacity-70" />
                                             </button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-44 p-1 border border-white/10 bg-[#141414] shadow-2xl rounded-2xl max-h-60 overflow-y-auto custom-scrollbar z-50" align="start">
-                                            <div className="flex flex-col gap-0.5 select-none font-mono">
+                                        <PopoverContent className="w-44 p-1 border border-black/10 dark:border-white/10 bg-white dark:bg-[#141414] shadow-2xl rounded-2xl max-h-60 overflow-y-auto custom-scrollbar z-50" align="start">
+                                            <div className="flex flex-col gap-0.5 select-none font-sans font-bold">
                                                 {TIME_OPTIONS.map((t) => (
                                                     <button
-                                                        key={t.value}
+                                                        key={`start-time-${t.value}`}
                                                         type="button"
                                                         onClick={() => setStartTime(t.value)}
                                                         className={cn(
-                                                            "w-full px-3 py-2 text-xs font-bold text-left rounded-xl transition-all cursor-pointer border-none font-sans",
-                                                            startTime === t.value ? "bg-primary-container text-white" : "text-text-primary hover:bg-white/5"
+                                                            "w-full px-3 py-2 text-xs text-left rounded-xl transition-all cursor-pointer border-none outline-none font-sans font-semibold",
+                                                            startTime === t.value ? "bg-primary-container text-white shadow-sm" : "text-text-primary dark:text-white hover:bg-black/5 dark:hover:bg-white/5"
                                                         )}
                                                     >
                                                         {t.label}
@@ -549,24 +548,25 @@ export function CreateEventPage() {
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary font-mono select-none">End Date</label>
+                                {/* End Date Selector */}
+                                <div className="space-y-1.5 font-mono">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">End Date</label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <button
                                                 type="button"
                                                 className={cn(
-                                                    "w-full bg-[#0d1117] border border-white/10 rounded-xl px-4 py-2.5 text-text-primary focus:border-primary-container transition-all outline-none text-xs flex items-center justify-between cursor-pointer font-medium",
-                                                    !endDate && "text-text-secondary/40"
+                                                    "w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container transition-colors outline-none text-xs flex items-center justify-between cursor-pointer font-sans font-semibold text-left",
+                                                    !endDate && "text-text-secondary/30"
                                                 )}
                                             >
                                                 <span className="truncate">
                                                     {endDate ? format(parseDateString(endDate), "PPP") : "Pick end date"}
                                                 </span>
-                                                <CalendarIcon className="w-4 h-4 text-text-secondary shrink-0 ml-1" />
+                                                <CalendarIcon className="w-4 h-4 text-text-secondary shrink-0 ml-1 opacity-70" />
                                             </button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0 border border-white/10 bg-[#141414] shadow-2xl rounded-2xl z-50" align="start">
+                                        <PopoverContent className="w-auto p-0 border border-black/10 dark:border-white/10 bg-white dark:bg-[#141414] shadow-2xl rounded-2xl z-50" align="start">
                                             <ShadcnCalendar
                                                 mode="single"
                                                 selected={parseDateString(endDate)}
@@ -576,33 +576,35 @@ export function CreateEventPage() {
                                         </PopoverContent>
                                     </Popover>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary font-mono select-none">End Time</label>
+
+                                {/* End Time Dropdown */}
+                                <div className="space-y-1.5 font-mono">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">End Time</label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <button
                                                 type="button"
                                                 className={cn(
-                                                    "w-full bg-[#0d1117] border border-white/10 rounded-xl px-4 py-2.5 text-text-primary focus:border-primary-container transition-all outline-none text-xs flex items-center justify-between cursor-pointer font-medium",
-                                                    !endTime && "text-text-secondary/40"
+                                                    "w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container transition-colors outline-none text-xs flex items-center justify-between cursor-pointer font-sans font-semibold text-left",
+                                                    !endTime && "text-text-secondary/30"
                                                 )}
                                             >
                                                 <span className="truncate">
                                                     {endTime ? formatTimeDisplay(endTime) : "Pick end time"}
                                                 </span>
-                                                <Clock className="w-4 h-4 text-text-secondary shrink-0 ml-1" />
+                                                <Clock className="w-4 h-4 text-text-secondary shrink-0 ml-1 opacity-70" />
                                             </button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-44 p-1 border border-white/10 bg-[#141414] shadow-2xl rounded-2xl max-h-60 overflow-y-auto custom-scrollbar z-50" align="start">
-                                            <div className="flex flex-col gap-0.5 select-none font-mono">
+                                        <PopoverContent className="w-44 p-1 border border-black/10 dark:border-white/10 bg-white dark:bg-[#141414] shadow-2xl rounded-2xl max-h-60 overflow-y-auto custom-scrollbar z-50" align="start">
+                                            <div className="flex flex-col gap-0.5 select-none font-sans font-bold">
                                                 {TIME_OPTIONS.map((t) => (
                                                     <button
-                                                        key={t.value}
+                                                        key={`end-time-${t.value}`}
                                                         type="button"
                                                         onClick={() => setEndTime(t.value)}
                                                         className={cn(
-                                                            "w-full px-3 py-2 text-xs font-bold text-left rounded-xl transition-all cursor-pointer border-none font-sans",
-                                                            endTime === t.value ? "bg-primary-container text-white" : "text-text-primary hover:bg-white/5"
+                                                            "w-full px-3 py-2 text-xs text-left rounded-xl transition-all cursor-pointer border-none outline-none font-sans font-semibold",
+                                                            endTime === t.value ? "bg-primary-container text-white shadow-sm" : "text-text-primary dark:text-white hover:bg-black/5 dark:hover:bg-white/5"
                                                         )}
                                                     >
                                                         {t.label}
@@ -616,38 +618,44 @@ export function CreateEventPage() {
                         </div>
                     </section>
                 </div>
-
-                {/* Location & Capacity Fields */}
-                <section className="bg-[#141414] border border-white/5 rounded-2xl p-5 sm:p-6 space-y-5 text-left">
-                    <div className="flex items-center justify-between pb-3 border-b border-white/5">
-                        <div className="flex items-center gap-2.5">
+                {/* 📍 Location Logistics & Seating Capacity Section Card */}
+                <section className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 rounded-2xl p-5 sm:p-6 space-y-5 text-left transition-colors">
+                    <div className="flex items-center justify-between pb-3 border-b border-black/5 dark:border-white/5">
+                        <div className="flex items-center gap-2.5 select-none">
                             <div className="w-8 h-8 rounded-xl bg-primary-container/15 text-primary-container flex items-center justify-center shrink-0 shadow-sm">
                                 <Target className="w-4 h-4" />
                             </div>
                             <div>
-                                <h4 className="font-bold text-white text-sm uppercase tracking-wider font-mono">Location & Capacity</h4>
-                                <p className="text-xs text-text-secondary">Venue parameters and audience scaling strategy</p>
+                                <h4 className="font-extrabold text-text-primary dark:text-white text-sm uppercase tracking-wider font-mono">Location &amp; Capacity</h4>
+                                <p className="text-xs text-text-secondary font-medium mt-0.5">Venue parameters and audience scaling strategy</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                        {/* Venue Destination Text Input Field */}
                         <div className="lg:col-span-2 space-y-2">
                             <div className="flex justify-between items-center select-none font-mono text-[10px] text-text-secondary">
-                                <label className="font-bold uppercase tracking-wider">Venue Location / Virtual Link *</label>
-                                <span className="font-bold uppercase tracking-wider">{formatType === 'Online' ? '🌐 Virtual Stream' : '📍 Physical Address'}</span>
+                                <label className="font-extrabold uppercase tracking-wider">Venue Location / Virtual Link *</label>
+                                <span className="font-black uppercase tracking-widest">{formatType === 'Online' ? '🌐 Virtual Stream' : '📍 Physical Address'}</span>
                             </div>
                             <div className="relative">
-                                {formatType === 'Online' ? <Video className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/50" /> : <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/50" />}
+                                {formatType === 'Online' ? (
+                                    <Video className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/50" />
+                                ) : (
+                                    <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/50" />
+                                )}
                                 <input
                                     type="text"
                                     value={location}
                                     onChange={(e) => setLocation(e.target.value)}
-                                    className="w-full bg-[#0d1117] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary focus:border-primary-container focus:outline-none transition-all font-medium"
-                                    placeholder={formatType === 'Online' ? "https://google.com or Zoom Link..." : "e.g. 100 Freedom Way, Main Hall, City Center..."}
+                                    className="w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary focus:border-primary-container focus:outline-none transition-all font-sans font-medium"
+                                    placeholder={formatType === 'Online' ? "https://google.com or active streaming coordinates..." : "e.g. 100 Freedom Way, Main Hall, City Center..."}
                                     required
                                 />
                             </div>
+
+                            {/* Interactive Quick Presets Selector Row */}
                             <div className="flex flex-wrap items-center gap-1.5 pt-1 select-none font-mono text-[9px]">
                                 <span className="font-bold text-text-secondary uppercase tracking-wider mr-1">Quick Presets:</span>
                                 {[
@@ -655,15 +663,23 @@ export function CreateEventPage() {
                                     { label: 'Community Center', val: 'Community Center - Room 204' },
                                     { label: 'Google Meet', val: 'https://google.com' }
                                 ].map((preset) => (
-                                    <button key={preset.label} type="button" onClick={() => setLocation(preset.val)} className="font-bold px-2 py-0.5 rounded-full bg-white/[0.02] border border-white/5 text-text-secondary hover:text-white hover:border-primary-container cursor-pointer">+ {preset.label}</button>
+                                    <button
+                                        key={`venue-preset-${preset.label}`}
+                                        type="button"
+                                        onClick={() => setLocation(preset.val)}
+                                        className="font-black px-2.5 py-1 rounded-full bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/5 text-text-secondary hover:text-text-primary dark:hover:text-white hover:border-primary-container cursor-pointer transition-colors outline-none"
+                                    >
+                                        + {preset.label}
+                                    </button>
                                 ))}
                             </div>
                         </div>
 
+                        {/* Capacity Attendance Caps Counter Input */}
                         <div className="space-y-2">
                             <div className="flex justify-between items-center select-none font-mono text-[10px] text-text-secondary">
-                                <label className="font-bold uppercase tracking-wider">Capacity Strategy</label>
-                                <span className="font-extrabold uppercase tracking-wider text-primary-container">{capacity ? `${capacity} RSVPs` : 'Unlimited'}</span>
+                                <label className="font-extrabold uppercase tracking-wider">Capacity Strategy</label>
+                                <span className="font-black uppercase tracking-widest text-primary-container">{capacity ? `${capacity} RSVPs` : 'Unlimited'}</span>
                             </div>
                             <div className="relative">
                                 <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/50" />
@@ -672,10 +688,12 @@ export function CreateEventPage() {
                                     min="1"
                                     value={capacity}
                                     onChange={(e) => setCapacity(e.target.value)}
-                                    className="w-full bg-[#0d1117] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary focus:border-primary-container focus:outline-none transition-all font-mono font-medium"
+                                    className="w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary focus:border-primary-container focus:outline-none transition-all font-mono font-bold"
                                     placeholder="Unlimited entries"
                                 />
                             </div>
+
+                            {/* Rapid Seating Allotment Switches */}
                             <div className="flex items-center gap-1 pt-1 select-none font-mono text-[9px]">
                                 {[
                                     { label: 'Unlimited', val: '' },
@@ -683,43 +701,54 @@ export function CreateEventPage() {
                                     { label: '200 Seats', val: '200' },
                                     { label: '500+', val: '500' }
                                 ].map((capOption) => (
-                                    <button key={capOption.label} type="button" onClick={() => setCapacity(capOption.val)} className={cn("flex-1 font-bold py-1 rounded border transition-all cursor-pointer text-center", capacity === capOption.val ? "bg-primary-container text-white border-primary-container shadow-sm" : "bg-white/[0.02] border-white/5 text-text-secondary hover:text-white")}>{capOption.label}</button>
+                                    <button
+                                        key={`cap-opt-${capOption.label}`}
+                                        type="button"
+                                        onClick={() => setCapacity(capOption.val)}
+                                        className={cn(
+                                            "flex-1 font-black py-1.5 rounded border transition-all cursor-pointer text-center outline-none",
+                                            capacity === capOption.val
+                                                ? "bg-primary-container text-white border-primary-container shadow-md"
+                                                : "bg-black/[0.01] dark:bg-white/[0.02] border-black/10 dark:border-white/5 text-text-secondary hover:text-text-primary dark:hover:text-white"
+                                        )}
+                                    >
+                                        {capOption.label}
+                                    </button>
                                 ))}
                             </div>
                         </div>
                     </div>
                 </section>
-
-                {/* Submission Action Bar Strip */}
-                <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#141414] border border-white/5 rounded-2xl shadow-sm">
-                    <p className="text-text-secondary text-xs max-w-sm text-center sm:text-left leading-relaxed font-sans">
-                        Please verify all required parameters marked with <span className="text-primary-container font-bold">*</span> are logged before deploying item manifest onto feed index tables.
+                {/* 🚀 Master Action Form Controls Bar Row */}
+                <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 rounded-2xl shadow-xl transition-colors select-none">
+                    <p className="text-text-secondary text-xs max-w-sm text-center sm:text-left leading-relaxed font-sans font-medium">
+                        Please verify all required parameters marked with <span className="text-primary-container font-black">*</span> are logged before deploying item manifest onto feed index tables.
                     </p>
-                    <div className="flex items-center gap-3 w-full sm:w-auto font-mono select-none">
+                    <div className="flex items-center gap-3 w-full sm:w-auto font-mono text-xs uppercase font-bold tracking-wider">
                         <button
                             type="button"
                             onClick={() => navigate('/events')}
-                            className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl border border-white/10 text-xs font-bold text-text-secondary hover:text-white hover:bg-white/5 transition-all cursor-pointer bg-transparent"
+                            className="flex-1 sm:flex-none px-6 py-3 rounded-xl border border-black/10 dark:border-white/10 text-xs font-black text-text-secondary hover:text-text-primary dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer bg-transparent outline-none"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || createEventMutation.isPending}
                             className={cn(
-                                "flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-primary-container hover:brightness-110 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border-none crimson-glow",
-                                isSubmitting && "opacity-40 cursor-not-allowed"
+                                "flex-1 sm:flex-none px-6 py-3 rounded-xl bg-primary-container hover:brightness-105 text-white font-black text-xs shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer border-none crimson-glow outline-none",
+                                (isSubmitting || createEventMutation.isPending) && "opacity-40 cursor-not-allowed active:scale-100"
                             )}
                         >
-                            <span>{isSubmitting ? 'Launching Node...' : 'Launch Event'}</span>
-                            <Rocket className="w-3.5 h-3.5" />
+                            <span>{isSubmitting || createEventMutation.isPending ? 'Launching Node...' : 'Launch Event'}</span>
+                            <Rocket className="w-3.5 h-3.5 stroke-[2.5px]" />
                         </button>
                     </div>
                 </div>
             </form>
 
-            {/* Global Theme Footer element */}
-            <footer className="pt-12 text-center text-[10px] font-bold uppercase tracking-widest text-text-secondary/30 pb-4 font-mono select-none">
+            {/* 📝 Copyright Page Footer Signature */}
+            <footer className="pt-12 text-center text-[10px] font-black uppercase tracking-widest text-text-secondary/20 pb-4 font-mono select-none pointer-events-none">
                 © {new Date().getFullYear()} Kollective. Built for revolutionary community leadership. All Rights Reserved.
             </footer>
         </div>

@@ -3,7 +3,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Virtuoso } from 'react-virtuoso';
 import { useHashtagTimelineQuery, useFollowTagMutation } from '../features/timeline/useHashtagTimeline';
-import { PostCard } from '../features/timeline/PostCard';
+import { PostCard } from '../components/posts/PostCard';
 
 export const HashtagTimelinePage = () => {
     const { id: tagId } = useParams();

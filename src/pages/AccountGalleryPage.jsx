@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAccountGalleryQuery } from '../features/profile/useGalleryFeature';
-import { ImageLightbox } from '../features/timeline/ImageLightbox';
+import { ImageLightbox } from '../components/ImageLightbox';
 
 export const AccountGalleryPage = () => {
     const { username } = useParams();

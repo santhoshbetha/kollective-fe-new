@@ -53,12 +53,15 @@ export function ProposalsFeed({
 
     if (filteredProposals.length === 0) {
         return (
-            <div className="glass-card rounded-[24px] p-12 text-center border border-white/5 bg-[#141414] font-mono text-xs text-text-secondary/40 select-none">
-                <span className="material-symbols-outlined text-4xl text-text-secondary/30 mb-4 block">deck</span>
-                // NO_COMMUNITY_PROPOSALS_LOGGED_IN_THIS_SCOPE
+            <div className="glass-card rounded-[24px] p-12 text-center border border-white/5 bg-[#141414] font-mono text-md text-text-secondary/80 select-none">
+                <span className="material-symbols-outlined text-4xl text-text-secondary/80 mb-1 mr-1 block">
+                    deck
+                </span>
+                NO_COMMUNITY_PROPOSALS_LOGGED_IN_THIS_SCOPE
             </div>
         );
     }
+
     return (
         <div className="space-y-8 pb-20 relative w-full">
             {/* Suggested Focus Areas & Anti-Monopoly Guidance Alert Module Banner */}
@@ -131,7 +134,7 @@ export function ProposalsFeed({
                         )),
                         Footer: () => (
                             <div className="py-8 text-center border-t border-white/5 font-mono text-[10px] text-text-secondary/30 select-none uppercase tracking-wider">
-                                // proposal_stream_index_calculation_complete
+                                proposal_stream_index_calculation_complete
                             </div>
                         )
                     }}

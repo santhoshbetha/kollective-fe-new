@@ -3,7 +3,7 @@ import React, { useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Virtuoso } from 'react-virtuoso';
 import { usePollsQuery } from './usePollsFeature';
-import { PollCard } from './PollCard';
+import { PollCard } from '../../components/polls/PollCard';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 
 export function PollsFeed({
@@ -151,8 +151,8 @@ export function PollsFeed({
                 </div>
             ) : filteredPolls?.length === 0 ? (
                 /* 🌌 Empty State Panel Container */
-                <div className="glass-card rounded-2xl p-12 text-center border border-white/5 bg-[#141414] font-mono text-xs text-text-secondary/40">
-                    // NO_ACTIVE_POLLS_FOUND: Be the first to introduce a consensus poll in {activeTab}!
+                <div className="glass-card rounded-2xl p-12 text-center border border-white/5 bg-[#141414] font-mono text-md text-text-secondary/80">
+                    NO_ACTIVE_POLLS_FOUND: Be the first to introduce a consensus poll in {activeTab}!
                 </div>
             ) : (
                 /* 🏆 PERFORMANCE FIX: Heavy map loop replaced with Virtuoso layout scroller */
@@ -171,7 +171,7 @@ export function PollsFeed({
                             Footer: () => (
                                 <div className="py-6 text-center bg-[#141414] border-t border-white/5">
                                     <p className="text-[10px] text-text-secondary font-mono uppercase tracking-wider italic opacity-40">
-                                        // POLL_INDEX_STREAM_COMPLETE
+                                        POLL_INDEX_STREAM_COMPLETE
                                     </p>
                                 </div>
                             )

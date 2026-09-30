@@ -59,9 +59,11 @@ export function LocalBusinessesFeed({
 
     if (filteredBusinesses.length === 0) {
         return (
-            <div className="glass-card rounded-[24px] p-12 text-center border border-white/5 bg-[#141414] font-mono text-xs text-text-secondary/40 select-none">
-                <span className="material-symbols-outlined text-4xl text-text-secondary/30 mb-4 block">storefront</span>
-                // NO_LOCAL_BUSINESSES_REGISTERED_ON_THIS_NODE
+            <div className="glass-card rounded-[24px] p-12 text-center border border-white/5 bg-[#141414] font-mono text-md text-text-secondary/80 select-none">
+                <span className="material-symbols-outlined text-4xl text-text-secondary/80 mb-1 mr-1 block">
+                    storefront
+                </span>
+                NO_LOCAL_BUSINESSES_REGISTERED_ON_THIS_NODE
             </div>
         );
     }
@@ -94,7 +96,7 @@ export function LocalBusinessesFeed({
                     )),
                     Footer: () => (
                         <div className="py-8 text-center border-t border-white/5 font-mono text-[10px] text-text-secondary/30 select-none uppercase tracking-wider">
-                            // directory_index_stream_compiled_cleanly
+                            directory_index_stream_compiled_cleanly
                         </div>
                     )
                 }}

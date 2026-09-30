@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { VirtuosoGrid } from 'react-virtuoso';
-import { PostAdModal } from '../features/classifieds/PostAdModal';
+import { PostAdModal } from '../components/modals/PostAdModal';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import {

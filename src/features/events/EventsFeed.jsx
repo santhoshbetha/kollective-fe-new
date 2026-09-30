@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useEventsQuery, useToggleEventInterest, useFilterEvents } from './useEventsFeature';
 import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
-import { EventCard } from './EventCard';
+import { EventCard } from '../../components/events/EventCard';
 import { getDisplayLocation } from '../../utils/eventUtils';
 import { Filter, ChevronDown, Search, MapPin, Calendar as CalendarIcon, X } from 'lucide-react';
 import { format } from 'date-fns';
@@ -445,12 +445,12 @@ export function EventsFeed({ navigate }) {
                         /* ⏰ Custom Sync Status Spinner Loader */
                         <div className="py-12 flex flex-col items-center gap-4 select-none font-mono text-xs">
                             <div className="w-6 h-6 rounded-full border-2 border-t-primary-container border-white/10 animate-spin"></div>
-                            <p className="text-text-secondary uppercase tracking-widest animate-pulse">// LOADING_ADVENTURES...</p>
+                            <p className="text-text-secondary uppercase tracking-widest animate-pulse"> LOADING_ADVENTURES...</p>
                         </div>
                     ) : filteredEvents?.length === 0 ? (
                         /* 🌌 Empty State Results Panel Layout */
                         <div className="bg-[#141414] border border-white/5 rounded-2xl p-12 text-center shadow-2xl font-mono text-xs text-text-secondary/40">
-                            // NO_EVENTS_FOUND_MATCHING_CRITERIA
+                            NO_EVENTS_FOUND_MATCHING_CRITERIA
                         </div>
                     ) : (
                         /* 🎨 RESPONSIVE GRID PLATFORM: Integrates Virtuoso List with custom grid items mapping */

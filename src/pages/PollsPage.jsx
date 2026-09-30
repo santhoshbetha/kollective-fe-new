@@ -60,7 +60,7 @@ export function PollsPage() {
     const statusTabs = useMemo(() => {
         return ['All', 'Active', 'Ended', ...(isAuthenticated ? ['My Votes'] : [])];
     }, [isAuthenticated]);
-    
+
     return (
         <div className="max-w-[1280px] mx-auto flex flex-col xl:flex-row gap-12 pb-20 p-4X bg-[#090d12]X">
 
@@ -224,7 +224,7 @@ export function PollsPage() {
                             <div className="h-3 bg-white/[0.02] rounded w-1/2" />
                         </div>
                     ) : sidebarData.list.length === 0 ? (
-                        <p className="text-xs text-text-secondary/50 font-mono italic">// NO_CLOSED_POLLS_LOGGED</p>
+                        <p className="text-xs text-text-secondary/50 font-mono italic">NO_CLOSED_POLLS_LOGGED</p>
                     ) : (
                         <div className="space-y-4">
                             {sidebarData.list.map((poll) => {

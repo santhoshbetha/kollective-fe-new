@@ -5,7 +5,7 @@ import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { LocalBusinessesFeed } from '../features/businesses/LocalBusinessesFeed';
 import { ProposalsFeed } from '../features/businesses/ProposalsFeed';
-import { PostAdModal } from '../features/classifieds/PostAdModal';
+import { PostAdModal } from '../components/modals/PostAdModal';
 import { Filter, ChevronDown, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

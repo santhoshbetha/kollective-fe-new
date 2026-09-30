@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useProfileQuery, useUpdateProfileMutation } from '../features/profile/useProfileFeature';
-import { UserAvatar } from '../components/UserAvatar';
+import { UserAvatar } from '../components/accounts/UserAvatar';
 import { ImageUploader } from '../components/ImageUploader';
 
 export const ProfileEditPage = () => {

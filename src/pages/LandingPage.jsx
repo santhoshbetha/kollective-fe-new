@@ -368,7 +368,7 @@ export const LandingPage = () => {
                                 <p className="text-text-primary text-lg font-bold leading-snug">
                                     Please log in to broadcast a post.
                                 </p>
-                                <p className="text-text-secondary text-xs font-semibold leading-relaxed">
+                                <p className="text-text-secondary text-[16px] font-semibold leading-relaxed">
                                     Voices and strategic alerts require a valid profile node session signature to be indexed on the main tactical feeds.
                                 </p>
                             </div>
@@ -382,7 +382,7 @@ export const LandingPage = () => {
                                     }}
                                     className="w-full py-3 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-xl shadow-lg shadow-primary-container/20 transition-all cursor-pointer text-xs uppercase tracking-wider border-none outline-none font-sans"
                                 >
-                                    Log in to Account
+                                    Log in
                                 </button>
                                 <button
                                     type="button"

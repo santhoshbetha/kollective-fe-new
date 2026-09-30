@@ -1,3 +1,4 @@
+// src/context/PhoenixSocketContext.jsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Socket } from 'phoenix';
 import { useAuthStore } from '../store/auth/useAuthStore';
@@ -11,11 +12,20 @@ export const PhoenixSocketProvider = ({ children }) => {
 
     const [socket, setSocket] = useState(null);
     const [channel, setChannel] = useState(null);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [latestNotification, setLatestNotification] = useState(null);
     //const [juryAlert, setJuryAlert] = useState(null);
 
     useEffect(() => {
         let phoenixSocket = null;
-        let userChannel = null;
+        let notificationChannel = null;
+
+        if (!isAuthenticated || !user?.id) {
+            setSocket(null);
+            setChannel(null);
+            setUnreadCount(0);
+            return;
+        }
 
         try {
             const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/socket';
@@ -26,7 +36,7 @@ export const PhoenixSocketProvider = ({ children }) => {
             // connect/2 function can catch this to assign a guest socket room safely!
             phoenixSocket = new Socket(wsUrl, {
                 params: {
-                    token: isAuthenticated ? (localStorage.getItem("user_token") || "") : ""
+                    token: localStorage.getItem("user_token") || ""
                 },
                 // Back-off physics configuration multiplier for unstable networks
                 reconnectAfterMs: (tries) => [1000, 2000, 5000, 10000][tries - 1] || 10000
@@ -35,26 +45,34 @@ export const PhoenixSocketProvider = ({ children }) => {
             phoenixSocket.connect();
             setSocket(phoenixSocket);
 
-            // 🚀 AUTHENTICATED NOTIFICATION LANE:
-            // Only mount and subscribe to private push notification channels if a user is logged in
-            if (isAuthenticated && user?.handle) {
-                const userId = user.handle.replace('@', '');
-                userChannel = phoenixSocket.channel(`user:${userId}`, {});
+            // ✅ FIX 1 & 2: Route using the correct prefix and the user's explicit ULID key
+            const targetTopic = `user_notifications:${user.id}`;
+            notificationChannel = phoenixSocket.channel(targetTopic, {});
 
-                userChannel.join()
-                    .receive('ok', () => console.log(`Connected secure sync channel: user:${userId}`))
-                    .receive('error', resp => console.error('Private sync channel connection rejected:', resp));
+            // Hydrate unread metrics upon successful network connection loops
+            notificationChannel.on('initial_state', (payload) => {
+                if (payload && typeof payload.unread_count === 'number') {
+                    setUnreadCount(payload.unread_count);
+                }
+            });
 
-                //userChannel.on('new_notification', (payload) => {
-                //    if (payload.type === 'JURY_DUTY_ASSIGNED') {
-                //        setJuryAlert(payload);
-                //    }
-                //});
-                setChannel(userChannel);
-            } else {
-                // Wipe channels clean if unauthenticated visitor context is loaded
-                setChannel(null);
-            }
+            // ✅ FIX 3: Catch the exact network event string passed from the backend
+            notificationChannel.on('new_notification', (payload) => {
+                console.log("⚡ Real-time Notification Node Received:", payload);
+                setLatestNotification(payload);
+                setUnreadCount((prev) => prev + 1);
+            });
+
+            notificationChannel.join()
+                .receive('ok', () => console.log(` Connected secure sync channel: ${targetTopic}`))
+                .receive('error', resp => console.error('Private sync channel connection rejected:', resp));
+
+            //userChannel.on('new_notification', (payload) => {
+            //    if (payload.type === 'JURY_DUTY_ASSIGNED') {
+            //        setJuryAlert(payload);
+            //    }
+            //});
+            setChannel(notificationChannel);
 
         } catch (e) {
             console.error("Phoenix socket initialization execution bypassed:", e);
@@ -73,20 +91,38 @@ export const PhoenixSocketProvider = ({ children }) => {
 
         // Cleanup cycle hooks protect memory limits against memory leaks
         return () => {
-            if (userChannel) {
-                try { userChannel.leave(); } catch (err) { console.error(err); }
+            if (notificationChannel) {
+                try { notificationChannel.leave(); } catch (err) { console.error(err); }
             }
             if (phoenixSocket) {
                 try { phoenixSocket.disconnect(); } catch (err) { console.error(err); }
             }
         };
-    }, [user, isAuthenticated]); // Re-fire safely whenever authentication profiles shift
+    }, [user?.id, isAuthenticated]); // Re-fire safely when user keys shift
 
     return (
-        <PhoenixSocketContext.Provider value={{ socket, channel, /*juryAlert, setJuryAlert */ }}>
+        <PhoenixSocketContext.Provider value={{
+            socket,
+            channel,
+            unreadCount,
+            setUnreadCount,
+            latestNotification,
+            setLatestNotification
+            /*juryAlert, setJuryAlert */
+        }}>
             {children}
         </PhoenixSocketContext.Provider>
     );
 };
 
-export const useSocket = () => useContext(PhoenixSocketContext);
+const defaultSocketContext = {
+    socket: null,
+    channel: null,
+    unreadCount: 0,
+    setUnreadCount: () => {},
+    latestNotification: null,
+    setLatestNotification: () => {}
+};
+
+export const useSocket = () => useContext(PhoenixSocketContext) || defaultSocketContext;
+

@@ -42,7 +42,7 @@ export function OrganizeFeed() {
         return (
             <div className="py-16 text-center text-text-secondary/40 bg-[#141414] border border-white/5 rounded-2xl p-8 font-mono text-xs select-none">
                 <span className="material-symbols-outlined text-4xl opacity-30 mb-3 block text-primary-container">campaign</span>
-                // NO_MOBILIZATION_ACTIONS_SCHEDULED_IN_YOUR_GRID_COORDINATE
+                NO_MOBILIZATION_ACTIONS_SCHEDULED_IN_YOUR_GRID_COORDINATE
             </div>
         );
     }
@@ -75,7 +75,7 @@ export function OrganizeFeed() {
                     )),
                     Footer: () => (
                         <div className="py-8 text-center border-t border-white/5 font-mono text-[10px] text-text-secondary/30 select-none uppercase tracking-wider">
-                            // mobilization_action_index_sync_compiled_cleanly
+                            mobilization_action_index_sync_compiled_cleanly
                         </div>
                     )
                 }}

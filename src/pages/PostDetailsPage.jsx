@@ -1,19 +1,17 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TrendingWidget } from '../components/TrendingWidget';
-import { ImageCarouselModal } from '../components/ImageCarouselModal';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ImageCarouselModal } from '../components/modals/ImageCarouselModal';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePostActions } from '../features/timeline/usePostActions';
-import { apiFetch, apiFetchPosts } from '../api/apiClient';
-import { CascadedPostRow } from '../components/CascadedPostRow';
+import { apiFetchPosts } from '../api/apiClient';
 import { usePostsStore } from '../store/usePostsStore';
-import { UserAvatar } from '../components/UserAvatar';
-import { EmojiSelector } from '../components/EmojiSelector';
 import { useThread } from '../hooks/useThread';
 import { useAuthStore } from '../store/auth/useAuthStore';
-import { LoginPromptModal } from '../components/LoginPromptModal';
+import { LoginPromptModal } from '../components/modals/LoginPromptModal';
 import { getReplyCount } from '../utils/postHelpers';
-import { ModernLargeThreadContainer } from '../components/ModernLargeThreadContainer';
+import { prepareBroadcastPayload } from '../utils/broadcastNormalize';
+import { ModernLargeThreadContainer } from '../components/posts/ModernLargeThreadContainer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter } from '../components/ui/Dialog';
 
 // Helper: Hides sensitive data or spoilers behind a button toggle natively
@@ -78,7 +76,7 @@ export const PostDetailsPage = () => {
     const [carouselOpen, setCarouselOpen] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
 
-    const handleCommentFileChange = (e) => {
+    const handleCommentFileChangeX = (e) => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
@@ -88,6 +86,42 @@ export const PostDetailsPage = () => {
             reader.readAsDataURL(file);
         }
     };
+
+    /**
+     * 📸 HANDLES LOCAL FILE SELECTION FOR INLINE TIMELINE COMMENTS
+     * Captures user attachments, generates memory object canvas previews,
+     * and restricts comment uploads to a single file to keep child grids fast.
+     */
+    const handleCommentFileChange = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+
+            // 🛡️ FRONTEND LIMIT FILTER GATES: Validate 5MB byte size constraints before caching
+            const maxCommentByteLimit = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxCommentByteLimit) {
+                setFeedbackModal({
+                    type: 'error',
+                    title: 'Media Allocation Dropped',
+                    message: `The attached image is too heavy (${(file.size / (1024 * 1024)).toFixed(1)}MB). Comment attachments are bounded to a maximum size of 5.0MB.`
+                });
+                return;
+            }
+
+            // Generate immediate sandbox object URL preview parameters
+            const immediatePreviewUrl = URL.createObjectURL(file);
+
+            // Update specialized local comment attachment states cleanly
+            if (typeof setCommentImage === 'function') {
+                setCommentImage(immediatePreviewUrl);
+            }
+
+            // Automatically reveal the parent text box to accommodate graphics
+            if (typeof setIsCommentExpanded === 'function') {
+                setIsCommentExpanded(true);
+            }
+        }
+    };
+
 
     // 🎯 NETWORK INTERACTION QUERY: Fetch the complete thread map list from your Elixir context endpoint
     const { data: threadContext, isPending, error } = useThread(currentPostId);
@@ -580,7 +614,7 @@ export const PostDetailsPage = () => {
         }
     }, [focusPost]);
 
-    const handleCommentSubmit = (e) => {
+    const handleCommentSubmitO = (e) => {
         e.preventDefault();
         if (!isAuthenticated) {
             setIsLoginPromptOpen(true);
@@ -593,6 +627,62 @@ export const PostDetailsPage = () => {
             text: commentText.trim(),
             content_warning: showCommentCwInput ? commentCwText.trim() : undefined,
             images: commentImage ? [commentImage] : undefined,
+        });
+    };
+
+    const handleCommentSubmit = (e) => {
+        e.preventDefault();
+        if (!isAuthenticated) {
+            setIsLoginPromptOpen(true);
+            return;
+        }
+
+        const cleanCommentText = commentText?.trim() || '';
+        if (!cleanCommentText && !commentImage) return;
+
+        // 🚀 USE THE COMMON NORMALIZER LIBRARY: Automatically maps hashtags, content warnings, and org parameters
+        const basePayload = prepareBroadcastPayload({
+            content: cleanCommentText,
+            contentType: 'comment',
+            audience: 'World', // Comments inherit root target scopes or map to world baseline bounds
+            postIdentity: activeAccount?.type === 'organization' ? 'organization' : 'personal',
+            activeAccount,
+            user,
+            showCw: showCommentCwInput,
+            cwText: commentCwText
+        });
+
+        // Fire the specialized reply query mutation, appending your attachments array cleanly
+        replyMutation.mutate({
+            ...basePayload,
+            images: commentImage ? [commentImage] : undefined,
+            // Aligns naming configurations with your exact backend comment column assignments
+            content_warning: basePayload.contentWarning
+        }, {
+            onSuccess: () => {
+                // Clear inline element local states cleanly upon request completion
+                setCommentText('');
+                setCommentCwText('');
+                setCommentImage(null);
+                setShowCommentCwInput(false);
+
+                // Refreshes view caching lanes instantly
+                queryClient.invalidateQueries({ queryKey: ['timeline'] });
+
+                setFeedbackModal({
+                    type: 'success',
+                    title: 'Reply Broadcasted',
+                    message: 'Your reply has been appended to this post timeline node successfully.'
+                });
+            },
+            onError: (err) => {
+                console.error("Failed to append inline response:", err);
+                setFeedbackModal({
+                    type: 'error',
+                    title: 'Broadcast Failed',
+                    message: err?.data?.message || err?.message || "Failed to sync comment with edge registry."
+                });
+            }
         });
     };
 
@@ -695,6 +785,7 @@ export const PostDetailsPage = () => {
                         commentCwText={commentCwText}
                         setCommentCwText={setCommentCwText}
                         showCommentCwInput={showCommentCwInput}
+                        setShowCommentCwInput={setShowCommentCwInput}
                         isCommentExpanded={isCommentExpanded}
                         setIsCommentExpanded={setIsCommentExpanded}
                         commentImage={commentImage}

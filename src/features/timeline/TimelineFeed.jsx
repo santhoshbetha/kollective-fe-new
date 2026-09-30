@@ -5,7 +5,7 @@ import PullToRefresh from 'react-simple-pull-to-refresh';
 import { useHomeTimeline } from './useHomeTimeline';
 import { useStore } from '../../store/useStore';
 import { useFiltersQuery } from '../filters/useFiltersFeature';
-import { PostCard } from './PostCard';
+import { PostCard } from '../../components/posts/PostCard';
 import { usePostsStore } from '../../store/usePostsStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { processFeedPosts } from '../../utils/feedUtils';
@@ -228,7 +228,7 @@ export function TimelineFeed() {
                                         {!hasNextPage && filteredPosts.length > 0 && (
                                             <div className="py-8 text-center bg-[#141414] border-t border-white/5">
                                                 <p className="text-xs text-text-secondary font-mono uppercase tracking-wider italic opacity-40">
-                                                    // TIMELINE_END: Catch-up matrices complete.
+                                                    TIMELINE_END: Catch-up matrices complete.
                                                 </p>
                                             </div>
                                         )}

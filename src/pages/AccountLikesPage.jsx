@@ -2,7 +2,7 @@
 import React from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { useAccountLikesQuery } from '../features/profile/useLikesFeature';
-import { PostCard } from '../features/timeline/PostCard';
+import { PostCard } from '../components/posts/PostCard';
 
 export const AccountLikesPage = () => {
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useAccountLikesQuery();
