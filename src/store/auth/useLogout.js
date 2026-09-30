@@ -20,6 +20,8 @@ export function useLogout() {
 
             // 3. Purge disk storage
             localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_token');
+            localStorage.removeItem('socket_token');
             localStorage.removeItem('auth_user');
 
             // 4. Reset query caches completely

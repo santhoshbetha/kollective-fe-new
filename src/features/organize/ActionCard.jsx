@@ -2,6 +2,7 @@
 import React from "react";
 import { useRsvpToAction } from "./useOrganizeFeature";
 import { useNavigate } from "react-router-dom";
+import { getOrganizerName } from "../../utils/eventUtils";
 import { cn } from "@/lib/utils"; // Adjust to your local helper path
 
 export const ActionCard = ({ action, setToastMessage }) => {
@@ -76,7 +77,7 @@ export const ActionCard = ({ action, setToastMessage }) => {
                     <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary-container text-base shrink-0 select-none">person</span>
                         <span className="truncate">
-                            Organized by <span className="text-primary-container hover:underline cursor-pointer font-bold font-mono">{action?.organizer}</span>
+                            Organized by <span className="text-primary-container hover:underline cursor-pointer font-bold font-mono">{getOrganizerName(action?.organizer)}</span>
                         </span>
                     </div>
                 </div>

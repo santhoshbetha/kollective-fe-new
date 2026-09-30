@@ -200,7 +200,7 @@ export function UserProfilePage() {
   if (isProfileLoading) {
     return (
       <div className="max-w-7xl mx-auto p-6 text-center text-xs font-mono text-text-secondary animate-pulse">
-                // COMPILING_DECENTRALIZED_IDENTITY_SCHEMA...
+        COMPILING_DECENTRALIZED_IDENTITY_SCHEMA...
       </div>
     );
   }

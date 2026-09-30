@@ -1,5 +1,5 @@
-// src/features/calendar/calendar-utils.js
 import { parseISO, addHours } from 'date-fns';
+import { getOrganizerName } from '../../utils/eventUtils';
 
 export const CATEGORY_COLORS = {
     'Politics': 'crimson',
@@ -94,23 +94,28 @@ export function transformToCalendarEvents(rawEvents = []) {
         }
 
         const colorKey = CATEGORY_COLORS[event.category] || CATEGORY_COLORS['Default'];
+        const organizerName = getOrganizerName(event.organizer || event.created_by);
+        const organizerAvatarUrl =
+            event.organizerAvatar ||
+            (typeof event.organizer === 'object' ? event.organizer?.avatar_url || event.organizer?.avatar : null) ||
+            (typeof event.created_by === 'object' ? event.created_by?.avatar_url || event.created_by?.avatar : null);
 
         return {
             id: event.id,
-            title: event.title || 'Untitled Event',
-            description: event.description || '',
+            title: typeof event.title === 'string' ? event.title : (event.title?.name || 'Untitled Event'),
+            description: typeof event.description === 'string' ? event.description : '',
             start: startDate,
             end: endDate,
-            location: event.location || 'TBD',
-            organizer: event.organizer || 'Community Member',
-            organizerAvatar: event.organizerAvatar,
-            category: event.category || 'General',
+            location: typeof event.location === 'string' ? event.location : (event.location?.address || event.location?.name || 'TBD'),
+            organizer: organizerName,
+            organizerAvatar: organizerAvatarUrl,
+            category: typeof event.category === 'string' ? event.category : 'General',
             color: colorKey,
             isInterested: Boolean(event.isInterested),
             isAttending: Boolean(event.isAttending),
             attendeesCount: event.attendeesCount || 0,
             interestedCount: event.interestedCount || 0,
-            image: event.image || event.cover_image_url,
+            image: typeof event.image === 'string' ? event.image : event.cover_image_url,
             rawEvent: event
         };
     });

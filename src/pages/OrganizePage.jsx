@@ -88,8 +88,10 @@ export const OrganizePage = () => {
                         </div>
                     ) : filteredActions.length === 0 ? (
                         /* 🌌 Empty State Feed Result Panel */
-                        <div className="py-16 text-center text-text-secondary/40 bg-[#141414] border border-white/5 rounded-2xl p-8 font-mono text-xs select-none">
-                            <span className="material-symbols-outlined text-4xl opacity-30 mb-3 block text-primary-container">campaign</span>
+                        <div className="py-16 text-center text-text-secondary/80 bg-[#141414] border border-white/5 rounded-2xl p-8 font-mono text-md select-none">
+                            <span className="material-symbols-outlined text-6xl mb-1 mr-1 block text-primary-container">
+                                campaign
+                            </span>
                             NO_ACTIVE_MOBILIZATIONS_FOUND_IN_THIS_GEO_SCOPE
                         </div>
                     ) : (

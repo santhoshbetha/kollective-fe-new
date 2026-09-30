@@ -3,6 +3,7 @@ import React from 'react';
 import { useCalendarContext } from './calendar-context';
 import { format, isSameDay, isToday } from 'date-fns';
 import { COLOR_CLASSES } from './calendar-utils';
+import { getOrganizerName } from '../../utils/eventUtils';
 import { MapPin, User, Clock, Heart, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -82,7 +83,7 @@ export function CalendarBodyDay() {
                                             </span>
                                             <span className="flex items-center gap-1.5">
                                                 <User className="w-3.5 h-3.5 text-primary-container" />
-                                                <span>{evt.organizer}</span>
+                                                <span>{getOrganizerName(evt.organizer)}</span>
                                             </span>
                                         </div>
                                     </div>

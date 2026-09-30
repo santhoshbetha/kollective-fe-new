@@ -40,9 +40,10 @@ export function getOrganizerName(organizer) {
     if (!organizer) return 'Organizer';
     if (typeof organizer === 'string') return organizer;
     if (typeof organizer === 'object') {
-        return organizer.username || organizer.name || organizer.display_name || 'Organizer';
+        const name = organizer.display_name || organizer.name || organizer.username || organizer.handle;
+        if (typeof name === 'string' && name.trim() !== '') return name;
     }
-    return String(organizer);
+    return 'Organizer';
 }
 
 /**

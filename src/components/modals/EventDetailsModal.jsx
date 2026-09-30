@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { COLOR_CLASSES } from '../../features/calendar/calendar-utils';
+import { getOrganizerName } from '../../utils/eventUtils';
 import { X, Calendar as CalendarIcon, MapPin, User, Heart, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export function EventDetailsModal({ event, onClose, onInterestToggle, onAttendanceToggle }) {
@@ -10,6 +11,7 @@ export function EventDetailsModal({ event, onClose, onInterestToggle, onAttendan
     if (!event) return null;
 
     const colorStyle = COLOR_CLASSES[event.color] || COLOR_CLASSES.crimson;
+    const organizerName = getOrganizerName(event.organizer);
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -83,7 +85,7 @@ export function EventDetailsModal({ event, onClose, onInterestToggle, onAttendan
 
                         <div className="flex items-center gap-3 text-text-secondary text-sm">
                             <User className="w-4 h-4 text-primary-container shrink-0" />
-                            <span>Organized by <strong className="text-text-primary">{event.organizer}</strong></span>
+                            <span>Organized by <strong className="text-text-primary">{organizerName}</strong></span>
                         </div>
                     </div>
 

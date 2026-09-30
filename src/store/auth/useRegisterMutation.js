@@ -43,6 +43,8 @@ export function useRegisterMutation() {
 
             if (token && user) {
                 localStorage.setItem('auth_token', token);
+                localStorage.setItem('user_token', token);
+                localStorage.setItem('socket_token', token);
                 localStorage.setItem('auth_user', JSON.stringify(user));
                 setSession(token, user);
                 queryClient.clear();

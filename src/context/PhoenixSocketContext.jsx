@@ -8,6 +8,7 @@ const PhoenixSocketContext = createContext(null);
 export const PhoenixSocketProvider = ({ children }) => {
     // Listen to authentication states to react dynamically to logins/logouts
     const user = useAuthStore((state) => state.user);
+    const storeToken = useAuthStore((state) => state.token);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
     const [socket, setSocket] = useState(null);
@@ -29,6 +30,7 @@ export const PhoenixSocketProvider = ({ children }) => {
 
         try {
             const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/socket';
+            const authToken = storeToken || localStorage.getItem("auth_token") || localStorage.getItem("user_token") || localStorage.getItem("jwt_auth_token") || localStorage.getItem("socket_token") || "";
 
             // 🚀 ADVANCED GUEST ACCESS STRATEGY:
             // Dynamically load the token on connection if authenticated.
@@ -36,7 +38,7 @@ export const PhoenixSocketProvider = ({ children }) => {
             // connect/2 function can catch this to assign a guest socket room safely!
             phoenixSocket = new Socket(wsUrl, {
                 params: {
-                    token: localStorage.getItem("user_token") || ""
+                    token: authToken
                 },
                 // Back-off physics configuration multiplier for unstable networks
                 reconnectAfterMs: (tries) => [1000, 2000, 5000, 10000][tries - 1] || 10000
@@ -98,7 +100,7 @@ export const PhoenixSocketProvider = ({ children }) => {
                 try { phoenixSocket.disconnect(); } catch (err) { console.error(err); }
             }
         };
-    }, [user?.id, isAuthenticated]); // Re-fire safely when user keys shift
+    }, [user?.id, storeToken, isAuthenticated]); // Re-fire safely when user keys shift
 
     return (
         <PhoenixSocketContext.Provider value={{
