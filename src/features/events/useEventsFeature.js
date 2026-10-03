@@ -18,6 +18,7 @@ export function useEventsQuery() {
         queryFn: async () => {
             try {
                 const res = await apiFetch('/events');
+                console.log("useEventsQuery res:", res)
                 if (res && (res.data || Array.isArray(res))) {
                     return res;
                 }
@@ -306,6 +307,7 @@ export function useEventCommentsQuery(eventId) {
         queryFn: async () => {
             try {
                 const res = await apiFetch(`/event_comments?event_id=${eventId}`);
+                console.log("useEventCommentsQuery res:", res)
                 if (res && (res.data || Array.isArray(res))) {
                     return res.data || res;
                 }

@@ -75,8 +75,12 @@ export default function SettingsDashboard({ activeOrg: propActiveOrg }) {
                     <div className="flex items-center gap-3">
                         <Building2 className="w-5 h-5 text-primary-container shrink-0" />
                         <div className="flex flex-col">
-                            <span className="text-xs font-extrabold text-text-secondary uppercase tracking-wider font-mono">Managing Workspace</span>
-                            <span className="text-sm font-semibold text-text-secondary mt-0.5">Toggle context focus across multiple memberships</span>
+                            <span className="text-md font-extrabold text-text-secondary uppercase tracking-wider font-mono">
+                                Managing Workspace
+                            </span>
+                            <span className="text-lg font-semibold text-text-secondary mt-0.5">
+                                Toggle context focus across multiple memberships
+                            </span>
                         </div>
                     </div>
                     <div className="w-full sm:w-auto">
@@ -103,7 +107,7 @@ export default function SettingsDashboard({ activeOrg: propActiveOrg }) {
                 {/* Navigation Sidebar Panel Container */}
                 <aside className="w-full lg:w-72 bg-surface-container-low/40 p-5 border-b lg:border-b-0 lg:border-r border-white/5 flex flex-col gap-2 shrink-0 select-none">
                     <div className="px-3 py-2 mb-4 border-b border-white/5 pb-5">
-                        <div className="flex flex-wrap items-center gap-2 mb-1.5 font-mono text-[10px] uppercase font-bold tracking-wider select-none">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5 font-mono text-[14px] uppercase font-bold tracking-wider select-none">
                             <span className="text-text-secondary/70">
                                 Workspace Settings
                             </span>

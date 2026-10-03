@@ -39,8 +39,12 @@ export default function GeneralOrgSettings({ activeOrgId }) {
         <div className="space-y-6 text-left font-sans animate-in fade-in duration-200">
             {/* Upscaled Heading Elements */}
             <div className="border-b dark:border-white/5 border-black/5 pb-4 select-none">
-                <h2 className="text-2xl font-black text-text-primary tracking-tight">Owner Administrative Panel</h2>
-                <p className="text-sm text-text-secondary mt-0.5 font-medium">Configure organization metadata, public directory listings, and identity properties.</p>
+                <h2 className="text-2xl font-black text-text-primary tracking-tight">
+                    Owner Administrative Panel
+                </h2>
+                <p className="text-md text-text-secondary mt-0.5 font-medium">
+                    Configure organization metadata, public directory listings, and identity properties.
+                </p>
             </div>
 
             {/* Status Display Blocks */}

@@ -65,8 +65,12 @@ export const ModernLargeThreadContainer = ({
         return list;
     }, [ancestors, focusPost, descendants]); // Remove activeReplyPostId from dependencies!
 
-    console.log("ModernLargeThreadContainer: unifiedLayoutItems", unifiedLayoutItems);
-    console.log("ModernLargeThreadContainer: focusPost", focusPost);
+    //console.log("ModernLargeThreadContainer: unifiedLayoutItems", unifiedLayoutItems);
+    //console.log("ModernLargeThreadContainer: focusPost", focusPost);
+
+    console.log("ModernLargeThreadContainer: ancestors", ancestors);
+
+    console.log("ModernLargeThreadContainer: focusPost : ", focusPost?.id, focusPost?.content, focusPost?.likes_count);
 
 
     // 🚀 Optimization 1: Standardize window scroll alignment on thread transitions
@@ -79,11 +83,13 @@ export const ModernLargeThreadContainer = ({
         navigate(`/post/${id}`);
     }, [navigate]);
 
-    const handleActionToggle = useCallback((actionType, id) => {
+    const handleActionToggleX = useCallback((actionType, id) => {
         if (!isAuthenticated) {
             setIsLoginPromptOpen(true);
             return;
         }
+        console.log("likeMutation handleActionToggle: actionType", actionType);
+        console.log("likeMutation handleActionToggle: id", id);
         switch (actionType) {
             case 'like': postActions.toggleLike(id); break;
             case 'bookmark': postActions.toggleBookmark(id); break;
@@ -91,6 +97,56 @@ export const ModernLargeThreadContainer = ({
             default: break;
         }
     }, [isAuthenticated, setIsLoginPromptOpen, postActions]);
+
+    const handleActionToggle = useCallback((actionType, payload) => {
+        if (!isAuthenticated) {
+            setIsLoginPromptOpen(true);
+            return;
+        }
+
+        // 🚀 TARGET NORMALIZATION GATE: 
+        // Safely check if the input is an advanced object parameter or a legacy loose string id
+        const isObjectPayload = payload && typeof payload === 'object';
+        const rawPostId = isObjectPayload ? payload.postId : payload;
+        const rawReblogId = isObjectPayload ? payload.reblogId : null;
+
+        // If we are inside the Thread View page, item.data is already the original content.
+        // We ensure targetId maps directly to the active content item.
+        const targetId = rawReblogId || rawPostId;
+
+        console.log("likeMutation handleActionToggle: actionType", actionType);
+        console.log("likeMutation handleActionToggle: targetId", targetId);
+        console.log("likeMutation handleActionToggle: payload", payload);
+        console.log("likeMutation handleActionToggle: rawPostId", rawPostId);
+        console.log("likeMutation handleActionToggle: rawReblogId", rawReblogId);
+        console.log("likeMutation handleActionToggle: isObjectPayload", isObjectPayload);
+
+        switch (actionType) {
+            case 'like':
+                // Always pass down the exact targetId matching your mutation expectations
+                //postActions.toggleLike(targetId);
+                postActions.toggleLike({
+                    postId: rawPostId,
+                    reblogId: rawReblogId,
+                    isCurrentlyLiked: isObjectPayload ? payload.isCurrentlyLiked : false
+                });
+                break;
+            case 'bookmark':
+                // Pass the structured object to match your bookmark mutation arguments block
+                postActions.toggleBookmark({
+                    postId: rawPostId,
+                    reblogId: rawReblogId,
+                    isCurrentlyBookmarked: isObjectPayload ? payload.isCurrentlyBookmarked : false
+                });
+                break;
+            case 'reblog':
+                postActions.toggleReblog(targetId);
+                break;
+            default:
+                break;
+        }
+    }, [isAuthenticated, setIsLoginPromptOpen, postActions]);
+
 
     const renderInlineReplyForm = (targetPost) => {
         if (!targetPost) return null;

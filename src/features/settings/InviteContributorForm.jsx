@@ -43,7 +43,9 @@ export default function InviteContributorForm({ onInviteSuccess }) {
                 <UserPlus className="w-5 h-5 text-primary-container shrink-0" />
                 <h3 className="text-lg font-black text-text-primary tracking-tight">Invite New Team Member</h3>
             </div>
-            <p className="text-sm font-medium text-text-secondary mb-5 select-none">The recipient must have an active Kollective account or email address.</p>
+            <p className="text-lg font-medium text-text-secondary mb-5 select-none">
+                The recipient must have an active Kollective account or email address.
+            </p>
 
             {/* Error Feedback Display Banners */}
             {error && (

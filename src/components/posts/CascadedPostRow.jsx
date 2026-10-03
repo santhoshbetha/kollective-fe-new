@@ -12,7 +12,7 @@ import { getReplyCount, getReblogCount } from '../../utils/postHelpers';
 import { ThreadLine } from './ThreadLine';
 import cn from 'clsx';
 
-export const CascadedPostRow = React.memo(function CascadedPostRow({
+export const CascadedPostRow = React.memo(function C({
     post: propPost,
     isFocus,
     isAncestor,
@@ -263,7 +263,9 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
                                 isSelf ? "opacity-40 cursor-not-allowed text-text-secondary/50" : post?.liked ? "text-primary-container font-black cursor-pointer" : "hover:text-white cursor-pointer"
                             )}
                         >
-                            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>star</span>
+                            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
+                                star
+                            </span>
                             <span>{(post?.likes || 0).toLocaleString()}</span>
                         </button>
 

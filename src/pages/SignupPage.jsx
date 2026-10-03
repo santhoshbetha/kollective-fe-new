@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Alert, AlertTitle, AlertDescription } from '../components/ui/Alert';
-import { DatePicker } from '../components/ui/date-picker';
+import { useFeatureFlagsStore } from '../store/useFeatureFlags';
 import { useRegisterMutation } from '../store/auth/useRegisterMutation';
 
 const DEMOCRATIC_COUNTRIES = [
@@ -25,6 +25,7 @@ export const SignupPage = () => {
     const [currentStep, setCurrentStep] = useState(1); // 1: Welcome, 2: Details, 3: Verify
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
+    const isRegistrationOpen = useFeatureFlagsStore((state) => state.flags.registration_open);
 
     // Fully loaded data state
     const [formData, setFormData] = useState({
@@ -76,6 +77,19 @@ export const SignupPage = () => {
             setCurrentStep((prev) => prev - 1);
         }
     };
+
+    if (!isRegistrationOpen) {
+        return (
+            <div className="p-8 border border-amber-200 bg-amber-50 rounded-2xl text-center select-none animate-in zoom-in-95">
+                <h3 className="text-sm font-black font-mono text-amber-800 uppercase tracking-wider mb-1">
+                    🔒 Registration Temporarily Paused
+                </h3>
+                <p className="text-xs text-amber-600 font-medium leading-relaxed">
+                    Platform operators have locked public sign-up loops for system synchronization maintenance. Please try again shortly.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center bg-background text-on-surface p-4 sm:p-6 isolate selection:bg-primary/30">

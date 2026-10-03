@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import BallotBooth from './BallotBooth';
-import VotingSuccess from './VotingSuccess';
+import VotingSuccess from '../VotingSuccess';
 
 const BallotContainer = ({ applicationId, authToken, handleClose }) => {
     const [isSuccess, setIsSuccess] = useState(false);

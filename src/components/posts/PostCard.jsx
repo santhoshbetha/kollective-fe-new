@@ -167,7 +167,23 @@ export const PostCard = React.memo(function PostCard({
 
     const toggleBookmarkMutation = useToggleBookmark();
 
-    const getDisplayPost = (rawPost) => {
+    const getDisplayPostDebug = (rawPost) => {
+        console.log("here! getDisplayPost rawPost 1: ", rawPost);
+        console.log("here! getDisplayPost typeof rawPost.reblog : ", typeof rawPost.reblog);
+        if (!rawPost) return rawPost;
+        console.log("here! getDisplayPost 2 ");
+        if (rawPost.reblog && typeof rawPost.reblog === 'object') return rawPost.reblog;
+        console.log("here! getDisplayPost 3");
+        if (rawPost.reblog && typeof rawPost.reblog === 'string' && storeEntities[rawPost.reblog]) return storeEntities[rawPost.reblog];
+        console.log("here! getDisplayPost 4");
+        if (rawPost.reblog_of_id && storeEntities[rawPost.reblog_of_id]) return storeEntities[rawPost.reblog_of_id];
+        console.log("here! getDisplayPost 5");
+        if (rawPost.reblogOf && storeEntities[rawPost.reblogOf]) return storeEntities[rawPost.reblogOf];
+        console.log("here! getDisplayPost 6");
+        return rawPost;
+    };
+
+    const getDisplayPostX = (rawPost) => {
         if (!rawPost) return rawPost;
         if (rawPost.reblog && typeof rawPost.reblog === 'object') return rawPost.reblog;
         if (rawPost.reblog && typeof rawPost.reblog === 'string' && storeEntities[rawPost.reblog]) return storeEntities[rawPost.reblog];
@@ -176,11 +192,35 @@ export const PostCard = React.memo(function PostCard({
         return rawPost;
     };
 
+    const getDisplayPost = (rawPost) => {
+        if (!rawPost) return rawPost;
+
+        // 🚀 THE MASTER SYNC FIX: 
+        // If the post is a reblog, pull the original content's ID and extract it 
+        // straight out of our normalized Zustand entity dictionary (Single Source of Truth).
+        if (rawPost.reblog && rawPost.reblog.id && storeEntities[rawPost.reblog.id]) {
+            return storeEntities[rawPost.reblog.id];
+        }
+
+        // Fallback A: If the store hasn't normalized this nested target id yet, fall back to the inline object safely
+        if (rawPost.reblog && typeof rawPost.reblog === 'object') {
+            return rawPost.reblog;
+        }
+
+        // Fallback B: Legacy string key fallback safety checks
+        if (rawPost.reblog && typeof rawPost.reblog === 'string' && storeEntities[rawPost.reblog]) {
+            return storeEntities[rawPost.reblog];
+        }
+
+        return rawPost;
+    };
+
+
     const displayPost = getDisplayPost(post);
     const author = displayPost?.author || post?.author;
 
-    const reblogsCount = getReblogCount(post);
-    const likesCount = getLikeCount(post);
+    const reblogsCount = getReblogCount(displayPost);
+    const likesCount = getLikeCount(displayPost);
 
     const isSelfPost = useMemo(() => {
         const targetAuthor = displayPost?.author || post?.author;
@@ -214,9 +254,15 @@ export const PostCard = React.memo(function PostCard({
     const isAlreadyReblogged = !!(post?.reblogged || post?.has_reblogged || displayPost?.reblogged || displayPost?.has_reblogged);
 
     const targetData = isRebloggedPost
-        ? (post.reblog || {})  // Real source content for bookmarking logic
+        ? (post?.reblog || {})  // Real source content for bookmarking logic
         : post;
-    console.log("targetData", targetData);
+
+    console.log("here! PostCard storeEntities : ", storeEntities);
+    console.log("here! PostCard propPost : ", propPost?.id, propPost?.content, propPost?.likes_count);
+    console.log("here! PostCard storePost : ", storePost?.id, storePost?.content, storePost?.likes_count);
+    console.log("here! PostCard post : ", post?.id, post?.content, post?.likes_count, post);
+    console.log("here! PostCard displayPost : ", displayPost?.id, displayPost?.content, displayPost?.likes_count, displayPost?.liked, displayPost?.bookmarked);
+    console.log("here! PostCard targetData : ", targetData?.id, targetData?.content, targetData?.likes_count);
 
     // Derive active saved state parameters cleanly from incoming data matrices
     // 🚀 THE DEEP DEBUG FIX: Force the individual card to explicitly subscribe 
@@ -237,7 +283,18 @@ export const PostCard = React.memo(function PostCard({
         post?.bookmarked ||
         post?.isBookmarked
     );
-    //console.log('PostCard isBookmarked', isBookmarked);
+    console.log('PostCard isBookmarked', isBookmarked);
+    console.log('PostCard post?.content', post?.content);
+    console.log('PostCard post?.bookmarked', post?.bookmarked);
+    console.log('PostCard targetData?.bookmarked', targetData?.bookmarked);
+    console.log('PostCard targetData?.isBookmarked', targetData?.isBookmarked);
+    console.log('PostCard displayPost?.bookmarked', displayPost?.bookmarked);
+    console.log('PostCard displayPost?.isBookmarked', displayPost?.isBookmarked);
+    console.log('PostCard isLiked', isLiked);
+    console.log('PostCard isBookmarked', isBookmarked);
+    console.log('PostCard post?.reblogged', post?.reblogged);
+    console.log('PostCard targetData?.reblogged', targetData?.reblogged);
+    console.log('PostCard displayPost?.reblogged', displayPost?.reblogged);
     //console.log('PostCard livePost', livePost);
 
     const { toggleLike, toggleReblog, toggleBookmark, isActionPending } = usePostActions();
@@ -253,7 +310,7 @@ export const PostCard = React.memo(function PostCard({
     const [carouselOpen, setCarouselOpen] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
 
-    const allImages = displayPost?.images || (displayPost?.image ? [displayPost.image] : (post?.images || (post?.image ? [post.image] : [])));
+    const allImages = displayPost?.images || (displayPost?.image ? [displayPost.image] : (post?.images || (post?.image ? [post?.image] : [])));
 
     const triggerLoginPrompt = (message = "Please log in to interact with posts.") => {
         setLoginPromptMessage(message);
@@ -269,8 +326,8 @@ export const PostCard = React.memo(function PostCard({
         if (targetPostId) {
             //toggleLike(targetPostId);
             toggleLike({
-                postId: post.id,
-                reblogId: isRebloggedPost ? post.reblog.id : null,
+                postId: post?.id,
+                reblogId: isRebloggedPost ? post?.reblog.id : null,
                 isCurrentlyLiked: isLiked
             });
         }
@@ -290,7 +347,7 @@ export const PostCard = React.memo(function PostCard({
 
     const handleBookmarkClick = (e) => {
         if (e) e.stopPropagation();
-        if (isSelf) return;
+        if (isSelf) return; ``
         if (!isAuthenticated) {
             triggerLoginPrompt("Please log in to bookmark posts.");
             return;
@@ -299,8 +356,8 @@ export const PostCard = React.memo(function PostCard({
         if (targetPostId) {
             //toggleBookmark(targetPostId);
             toggleBookmark({
-                postId: post.id, // Wrapper post ID
-                reblogId: isRebloggedPost ? post.reblog.id : null, // Target inner ID
+                postId: post?.id, // Wrapper post ID
+                reblogId: isRebloggedPost ? post?.reblog.id : null, // Target inner ID
                 isCurrentlyBookmarked: isBookmarked
             });
         }
@@ -388,7 +445,7 @@ export const PostCard = React.memo(function PostCard({
 
     // ⚡ Top-Scope Unification: Safe payload normalization
     const videoSource = typeof post?.video === 'string'
-        ? post.video
+        ? post?.video
         : post?.video?.url || post?.videoUrl;
 
     const authorRole = post?.author?.role || 'Journalist';
@@ -421,10 +478,16 @@ export const PostCard = React.memo(function PostCard({
             activeMenuSetShowMenu = null;
             return;
         }
-        navigate(`/post/${displayPost?.id || post?.id}`);
+        console.log("handleCardClick displayPost?.id : ", displayPost?.id);
+        console.log("handleCardClick post?.id : ", post?.id);
+        if (displayPost?.id) {
+            navigate(`/post/${displayPost?.id}`);
+        } else {
+            navigate(`/post/${post?.id}`);
+        }
     }, [navigate, displayPost?.id, post?.id]);
 
-    console.log("PostCard Post 22 : ", post);
+    console.log("PostCard Post 22 : ", post?.id, post?.content, post?.likes_count);
 
     // SYSTEM AI POST STYLE
     if (post?.isSystem) {
@@ -545,7 +608,7 @@ export const PostCard = React.memo(function PostCard({
                             </h2>
 
                             {post?.contentWarning ? (
-                                <ContentWarningWrapper warning={post.contentWarning}>
+                                <ContentWarningWrapper warning={post?.contentWarning}>
                                     <p className="font-body-lg text-base md:text-lg text-text-primary/90 leading-relaxed font-normal">
                                         {post?.text}
                                     </p>
@@ -588,17 +651,17 @@ export const PostCard = React.memo(function PostCard({
                                         </div>
                                         {post?.imageMeta && (
                                             <span className="text-[11px] font-bold text-white/80 bg-black/40 px-2 py-0.5 rounded backdrop-blur-md border border-white/5 shadow-sm">
-                                                {post.imageMeta}
+                                                {post?.imageMeta}
                                             </span>
                                         )}
                                     </div>
                                 </div>
                                 {/* Render the refactored player block, feeding parameters directly down to the child layer */}
                                 <KollectiveImagePlayer
-                                    src={post.image.url} // ✅ Fixed
-                                    staticUrl={post.image.static_url} // ✅ Matches your PostJSON object key!
-                                    blurhash={post.image.blurhash}    // ✅ Matches your PostJSON object key!
-                                    imageMeta={post.image.imageMeta || post?.imageMeta}
+                                    src={post?.image.url} // ✅ Fixed
+                                    staticUrl={post?.image.static_url} // ✅ Matches your PostJSON object key!
+                                    blurhash={post?.image.blurhash}    // ✅ Matches your PostJSON object key!
+                                    imageMeta={post?.image.imageMeta || post?.imageMeta}
                                     onClick={() => {
                                         setCarouselIndex(0);
                                         setCarouselOpen(true);
@@ -654,7 +717,9 @@ export const PostCard = React.memo(function PostCard({
                                     )}
                                     title={post?.liked ? "Unlike" : "Like"}
                                 >
-                                    <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
+                                    <span
+                                        className="material-symbols-outlined text-[18px]"
+                                        style={{ fontVariationSettings: displayPost?.liked ? "'FILL' 1" : "'FILL' 0" }}>
                                         star
                                     </span>
                                     <span>
@@ -868,12 +933,12 @@ export const PostCard = React.memo(function PostCard({
                                 disabled={isActionPending}
                                 className={cn(
                                     "flex items-center gap-1.5 font-bold text-xs transition-colors bg-transparent border-none cursor-pointer",
-                                    (displayPost?.liked || post?.liked) ? "text-primary-container font-extrabold" : "hover:text-white"
+                                    (displayPost?.liked) ? "text-primary-container font-extrabold" : "hover:text-white"
                                 )}
                                 title="Like"
                             >
                                 <span className="material-symbols-outlined text-[18px]"
-                                    style={{ fontVariationSettings: (displayPost?.liked || post?.liked) ? "'FILL' 1" : "'FILL' 0" }}>
+                                    style={{ fontVariationSettings: (displayPost?.liked) ? "'FILL' 1" : "'FILL' 0" }}>
                                     star
                                 </span>
                                 <span>{likesCount.toLocaleString()}</span>
@@ -881,7 +946,7 @@ export const PostCard = React.memo(function PostCard({
                         </div>
 
                         {/* Context Action layout toggle section */}
-                        {post?.communityJoinable ? (
+                        {displayPost?.communityJoinable ? (
                             <button
                                 onClick={(e) => { e.stopPropagation(); handleJoinCircleClick(); }}
                                 className={cn(
@@ -896,20 +961,22 @@ export const PostCard = React.memo(function PostCard({
                                 onClick={handleBookmarkClick}
                                 disabled={isActionPending || isSelf}
                                 className={cn(
-                                    "flex items-center justify-center p-1.5 rounded-full transition-colors border-none bg-transparent ml-auto",
+                                    "flex items-center justify-center p-1.5 rounded-full transition-colors border-none bg-transparent ml-auto cursor-pointer",
                                     isSelf ? "opacity-30 cursor-not-allowed" :
-                                        (displayPost?.bookmarked || post?.bookmarked) ? "text-amber-500 hover:bg-white/5" : "hover:text-text-primary hover:bg-white/5"
+                                        (displayPost?.bookmarked) ? "text-amber-500 hover:bg-white/5" : "hover:text-text-primary hover:bg-white/5"
                                 )}
                                 title="Bookmark"
                             >
-                                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: (displayPost?.bookmarked || post?.bookmarked) ? "'FILL' 1" : "'FILL' 0" }}>
+                                <span
+                                    className="material-symbols-outlined text-[18px]"
+                                    style={{ fontVariationSettings: (displayPost?.bookmarked) ? "'FILL' 1" : "'FILL' 0" }}
+                                >
                                     bookmark
                                 </span>
                             </button>
                         )}
                     </div>
                 </div>
-
 
                 {/* 🏆 FULLSCREEN IMAGE CAROUSEL CANVASES */}
                 <ImageLightbox

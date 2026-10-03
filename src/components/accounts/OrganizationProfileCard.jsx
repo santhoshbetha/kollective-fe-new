@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import VerificationBadge from './VerificationBadge';
+import VerificationBadge from '../VerificationBadge';
 
 const OrganizationProfileCard = ({ profileData }) => {
     const [showLog, setShowLog] = useState(false);
@@ -9,9 +9,8 @@ const OrganizationProfileCard = ({ profileData }) => {
     const correctionLog = metadata?.correction_log || [];
 
     return (
-        <div className={`w-full max-w-xl border bg-surface-container p-6 font-mono text-text-primary transition-colors duration-300 glass-card ${
-            isWarned ? 'border-yellow-500 shadow-[0_0_15px_rgba(244,208,0,0.05)]' : 'border-white/10'
-        }`}>
+        <div className={`w-full max-w-xl border bg-surface-container p-6 font-mono text-text-primary transition-colors duration-300 glass-card ${isWarned ? 'border-yellow-500 shadow-[0_0_15px_rgba(244,208,0,0.05)]' : 'border-white/10'
+            }`}>
 
             {/* Upper Status Block */}
             <div className="flex items-start justify-between mb-4">

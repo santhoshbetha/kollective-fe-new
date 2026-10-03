@@ -90,6 +90,7 @@ export const MainLayout = () => {
         ...(canAccessLocalizedFeatures ? [{ name: 'Classifieds', path: '/classifieds', icon: 'newspaper' }] : []),
         ...(isAuthenticated ? [{ name: 'Organize', path: '/organize', icon: 'campaign' }] : []),
         ...(canAccessCivicAssembly ? [{ name: 'Civic Assembly', path: '/campaigns/local', icon: 'groups' }] : []),
+        ...(isAuthenticated ? [{ name: 'Messages', path: '/messages', icon: 'chat' }] : []),
         ...(isAuthenticated ? [{ name: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' }] : []),
         ...(isAuthenticated ? [{ name: 'Notifications', path: '/notifications', icon: 'notifications' }] : []),
         ...(isAuthenticated ? [{ name: 'Settings', path: '/settings', icon: 'settings' }] : []),

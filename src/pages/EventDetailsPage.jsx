@@ -15,7 +15,7 @@ import { EmojiSelector } from '../components/EmojiSelector';
 import { useAuthStore } from '../store/auth/useAuthStore';
 
 export const EventDetailsPage = () => {
-  const { id } = useParams();
+  const { id: eventId } = useParams();
   const navigate = useNavigate();
 
   const currentUser = useAuthStore((state) => state.user);
@@ -43,10 +43,10 @@ export const EventDetailsPage = () => {
     return false;
   };
 
-  const toggleEventAttendanceMutation = useToggleEventAttendance(id);
-  const commentMutation = useAddEventComment(id);
-  const likeCommentMutation = useLikeEventComment(id);
-  const { data: fetchedComments } = useEventCommentsQuery(id);
+  const toggleEventAttendanceMutation = useToggleEventAttendance(eventId);
+  const commentMutation = useAddEventComment(eventId);
+  const likeCommentMutation = useLikeEventComment(eventId);
+  const { data: fetchedComments } = useEventCommentsQuery(eventId);
 
   const { events, eventsLoading } = useEventsQuery();
   const toggleEventInterestMutation = useToggleEventInterest();
@@ -74,7 +74,10 @@ export const EventDetailsPage = () => {
     }, 3000);
   };
 
-  const event = events?.find((e) => e.id === id);
+  const event = events?.find((e) => e.id === eventId);
+
+  console.log("EventDetailsPage event:", event);
+  console.log("EventDetailsPage fetchedComments:", fetchedComments)
 
   const allComments = (fetchedComments && Array.isArray(fetchedComments) && fetchedComments.length > 0)
     ? fetchedComments
@@ -142,7 +145,7 @@ export const EventDetailsPage = () => {
     if (!commentText.trim() && !commentImage) return;
 
     setIsSubmittingComment(true);
-    commentMutation.mutate({ eventId: id, commentText: commentText.trim(), imageUrl: commentImage }, {
+    commentMutation.mutate({ eventId: eventId, commentText: commentText.trim(), imageUrl: commentImage }, {
       onSuccess: () => {
         setCommentText('');
         setCommentImage(null);
@@ -160,7 +163,7 @@ export const EventDetailsPage = () => {
   const handlePostReply = (parentId) => {
     if (!replyText.trim() && !replyImage) return;
 
-    commentMutation.mutate({ eventId: id, commentText: replyText.trim(), parentId, imageUrl: replyImage }, {
+    commentMutation.mutate({ eventId: eventId, commentText: replyText.trim(), parentId, imageUrl: replyImage }, {
       onSuccess: () => {
         setReplyText('');
         setReplyImage(null);

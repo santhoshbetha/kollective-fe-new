@@ -77,170 +77,7 @@ export function usePostActions(currentThreadId = null) {
         }
     };
 
-    // 1. Toggle Like Mutation
-    const likeMutationO = useMutation({
-        mutationFn: async (postId) => {
-            return await apiFetch(`/posts/${postId}/like`, { method: 'POST' });
-        },
-        onMutate: async (postId) => {
-            await queryClient.cancelQueries({ queryKey: homeTimelineKey });
-            if (activeThreadKey) await queryClient.cancelQueries({ queryKey: activeThreadKey });
-
-            const prevTimeline = queryClient.getQueryData(homeTimelineKey);
-            const prevThread = activeThreadKey ? queryClient.getQueryData(activeThreadKey) : null;
-
-            syncAllCacheQueries(postId, (post) => {
-                const isLiked = !post.liked;
-                const newLikes = isLiked
-                    ? (post.likes || post.likes_count || 0) + 1
-                    : Math.max(0, (post.likes || post.likes_count || 1) - 1);
-                return {
-                    ...post,
-                    liked: isLiked,
-                    has_liked: isLiked,
-                    likes: newLikes,
-                    likes_count: newLikes,
-                    likesCount: newLikes
-                };
-            });
-
-            return { prevTimeline, prevThread };
-        },
-        onError: (err, id, context) => {
-            if (context?.prevTimeline) queryClient.setQueryData(homeTimelineKey, context.prevTimeline);
-            if (context?.prevThread && activeThreadKey) queryClient.setQueryData(activeThreadKey, context.prevThread);
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: homeTimelineKey, refetchType: 'none' });
-            if (activeThreadKey) queryClient.invalidateQueries({ queryKey: activeThreadKey, refetchType: 'none' });
-        },
-    });
-
-    const likeMutation = useMutation({
-        // 🚀 ROUTE FIX: Maintain strict POST methods, passing the state change flag inside the JSON body
-        mutationFn: async ({ postId, isCurrentlyLiked, reblogId }) => {
-            const targetId = reblogId || postId;
-            const nextLikedState = !isCurrentlyLiked;
-
-            console.log("likeMutation postId", postId);
-            console.log("likeMutation isCurrentlyLiked", isCurrentlyLiked);
-            console.log("likeMutation reblogId", reblogId);
-
-            const res = await apiFetch(`/posts/${targetId}/like`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    // Adjust this property name if your backend expects a different variable name
-                    like: nextLikedState,
-                    status: nextLikedState ? 'like' : 'unlike'
-                })
-            });
-            console.log("likeMutation res", res);
-            return res?.data || res;
-        },
-        onMutate: async ({ postId, isCurrentlyLiked, reblogId }) => {
-            const targetId = reblogId || postId;
-
-            await queryClient.cancelQueries({ queryKey: homeTimelineKey });
-            if (activeThreadKey) await queryClient.cancelQueries({ queryKey: activeThreadKey });
-
-            const prevTimeline = queryClient.getQueryData(homeTimelineKey);
-            const prevThread = activeThreadKey ? queryClient.getQueryData(activeThreadKey) : null;
-
-            const nextLikedState = !isCurrentlyLiked;
-            const store = usePostsStore.getState();
-
-            // 🚀 STEP 1: Look up the baseline count once from the original target content source
-            const originalTargetItem = store.entities[targetId];
-            const baseLikesCount = originalTargetItem?.likes || originalTargetItem?.likes_count || originalTargetItem?.likesCount || 0;
-
-            // 🚀 STEP 2: Compute the absolute static target number exactly once
-            const absoluteNewLikesCount = nextLikedState
-                ? baseLikesCount + 1
-                : Math.max(0, baseLikesCount - 1);
-
-            // Universal transformer that forces the exact calculated static value
-            const applyStaticLikesCount = (postItem) => ({
-                ...postItem,
-                liked: nextLikedState,
-                has_liked: nextLikedState,
-                likes: absoluteNewLikesCount,
-                likes_count: absoluteNewLikesCount,
-                likesCount: absoluteNewLikesCount
-            });
-
-            // 1️⃣ Sync TanStack Query caches across active feeds
-            if (typeof syncAllCacheQueries === 'function') {
-                syncAllCacheQueries(targetId, applyStaticLikesCount);
-                // 🚀 ROUTE SAFETY CHECK: Only sync parent wrappers if they are present and distinct
-                if (reblogId && postId && reblogId !== postId) {
-                    syncAllCacheQueries(postId, applyStaticLikesCount);
-                }
-            }
-
-            // 2️⃣ Sync Zustand Client Store Layer using the safe static calculation
-            const updatesBatch = [];
-
-            if (store.entities[targetId]) {
-                updatesBatch.push(applyStaticLikesCount(store.entities[targetId]));
-            }
-
-            // 🚀 ROUTE SAFETY CHECK: Only process nested reblog wrapper parameters if the wrapper actually exists
-            if (reblogId && postId && reblogId !== postId && store.entities[postId]) {
-                const updatedWrapper = applyStaticLikesCount(store.entities[postId]);
-                if (updatedWrapper.reblog) {
-                    updatedWrapper.reblog = applyStaticLikesCount(updatedWrapper.reblog);
-                }
-                updatesBatch.push(updatedWrapper);
-            }
-
-            if (updatesBatch.length > 0) {
-                store.importFetchedPosts(updatesBatch);
-            }
-
-            return { prevTimeline, prevThread, targetId, postId, reblogId, isCurrentlyLiked };
-        },
-
-        onError: (err, variables, context) => {
-            if (context?.prevTimeline) queryClient.setQueryData(homeTimelineKey, context.prevTimeline);
-            if (context?.prevThread && activeThreadKey) queryClient.setQueryData(activeThreadKey, context.prevThread);
-
-            // Revert local Zustand changes back to original parameters if the network call fails
-            const store = usePostsStore.getState();
-            const rollbacksBatch = [];
-
-            const revertLikesData = (postItem) => {
-                const currentLikesCount = postItem.likes || postItem.likes_count || postItem.likesCount || 0;
-                const originalState = variables.isCurrentlyLiked;
-                const rolledLikes = originalState
-                    ? Math.max(1, currentLikesCount)
-                    : Math.max(0, currentLikesCount);
-
-                return {
-                    ...postItem,
-                    liked: originalState,
-                    has_liked: originalState,
-                    likes: postItem.likes,
-                    likes_count: postItem.likes_count,
-                    likesCount: postItem.likesCount
-                };
-            };
-
-            const targetId = variables.reblogId || variables.postId;
-            if (store.entities && store.entities[targetId]) rollbacksBatch.push(revertLikesData(store.entities[targetId]));
-            if (variables.reblogId && store.entities && store.entities[variables.postId]) rollbacksBatch.push(revertLikesData(store.entities[variables.postId]));
-
-            if (rollbacksBatch.length > 0) {
-                store.importFetchedPosts(rollbacksBatch);
-            }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: homeTimelineKey, refetchType: 'none' });
-            if (activeThreadKey) queryClient.invalidateQueries({ queryKey: activeThreadKey, refetchType: 'none' });
-        },
-    });
-
-
-    // 2. Toggle Reblog (Boost) Mutation
+    // 1. Toggle Reblog (Boost) Mutation
     const reblogMutation = useMutation({
         mutationFn: async (postId) => {
             // 🚀 REMOVED THE GUARD SHORT-CIRCUIT: Let the fetch fire so it hits your Elixir context toggle block!
@@ -294,11 +131,10 @@ export function usePostActions(currentThreadId = null) {
         },
     });
 
-    // 3. Toggle Bookmark Mutation
-    const bookmarkMutationO = useMutation({
+    // 2. Toggle Like Mutation
+    const likeMutation = useMutation({
         mutationFn: async (postId) => {
-            console.log("bookmarkMutation postId", postId);
-            return await apiFetch(`/posts/${postId}/bookmark`, { method: 'POST' });
+            return await apiFetch(`/posts/${postId}/like`, { method: 'POST' });
         },
         onMutate: async (postId) => {
             await queryClient.cancelQueries({ queryKey: homeTimelineKey });
@@ -307,7 +143,20 @@ export function usePostActions(currentThreadId = null) {
             const prevTimeline = queryClient.getQueryData(homeTimelineKey);
             const prevThread = activeThreadKey ? queryClient.getQueryData(activeThreadKey) : null;
 
-            syncAllCacheQueries(postId, (post) => ({ ...post, bookmarked: !post.bookmarked }));
+            syncAllCacheQueries(postId, (post) => {
+                const isLiked = !post.liked;
+                const newLikes = isLiked
+                    ? (post.likes || post.likes_count || 0) + 1
+                    : Math.max(0, (post.likes || post.likes_count || 1) - 1);
+                return {
+                    ...post,
+                    liked: isLiked,
+                    has_liked: isLiked,
+                    likes: newLikes,
+                    likes_count: newLikes,
+                    likesCount: newLikes
+                };
+            });
 
             return { prevTimeline, prevThread };
         },
@@ -317,72 +166,11 @@ export function usePostActions(currentThreadId = null) {
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: homeTimelineKey, refetchType: 'none' });
-            queryClient.invalidateQueries({ queryKey: ['timeline', 'bookmarks'], refetchType: 'none' });
+            if (activeThreadKey) queryClient.invalidateQueries({ queryKey: activeThreadKey, refetchType: 'none' });
         },
     });
 
-    const bookmarkMutationN = useMutation({
-        // 🚀 UPGRADE A: Dynamically switch HTTP methods instead of hardcoding 'POST'
-        mutationFn: async ({ postId, isCurrentlyBookmarked }) => {
-            const method = isCurrentlyBookmarked ? 'DELETE' : 'POST';
-            console.log("bookmarkMutation postId", postId, "method", method);
-            return await apiFetch(`/posts/${postId}/bookmark`, { method });
-        },
-        onMutate: async ({ postId, isCurrentlyBookmarked }) => {
-            await queryClient.cancelQueries({ queryKey: homeTimelineKey });
-            if (activeThreadKey) await queryClient.cancelQueries({ queryKey: activeThreadKey });
-            // Cancel bookmarks query scope to prevent race conditions during deletion loops
-            await queryClient.cancelQueries({ queryKey: ['bookmarks'] });
-
-            const prevTimeline = queryClient.getQueryData(homeTimelineKey);
-            const prevThread = activeThreadKey ? queryClient.getQueryData(activeThreadKey) : null;
-
-            const nextBookmarkedState = !isCurrentlyBookmarked;
-
-            // Maintain your structural synchronization loops
-            // 1️⃣ Updates your TanStack React Query memory layers
-            if (typeof syncAllCacheQueries === 'function') {
-                syncAllCacheQueries(postId, (post) => ({ ...post, bookmarked: nextBookmarkedState }));
-            }
-
-            // 2️⃣ 🚀 ADD THIS HERE: Instantly updates your Zustand client store for snappy UI state changes
-            /*const store = usePostsStore.getState();
-            if (store.entities && store.entities[postId]) {
-                store.importFetchedPosts([{
-                    ...store.entities[postId],
-                    bookmarked: nextBookmarkedState,
-                    isBookmarked: nextBookmarkedState
-                }]);
-            }*/
-
-            // 🚀 UPGRADE B: If un-bookmarking, remove the element from the Bookmarks tab immediately
-            // 3️⃣ Slices the element out of the Bookmarks list layout if un-bookmarking
-            if (!nextBookmarkedState) {
-                ejectFromBookmarksCache(postId);
-            }
-
-            return { prevTimeline, prevThread };
-        },
-        onError: (err, variables, context) => {
-            if (context?.prevTimeline) queryClient.setQueryData(homeTimelineKey, context.prevTimeline);
-            if (context?.prevThread && activeThreadKey) queryClient.setQueryData(activeThreadKey, context.prevThread);
-
-            // 🎯 OPTIONAL ROLLBACK: Consider flipping Zustand back if you want airtight error handling
-            /*const store = usePostsStore.getState();
-            if (store.entities && store.entities[variables.postId]) {
-                store.importFetchedPosts([{
-                    ...store.entities[variables.postId],
-                    bookmarked: variables.isCurrentlyBookmarked,
-                    isBookmarked: variables.isCurrentlyBookmarked
-                }]);
-            }*/
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: homeTimelineKey, refetchType: 'none' });
-            queryClient.invalidateQueries({ queryKey: ['bookmarks'], refetchType: 'none' });
-        },
-    });
-
+    // 3. Toggle Bookmark Mutation
     const bookmarkMutation = useMutation({
         mutationFn: async ({ postId, isCurrentlyBookmarked, reblogId }) => {
             // 🚀 TARGET FALLTHROUGH: Always dispatch network request against original content ID
@@ -393,12 +181,9 @@ export function usePostActions(currentThreadId = null) {
         },
         onMutate: async ({ postId, isCurrentlyBookmarked, reblogId }) => {
             const targetId = reblogId || postId;
-
             await queryClient.cancelQueries({ queryKey: homeTimelineKey });
             await queryClient.cancelQueries({ queryKey: ['bookmarks'] });
-
             const nextBookmarkedState = !isCurrentlyBookmarked;
-
             // 1. Sync React Query caching layers
             if (typeof syncAllCacheQueries === 'function') {
                 syncAllCacheQueries(targetId, (p) => ({ ...p, bookmarked: nextBookmarkedState }));
@@ -406,7 +191,6 @@ export function usePostActions(currentThreadId = null) {
                     syncAllCacheQueries(postId, (p) => ({ ...p, bookmarked: nextBookmarkedState }));
                 }
             }
-
             // 2. 🚀 ZUSTAND MUTATION UPGRADE: Update original target AND wrapper entities concurrently
             const store = usePostsStore.getState();
             const updatesBatch = [];
@@ -419,7 +203,6 @@ export function usePostActions(currentThreadId = null) {
                     isBookmarked: nextBookmarkedState
                 });
             }
-
             // Update the timeline wrapper post reference if dealing with a reblog
             if (reblogId && store.entities[postId]) {
                 updatesBatch.push({
@@ -433,16 +216,13 @@ export function usePostActions(currentThreadId = null) {
                     }
                 });
             }
-
             if (updatesBatch.length > 0) {
                 store.importFetchedPosts(updatesBatch);
             }
-
             // 3. Invalidation cache eviction clean up triggers
             if (!nextBookmarkedState) {
                 ejectFromBookmarksCache(targetId);
             }
-
             return { targetId };
         },
         onError: (err, { targetId }, context) => {

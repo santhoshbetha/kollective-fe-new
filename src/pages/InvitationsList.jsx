@@ -93,7 +93,9 @@ export default function InvitationsList() {
             <div className="flex items-center justify-between mb-6 pb-4 border-b dark:border-white/5 border-black/5 select-none">
                 <div className="space-y-0.5">
                     <h2 className="text-2xl font-black text-text-primary tracking-tight">Organization Invitations</h2>
-                    <p className="text-sm text-text-secondary font-medium">Review and accept invitations to collaborate with sovereign organizations</p>
+                    <p className="text-lg text-text-secondary font-medium">
+                        Review and accept invitations to collaborate with sovereign organizations
+                    </p>
                 </div>
                 <Mail className="w-6 h-6 text-primary-container shrink-0 hidden sm:block" />
             </div>
@@ -153,25 +155,25 @@ export default function InvitationsList() {
                                     <div className="min-w-0 space-y-0.5">
                                         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                             <p className={cn(
-                                                "font-black text-base text-text-primary tracking-tight",
+                                                "font-black text-lg text-text-primary tracking-tight",
                                                 expired && "line-through text-text-secondary"
                                             )}>
                                                 {org.name || 'Anonymous Org'}
                                             </p>
                                             {org.handle && (
-                                                <span className="text-sm text-text-secondary font-medium font-mono">
+                                                <span className="text-lg text-text-secondary font-medium font-mono">
                                                     {org.handle}
                                                 </span>
                                             )}
                                         </div>
 
-                                        <div className="flex items-center flex-wrap gap-2 text-xs font-medium text-text-secondary pt-0.5 select-none">
+                                        <div className="flex items-center flex-wrap gap-2 text-md font-medium text-text-secondary pt-0.5 select-none">
                                             <span>Offered Role Slot:</span>
-                                            <span className="capitalize font-bold text-amber-400 dark:text-amber-300 bg-amber-400/10 dark:bg-amber-400/15 border border-amber-400/20 px-2.5 py-0.5 rounded-md text-[10px] uppercase font-mono tracking-wider">
+                                            <span className="capitalize font-bold text-amber-400 dark:text-amber-300 bg-amber-400/10 dark:bg-amber-400/15 border border-amber-400/20 px-2.5 py-0.5 rounded-md text-[14px] uppercase font-mono tracking-wider">
                                                 {invite.role || 'contributor'}
                                             </span>
                                             {expired && (
-                                                <span className="text-rose-400 font-extrabold uppercase tracking-wide font-mono text-[10px] bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                                <span className="text-rose-400 font-extrabold uppercase tracking-wide font-mono text-[14px] bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
                                                     <X className="w-3 h-3" /> Expired
                                                 </span>
                                             )}
@@ -180,7 +182,7 @@ export default function InvitationsList() {
                                 </div>
 
                                 {/* Responsive Operations Control Row Blocks */}
-                                <div className="flex items-center gap-2 self-end sm:self-center select-none font-mono text-[10px] uppercase font-bold tracking-wider">
+                                <div className="flex items-center gap-2 self-end sm:self-center select-none font-mono text-[14px] uppercase font-bold tracking-wider">
                                     {expired ? (
                                         <button
                                             type="button"

@@ -89,7 +89,7 @@ export default function TeamManagement({ activeOrgId, userRole }) {
             {/* Expanded Header Layout */}
             <div className="border-b dark:border-white/5 border-black/5 pb-4 select-none">
                 <h2 className="text-2xl font-black text-text-primary tracking-tight">Team Management</h2>
-                <p className="text-sm text-text-secondary mt-0.5 font-medium">Manage writing, publication, and moderation permissions within this organization.</p>
+                <p className="text-lg text-text-secondary mt-0.5 font-medium">Manage writing, publication, and moderation permissions within this organization.</p>
             </div>
 
             {canManageTeam && (
@@ -98,7 +98,7 @@ export default function TeamManagement({ activeOrgId, userRole }) {
             {/* Active Members Grid Section */}
             <div className="space-y-3">
                 <div className="flex items-center justify-between select-none">
-                    <h3 className="text-xs font-black text-text-secondary uppercase tracking-widest font-mono">
+                    <h3 className="text-md font-black text-text-secondary uppercase tracking-widest font-mono">
                         Active Roster ({activeMembers.length})
                     </h3>
                 </div>
@@ -184,7 +184,7 @@ export default function TeamManagement({ activeOrgId, userRole }) {
             </div>            {/* Sent Invitations Section Layout Block */}
             {canManageTeam && (
                 <div className="space-y-3 pt-4">
-                    <h3 className="text-xs font-black text-text-secondary uppercase tracking-widest font-mono select-none">
+                    <h3 className="text-md font-black text-text-secondary uppercase tracking-widest font-mono select-none">
                         Sent Invitations ({pendingInvites.length})
                     </h3>
 
@@ -199,14 +199,14 @@ export default function TeamManagement({ activeOrgId, userRole }) {
                                 {pendingInvites.map((invite) => (
                                     <li key={invite.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/[0.005] transition-all duration-150 animate-in fade-in duration-100">
                                         <div className="text-left min-w-0 space-y-0.5">
-                                            <p className="font-black text-base text-text-primary tracking-tight truncate">
+                                            <p className="font-black text-lg text-text-primary tracking-tight truncate">
                                                 {invite.user?.name || invite.email || "Pending User"}
                                             </p>
-                                            <p className="text-sm font-medium font-mono text-text-secondary truncate opacity-60">
+                                            <p className="text-lg font-medium font-mono text-text-secondary truncate opacity-60">
                                                 {invite.email ? `Sent to: ${invite.email}` : `Mapping identifier (ID: ${invite.user?.id})`}
                                             </p>
                                         </div>
-                                        <div className="flex items-center gap-3 shrink-0 select-none font-mono text-[10px] uppercase font-bold tracking-wider">
+                                        <div className="flex items-center gap-3 shrink-0 select-none font-mono text-[14px] uppercase font-bold tracking-wider">
                                             <span className="px-2.5 py-1 rounded-md border bg-amber-400/10 border-amber-400/20 text-amber-400 capitalize">
                                                 {invite.role} (Pending)
                                             </span>

@@ -6,15 +6,57 @@ import { usePostsStore } from '../../store/usePostsStore';
 import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
+/*
+export function useHomeTimeline() {
+    const importFetchedPosts = usePostsStore((state) => state.importFetchedPosts);
+    // Read the live active tab out of your unified Zustand useStore
+    const activeTab = useStore((state) => state.homeFeedTab); // 'All Activity' | 'Voices' | 'Popular' | 'Following'
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const { countryCode, countryName } = useCountry();
+
+    const countryKey = countryCode || countryName || 'US';
+
+    return useInfiniteQuery({
+        // 🚀 Include activeTab and country info in the Query Key array
+        queryKey: ['timeline', 'home', activeTab, isAuthenticated, countryKey],
+        queryFn: async ({ pageParam }) => {
+            const categoryParam = activeTab === 'All Activity' ? '' : `&category=${encodeURIComponent(activeTab.toLowerCase())}`;
+            const cursorParam = pageParam ? `&cursor=${pageParam}` : '';
+            const detectedCountry = countryCode || countryName || 'US';
+            const countryParam = (!isAuthenticated && detectedCountry)
+                ? `&country=${encodeURIComponent(detectedCountry)}&country_code=${encodeURIComponent(countryCode || 'US')}`
+                : '';
+            const path = `/posts?sort=newest${categoryParam}${countryParam}${cursorParam}`;
+            try {
+                const res = await apiFetch(path);
+                console.log("home timeline res", res);
+                if (res && (res.data || Array.isArray(res))) {
+                    console.log("home timeline res data", res);
+                    return res;
+                }
+            } catch (err) {
+                console.warn('apiFetch failed for home timeline, falling back to mockApi', err);
+            }
+            return api.getPosts({ tab: activeTab, max_id: pageParam, country: detectedCountry });
+        },
+        initialPageParam: null,
+        getNextPageParam: (lastPage) =>
+            lastPage?.next_cursor ?? lastPage?.nextCursor ?? lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
+
+        staleTime: 5 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+    });
+}*/
+
 export function useHomeTimeline() {
     const activeTab = useStore((state) => state.homeFeedTab);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-    const importFetchedPosts = usePostsStore((state) => state.importFetchedPosts);
     const { countryCode, countryName } = useCountry();
     const countryKey = countryCode || countryName || 'US';
 
     return useInfiniteQuery({
-        // 🚀 THE TIMELINE CACHE MAP KEY: Matches your global syncAllCacheQueries partial matchers
         queryKey: ['timeline', 'home', activeTab, isAuthenticated, countryKey],
         queryFn: async ({ pageParam }) => {
             let filterQuery = '';
@@ -44,38 +86,21 @@ export function useHomeTimeline() {
             }
 
             // Standardize shapes into a reliable internal contract:
+            // Handles { data: [...] }, { posts: [...] }, or raw arrays directly
             const posts = Array.isArray(rawData)
                 ? rawData
                 : (rawData?.data || rawData?.posts || rawData?.posts?.data || []);
 
             const nextCursor = rawData?.next_cursor ?? rawData?.nextCursor ?? rawData?.nextPageId ?? null;
 
-            // 🚀 HYDRATION SYNC INTERCEPTOR:
-            // Automatically push incoming posts directly into the Zustand Entities cache dictionary.
-            // This preserves optimistic interactions natively before rendering components to screen.
-            if (Array.isArray(posts) && posts.length > 0) {
-                importFetchedPosts(posts);
-            }
-
             return { posts, nextCursor };
         },
         initialPageParam: null,
         getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
-
-        // 🚀 THE SCALING BOUNDARY FIX: Maintain a rolling window constraint of exactly 5 pages maximum.
-        // Drops old pages out of active memory automatically, guaranteeing your wide cache scans stay ultra-fast.
-        maxPages: 5,
-
         staleTime: 5 * 60 * 1000,
         gcTime: 30 * 60 * 1000,
         refetchOnMount: false,
         refetchOnWindowFocus: false,
     });
 }
-
-
-
-
-
-
 

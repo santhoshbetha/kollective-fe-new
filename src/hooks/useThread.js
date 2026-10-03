@@ -39,14 +39,15 @@ export function useThread(currentPostId) {
             if (!data) return { ancestors: [], focus: null, descendants: [] };
             if (data.isPlaceholder) return data;
 
+            // 🚀 FIX: Reverse the spread precedence to ensure local cached interactions override network payloads
             const ancestors = Array.isArray(data.ancestors)
-                ? data.ancestors.map((p) => (p?.id ? { ...(entities[p.id] || {}), ...p } : p))
+                ? data.ancestors.map((p) => (p?.id ? { ...p, ...(entities[p.id] || {}) } : p))
                 : [];
             const focus = data.focus
-                ? (data.focus?.id ? { ...(entities[data.focus.id] || {}), ...data.focus } : data.focus)
+                ? (data.focus?.id ? { ...data.focus, ...(entities[data.focus.id] || {}) } : data.focus)
                 : null;
             const descendants = Array.isArray(data.descendants)
-                ? data.descendants.map((p) => (p?.id ? { ...(entities[p.id] || {}), ...p } : p))
+                ? data.descendants.map((p) => (p?.id ? { ...p, ...(entities[p.id] || {}) } : p))
                 : [];
 
             return { ancestors, focus, descendants, _raw: data };

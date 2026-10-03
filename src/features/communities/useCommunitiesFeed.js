@@ -1,69 +1,24 @@
-// src/features/communities/useCommunitiesFeed.js
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
-import { useCountry } from '../../hooks/useCountry';
 import { usePostsStore } from '../../store/usePostsStore';
+import { useCountry } from '../../hooks/useCountry'; // Verify path fits your directory layout
 import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
-/*
 export function useCommunitiesFeed() {
+    // Read the active geo-scoped tab out of your global useStore
+    const activeTab = useStore((state) => state.communitiesTab); // 'Local' | 'State' | 'Country' | 'World'
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const importFetchedPosts = usePostsStore((state) => state.importFetchedPosts);
-    // Read the active geo-scoped tab out of your global useStore
-    const activeTab = useStore((state) => state.communitiesTab); // 'Local' | 'State' | 'Country' | 'World'
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-    const { countryCode, countryName } = useCountry();
-
-    const countryKey = countryCode || countryName || 'US';
-
-    return useInfiniteQuery({
-        // 🚀 Sandbox the cache keys cleanly by geo-scope and detected country
-        queryKey: ['communities', 'feed', activeTab, isAuthenticated, countryKey],
-        queryFn: async ({ pageParam }) => {
-            let effectiveTab = activeTab || 'Local';
-            if (!isAuthenticated && (effectiveTab === 'Local' || effectiveTab === 'State')) {
-                effectiveTab = 'Country';
-            }
-            const scope = effectiveTab.toLowerCase();
-            const detectedCountry = countryCode || countryName || 'US';
-            const countryParam = (!isAuthenticated && detectedCountry)
-                ? `&country=${encodeURIComponent(detectedCountry)}&country_code=${encodeURIComponent(countryCode || 'US')}`
-                : '';
-            const baseUrl = `/posts?scope=${scope}${countryParam}`;
-            const path = pageParam ? `${baseUrl}&max_id=${pageParam}` : baseUrl;
-            try {
-                const res = await apiFetch(path);
-                if (res && (res.data || Array.isArray(res))) {
-                    console.log("community feed posts:::", res);
-                    return res;
-                }
-            } catch (err) {
-                console.warn('apiFetch failed for communities feed, falling back to mockApi getPosts', err);
-            }
-            console.log("community mock feed posts");
-            return api.getPosts({ scope, max_id: pageParam, country: detectedCountry });
-        },
-        initialPageParam: null,
-        getNextPageParam: (lastPage) =>
-            lastPage?.next_cursor ?? lastPage?.nextCursor ?? lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
-        staleTime: 5 * 60 * 1000,
-        gcTime: 30 * 60 * 1000,
-        refetchOnMount: false,
-        refetchOnWindowFocus: false,
-    });
-}*/
-
-export function useCommunitiesFeed() {
-    // Read the active geo-scoped tab out of your global useStore
-    const activeTab = useStore((state) => state.communitiesTab); // 'Local' | 'State' | 'Country' | 'World'
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const { countryCode, countryName } = useCountry();
     const countryKey = countryCode || countryName || 'US';
 
     return useInfiniteQuery({
-        // 🚀 Sandbox the cache keys cleanly by geo-scope and detected country
-        queryKey: ['communities', 'feed', activeTab, isAuthenticated, countryKey],
+        // 🚀 THE TIMELINE CACHE MAP KEY UPGRADE:
+        // Prefixed with 'timeline' to match your broad cache sweep partial matchers
+        // This ensures deep-nested reblogs and likes reflect immediately across your geo-tabs
+        queryKey: ['timeline', 'communities', 'feed', activeTab, isAuthenticated, countryKey],
         queryFn: async ({ pageParam }) => {
             let effectiveTab = activeTab || 'Local';
             if (!isAuthenticated && (effectiveTab === 'Local' || effectiveTab === 'State')) {
@@ -99,18 +54,27 @@ export function useCommunitiesFeed() {
                 ? rawData
                 : (rawData?.data || rawData?.posts || rawData?.posts?.data || []);
 
-            // Handle fallbacks for dynamic page index or cursor structures from the mock vs. real backend
             const nextCursor = rawData?.next_cursor ?? rawData?.nextCursor ?? rawData?.nextPageId ?? null;
+
+            // 🚀 HYDRATION SYNC INTERCEPTOR:
+            // Automatically push incoming geo-scoped posts directly into the Zustand Entities cache dictionary.
+            // This preserves optimistic interactions natively before rendering components to screen.
+            if (Array.isArray(posts) && posts.length > 0) {
+                importFetchedPosts(posts);
+            }
 
             return { posts, nextCursor };
         },
         initialPageParam: null,
-        // Predictable traversal using the standardized contract payload
         getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
+
+        // 🚀 THE SCALING BOUNDARY FIX: Maintain a rolling window constraint of exactly 5 pages maximum.
+        // Drops old pages out of active memory automatically, guaranteeing your wide cache scans stay ultra-fast.
+        maxPages: 5,
+
         staleTime: 5 * 60 * 1000,
         gcTime: 30 * 60 * 1000,
         refetchOnMount: false,
         refetchOnWindowFocus: false,
     });
 }
-

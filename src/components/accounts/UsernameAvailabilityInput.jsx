@@ -1,6 +1,6 @@
 // UsernameAvailabilityInput.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiFetch } from '../api/apiClient';
+import { apiFetch } from '../../api/apiClient';
 
 const UsernameAvailabilityInput = ({ onValidated }) => {
     const [username, setUsername] = useState("");

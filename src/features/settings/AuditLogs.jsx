@@ -51,8 +51,12 @@ export default function AuditLogs({ activeOrgId }) {
         <div className="space-y-6 text-left font-sans animate-in fade-in duration-200 w-full">
             {/* Expanded Content Headers */}
             <div className="border-b dark:border-white/5 border-black/5 pb-4 select-none">
-                <h2 className="text-2xl font-black text-text-primary tracking-tight">Organization Audit Trail</h2>
-                <p className="text-sm text-text-secondary mt-0.5 font-medium">Review security, moderation, and team adjustments across your community node.</p>
+                <h2 className="text-2xl font-black text-text-primary tracking-tight">
+                    Organization Audit Trail
+                </h2>
+                <p className="text-lg text-text-secondary mt-0.5 font-medium">
+                    Review security, moderation, and team adjustments across your community node.
+                </p>
             </div>
 
             <div className="bg-surface-container-low border dark:border-white/10 border-black/5 rounded-2xl overflow-hidden shadow-xl">
@@ -81,7 +85,7 @@ export default function AuditLogs({ activeOrgId }) {
                                                 </span>
 
                                                 <span className={cn(
-                                                    "px-2.5 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider font-mono border flex items-center gap-1 select-none",
+                                                    "px-2.5 py-0.5 text-[14px] font-bold rounded-md uppercase tracking-wider font-mono border flex items-center gap-1 select-none",
                                                     isDelete
                                                         ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                                                         : isInvite
@@ -100,7 +104,7 @@ export default function AuditLogs({ activeOrgId }) {
                                                 )}
                                             </div>
 
-                                            <div className="text-sm text-text-secondary font-medium leading-relaxed mt-2">
+                                            <div className="text-lg text-text-secondary font-medium leading-relaxed mt-2">
                                                 {log.details ? (
                                                     <span>{log.details}</span>
                                                 ) : (
@@ -117,7 +121,7 @@ export default function AuditLogs({ activeOrgId }) {
                                         </div>
 
                                         <div className="text-right flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 shrink-0">
-                                            <span className="text-xs font-mono font-medium text-text-secondary/50 select-none">
+                                            <span className="text-md font-mono font-medium text-text-secondary/50 select-none">
                                                 {new Date(log.inserted_at).toLocaleString()}
                                             </span>
                                             {(log.action === 'post_deleted' || log.metadata?.can_restore) && (

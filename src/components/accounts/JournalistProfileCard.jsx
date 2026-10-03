@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import VerificationBadge from './VerificationBadge';
+import VerificationBadge from '../VerificationBadge';
 
 const JournalistProfileCard = ({ profileData }) => {
     const [showPressPass, setShowPressPass] = useState(false);
