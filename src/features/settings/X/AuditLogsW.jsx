@@ -1,6 +1,6 @@
 // src/features/settings/AuditLogs.jsx
 import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
+import { apiFetch } from '../../api/apiClient';
 
 export default function AuditLogs({ activeOrgId }) {
     const [logs, setLogs] = useState([]);
@@ -11,10 +11,10 @@ export default function AuditLogs({ activeOrgId }) {
         try {
             setLoading(true);
             setError(null);
-            const response = await api.get('/org-settings/audit-logs');
-            setLogs(response.data?.data || response.data || []);
+            const response = await apiFetch('/org-settings/audit-logs');
+            setLogs(response?.data || (Array.isArray(response) ? response : []));
         } catch (err) {
-            setError(err.response?.data?.error || err.message || 'Failed to load audit logs.');
+            setError(err.data?.error || err.message || 'Failed to load audit logs.');
         } finally {
             setLoading(false);
         }
@@ -130,11 +130,11 @@ function RestoreButton({ postId, onRestoreSuccess }) {
         if (!window.confirm("Are you sure you want to restore this post to the public feed?")) return;
         try {
             setRestoring(true);
-            await api.post(`/posts/${postId}/restore`);
+            await apiFetch(`/posts/${postId}/restore`, { method: 'POST' });
             alert("Post restored successfully!");
             if (onRestoreSuccess) onRestoreSuccess();
         } catch (err) {
-            alert(err.response?.data?.error || err.message || "Error restoring item.");
+            alert(err.data?.error || err.message || "Error restoring item.");
         } finally {
             setRestoring(false);
         }

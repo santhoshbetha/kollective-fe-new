@@ -1,10 +1,14 @@
 // src/features/settings/InviteContributorForm.jsx
 import React, { useState } from 'react';
-import api from '../../services/api';
+import { apiFetch } from '../../api/apiClient';
+import { useAuthStore } from '../../store/auth/useAuthStore';
 import { UserPlus, AlertCircle, CheckCircle2, Send, Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils"; // Adjust to your layout utility directory helper path
 
-export default function InviteContributorForm({ onInviteSuccess }) {
+export default function InviteContributorForm({ activeOrgId, onInviteSuccess }) {
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+    const orgId = activeOrgId || activeAccount?.id || '';
+
     const [email, setEmail] = useState('');
     const [role, setRole] = useState('contributor');
     const [submitting, setSubmitting] = useState(false);
@@ -18,9 +22,12 @@ export default function InviteContributorForm({ onInviteSuccess }) {
         setSuccessMessage(null);
 
         try {
-            // Hits the scope guarded by your :require_org_admin pipeline
-            const response = await api.post('/org-admin/invite', { email, role });
-            const newInvite = response.data?.data || response.data;
+            // Hits the real BE endpoint: POST /api/v1/org-admin/organizations/:org_id/invite
+            const response = await apiFetch(`/org-admin/organizations/${orgId}/invite`, {
+                method: 'POST',
+                body: JSON.stringify({ email, role })
+            });
+            const newInvite = response?.data || response;
 
             setSuccessMessage(`Invitation dispatched to ${email}!`);
             setEmail('');
@@ -30,7 +37,7 @@ export default function InviteContributorForm({ onInviteSuccess }) {
                 onInviteSuccess(newInvite);
             }
         } catch (err) {
-            setError(err.response?.data?.error || err.message || 'Failed to dispatch invitation.');
+            setError(err.data?.message || err.data?.error || err.message || 'Failed to dispatch invitation.');
         } finally {
             setSubmitting(false);
         }

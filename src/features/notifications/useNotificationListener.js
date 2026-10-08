@@ -18,7 +18,7 @@ export function useNotificationListener() {
         const token = useAuthStore.getState().token || localStorage.getItem('jwt_auth_token') || localStorage.getItem('auth_token');
         if (!token || token === 'null' || token === 'undefined') return;
 
-        const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/socket';
+        const wsUrl = import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:4000/socket';
         const socket = new Socket(wsUrl, { params: { token } });
         socket.connect();
 

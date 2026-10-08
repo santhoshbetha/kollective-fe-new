@@ -29,7 +29,7 @@ export function VerifyPeerScanner({ userToken, onVouchSuccess }) {
 
                 setScanStatus("Transmitting Core Trust Packet...");
 
-                apiFetch('/api/vouch/verify-peer', {
+                apiFetch('/vouch/verify-peer', {
                     method: 'POST',
                     body: JSON.stringify({ secure_token: decodedText })
                 })
@@ -53,7 +53,7 @@ export function VerifyPeerScanner({ userToken, onVouchSuccess }) {
         setErrorMessage("");
         setScanStatus("Transmitting Simulated Trust Packet...");
 
-        apiFetch('/api/vouch/verify-peer', {
+        apiFetch('/vouch/verify-peer', {
             method: 'POST',
             body: JSON.stringify({ secure_token: "vouch_tok_simulated" })
         })
@@ -79,7 +79,9 @@ export function VerifyPeerScanner({ userToken, onVouchSuccess }) {
     return (
         <div className="w-full max-w-md border border-white/10 bg-surface-container p-6 font-mono text-text-primary glass-card">
             <h3 className="text-lg font-bold tracking-wider text-rose-500 uppercase mb-2">Verify a Local Peer</h3>
-            <p className="text-md text-text-secondary mb-4 font-sans">Scan their temporary QR code only if you physically confirm they work or reside inside your legislative bracket zone.</p>
+            <p className="text-md text-text-secondary mb-4 font-sans">
+                Scan their temporary QR code only if you physically confirm they work or reside inside your legislative bracket zone.
+            </p>
 
             <div id="reader" className="w-full bg-surface-container-low border border-white/5 overflow-hidden rounded-none"></div>
 

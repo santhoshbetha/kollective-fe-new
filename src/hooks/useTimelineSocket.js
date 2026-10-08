@@ -26,7 +26,7 @@ export function useTimelineSocket() {
     useEffect(() => {
         if (!token) return;
 
-        const socket = new Socket('ws://localhost:4000/socket', { params: { token } });
+        const socket = new Socket(import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:4000/socket', { params: { token } });
         socket.connect();
 
         // Connect to a unified user notification stream channel

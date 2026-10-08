@@ -3,11 +3,8 @@ import { useAuthStore } from '../store/auth/useAuthStore';
 import { useTimelineBufferStore } from '../store/useTimelineBufferStore';
 import queryClient from './queryClient';
 
-//const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1').replace(/\/\$/, '');
-//const API_HOST = API_BASE.replace(/\/api\/v1\/?\$/, '');
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1').replace(/\/$/, '');
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:4000/api/v1').replace(/\/$/, '');
 const API_HOST = API_BASE.replace(/\/api\/v1\/?$/, '');
-
 
 /**
  * 🏆 MASTER APICLIENT FETCH CONFIGURATION MATRIX
@@ -17,6 +14,15 @@ const API_HOST = API_BASE.replace(/\/api\/v1\/?$/, '');
 export async function apiFetch(endpoint, options = {}, incomingQueryClient) {
     const { token, activeAccount } = useAuthStore.getState();
     let url = endpoint || '';
+
+    console.log("apiFetch endpoint:;", endpoint);
+    console.log("apiFetch options:;", options);
+    console.log("apiFetch incomingQueryClient:;", incomingQueryClient);
+    console.log("apiFetch token:;", token);
+    console.log("apiFetch activeAccount:;", activeAccount);
+    console.log("apiFetch API_BASE:;", API_BASE);
+    console.log("apiFetch API_HOST:;", API_HOST);
+    console.log("apiFetch url:;", url);
 
     // 1️⃣ Normalize absolute and host-relative request path destinations
     if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -45,6 +51,8 @@ export async function apiFetch(endpoint, options = {}, incomingQueryClient) {
     };
 
     const response = await fetch(url, { ...options, headers });
+
+    console.log("apiFetch respnse:;", response)
 
     // 3️⃣ 🚨 GLOBAL RECOVERY INTERCEPTION: Catch systemic credential drops or token revocations
     if (response.status === 401 || response.status === 403) {
@@ -83,6 +91,7 @@ export async function apiFetch(endpoint, options = {}, incomingQueryClient) {
         } else {
             try {
                 data = await response.json();
+                console.log("apiFetch data 1:;", data)
             } catch (e) {
                 if (!response.ok) {
                     throw new Error(`Server returned invalid JSON with status ${response.status}`);
@@ -124,6 +133,7 @@ export async function apiFetch(endpoint, options = {}, incomingQueryClient) {
         throw err;
     }
 
+    console.log("apiFetch data 2:;", data);
     return data;
 }
 

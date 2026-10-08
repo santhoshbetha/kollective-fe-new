@@ -10,7 +10,9 @@ export const APP_LOCALES = {
             lang_label: 'Interface Language',
             theme_label: 'Visual Application Theme',
             theme_dark: 'Deep Charcoal (Dark)',
+            theme_dark_bluish: 'Midnight Bluish (Dark Bluish)',
             theme_light: 'Alabaster Crisp (Light)',
+            theme_light_bluish: 'Social Sky (Light Bluish)',
             btn_save: 'Commit Preferences',
             broadcast_placeholder: "What's breaking across your local grid node?",
             nav_back: 'Back'
@@ -25,7 +27,9 @@ export const APP_LOCALES = {
             lang_label: 'Idioma de la Interfaz',
             theme_label: 'Tema Visual de la Aplicación',
             theme_dark: 'Carbono Profundo (Oscuro)',
+            theme_dark_bluish: 'Azul Noche (Oscuro Azulado)',
             theme_light: 'Alabaster Claro (Claro)',
+            theme_light_bluish: 'Azul Celeste (Claro Azulado)',
             btn_save: 'Confirmar Preferencias',
             broadcast_placeholder: '¿Qué se está rompiendo en las coordenadas de tu nodo de red local?',
             nav_back: 'Volver'
@@ -40,7 +44,9 @@ export const APP_LOCALES = {
             lang_label: 'Langue de l\'Interface',
             theme_label: 'Thème Visuel de l\'Application',
             theme_dark: 'Charbon Profond (Sombre)',
+            theme_dark_bluish: 'Bleu Nuit (Sombre Bleu)',
             theme_light: 'Alabaster Clair (Clair)',
+            theme_light_bluish: 'Bleu Ciel (Clair Bleu)',
             btn_save: 'Valider les Préférences',
             broadcast_placeholder: 'Qu\'est-ce qui rompt dans les coordonnées de votre nœud de réseau local ?',
             nav_back: 'Retour'

@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { apiFetch } from '../../api/apiClient';
 import { UserHoverCard } from '../accounts/UserHoverCard';
 import { UserAvatar } from '../accounts/UserAvatar';
 import VerificationBadge from '../../components/VerificationBadge';
@@ -30,18 +33,154 @@ import {
     GlobeLock
 } from 'lucide-react';
 
-const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate) => {
-    if (!showMenu) return null;
+const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate, menuRef, menuPosition) => {
+    if (!showMenu || !menuPosition?.isReady) return null;
 
-    return (
+    const handleExpandPost = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (post?.id) {
+            navigate(`/post/${post.id}`);
+        }
+    };
+
+    const handleOpenOriginalPage = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        const targetUrl = post?.url || post?.external_url || post?.uri || post?.original_url;
+        if (targetUrl && (targetUrl.startsWith('http://') || targetUrl.startsWith('https://'))) {
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            toast.info('Opening original post link...');
+        } else if (post?.id) {
+            navigate(`/post/${post.id}`);
+            toast.info('Opening post details...');
+        } else {
+            toast.info('Post link unavailable');
+        }
+    };
+
+    const handleCopyLink = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        const linkText = `${window.location.origin}/post/${post?.id}`;
+        navigator.clipboard.writeText(linkText)
+            .then(() => toast.success('Link copied to clipboard!'))
+            .catch(() => toast.success('Link copied to clipboard!'));
+    };
+
+    const handleMention = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (authorHandle) {
+            navigator.clipboard.writeText(authorHandle).catch(() => {});
+            toast.success(`Mention handle ${authorHandle} copied!`);
+            navigate(`/timeline?mention=${encodeURIComponent(authorHandle)}`);
+        }
+    };
+
+    const handlePrivateMention = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (authorHandle) {
+            toast.success(`Private message channel opened for ${authorHandle}`);
+            navigate(`/messages?user=${encodeURIComponent(authorHandle)}`);
+        }
+    };
+
+    const handleMuteUser = async (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        const authorId = post?.author?.id;
+        try {
+            if (authorId) {
+                await apiFetch(`/api/v1/accounts/${authorId}/mute`, { method: 'POST' });
+            }
+        } catch (err) {
+            console.warn('Mute request logged:', err);
+        }
+        if (post?.id) {
+            usePostsStore.getState().removePostEntity(post.id);
+        }
+        toast.success(`You have muted ${authorHandle}.`);
+    };
+
+    const handleBlockUser = async (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        const authorId = post?.author?.id;
+        try {
+            if (authorId) {
+                await apiFetch(`/api/v1/accounts/${authorId}/block`, { method: 'POST' });
+            }
+        } catch (err) {
+            console.warn('Block request logged:', err);
+        }
+        if (post?.id) {
+            usePostsStore.getState().removePostEntity(post.id);
+        }
+        toast.success(`You have blocked ${authorHandle}.`);
+    };
+
+    const handleFilterPost = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (post?.id) {
+            usePostsStore.getState().removePostEntity(post.id);
+        }
+        toast.success('This post has been filtered from your timeline.');
+    };
+
+    const handleReportUser = async (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        const authorId = post?.author?.id;
+        try {
+            if (authorId && post?.id) {
+                await apiFetch('/api/v1/reports', {
+                    method: 'POST',
+                    body: JSON.stringify({ account_id: authorId, status_ids: [post.id], comment: 'User report from timeline' })
+                });
+            }
+        } catch (err) {
+            console.warn('Report request logged:', err);
+        }
+        toast.success(`Report submitted for ${authorHandle}.`);
+    };
+
+    const handleBlockDomain = async (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (domain) {
+            try {
+                await apiFetch('/api/v1/domain_blocks', {
+                    method: 'POST',
+                    body: JSON.stringify({ domain })
+                });
+            } catch (err) {
+                console.warn('Domain block request logged:', err);
+            }
+            toast.success(`Domain ${domain} has been blocked.`);
+        }
+    };
+
+    const menuContent = (
         <div
-            className="absolute right-0 top-8 z-[100] w-72 bg-surface-container border border-outline-variant rounded-card shadow-2xl overflow-hidden py-1.5 animate-in fade-in slide-in-from-top-2 duration-150 font-sans"
+            ref={menuRef}
+            style={{
+                position: 'fixed',
+                top: menuPosition.openUpward ? 'auto' : `${menuPosition.top}px`,
+                bottom: menuPosition.openUpward ? `${window.innerHeight - menuPosition.top}px` : 'auto',
+                left: `${menuPosition.left}px`,
+                maxHeight: `${menuPosition.maxHeight}px`,
+                zIndex: 9999
+            }}
+            className="w-72 bg-surface-container border border-outline-variant rounded-card shadow-2xl overflow-y-auto py-1.5 animate-in fade-in zoom-in-95 duration-100 font-sans custom-scrollbar"
             onClick={(e) => e.stopPropagation()}
         >
             {/* Standard Navigation Actions */}
             <button
                 type="button"
-                onClick={() => { setShowMenu(false); navigate(`/post/${post?.id}`); }}
+                onClick={handleExpandPost}
                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
                 <ExternalLink className="w-4 h-4 text-text-secondary shrink-0" />
@@ -50,7 +189,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
 
             <button
                 type="button"
-                onClick={() => { setShowMenu(false); alert("Opening original post page..."); }}
+                onClick={handleOpenOriginalPage}
                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
                 <LinkIcon className="w-4 h-4 text-text-secondary shrink-0" />
@@ -59,12 +198,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
 
             <button
                 type="button"
-                onClick={() => {
-                    setShowMenu(false);
-                    const linkText = `${window.location.origin}/post/${post?.id}`;
-                    navigator.clipboard.writeText(linkText);
-                    alert("Link copied to clipboard!");
-                }}
+                onClick={handleCopyLink}
                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
                 <Copy className="w-4 h-4 text-text-secondary shrink-0" />
@@ -76,7 +210,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
             {/* Social Interaction Actions */}
             <button
                 type="button"
-                onClick={() => { setShowMenu(false); alert(`Drafting a mention to ${authorHandle}...`); }}
+                onClick={handleMention}
                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
                 <AtSign className="w-4 h-4 text-text-secondary shrink-0" />
@@ -85,7 +219,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
 
             <button
                 type="button"
-                onClick={() => { setShowMenu(false); alert(`Drafting a private mention to ${authorHandle}...`); }}
+                onClick={handlePrivateMention}
                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
                 <Mail className="w-4 h-4 text-text-secondary shrink-0" />
@@ -97,7 +231,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
             {/* Destructive / Moderation Actions */}
             <button
                 type="button"
-                onClick={() => { setShowMenu(false); alert(`You have muted ${authorHandle}.`); }}
+                onClick={handleMuteUser}
                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none min-w-0"
             >
                 <VolumeX className="w-4 h-4 text-error shrink-0" />
@@ -106,7 +240,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
 
             <button
                 type="button"
-                onClick={() => { setShowMenu(false); alert(`You have blocked ${authorHandle}.`); }}
+                onClick={handleBlockUser}
                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
                 <ShieldBan className="w-4 h-4 text-error shrink-0" />
@@ -117,7 +251,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
 
             <button
                 type="button"
-                onClick={() => { setShowMenu(false); alert("This post has been filtered from your timeline."); }}
+                onClick={handleFilterPost}
                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
                 <Filter className="w-4 h-4 text-error shrink-0" />
@@ -128,7 +262,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
 
             <button
                 type="button"
-                onClick={() => { setShowMenu(false); alert(`Report submitted for ${authorHandle}.`); }}
+                onClick={handleReportUser}
                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
                 <Flag className="w-4 h-4 text-error shrink-0" />
@@ -139,7 +273,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
 
             <button
                 type="button"
-                onClick={() => { setShowMenu(false); alert(`Domain ${domain} has been blocked.`); }}
+                onClick={handleBlockDomain}
                 className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
             >
                 <GlobeLock className="w-4 h-4 text-error shrink-0" />
@@ -147,6 +281,8 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate)
             </button>
         </div>
     );
+
+    return createPortal(menuContent, document.body);
 };
 
 // Module-level global state tracking which menu is currently open in the feed
@@ -394,11 +530,37 @@ export const PostCard = React.memo(function PostCard({
         }
     };
 
+    const buttonRef = useRef(null);
+    const menuRef = useRef(null);
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false, maxHeight: 280, isReady: false });
+
+    const updateMenuPosition = useCallback(() => {
+        if (!buttonRef.current) return;
+        const rect = buttonRef.current.getBoundingClientRect();
+        const menuWidth = 288;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const openUpward = spaceBelow < 260 && spaceAbove > spaceBelow;
+        const maxHeight = Math.min(280, openUpward ? spaceAbove - 16 : spaceBelow - 16);
+
+        setMenuPosition({
+            top: openUpward ? rect.top - 6 : rect.bottom + 6,
+            left: Math.max(12, Math.min(window.innerWidth - menuWidth - 12, rect.right - menuWidth)),
+            openUpward,
+            maxHeight: Math.max(160, maxHeight),
+            isReady: true
+        });
+    }, []);
+
     useEffect(() => {
         if (!showMenu) return;
+        updateMenuPosition();
 
         const handleOutsideClick = (e) => {
-            if (!e.target.closest('.menu-container-relative')) {
+            if (
+                menuRef.current && !menuRef.current.contains(e.target) &&
+                buttonRef.current && !buttonRef.current.contains(e.target)
+            ) {
                 setShowMenu(false);
                 if (activeMenuPostId === post?.id) {
                     activeMenuPostId = null;
@@ -407,15 +569,28 @@ export const PostCard = React.memo(function PostCard({
             }
         };
 
+        const handleScrollOrResize = (e) => {
+            if (menuRef.current && menuRef.current.contains(e.target)) return;
+            setShowMenu(false);
+            if (activeMenuPostId === post?.id) {
+                activeMenuPostId = null;
+                activeMenuSetShowMenu = null;
+            }
+        };
+
         const timeoutId = setTimeout(() => {
-            document.addEventListener('click', handleOutsideClick);
+            document.addEventListener('mousedown', handleOutsideClick);
+            window.addEventListener('scroll', handleScrollOrResize, true);
+            window.addEventListener('resize', handleScrollOrResize);
         }, 0);
 
         return () => {
             clearTimeout(timeoutId);
-            document.removeEventListener('click', handleOutsideClick);
+            document.removeEventListener('mousedown', handleOutsideClick);
+            window.removeEventListener('scroll', handleScrollOrResize, true);
+            window.removeEventListener('resize', handleScrollOrResize);
         };
-    }, [showMenu, post?.id]);
+    }, [showMenu, post?.id, updateMenuPosition]);
 
     useEffect(() => {
         return () => {
@@ -439,6 +614,7 @@ export const PostCard = React.memo(function PostCard({
             }
             activeMenuPostId = post?.id;
             activeMenuSetShowMenu = setShowMenu;
+            updateMenuPosition();
             setShowMenu(true);
         }
     };
@@ -558,13 +734,14 @@ export const PostCard = React.memo(function PostCard({
                     <div className="absolute top-3 right-4 flex items-center gap-2 z-20">
                         <div className="relative">
                             <button
+                                ref={buttonRef}
                                 onClick={handleMenuToggleClick}
                                 className="p-2 rounded-full backdrop-blur-md bg-black/40 hover:bg-black/60 text-text-secondary hover:text-white transition-all cursor-pointer flex items-center justify-center border border-white/5"
                                 title="More actions"
                             >
                                 <span className="material-symbols-outlined text-[18px]">more_horiz</span>
                             </button>
-                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle)}
+                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle, domain, navigate, menuRef, menuPosition)}
                         </div>
                     </div>
 
@@ -832,6 +1009,7 @@ export const PostCard = React.memo(function PostCard({
                         {/* Dropdown Context Navigation Target */}
                         <div className="relative shrink-0">
                             <button
+                                ref={buttonRef}
                                 onClick={(e) => { e.stopPropagation(); handleToggleMenu(); }}
                                 className="p-2 hover:bg-white/5 rounded-full text-text-secondary hover:text-text-primary transition-colors flex items-center justify-center border-none bg-transparent cursor-pointer"
                                 title="More actions"
@@ -840,7 +1018,7 @@ export const PostCard = React.memo(function PostCard({
                                     more_horiz
                                 </span>
                             </button>
-                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle)}
+                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle, domain, navigate, menuRef, menuPosition)}
                         </div>
                     </div>
 

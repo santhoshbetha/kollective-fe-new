@@ -1,6 +1,6 @@
 // src/features/settings/GeneralOrgSettings.jsx
 import React, { useState } from 'react';
-import api from '../../services/api';
+import { apiFetch } from '../../api/apiClient';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 
 export default function GeneralOrgSettings({ activeOrgId }) {
@@ -22,12 +22,15 @@ export default function GeneralOrgSettings({ activeOrgId }) {
 
         try {
             const payload = { name, bio, website };
-            const response = await api.put('/org-settings/profile', payload);
+            const response = await apiFetch('/org-settings/profile', {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
 
             updateActiveProfile(payload);
-            setSuccessMessage(response.data?.message || 'Organization settings saved successfully.');
+            setSuccessMessage(response?.message || 'Organization settings saved successfully.');
         } catch (err) {
-            setErrorMessage(err.response?.data?.error || 'Failed to update organization profile.');
+            setErrorMessage(err.data?.error || err.message || 'Failed to update organization profile.');
         } finally {
             setSaving(false);
         }

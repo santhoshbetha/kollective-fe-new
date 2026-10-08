@@ -170,7 +170,11 @@ function ReportsIndex() {
 // 🔵 3. IDENTITY REGISTRY INDEX (USER INDEX)
 function UserIndex() {
     const [search, setSearch] = useState('');
-    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useAdminUsersQuery(search);
+    const { data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        status } = useAdminUsersQuery(search);
     const mutation = useAdminActionMutation('users');
     const items = data?.pages.flatMap((p) => p.accounts || p || []) || [];
 

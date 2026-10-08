@@ -4,40 +4,41 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'sonner';
 import { LandingPage } from './pages/LandingPage';
-import { HomePage } from './pages/HomePage';
-import { CommunitiesPage } from './pages/CommunitiesPage';
-import { OrganizePage } from './pages/OrganizePage';
-import { CreateActionPage } from './pages/CreateActionPage';
-import { ActionDetailsPage } from './pages/ActionDetailsPage';
-import { PostDetailsPage } from './pages/PostDetailsPage';
-import { EventsPage } from './pages/EventsPage';
-import { CreateEventPage } from './pages/CreateEventPage';
-import { EventDetailsPage } from './pages/EventDetailsPage';
+import { HomePage } from './pages/posts/HomePage';
+import { CommunitiesPage } from './pages/posts/CommunitiesPage';
+import { OrganizePage } from './pages/actions/OrganizePage';
+import { CreateActionPage } from './pages/actions/CreateActionPage';
+import { ActionDetailsPage } from './pages/actions/ActionDetailsPage';
+import { PostDetailsPage } from './pages/posts/PostDetailsPage';
+import { EventsPage } from './pages/events/EventsPage';
+import { CreateEventPage } from './pages/events/CreateEventPage';
+import { EventDetailsPage } from './pages/events/EventDetailsPage';
 import { CalendarPage } from './pages/CalendarPage';
-import { LocalBusinessesPage } from './pages/LocalBusinessesPage';
-import { BusinessDetailsPage } from './pages/BusinessDetailsPage';
-import { PostBusinessPage } from './pages/PostBusinessPage';
-import { PostBusinessProposalPage } from './pages/PostBusinessProposalPage';
+import { LocalBusinessesPage } from './pages/businesses/LocalBusinessesPage';
+import { BusinessDetailsPage } from './pages/businesses/BusinessDetailsPage';
+import { PostBusinessPage } from './pages/businesses/PostBusinessPage';
+import { PostBusinessProposalPage } from './pages/businesses/PostBusinessProposalPage';
 import { ClassifiedsDirectoryPage } from './pages/ClassifiedsDirectoryPage';
-import { PollsPage } from './pages/PollsPage';
-import { CreatePollPage } from './pages/CreatePollPage';
-import { BusinessProposalDetailsPage } from './pages/BusinessProposalDetailsPage';
-import { SettingsPage } from './pages/SettingsPage';
-import InvitationsList from './pages/InvitationsList';
+import { PollsPage } from './pages/posts/PollsPage';
+import { CreatePollPage } from './pages/posts/CreatePollPage';
+import { BusinessProposalDetailsPage } from './pages/businesses/BusinessProposalDetailsPage';
+import { SettingsPage } from './pages/settings/SettingsPage';
+import InvitationsList from './pages/settings/InvitationsList';
 import SettingsDashboard from './features/settings/SettingsDashboard';
 import { MutesPage } from './pages/MutesPage';
 import { BlocksPage } from './pages/BlocksPage';
 import { FiltersPage } from './pages/FiltersPage';
-import { EditProfilePage } from './pages/EditProfilePage';
-import { BookmarksPage } from './pages/BookmarksPage';
-import { NotificationsPage } from './pages/NotificationsPage';
+import { EditProfilePage } from './pages/settings/EditProfilePage';
+import { BookmarksPage } from './pages/bookmarks/BookmarksPage';
+import { NotificationsPage } from './pages/notifications/NotificationsPage';
 import { SuggestionsPage } from './pages/SuggestionsPage';
 import { HashtagTimelinePage } from './pages/HashtagTimelinePage';
 import { ExplorePage } from './pages/ExplorePage';
-import { LoginPage } from './pages/LoginPage';
-import { SignupPage } from './pages/SignupPage';
-import { SignupPageO } from './pages/SignupPageO';
-import { UserProfilePage } from './pages/UserProfilePage';
+import { LoginPage } from './pages/auth/LoginPage';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { SignupPage } from './pages/auth/SignupPage';
+import { SignupPageO } from './pages/auth/SignupPageO';
+import { UserProfilePage } from './pages/profile/UserProfilePage';
 import { AccountLikesPage } from './pages/AccountLikesPage';
 import { AccountGalleryPage } from './pages/AccountGalleryPage';
 import { NetworkPage } from './pages/NetworkPage';
@@ -50,7 +51,7 @@ import ActivistJuryPortal from './components/ActivistJuryPortal';
 import UnifiedAdminDashboard from './pages/admin/UnifiedAdminDashboard';
 import AdminVideoDashboard from './pages/admin/AdminVideoDashboard';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
-import ProfilePageDemo from './pages/ProfilePageDemo';
+import ProfilePageDemo from './pages/profile/ProfilePageDemo';
 import ScholarDisputePage from './pages/ScholarDisputePage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
@@ -70,9 +71,9 @@ import CandidacyReviewPanel from './pages/admin/CandidacyReviewPanel';
 // Guard & Layout Wrappers
 import { PublicOnlyRoute } from './components/PublicOnlyRoute';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { MainLayout } from './components/MainLayout';
-import { ProfilePage } from './pages/ProfilePage';
-import { ProfileEditPage } from './pages/ProfileEditPage';
+import { MainLayout } from './components/Mainlayout';
+import { ProfilePage } from './pages/profile/ProfilePage';
+import { ProfileEditPage } from './pages/profile/ProfileEditPage';
 import { AlertProvider } from './context/AlertContext';
 import { PhoenixSocketProvider } from './context/PhoenixSocketContext';
 
@@ -82,7 +83,7 @@ import { TopProgressBar } from './components/ui/TopProgressBar';
 import queryClient from './api/queryClient';
 import { VoiceAlertToast } from './components/VoiceAlertToast';
 
-import MessagesPage from './pages/MessagesPage';
+import MessagesPage from './pages/messages/MessagesPage';
 
 export default function App() {
   // ⚡ ATOMIC OBSERVATION: Tracks initialization states cleanly
@@ -121,9 +122,12 @@ export default function App() {
               {/* 🌍 1. PUBLIC ROUTES (No Auth Required) */}
               <Route element={<PublicOnlyRoute />}>
                 <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
                 <Route path="/create-account" element={<SignupPage />} />
                 <Route path="/signupo" element={<SignupPageO />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset_password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ForgotPassword />} />
               </Route>
 
               <Route path="/privacy" element={<PrivacyPage />} />

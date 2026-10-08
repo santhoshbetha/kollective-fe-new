@@ -133,7 +133,7 @@ export function DirectMessageView() {
                     />
                 ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center font-mono text-xs text-neutral-300 opacity-60 select-none">
-                        // PRIVATE_DISCUSSION_LINE_INITIALIZED...
+                        PRIVATE_DISCUSSION_LINE_INITIALIZED...
                     </div>
                 )}
             </div>

@@ -1,37 +1,31 @@
 // src/pages/ModerationDashboard.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminIncidentPanel from './AdminIncidentPanel';
+import { SecurityBlacklistsPanel } from './SecurityBlacklistsPanel';
+import { apiFetch } from '../../api/apiClient';
 import { Gavel, AlertTriangle, CheckCircle2, Activity, FileText, Trash2, UserX, ShieldX, FolderKanban, Loader2, Info } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 // 📡 CORE NETWORKING SERVICES MAPPING
 const fetchReportsData = async (filterStatus) => {
-    const token = localStorage.getItem("user_token") || "";
     const path = filterStatus === "scholars"
         ? '/api/v1/admin/incidents'
         : `/api/v1/admin/reports?status=${filterStatus}`;
 
-    const res = await fetch(path, {
-        headers: { "Authorization": `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error("Failed to load operations queue items.");
-    const json = await res.json();
-    return json.data || [];
+    const res = await apiFetch(path);
+    return res?.data || res || [];
 };
 
 const resolveReportTicket = async ({ ticketId, actionType }) => {
-    const token = localStorage.getItem("user_token") || "";
-    const res = await fetch(`/api/v1/admin/reports/${ticketId}/resolve`, {
+    const res = await apiFetch(`/api/v1/admin/reports/${ticketId}/resolve`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ action: actionType, notes: "Processed via Operations Desk UI Dashboard." })
+        body: JSON.stringify({
+            action: actionType,
+            notes: "Processed via Operations Desk UI Dashboard."
+        })
     });
-    if (!res.ok) throw new Error("Failed to commit operations mitigation protocol.");
-    return await res.json();
+    return res;
 };
 
 export const ModerationDashboard = () => {
@@ -47,7 +41,8 @@ export const ModerationDashboard = () => {
         queryKey: ['admin', 'operations', 'queue', filter],
         queryFn: () => fetchReportsData(filter),
         enabled: filter !== "firewall",
-        staleTime: 15000
+        staleTime: 30000,
+        refetchOnWindowFocus: false
     });
 
     // Automatically sync initial index elements upon completion of background network queries
@@ -118,7 +113,7 @@ export const ModerationDashboard = () => {
             </header>
 
             {/* Sub-navigation layout tab selection array */}
-            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-neutral-200 dark:border-zinc-800 mb-8 font-mono select-none">
+            <div className="flex flex-col xl:flex-row gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-neutral-200 dark:border-zinc-800 mb-8 font-mono select-none">
                 {[
                     { label: "🚨 Active Incidents", value: "open" },
                     { label: "✅ Audit Trail History", value: "resolved" },
@@ -143,6 +138,7 @@ export const ModerationDashboard = () => {
                     );
                 })}
             </div>
+
             {/* 🚨 COMPLIANCE INCIDENTS QUEUE LAYOUT */}
             {filter !== "firewall" && filter !== "scholars" && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -287,11 +283,12 @@ export const ModerationDashboard = () => {
                     </div>
                 </div>
             )}
+
             {/* 🔬 SCHOLAR INTEGRITY AUDITS QUEUE LAYOUT */}
             {filter === "scholars" && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
                     {/* Left Column: Scholar Queue */}
-                    <div className="lg:col-span-8 space-y-4">
+                    <div className="md:col-span-12 xl:col-span-6 space-y-4">
                         <div className="flex justify-between items-center border-b border-neutral-200 dark:border-zinc-800 pb-2 mb-4 select-none">
                             <h3 className="font-mono text-md font-black text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
                                 <Activity className="w-4 h-4 text-emerald-500" />
@@ -352,7 +349,7 @@ export const ModerationDashboard = () => {
                     </div>
 
                     {/* Right Column: Dynamic AdminIncidentPanel Container */}
-                    <div className="lg:col-span-4">
+                    <div className="md:col-span-12 xl:col-span-6">
                         {activeScholarIncident ? (
                             <AdminIncidentPanel
                                 incidentPayload={activeScholarIncident}
@@ -371,15 +368,9 @@ export const ModerationDashboard = () => {
                 </div>
             )}
 
-            {/* 🔥 IN-MEMORY FIREWALL MOCK LAYOUT PANEL */}
+            {/* 🔥 IN-MEMORY FIREWALL PANEL */}
             {filter === "firewall" && (
-                <section className="bg-white dark:bg-zinc-900/40 border border-neutral-200 dark:border-zinc-800 p-12 text-center rounded-[24px] shadow-md select-none animate-in zoom-in-95 duration-150">
-                    <Activity className="w-12 h-12 text-neutral-400 mx-auto mb-4 stroke-[1.25px] animate-pulse" />
-                    <h3 className="font-black text-neutral-800 dark:text-white text-lg mb-1 tracking-tight">In-Memory Firewall</h3>
-                    <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium max-w-sm mx-auto leading-relaxed">
-                        Real-time request packet analyzer, dynamic rate limiters, and malicious network traffic drop rules are running automatically behind the scene parameters.
-                    </p>
-                </section>
+                <SecurityBlacklistsPanel />
             )}
         </div>
     );

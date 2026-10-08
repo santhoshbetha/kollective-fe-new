@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
 
-export const SystemConfigurationPanel = () => {
+export const SystemConfigurationPanel = ({ onCommandStart, onCommandComplete }) => {
     const queryClient = useQueryClient();
     const token = localStorage.getItem("user_token") || "";
 
@@ -9,69 +9,80 @@ export const SystemConfigurationPanel = () => {
     const { data: flags = [], isLoading } = useQuery({
         queryKey: ['admin', 'config', 'flags'],
         queryFn: async () => {
-            const res = await apiFetch('/api/v1/admin/config/feature_flags', {
-                method: 'POST',
-            });
-            //  const res = await fetch('/api/v1/admin/config/feature_flags', {
-            //      headers: { "Authorization": `Bearer ${token}` }
-            //  });
-            const json = await res.json();
-            return json.data || [];
+            const res = await apiFetch('/api/v1/admin/config/feature_flags');
+            return res?.data || res || [];
         }
     });
 
     // 2️⃣ Mutation to dynamically toggle values over the network
     const toggleMutation = useMutation({
         mutationFn: async ({ key, enabled }) => {
+            onCommandStart?.(`Toggling feature flag '${key.replace(/_/g, ' ')}' to ${enabled ? 'ACTIVE' : 'DISABLED'}...`);
             const res = await apiFetch('/api/v1/admin/config/feature_flags/toggle', {
                 method: 'POST',
                 body: JSON.stringify({ key, enabled })
             });
-            //   const res = await fetch('/api/v1/admin/config/feature_flags/toggle', {
-            //      method: 'POST',
-            //      headers: {
-            //          'Content-Type': 'application/json',
-            //         'Authorization': `Bearer ${token}`
-            //    },
-            //      body: JSON.stringify({ key, enabled })
-            //  });
-            return await res.json();
+            return res;
         },
-        onSuccess: () => {
+        onSuccess: (data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'config', 'flags'] });
+            const actionText = variables.enabled ? 'activated' : 'disabled';
+            onCommandComplete?.({
+                type: 'success',
+                title: 'Command Executed Successfully',
+                message: data?.message || `Feature flag '${variables.key.replace(/_/g, ' ')}' was successfully ${actionText}.`,
+                target: variables.key
+            });
+        },
+        onError: (err, variables) => {
+            onCommandComplete?.({
+                type: 'error',
+                title: 'Command Execution Failed',
+                message: err?.message || `Failed to toggle feature flag '${variables.key}'.`,
+                target: variables.key
+            });
         }
     });
 
-    if (isLoading) return <div className="p-12 text-center text-xs font-mono opacity-50">Syncing config cache...</div>;
+    if (isLoading) return (
+        <div className="py-16 text-center text-sm font-mono font-bold text-neutral-500 dark:text-neutral-400 opacity-70 select-none">
+            Syncing config cache...
+        </div>
+    );
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-200 text-left">
             {flags.map((flag) => (
-                <div key={flag.key} className="bg-white border border-neutral-200 p-6 rounded-2xl flex flex-col justify-between shadow-sm">
+                <div
+                    key={flag.key}
+                    className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/10 p-6 rounded-2xl flex flex-col justify-between shadow-xl transition-all hover:border-primary-container/30"
+                >
                     <div>
-                        <h4 className="text-sm font-black font-mono text-neutral-900 tracking-tight mb-1 uppercase">
-                            ⚙️ {flag.key.replace(/_/g, ' ')}
+                        <h4 className="text-base sm:text-lg font-black font-mono text-neutral-900 dark:text-white tracking-tight mb-2 uppercase flex items-center gap-2">
+                            <span>⚙️</span>
+                            <span className="truncate">{flag.key.replace(/_/g, ' ')}</span>
                         </h4>
-                        <p className="text-xs text-neutral-500 leading-relaxed font-medium mb-4">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed font-medium mb-5">
                             {flag.description}
                         </p>
                     </div>
-                    <div className="flex items-center justify-between border-t border-neutral-100 pt-4 mt-2 select-none">
-                        <span className={`text-[10px] font-black font-mono px-2 py-0.5 border rounded uppercase ${flag.enabled
-                            ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
-                            : 'bg-neutral-50 border-neutral-200 text-neutral-400'
+                    <div className="flex items-center justify-between border-t border-black/5 dark:border-white/10 pt-4 mt-2 select-none gap-3">
+                        <span className={`text-[11px] font-black font-mono px-3 py-1 border rounded-lg uppercase tracking-wider ${flag.enabled
+                            ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-neutral-100 dark:bg-white/5 border-neutral-200 dark:border-white/10 text-neutral-500 dark:text-neutral-400'
                             }`}>
                             {flag.enabled ? 'ACTIVE_OPERATIONAL' : 'SYSTEM_DISABLED'}
                         </span>
                         <button
                             type="button"
+                            disabled={toggleMutation.isPending && toggleMutation.variables?.key === flag.key}
                             onClick={() => toggleMutation.mutate({ key: flag.key, enabled: !flag.enabled })}
-                            className={`px-4 py-1.5 text-xs font-mono font-black border rounded-xl transition-all outline-none cursor-pointer ${flag.enabled
-                                ? 'bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100'
-                                : 'bg-primary-container text-white border-primary-container hover:brightness-105'
+                            className={`px-4 py-2 text-xs font-mono font-black border rounded-xl transition-all outline-none cursor-pointer active:scale-95 disabled:opacity-40 shrink-0 ${flag.enabled
+                                ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20'
+                                : 'bg-primary-container text-white border-primary-container hover:brightness-105 shadow-sm'
                                 }`}
                         >
-                            {flag.enabled ? 'Disable' : 'Enable'}
+                            {flag.enabled ? 'Disable Flag' : 'Enable Flag'}
                         </button>
                     </div>
                 </div>

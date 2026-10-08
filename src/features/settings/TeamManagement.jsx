@@ -1,6 +1,6 @@
 // src/features/settings/TeamManagement.jsx
 import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
+import { apiFetch } from '../../api/apiClient';
 import InviteContributorForm from './InviteContributorForm';
 import { Users, ShieldAlert, RefreshCw, UserCheck, Shield, Trash2, CheckCircle2, MailOpen } from 'lucide-react';
 import { cn } from "@/lib/utils"; // Adjust to match your local utility helper directory path
@@ -21,17 +21,17 @@ export default function TeamManagement({ activeOrgId, userRole }) {
             setLoading(true);
             setError(null);
 
-            // 1. Fetch active workspace members
-            const membersRes = await api.get('/org-settings/members');
-            setActiveMembers(membersRes.data?.data || membersRes.data || []);
+            // 1. Fetch active workspace members (GET /api/v1/org-settings/members)
+            const membersRes = await apiFetch('/org-settings/members');
+            setActiveMembers(membersRes?.data || (Array.isArray(membersRes) ? membersRes : []));
 
-            // 2. Fetch pending invites if user holds management permissions
+            // 2. Fetch pending invites if user holds management permissions (GET /api/v1/org-settings/pending-invites)
             if (canManageTeam) {
-                const invitesRes = await api.get('/org-settings/pending-invites');
-                setPendingInvites(invitesRes.data?.data || invitesRes.data || []);
+                const invitesRes = await apiFetch('/org-settings/pending-invites');
+                setPendingInvites(invitesRes?.data || (Array.isArray(invitesRes) ? invitesRes : []));
             }
         } catch (err) {
-            setError(err.response?.data?.error || err.message || 'Failed to load team data.');
+            setError(err.data?.error || err.message || 'Failed to load team data.');
         } finally {
             setLoading(false);
         }
@@ -52,7 +52,8 @@ export default function TeamManagement({ activeOrgId, userRole }) {
     const handleRemoveMemberExecute = async (userId) => {
         try {
             setActionStatus({ type: null, text: '', id: null });
-            await api.delete(`/org-settings/members/${userId}`);
+            // DELETE /api/v1/org-settings/members/:user_id
+            await apiFetch(`/org-settings/members/${userId}`, { method: 'DELETE' });
 
             setActionStatus({ type: 'success', text: 'Access revoked successfully.', id: userId });
             setActiveMembers((prev) => prev.filter((m) => m.user?.id !== userId));
@@ -61,14 +62,14 @@ export default function TeamManagement({ activeOrgId, userRole }) {
         } catch (err) {
             setActionStatus({
                 type: 'error',
-                text: err.response?.data?.error || err.message || 'Failed to remove member.',
+                text: err.data?.error || err.message || 'Failed to remove member.',
                 id: userId
             });
         }
     };
     if (loading) {
         return (
-            <div className="p-12 text-center text-text-secondary max-w-4xl mx-auto flex flex-col items-center justify-center gap-3 font-sans">
+            <div className="p-12 text-center text-text-secondary w-full flex flex-col items-center justify-center gap-3 font-sans">
                 <RefreshCw className="w-7 h-7 text-primary-container animate-spin" />
                 <p className="text-sm font-bold uppercase tracking-wider animate-pulse">Syncing workspace roster...</p>
             </div>
@@ -77,7 +78,7 @@ export default function TeamManagement({ activeOrgId, userRole }) {
 
     if (error) {
         return (
-            <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-semibold rounded-xl flex items-center gap-2.5 max-w-4xl mx-auto animate-in slide-in-from-top-2 duration-150 font-sans">
+            <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-semibold rounded-xl flex items-center gap-2.5 w-full animate-in slide-in-from-top-2 duration-150 font-sans">
                 <ShieldAlert className="w-5 h-5 shrink-0" />
                 <span>Error: {error}</span>
             </div>

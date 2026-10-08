@@ -16,7 +16,7 @@ export function UserAvatar({
     const [imgFailed, setImgFailed] = useState(false);
 
     const userId = user?.id || user?.userId;
-    const isOnline = usePresenceStore((state) => (userId ? !!state.activeList[String(userId)] : false));
+    const isOnline = usePresenceStore((state) => (userId ? !!state.activeList[String(userId)] : false)) || Boolean(user?.isOnline);
 
     const userName = name || user?.name || user?.username || user?.handle || '';
     const avatarUrl = (avatar !== undefined && avatar !== '') ? avatar : (user?.avatar || user?.avatar_url);

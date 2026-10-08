@@ -1,6 +1,6 @@
 // src/features/settings/TeamManagement.jsx
 import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
+import { apiFetch } from '../../api/apiClient';
 import InviteContributorForm from './InviteContributorForm';
 
 export default function TeamManagement({ activeOrgId, userRole }) {
@@ -19,17 +19,17 @@ export default function TeamManagement({ activeOrgId, userRole }) {
                 setLoading(true);
                 setError(null);
 
-                // 1. Fetch active members (Uses GET /api/org-settings/members)
-                const membersRes = await api.get('/org-settings/members');
-                setActiveMembers(membersRes.data?.data || membersRes.data || []);
+                // 1. Fetch active members (Uses GET /api/v1/org-settings/members)
+                const membersRes = await apiFetch('/org-settings/members');
+                setActiveMembers(membersRes?.data || (Array.isArray(membersRes) ? membersRes : []));
 
-                // 2. Fetch pending invites for this org if user is allowed to manage team
+                // 2. Fetch pending invites for this org if user is allowed to manage team (GET /api/v1/org-settings/pending-invites)
                 if (canManageTeam) {
-                    const invitesRes = await api.get('/org-settings/pending-invites');
-                    setPendingInvites(invitesRes.data?.data || invitesRes.data || []);
+                    const invitesRes = await apiFetch('/org-settings/pending-invites');
+                    setPendingInvites(invitesRes?.data || (Array.isArray(invitesRes) ? invitesRes : []));
                 }
             } catch (err) {
-                setError(err.response?.data?.error || err.message || 'Failed to load team data.');
+                setError(err.data?.error || err.message || 'Failed to load team data.');
             } finally {
                 setLoading(false);
             }
@@ -52,13 +52,13 @@ export default function TeamManagement({ activeOrgId, userRole }) {
         if (!window.confirm(`Are you sure you want to revoke organizational access for ${name}?`)) return;
 
         try {
-            await api.delete(`/org-settings/members/${userId}`);
+            await apiFetch(`/org-settings/members/${userId}`, { method: 'DELETE' });
             alert("Access revoked successfully.");
 
             // Update local UI state
             setActiveMembers((prev) => prev.filter((m) => m.user?.id !== userId));
         } catch (err) {
-            alert(err.response?.data?.error || err.message || 'Failed to remove member.');
+            alert(err.data?.error || err.message || "Error revoking access.");
         }
     };
 

@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Socket, Presence } from 'phoenix';
 import { useAuthStore } from '../store/auth/useAuthStore';
 import { useFeatureFlagsStore } from '../store/useFeatureFlags';
+import { useDirectMessageStore } from '../store/useDirectMessageStore';
 
 const PhoenixSocketContext = createContext(null);
 
@@ -46,7 +47,7 @@ export const PhoenixSocketProvider = ({ children }) => {
         }
 
         try {
-            const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/socket';
+            const wsUrl = import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:4000/socket';
             const authToken = storeToken || localStorage.getItem("auth_token") || localStorage.getItem("user_token") || localStorage.getItem("jwt_auth_token") || localStorage.getItem("socket_token") || "";
 
             // 🚀 ADVANCED GUEST ACCESS STRATEGY:
@@ -68,6 +69,13 @@ export const PhoenixSocketProvider = ({ children }) => {
             const targetTopic = `user_notifications:${user.id}`;
             notificationChannel = phoenixSocket.channel(targetTopic, {});
 
+            notificationChannel.join()
+                .receive('ok', (resp) => console.log(`Connected secure sync channel: ${targetTopic}`, resp))
+                .receive('error', (error) => console.error('Private sync channel connection rejected:', error))
+                .receive('timeout', () => {
+                    console.warn(`⏳ [SOCKET TIMEOUT]: Notification channel join timed out.`);
+                });
+
             // Hydrate unread metrics upon successful network connection loops
             notificationChannel.on('initial_state', (payload) => {
                 if (payload && typeof payload.unread_count === 'number') {
@@ -80,11 +88,42 @@ export const PhoenixSocketProvider = ({ children }) => {
                 console.log("⚡ Real-time Notification Node Received:", payload);
                 setLatestNotification(payload);
                 setUnreadCount((prev) => prev + 1);
+
+                if (payload?.type === 'new_direct_message' || payload?.conversation_id) {
+                    console.log("RECEIVED MESSAGE", payload)
+                    useDirectMessageStore.getState().receiveIncomingDM(payload.sender, payload.conversation_id);
+                }
+
+                console.log("CHECKING RECEIVED MESSAGE", payload)
+
+                if (payload && payload.type === "dm_badge_update" && payload.conversation_id) {
+                    // If the operator isn't looking at the main full-screen message page, trigger the popup [1.4]
+                    if (window.location.pathname !== '/messages') {
+                        useDirectMessageStore.getState().receiveIncomingDM(
+                            { id: payload.sender_id, username: payload.sender_username },
+                            payload.conversation_id
+                        );
+                    }
+                }
             });
 
-            notificationChannel.join()
-                .receive('ok', () => console.log(` Connected secure sync channel: ${targetTopic}`))
-                .receive('error', resp => console.error('Private sync channel connection rejected:', resp));
+            notificationChannel.on('new_alert', (payload) => {
+                console.log("⚡ Real-time Alert Node Received:", payload);
+                setLatestNotification(payload);
+                setUnreadCount((prev) => prev + 1);
+
+                if (payload?.type === 'new_direct_message' || payload?.conversation_id) {
+                    if (window.location.pathname !== '/messages') {
+                        useDirectMessageStore.getState().receiveIncomingDM(
+                            {
+                                id: payload.sender_id,
+                                username: payload.sender_username || "Neighbor"
+                            },
+                            payload.conversation_id
+                        );
+                    }
+                }
+            });
 
             // ⚡ REAL-TIME DISTRIBUTED PRESENCE TRACKER:
             publicChannel = phoenixSocket.channel("user:public", {});

@@ -180,13 +180,21 @@ export function AppPreferencesForm() {
         }
     };
 
-    const handlePreferencesSubmit = (e) => {
+    const handlePreferencesSubmit = async (e) => {
         e.preventDefault();
         setTheme(localTheme);
         setAppLanguage(localLanguage);
 
-        // 🚀 UPGRADE A: Visual Toast notification instead of thread-blocking window alert
-        setToastMessage({ type: 'success', text: "Application telemetry parameters refreshed cleanly." });
+        try {
+            await apiFetch('/api/v1/settings/preferences', {
+                method: 'POST',
+                body: JSON.stringify({ theme: localTheme, locale: localLanguage })
+            });
+            setToastMessage({ type: 'success', text: "Application preferences updated and saved to backend DB." });
+        } catch (err) {
+            console.warn("Failed to persist theme/locale preferences to backend:", err);
+            setToastMessage({ type: 'success', text: "Application preferences updated locally." });
+        }
         setTimeout(() => setToastMessage(null), 4000);
     };
 
@@ -235,7 +243,9 @@ export function AppPreferencesForm() {
                             className="w-full bg-white dark:bg-[#111111] border border-white/10 dark:border-white/5 text-base font-bold rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container cursor-pointer transition-colors"
                         >
                             <option value="dark" className="bg-white dark:bg-[#111111]">{t('theme_dark')}</option>
+                            <option value="dark-bluish" className="bg-white dark:bg-[#111111]">{t('theme_dark_bluish')}</option>
                             <option value="light" className="bg-white dark:bg-[#111111]">{t('theme_light')}</option>
+                            <option value="light-bluish" className="bg-white dark:bg-[#111111]">{t('theme_light_bluish')}</option>
                         </select>
                     </div>
                 </div>

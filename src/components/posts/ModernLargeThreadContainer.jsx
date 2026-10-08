@@ -35,7 +35,8 @@ export const ModernLargeThreadContainer = ({
     showEmojiDropdown,
     setShowEmojiDropdown,
     activeReplyPostId,
-    setActiveReplyPostId
+    setActiveReplyPostId,
+    renderMenu
 }) => {
     const navigate = useNavigate();
     const [showCommentEmojiDropdown, setShowCommentEmojiDropdown] = useState(false);
@@ -587,6 +588,7 @@ export const ModernLargeThreadContainer = ({
                                         isCurrentlyBookmarked: currentRowBookmarked
                                     })}
                                     onReblog={(id) => handleActionToggle('reblog', id)}
+                                    renderMenu={renderMenu}
                                 />
                                 {renderInlineReplyForm(item.data)}
                             </div>
@@ -623,6 +625,7 @@ export const ModernLargeThreadContainer = ({
                                         isCurrentlyBookmarked: currentRowBookmarked
                                     })}
                                     onReblog={(id) => handleActionToggle('reblog', id)}
+                                    renderMenu={renderMenu}
                                 />
                             </div>
                         );
@@ -648,6 +651,7 @@ export const ModernLargeThreadContainer = ({
                                         isCurrentlyBookmarked: currentRowBookmarked
                                     })}
                                     onReblog={(id) => handleActionToggle('reblog', id)}
+                                    renderMenu={renderMenu}
                                 />
                                 {renderInlineReplyForm(item.data)}
                             </div>

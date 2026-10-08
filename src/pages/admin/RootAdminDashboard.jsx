@@ -1,41 +1,30 @@
-// src/pages/RootAdminDashboard.jsx
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShieldAlert, ArrowUpCircle, History, Settings, Ban, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ShieldAlert, ArrowUpCircle, History, Settings, Ban, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { useSocket } from '../../context/PhoenixSocketContext';
 import { Virtuoso } from 'react-virtuoso';
+import { useSocket } from '../../context/PhoenixSocketContext';
 import { SystemConfigurationPanel } from './SystemConfigurationPanel';
+import { SecurityBlacklistsPanel } from './SecurityBlacklistsPanel';
+import { apiFetch } from '../../api/apiClient';
+import { toast } from 'sonner';
 
 // Mock API client fetchers; substitute with your exact axios/apiFetch instance routing lines
 const fetchAuditLogs = async () => {
-    const token = localStorage.getItem("user_token") || "";
-    const res = await fetch('/api/v1/admin/root/audit_logs', {
-        headers: { "Authorization": `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error("Failed to load platform registry audit trail.");
-    const json = await res.json();
-    return json.data || [];
+    const res = await apiFetch('/api/v1/admin/root/audit_logs');
+    return res?.data || res || [];
 };
 
 const executePromotion = async ({ username, roleType }) => {
-    const token = localStorage.getItem("user_token") || "";
     const endpoint = roleType === "admin"
         ? "/api/v1/admin/root/users/promote_admin"
         : "/api/v1/admin/root/users/promote_moderator";
 
-    const res = await fetch(endpoint, {
+    const res = await apiFetch(endpoint, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        },
         body: JSON.stringify({ username })
     });
-
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Clearance assignment rejected.");
-    return json;
+    return res;
 };
 
 export const RootAdminDashboard = () => {
@@ -43,6 +32,8 @@ export const RootAdminDashboard = () => {
     const [targetUsername, setTargetUsername] = useState("");
     const [activeTab, setActiveTab] = useState("Staff & Permissions");
     const [message, setMessage] = useState(null);
+    const [loadingMessage, setLoadingMessage] = useState("");
+    const [popupStatus, setPopupStatus] = useState(null);
     const { latestGlobalLog } = useSocket();
 
     // 📡 TANSTACK QUERY HYDRATION: Manages automated background caching and state syncing
@@ -50,25 +41,70 @@ export const RootAdminDashboard = () => {
         queryKey: ['admin', 'root', 'audit-logs'],
         queryFn: fetchAuditLogs,
         staleTime: 30000,
-        refetchOnWindowFocus: true
+        refetchOnWindowFocus: false
     });
+
+    const handleCommandStart = (msg) => {
+        setLoadingMessage(msg || "Transmitting command to backend...");
+    };
+
+    const handleCommandComplete = (status) => {
+        setLoadingMessage("");
+        setPopupStatus({
+            isOpen: true,
+            ...status
+        });
+        if (status.type === 'success') {
+            toast.success(status.message);
+        } else {
+            toast.error(status.message);
+        }
+    };
 
     // 🚀 ATOMIC MUTATION INTERCEPTOR: Drives clean, non-blocking asynchronous user promotions
     const promotionMutation = useMutation({
         mutationFn: executePromotion,
-        onSuccess: (data) => {
-            setMessage({ type: "success", text: data?.message || "Privilege vector assigned successfully." });
+        onSuccess: (data, variables) => {
+            setLoadingMessage("");
+            const roleLabel = variables.roleType === "admin" ? "Root Admin" : "Moderator";
+            const successMsg = data?.message || `Privilege vector (${roleLabel}) assigned successfully to @${variables.username}.`;
+
+            setMessage({ type: "success", text: successMsg });
+            setPopupStatus({
+                isOpen: true,
+                type: "success",
+                title: "Command Executed Successfully",
+                message: successMsg,
+                target: `@${variables.username}`,
+                role: roleLabel
+            });
             setTargetUsername("");
             queryClient.invalidateQueries({ queryKey: ['admin', 'root', 'audit-logs'] });
+            toast.success(successMsg);
         },
-        onError: (err) => {
-            setMessage({ type: "error", text: err?.message || "Operation failed inside context." });
+        onError: (err, variables) => {
+            setLoadingMessage("");
+            const roleLabel = variables.roleType === "admin" ? "Root Admin" : "Moderator";
+            const errorMsg = err?.message || "Operation failed inside context.";
+
+            setMessage({ type: "error", text: errorMsg });
+            setPopupStatus({
+                isOpen: true,
+                type: "error",
+                title: "Command Execution Failed",
+                message: errorMsg,
+                target: `@${variables.username}`,
+                role: roleLabel
+            });
+            toast.error(errorMsg);
         }
     });
 
     const handleStaffPromotion = (roleType) => {
         if (!targetUsername.trim()) return;
         setMessage(null);
+        const roleLabel = roleType === "admin" ? "Root Admin" : "Moderator";
+        handleCommandStart(`Granting ${roleLabel} privileges to @${targetUsername.trim()}... Transmitting command to backend.`);
         promotionMutation.mutate({ username: targetUsername.trim(), roleType });
     };
 
@@ -100,7 +136,7 @@ export const RootAdminDashboard = () => {
             </header>
 
             {/* Sub-navigation tabs selection strip */}
-            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-black/10 dark:border-white/5 mb-8 font-mono select-none">
+            <div className="flex flex-col lg:flex-row gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-black/10 dark:border-white/5 mb-8 font-mono select-none">
                 {["Staff & Permissions", "System Configuration", "Security Blacklists"].map((tab) => {
                     const isActive = activeTab === tab;
                     return (
@@ -168,9 +204,12 @@ export const RootAdminDashboard = () => {
                                         type="button"
                                         onClick={() => handleStaffPromotion("moderator")}
                                         disabled={promotionMutation.isPending || !targetUsername.trim()}
-                                        className="flex-1 bg-black/[0.02] dark:bg-white/[0.04] border border-black/10 dark:border-white/5 hover:bg-black/[0.05] dark:hover:bg-white/10 text-text-primary dark:text-white px-6 py-3.5 rounded-xl font-black transition-all cursor-pointer outline-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="flex-1 bg-black/[0.02] dark:bg-white/[0.04] border border-black/10 dark:border-white/5 hover:bg-black/[0.05] dark:hover:bg-white/10 text-text-primary dark:text-white px-6 py-3.5 rounded-xl font-black transition-all cursor-pointer outline-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
-                                        Grant Moderator
+                                        {promotionMutation.isPending && promotionMutation.variables?.roleType === 'moderator' && (
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-container" />
+                                        )}
+                                        <span>Grant Moderator</span>
                                     </button>
                                     <button
                                         type="button"
@@ -178,7 +217,9 @@ export const RootAdminDashboard = () => {
                                         disabled={promotionMutation.isPending || !targetUsername.trim()}
                                         className="flex-1 bg-primary-container text-white px-6 py-3.5 rounded-xl font-black hover:brightness-105 transition-all outline-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
-                                        {promotionMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                                        {promotionMutation.isPending && promotionMutation.variables?.roleType === 'admin' && (
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                                        )}
                                         <span>Grant Root Admin</span>
                                     </button>
                                 </div>
@@ -186,7 +227,7 @@ export const RootAdminDashboard = () => {
                         </section>
                     </div>
                     {/* System Audit Log Block - Right Column Sidebar Panel */}
-                    <div className="lg:col-span-4">
+                    <div className="lg:col-span-4" hidden>
                         <section className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 p-5 rounded-[24px] flex flex-col h-[520px] shadow-xl transition-colors">
                             <div className="flex items-center gap-3 border-b border-black/5 dark:border-white/5 pb-4 mb-4 select-none">
                                 <History className="w-5 h-5 text-primary-container stroke-[2.5px]" />
@@ -339,23 +380,120 @@ export const RootAdminDashboard = () => {
             {activeTab === "System Configuration" && (
                 <section className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 p-12 text-center rounded-[24px] shadow-xl select-none animate-in zoom-in-95 duration-150 transition-colors">
                     <Settings className="w-12 h-12 text-text-secondary/40 mx-auto mb-4 stroke-[1.25px]" />
-                    <h3 className="font-black text-text-primary dark:text-white text-lg mb-1 tracking-tight">System Configurator</h3>
-                    <p className="text-text-secondary text-sm font-medium max-w-sm mx-auto leading-relaxed">
+                    <h3 className="font-black text-text-primary dark:text-white text-lg mb-1 tracking-tight">
+                        System Configurator
+                    </h3>
+                    <p className="text-text-secondary text-sm font-medium max-w-sm mx-auto leading-relaxed mb-6">
                         Global feature flags, mesh network routing tables, and rate-limiting throttling caps are currently undergoing synchronization.
                     </p>
-                    <SystemConfigurationPanel />
+                    <SystemConfigurationPanel
+                        onCommandStart={handleCommandStart}
+                        onCommandComplete={handleCommandComplete}
+                    />
                 </section>
 
             )}
 
             {activeTab === "Security Blacklists" && (
-                <section className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 p-12 text-center rounded-[24px] shadow-xl select-none animate-in zoom-in-95 duration-150 transition-colors">
-                    <Ban className="w-12 h-12 text-text-secondary/40 mx-auto mb-4 stroke-[1.25px]" />
-                    <h3 className="font-black text-text-primary dark:text-white text-lg mb-1 tracking-tight">Security Blacklists</h3>
-                    <p className="text-text-secondary text-sm font-medium max-w-sm mx-auto leading-relaxed">
-                        IP address CIDR blacklists, shadow-ban filters, and bad-actor firewall rule matrix specifications are currently under construction.
-                    </p>
-                </section>
+                <SecurityBlacklistsPanel
+                    onCommandStart={handleCommandStart}
+                    onCommandComplete={handleCommandComplete}
+                />
+            )}
+
+            {/* ⏳ COMMAND STATUS LOADER OVERLAY */}
+            {(promotionMutation.isPending || !!loadingMessage) && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in fade-in duration-200 select-none">
+                    <div className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/10 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-4 font-sans">
+                        <div className="w-16 h-16 rounded-2xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center mx-auto text-primary-container">
+                            <Loader2 className="w-8 h-8 animate-spin stroke-[2.5px]" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <h3 className="text-xl font-black text-text-primary dark:text-white tracking-tight">
+                                Executing Command...
+                            </h3>
+                            <p className="text-xs font-mono font-bold uppercase tracking-wider text-text-secondary">
+                                Transmitting Payload to Backend
+                            </p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 text-sm font-medium leading-relaxed font-mono text-text-secondary dark:text-neutral-300">
+                            {loadingMessage || "Processing operational command request..."}
+                        </div>
+                        <div className="pt-1">
+                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-primary-container/10 border border-primary-container/20 text-primary-container font-mono text-xs font-bold uppercase rounded-full animate-pulse">
+                                <span className="w-2 h-2 rounded-full bg-primary-container" />
+                                Awaiting Backend Response
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 📣 POPUP STATUS MESSAGE MODAL AFTER BACKEND COMMAND COMPLETION */}
+            {popupStatus?.isOpen && (
+                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-200 select-none">
+                    <div className={cn(
+                        "bg-white dark:bg-[#141414] border p-6 sm:p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-5 font-sans",
+                        popupStatus.type === "success" ? "border-emerald-500/30" : "border-rose-500/30"
+                    )}>
+                        <div className="flex flex-col items-center text-center space-y-3">
+                            <div className={cn(
+                                "w-16 h-16 rounded-2xl flex items-center justify-center border shadow-lg",
+                                popupStatus.type === "success"
+                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                    : "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
+                            )}>
+                                {popupStatus.type === "success" ? (
+                                    <CheckCircle2 className="w-10 h-10 stroke-[2.5px]" />
+                                ) : (
+                                    <AlertCircle className="w-10 h-10 stroke-[2.5px]" />
+                                )}
+                            </div>
+
+                            <div className="space-y-1">
+                                <h3 className="text-xl font-black text-text-primary dark:text-white tracking-tight">
+                                    {popupStatus.title || "Backend Command Status"}
+                                </h3>
+                                <span className={cn(
+                                    "inline-block px-2.5 py-0.5 rounded text-[10px] font-mono font-black uppercase tracking-widest border",
+                                    popupStatus.type === "success"
+                                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                        : "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
+                                )}>
+                                    {popupStatus.type === "success" ? "STATUS: SUCCESS_200" : "STATUS: REJECTED_ERROR"}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className={cn(
+                            "p-4 rounded-2xl border text-sm font-medium leading-relaxed font-mono text-left",
+                            popupStatus.type === "success"
+                                ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+                                : "bg-rose-500/5 border-rose-500/20 text-rose-700 dark:text-rose-300"
+                        )}>
+                            <p>{popupStatus.message}</p>
+                            {popupStatus.target && (
+                                <div className="mt-3 pt-2.5 border-t border-black/10 dark:border-white/10 text-xs flex justify-between items-center">
+                                    <span className="text-text-secondary font-bold">Target Vector:</span>
+                                    <span className="font-bold text-text-primary dark:text-white">{popupStatus.target}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setPopupStatus(null)}
+                            className={cn(
+                                "w-full py-3.5 px-6 font-mono text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer outline-none active:scale-95 text-white border-none shadow-lg",
+                                popupStatus.type === "success"
+                                    ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20"
+                                    : "bg-rose-600 hover:bg-rose-500 shadow-rose-600/20"
+                            )}
+                        >
+                            Acknowledge &amp; Close
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );

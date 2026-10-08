@@ -1,6 +1,6 @@
 // src/features/settings/AuditLogs.jsx
 import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
+import { apiFetch } from '../../api/apiClient';
 import { ShieldAlert, RefreshCw, CheckCircle2, Trash2, UserPlus, History } from 'lucide-react';
 import { cn } from "@/lib/utils"; // Adjust to your layout utility helper directory path
 
@@ -13,10 +13,12 @@ export default function AuditLogs({ activeOrgId }) {
         try {
             setLoading(true);
             setError(null);
-            const response = await api.get('/org-settings/audit-logs');
-            setLogs(response.data?.data || response.data || []);
+            // GET /api/v1/org-settings/audit-logs
+            const response = await apiFetch('/org-settings/audit-logs');
+            console.log("Audit Logs:", response);
+            setLogs(response?.data || (Array.isArray(response) ? response : []));
         } catch (err) {
-            setError(err.response?.data?.error || err.message || 'Failed to load audit logs.');
+            setError(err.data?.error || err.message || 'Failed to load audit logs.');
         } finally {
             setLoading(false);
         }
@@ -32,7 +34,7 @@ export default function AuditLogs({ activeOrgId }) {
 
     if (loading) {
         return (
-            <div className="p-12 text-center text-text-secondary max-w-4xl mx-auto flex flex-col items-center justify-center gap-3 font-sans">
+            <div className="p-12 text-center text-text-secondary w-full flex flex-col items-center justify-center gap-3 font-sans">
                 <RefreshCw className="w-7 h-7 text-primary-container animate-spin" />
                 <p className="text-sm font-bold uppercase tracking-wider animate-pulse">Syncing organizational records...</p>
             </div>
@@ -41,7 +43,7 @@ export default function AuditLogs({ activeOrgId }) {
 
     if (error) {
         return (
-            <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-semibold rounded-xl flex items-center gap-2.5 max-w-4xl mx-auto animate-in slide-in-from-top-2 duration-150 font-sans">
+            <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-semibold rounded-xl flex items-center gap-2.5 w-full animate-in slide-in-from-top-2 duration-150 font-sans">
                 <ShieldAlert className="w-5 h-5 shrink-0" />
                 <span>Error: {error}</span>
             </div>
@@ -151,13 +153,13 @@ function RestoreButton({ postId, onRestoreSuccess }) {
         try {
             setRestoring(true);
             setFeedback(null);
-            await api.post(`/posts/${postId}/restore`);
+            await apiFetch(`/posts/${postId}/restore`, { method: 'POST' });
             setFeedback({ type: 'success', text: 'Post recovered.' });
             setTimeout(() => {
                 if (onRestoreSuccess) onRestoreSuccess();
             }, 1500);
         } catch (err) {
-            setFeedback({ type: 'error', text: err.response?.data?.error || 'Recovery dropped.' });
+            setFeedback({ type: 'error', text: err.data?.error || err.message || 'Recovery dropped.' });
             setTimeout(() => setFeedback(null), 3000);
         } finally {
             setRestoring(false);

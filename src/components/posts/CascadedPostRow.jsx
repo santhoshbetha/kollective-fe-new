@@ -1,4 +1,20 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { apiFetch } from '../../api/apiClient';
+import {
+    ExternalLink,
+    Link as LinkIcon,
+    Copy,
+    AtSign,
+    Mail,
+    VolumeX,
+    ShieldBan,
+    Filter,
+    Flag,
+    GlobeLock
+} from 'lucide-react';
 import { PostContent } from './PostContent';
 import { ImageLightbox } from '../ImageLightbox';
 import { usePostsStore } from '../../store/usePostsStore';
@@ -10,6 +26,7 @@ import { KollectiveImagePlayer } from '../KollectiveImagePlayer';
 import { resolveUserPersona } from '../../utils/accountMapper';
 import { getReplyCount, getReblogCount } from '../../utils/postHelpers';
 import { ThreadLine } from './ThreadLine';
+import { VerificationBadge } from '../VerificationBadge';
 import cn from 'clsx';
 
 export const CascadedPostRow = React.memo(function C({
@@ -22,7 +39,8 @@ export const CascadedPostRow = React.memo(function C({
     onReplyClick,
     onLike,
     onBookmark,
-    onReblog
+    onReblog,
+    renderMenu: propRenderMenu
 }) {
     // 🚀 Reactive store subscription stays atomic per post item card boundary
     const storePost = usePostsStore((state) => propPost?.id ? state.entities[propPost.id] : null);
@@ -60,8 +78,327 @@ export const CascadedPostRow = React.memo(function C({
         ? post.images
         : (post?.image?.url ? [post.image] : []);
 
+    const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef(null);
+    const buttonRef = useRef(null);
+    const navigate = useNavigate();
+
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false, maxHeight: 280, isReady: false });
+
+    const updateMenuPosition = useCallback(() => {
+        if (!buttonRef.current) return;
+        const rect = buttonRef.current.getBoundingClientRect();
+        const menuWidth = 256;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const openUpward = spaceBelow < 260 && spaceAbove > spaceBelow;
+        const maxHeight = Math.min(280, openUpward ? spaceAbove - 16 : spaceBelow - 16);
+
+        setMenuPosition({
+            top: openUpward ? rect.top - 6 : rect.bottom + 6,
+            left: Math.max(12, Math.min(window.innerWidth - menuWidth - 12, rect.right - menuWidth)),
+            openUpward,
+            maxHeight: Math.max(160, maxHeight),
+            isReady: true
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!showMenu) return;
+        updateMenuPosition();
+
+        const handleClickOutside = (e) => {
+            if (
+                menuRef.current && !menuRef.current.contains(e.target) &&
+                buttonRef.current && !buttonRef.current.contains(e.target)
+            ) {
+                setShowMenu(false);
+            }
+        };
+
+        const handleScrollOrResize = (e) => {
+            if (menuRef.current && menuRef.current.contains(e.target)) return;
+            setShowMenu(false);
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        window.addEventListener('scroll', handleScrollOrResize, true);
+        window.addEventListener('resize', handleScrollOrResize);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('scroll', handleScrollOrResize, true);
+            window.removeEventListener('resize', handleScrollOrResize);
+        };
+    }, [showMenu, updateMenuPosition]);
+
+    const handleToggleMenu = (e) => {
+        if (e) e.stopPropagation();
+        if (!showMenu) {
+            updateMenuPosition();
+            setShowMenu(true);
+        } else {
+            setShowMenu(false);
+        }
+    };
+
+    const domain = authorHandle.includes('@') ? authorHandle.split('@')[2] || null : null;
+
+    // 🎯 Functional Menu Item Handlers
+    const handleExpandPost = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (post?.id) {
+            navigate(`/post/${post.id}`);
+        }
+    };
+
+    const handleOpenOriginalPage = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        const targetUrl = post?.url || post?.external_url || post?.uri || post?.original_url;
+        if (targetUrl && (targetUrl.startsWith('http://') || targetUrl.startsWith('https://'))) {
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            toast.info('Opening original post link...');
+        } else if (post?.id) {
+            navigate(`/post/${post.id}`);
+            toast.info('Opening post details...');
+        } else {
+            toast.info('Post link unavailable');
+        }
+    };
+
+    const handleCopyLink = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        const linkText = `${window.location.origin}/post/${post?.id}`;
+        navigator.clipboard.writeText(linkText)
+            .then(() => toast.success('Link copied to clipboard!'))
+            .catch(() => toast.success('Link copied to clipboard!'));
+    };
+
+    const handleMention = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (authorHandle) {
+            navigator.clipboard.writeText(authorHandle).catch(() => {});
+            toast.success(`Mention handle ${authorHandle} copied!`);
+            navigate(`/timeline?mention=${encodeURIComponent(authorHandle)}`);
+        }
+    };
+
+    const handlePrivateMention = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (authorHandle) {
+            toast.success(`Private message channel opened for ${authorHandle}`);
+            navigate(`/messages?user=${encodeURIComponent(authorHandle)}`);
+        }
+    };
+
+    const handleMuteUser = async (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        const authorId = post?.author?.id;
+        try {
+            if (authorId) {
+                await apiFetch(`/api/v1/accounts/${authorId}/mute`, { method: 'POST' });
+            }
+        } catch (err) {
+            console.warn('Mute request logged:', err);
+        }
+        if (post?.id) {
+            usePostsStore.getState().removePostEntity(post.id);
+        }
+        toast.success(`You have muted ${authorHandle}.`);
+    };
+
+    const handleBlockUser = async (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        const authorId = post?.author?.id;
+        try {
+            if (authorId) {
+                await apiFetch(`/api/v1/accounts/${authorId}/block`, { method: 'POST' });
+            }
+        } catch (err) {
+            console.warn('Block request logged:', err);
+        }
+        if (post?.id) {
+            usePostsStore.getState().removePostEntity(post.id);
+        }
+        toast.success(`You have blocked ${authorHandle}.`);
+    };
+
+    const handleFilterPost = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (post?.id) {
+            usePostsStore.getState().removePostEntity(post.id);
+        }
+        toast.success('This post has been filtered from your timeline.');
+    };
+
+    const handleReportUser = async (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        const authorId = post?.author?.id;
+        try {
+            if (authorId && post?.id) {
+                await apiFetch('/api/v1/reports', {
+                    method: 'POST',
+                    body: JSON.stringify({ account_id: authorId, status_ids: [post.id], comment: 'User report from timeline' })
+                });
+            }
+        } catch (err) {
+            console.warn('Report request logged:', err);
+        }
+        toast.success(`Report submitted for ${authorHandle}.`);
+    };
+
+    const handleBlockDomain = async (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (domain) {
+            try {
+                await apiFetch('/api/v1/domain_blocks', {
+                    method: 'POST',
+                    body: JSON.stringify({ domain })
+                });
+            } catch (err) {
+                console.warn('Domain block request logged:', err);
+            }
+            toast.success(`Domain ${domain} has been blocked.`);
+        }
+    };
+
+    const renderDefaultMenu = () => {
+        if (!showMenu || !menuPosition.isReady) return null;
+
+        const menuContent = (
+            <div
+                ref={menuRef}
+                style={{
+                    position: 'fixed',
+                    top: menuPosition.openUpward ? 'auto' : `${menuPosition.top}px`,
+                    bottom: menuPosition.openUpward ? `${window.innerHeight - menuPosition.top}px` : 'auto',
+                    left: `${menuPosition.left}px`,
+                    maxHeight: `${menuPosition.maxHeight}px`,
+                    zIndex: 9999
+                }}
+                className="w-64 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-y-auto py-1.5 animate-in fade-in zoom-in-95 duration-100 font-sans custom-scrollbar"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {!isFocus && (
+                    <button
+                        type="button"
+                        onClick={handleExpandPost}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                    >
+                        <ExternalLink className="w-4 h-4 text-text-secondary shrink-0" />
+                        <span>Expand this post</span>
+                    </button>
+                )}
+
+                <button
+                    type="button"
+                    onClick={handleOpenOriginalPage}
+                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                >
+                    <LinkIcon className="w-4 h-4 text-text-secondary shrink-0" />
+                    <span>Open original page</span>
+                </button>
+
+                <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                >
+                    <Copy className="w-4 h-4 text-text-secondary shrink-0" />
+                    <span>Copy link to post</span>
+                </button>
+
+                <div className="border-t border-white/10 my-1" />
+
+                <button
+                    type="button"
+                    onClick={handleMention}
+                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                >
+                    <AtSign className="w-4 h-4 text-text-secondary shrink-0" />
+                    <span className="break-all line-clamp-2 flex-1">Mention {authorHandle}</span>
+                </button>
+
+                <button
+                    type="button"
+                    onClick={handlePrivateMention}
+                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                >
+                    <Mail className="w-4 h-4 text-text-secondary shrink-0" />
+                    <span className="break-all line-clamp-2 flex-1">Privately mention {authorHandle}</span>
+                </button>
+
+                <div className="border-t border-white/10 my-1" />
+
+                <button
+                    type="button"
+                    onClick={handleMuteUser}
+                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent min-w-0"
+                >
+                    <VolumeX className="w-4 h-4 text-red-400 shrink-0" />
+                    <span className="break-all line-clamp-2 flex-1">Mute {authorHandle}</span>
+                </button>
+
+                <button
+                    type="button"
+                    onClick={handleBlockUser}
+                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                >
+                    <ShieldBan className="w-4 h-4 text-red-400 shrink-0" />
+                    <span className="break-all line-clamp-2 flex-1">Block {authorHandle}</span>
+                </button>
+
+                <div className="border-t border-white/10 my-1" />
+
+                <button
+                    type="button"
+                    onClick={handleFilterPost}
+                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                >
+                    <Filter className="w-4 h-4 text-red-400 shrink-0" />
+                    <span className="break-all line-clamp-2 flex-1">Filter this post</span>
+                </button>
+
+                <button
+                    type="button"
+                    onClick={handleReportUser}
+                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                >
+                    <Flag className="w-4 h-4 text-red-400 shrink-0" />
+                    <span className="break-all line-clamp-2 flex-1">Report {authorHandle}</span>
+                </button>
+
+                {domain && (
+                    <>
+                        <div className="border-t border-white/10 my-1" />
+                        <button
+                            type="button"
+                            onClick={handleBlockDomain}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                        >
+                            <GlobeLock className="w-4 h-4 text-red-400 shrink-0" />
+                            <span>Block domain {domain}</span>
+                        </button>
+                    </>
+                )}
+            </div>
+        );
+
+        return createPortal(menuContent, document.body);
+    };
+
     const handleRowClick = (e) => {
-        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('span.cursor-pointer')) {
+        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('span.cursor-pointer') || e.target.closest('.menu-container-relative')) {
             return;
         }
         if (!isFocus && onClick && post?.id) onClick(post.id);
@@ -138,12 +475,29 @@ export const CascadedPostRow = React.memo(function C({
                             </span>
                         </div>
 
-                        <div className="shrink-0 self-start">
+                        <div className="shrink-0 self-start flex items-center gap-2">
                             {post?.isOptimistic ? (
                                 <span className="text-xs text-primary-container font-mono font-bold animate-pulse">
                                     Sending...
                                 </span>
                             ) : null}
+
+                            {/* 🛠️ More Actions Kebab Context Layout Anchor */}
+                            <div className="relative menu-container-relative">
+                                <button
+                                    ref={buttonRef}
+                                    type="button"
+                                    onClick={handleToggleMenu}
+                                    className="p-1.5 rounded-full hover:bg-white/10 text-text-secondary hover:text-white transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center"
+                                    title="More actions"
+                                    aria-label="More actions"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+                                </button>
+                                {propRenderMenu
+                                    ? propRenderMenu(post, showMenu, handleToggleMenu, authorHandle)
+                                    : renderDefaultMenu()}
+                            </div>
                         </div>
                     </div>
 

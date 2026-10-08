@@ -9,7 +9,7 @@ import React from 'react';
 export const VerificationBadge = ({ type = 'citizen', size = 'sm', className = '' }) => {
 
     // 🎨 SYNCED THEME MATRIX: Matches the exact branding palettes of your attentive ThreadLines
-    const typeColors = {
+    const typeColorsX = {
         // Activist: Grassroots high-urgency bright amber/orange
         activist: '#f59e0b',
         // Scholar: Prestigious academic violet/indigo
@@ -23,6 +23,23 @@ export const VerificationBadge = ({ type = 'citizen', size = 'sm', className = '
         citizen: '#1d9bf0',
         // Warning: Moderation yellow flag alert boundaries
         warned: '#eab308',
+    };
+
+    // 🎨 SYNCED THEME MATRIX: Matches the exact branding palettes of your attentive ThreadLines
+    const typeColors = {
+        // Activist: Grassroots high-urgency bright amber/orange
+        activist: '#E32636',
+        // Scholar: Prestigious academic violet/indigo
+        scholar: '#008080',
+        // Journalist / Voice: Core Kollective primary brand alert crimson
+        journalist: '#008080',
+        voice: '#d32f2f',
+        // Organization: Premium high-contrast clean cyan/teal
+        organization: '#DAA520',
+        // Citizen / Standard: Balanced classic blue structure
+        citizen: '#1D9BF0',
+        // Warning: Moderation yellow flag alert boundaries
+        warned: '#f4711d',
     };
 
     // 🛡️ FIX: Safe extraction ensuring all valid keys match correctly

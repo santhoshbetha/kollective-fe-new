@@ -50,7 +50,7 @@ export function GlobalSearchBar() {
                         setIsOpen(true);
                     }}
                     placeholder="Search posts, cooperatives, or proposals..."
-                    className="w-full bg-[#141414] text-white border border-white/10 rounded-xl py-3 pl-11 pr-10 text-sm focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/10 transition-all font-medium placeholder:text-text-secondary/30"
+                    className="w-full bg-white dark:bg-[#141414] text-text-primary dark:text-white border border-black/10 dark:border-white/10 rounded-xl py-3 pl-11 pr-10 text-sm focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/10 transition-all font-medium placeholder:text-text-secondary/50"
                 />
                 {searchVal && (
                     <button
@@ -59,7 +59,7 @@ export function GlobalSearchBar() {
                             setSearchValue('');
                             setIsOpen(false);
                         }}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-text-secondary/60 hover:text-white bg-transparent border-none cursor-pointer flex items-center outline-none"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-text-secondary/60 hover:text-text-primary dark:hover:text-white bg-transparent border-none cursor-pointer flex items-center outline-none"
                     >
                         <X className="w-4 h-4" />
                     </button>
@@ -67,7 +67,7 @@ export function GlobalSearchBar() {
             </div>
             {/* Floating Dropdown System Results Portal */}
             {isOpen && searchVal.trim().length > 1 && (
-                <div className="absolute top-[calc(100%+8px)] inset-x-0 bg-[#141414] border border-white/10 shadow-2xl rounded-2xl max-h-[480px] overflow-y-auto custom-scrollbar p-2 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-4">
+                <div className="absolute top-[calc(100%+8px)] inset-x-0 bg-white dark:bg-[#141414] border border-black/10 dark:border-white/10 shadow-2xl rounded-2xl max-h-[480px] overflow-y-auto custom-scrollbar p-2 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-4 text-text-primary dark:text-white">
 
                     {isPending && (
                         <div className="py-6 text-center font-mono text-[10px] text-text-secondary/40 select-none uppercase tracking-widest animate-pulse">

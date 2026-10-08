@@ -1,6 +1,5 @@
-// src/pages/InvitationsList.jsx
 import React, { useState, useEffect } from 'react';
-import api from '../services/api';
+import { apiFetch } from '../api/apiClient';
 import { useAuthStore } from '../store/auth/useAuthStore';
 
 export default function InvitationsList() {
@@ -15,11 +14,11 @@ export default function InvitationsList() {
         try {
             setLoading(true);
             setError(null);
-            const res = await api.get('/invitations');
-            setInvitations(res.data?.data || []);
+            const res = await apiFetch('/invitations');
+            setInvitations(res?.data || (Array.isArray(res) ? res : []));
         } catch (err) {
             console.error('Failed to load invitations:', err);
-            setError(err.response?.data?.error || 'Failed to load invitations.');
+            setError(err.data?.error || err.message || 'Failed to load invitations.');
         } finally {
             setLoading(false);
         }
@@ -40,8 +39,9 @@ export default function InvitationsList() {
 
     const handleAction = async (id, action) => {
         try {
-            const response = await api.post(`/invitations/${id}/${action}`);
-            const acceptedOrg = response.data?.organization || response.data?.data?.organization;
+            const response = await apiFetch(`/invitations/${id}/${action}`, { method: 'POST' });
+            const payload = response?.data || response;
+            const acceptedOrg = payload?.membership?.organization || payload?.organization;
 
             // If accepted, synchronize the new organization into user's memberships immediately
             if (action === 'accept' && acceptedOrg && user) {
@@ -50,8 +50,8 @@ export default function InvitationsList() {
                 if (!alreadyMember) {
                     updatedMemberships.push({
                         organization: acceptedOrg,
-                        role: response.data?.role || 'contributor',
-                        status: 'active'
+                        role: payload?.membership?.role || payload?.role || 'contributor',
+                        status: payload?.membership?.status || payload?.status || 'approved'
                     });
                     const updatedUser = { ...user, memberships: updatedMemberships };
                     setSession(token, updatedUser);
@@ -61,7 +61,7 @@ export default function InvitationsList() {
             setInvitations(prev => prev.filter(invite => invite.id !== id));
             alert(`Invitation successfully ${action === 'accept' ? 'accepted' : 'declined'}.`);
         } catch (err) {
-            alert(err.response?.data?.error || `Error processing ${action} request.`);
+            alert(err.data?.error || err.message || `Error processing ${action} request.`);
         }
     };
 
@@ -111,18 +111,18 @@ export default function InvitationsList() {
                             <li key={invite.id} className={`py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${expired ? 'opacity-50' : ''}`}>
                                 <div className="flex items-center gap-3">
                                     <img
-                                        src={org.avatar || '/default-org.jpg'}
-                                        alt={org.name || 'Organization'}
+                                        src={org.avatar_url || org.avatar || '/default-org.jpg'}
+                                        alt={org.display_name || org.name || 'Organization'}
                                         className="w-10 h-10 rounded-xl object-cover border border-white/10 flex-shrink-0"
                                     />
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <p className={`font-bold text-sm text-text-primary ${expired ? 'line-through text-text-secondary' : ''}`}>
-                                                {org.name || 'Organization'}
+                                                {org.display_name || org.name || 'Organization'}
                                             </p>
-                                            {org.handle && (
+                                            {(org.username || org.handle) && (
                                                 <span className="text-xs text-text-secondary">
-                                                    {org.handle}
+                                                    {org.username ? (org.username.startsWith('@') ? org.username : `@${org.username}`) : org.handle}
                                                 </span>
                                             )}
                                         </div>

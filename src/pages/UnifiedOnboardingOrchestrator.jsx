@@ -145,6 +145,14 @@ const UnifiedOnboardingOrchestrator = ({ authToken: propAuthToken, onFlowComplet
             onClick: handleSkip
         },
         {
+            id: 'SCHOLAR',
+            title: 'Scholar / Researcher',
+            type: 'scholar',
+            description: 'Professors, researchers, economists, and academics.',
+            hoverBorder: 'hover:border-emerald-500',
+            onClick: () => setCurrentStep('SCHOLAR_FLOW')
+        },
+        {
             id: 'ORGANIZATION',
             title: 'News Organization',
             type: 'organization',
@@ -160,14 +168,7 @@ const UnifiedOnboardingOrchestrator = ({ authToken: propAuthToken, onFlowComplet
             hoverBorder: 'hover:border-tertiary',
             onClick: () => setCurrentStep('JOURNALIST_FLOW')
         },
-        {
-            id: 'SCHOLAR',
-            title: 'Scholar / Researcher',
-            type: 'scholar',
-            description: 'Professors, researchers, data analysts, and economists.',
-            hoverBorder: 'hover:border-emerald-500',
-            onClick: () => setCurrentStep('SCHOLAR_FLOW')
-        },
+
         {
             id: 'ACTIVIST',
             title: 'Frontline Activist',
@@ -201,7 +202,7 @@ const UnifiedOnboardingOrchestrator = ({ authToken: propAuthToken, onFlowComplet
                             <div className="space-y-1 min-w-0 pr-2">
                                 <div className="text-lg sm:text-base font-bold flex items-center gap-2 text-text-primary">
                                     <span>{role.title}</span>
-                                    <VerificationBadge type={role.type} />
+                                    <VerificationBadge type={role.type} size="lg" />
                                 </div>
                                 <p className="text-lg text-text-secondary leading-relaxed">
                                     {role.description}

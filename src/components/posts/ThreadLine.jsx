@@ -8,7 +8,6 @@ export function ThreadLine({ type, depth, userType }) {
     // 🎨 EXTENDED BRANDING MATRICES: Map precise user types to attentive, theme-friendly colors
     const getBrandColors = () => {
         switch (userType?.toLowerCase()) {
-            case 'journalist':
             case 'voice':
                 return {
                     bg: 'bg-primary-container', // Signature crimson alert
@@ -16,19 +15,41 @@ export function ThreadLine({ type, depth, userType }) {
                     shadow: 'rgba(211,47,47,0.3)',
                     pulse: 'from-primary-container'
                 };
-            case 'activist':
-                return {
-                    bg: 'bg-amber-500', // Dynamic high-urgency amber
-                    border: 'border-amber-500',
-                    shadow: 'rgba(245,158,11,0.3)',
-                    pulse: 'from-amber-500'
-                };
+            case 'journalist':
             case 'scholar':
                 return {
-                    bg: 'bg-indigo-400', // Academic deep-indigo/violet
-                    border: 'border-indigo-400',
-                    shadow: 'rgba(129,140,248,0.3)',
-                    pulse: 'from-indigo-400'
+                    bg: 'bg-teal-500', // Teal
+                    border: 'border-teal-500',
+                    shadow: 'rgba(0,128,128,0.3)',
+                    pulse: 'from-teal-500'
+                };
+            case 'activist':
+                return {
+                    bg: 'bg-primary-container', // Dynamic high-urgency red
+                    border: 'border-primary-container',
+                    shadow: 'rgba(211,47,47,0.3)',
+                    pulse: 'from-primary-container'
+                };
+            case 'organization':
+                return {
+                    bg: 'bg-gold-500', // Gold for orgs
+                    border: 'border-gold-500',
+                    shadow: 'rgba(255,215,0,0.3)',
+                    pulse: 'from-gold-500'
+                };
+            case 'citizen':
+                return {
+                    bg: 'bg-blue-500', // Blue for citizens
+                    border: 'border-blue-500',
+                    shadow: 'rgba(255,215,0,0.3)',
+                    pulse: 'from-blue-500'
+                };
+            case 'warned':
+                return {
+                    bg: 'bg-orange-500', // Orange for warned
+                    border: 'border-orange-500',
+                    shadow: 'rgba(255,165,0,0.3)',
+                    pulse: 'from-orange-500'
                 };
             default:
                 return {

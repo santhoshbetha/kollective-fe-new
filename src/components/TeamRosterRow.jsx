@@ -1,6 +1,6 @@
 // components/TeamRosterRow.jsx
 import React, { useState } from 'react';
-import api from '../services/api';
+import { apiFetch } from '../api/apiClient';
 
 export default function TeamRosterRow({ member, onRemoved }) {
     const [loading, setLoading] = useState(false);
@@ -11,10 +11,10 @@ export default function TeamRosterRow({ member, onRemoved }) {
 
         setLoading(true);
         try {
-            await api.delete(`/org-settings/members/${member.user.id}`);
+            await apiFetch(`/org-settings/members/${member.user.id}`, { method: 'DELETE' });
             onRemoved(member.user.id);
         } catch (err) {
-            alert(err.response?.data?.error || err.message || "Error processing removal.");
+            alert(err.data?.error || err.message || "Error processing removal.");
         } finally {
             setLoading(false);
         }

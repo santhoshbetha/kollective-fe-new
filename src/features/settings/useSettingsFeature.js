@@ -30,7 +30,6 @@ export function useUpdatePasswordMutation() {
 // ⚠️ Mutation: Permanent account destruction cascade
 export function useDeleteAccountMutation() {
     const queryClient = useQueryClient();
-    const logoutAction = useAuthStore((state) => state.logoutAction);
 
     return useMutation({
         mutationFn: async (payload) => {
@@ -44,7 +43,15 @@ export function useDeleteAccountMutation() {
             localStorage.removeItem('jwt_auth_token');
             // Wipe query caches and drop auth state back to unauthenticated logs
             queryClient.clear();
-            logoutAction();
+            const authState = useAuthStore.getState();
+            if (typeof authState.executeLogout === 'function') {
+                authState.executeLogout();
+            } else if (typeof authState.executeGlobalLogout === 'function') {
+                authState.executeGlobalLogout();
+            } else if (typeof authState.clearSession === 'function') {
+                authState.clearSession();
+            }
+            window.location.href = '/login';
         },
     });
 }

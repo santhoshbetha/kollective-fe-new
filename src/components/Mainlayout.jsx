@@ -18,6 +18,7 @@ import {
     DialogFooter
 } from './ui/Dialog';
 import { Button } from './ui/button';
+import { DirectMessageDrawer } from '../features/conversations/DirectMessageDrawer';
 
 export const MainLayout = () => {
     const location = useLocation();
@@ -92,15 +93,15 @@ export const MainLayout = () => {
         ...(canAccessCivicAssembly ? [{ name: 'Civic Assembly', path: '/campaigns/local', icon: 'groups' }] : []),
         ...(isAuthenticated ? [{ name: 'Messages', path: '/messages', icon: 'chat' }] : []),
         ...(isAuthenticated ? [{ name: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' }] : []),
-        ...(isAuthenticated ? [{ name: 'Notifications', path: '/notifications', icon: 'notifications' }] : []),
+        //...(isAuthenticated ? [{ name: 'Notifications', path: '/notifications', icon: 'notifications' }] : []),
         ...(isAuthenticated ? [{ name: 'Settings', path: '/settings', icon: 'settings' }] : []),
     ];
 
     const adminNavItems = [];
-    if (user && (user.role === 'root_admin' || user.role === 'admin')) {
+    if (user && (user.feature_flags?.role === 'root_admin' || user.feature_flags?.role === 'admin')) {
         adminNavItems.push({ name: 'Root Desk', path: '/admin/root', icon: 'shield_person' });
         adminNavItems.push({ name: 'Ops Desk', path: '/admin/moderation', icon: 'gavel' });
-    } else if (user && user.role === 'moderator') {
+    } else if (user && user.feature_flags?.role === 'moderator') {
         adminNavItems.push({ name: 'Ops Desk', path: '/admin/moderation', icon: 'gavel' });
     }
 
@@ -217,11 +218,12 @@ export const MainLayout = () => {
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
                     <aside className="relative flex flex-col w-72 max-w-xs bg-surface-container-lowest h-full p-6 text-text-primary border-r border-white/5 animate-in slide-in-from-left duration-300">
                         <div className="mb-8 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-primary-container rounded flex items-center justify-center text-white">
-                                    <span className="material-symbols-outlined text-sm">shield</span>
-                                </div>
-                                <span className="font-bold text-lg">Kollective</span>
+                            <div onClick={() => navigate('/')} className="flex items-center">
+                                <img src="/Shield&WINGS.png" alt="Kollective Logo" className="h-12 w-auto" />
+                                <span className="text-xl font-bold sm:inline-block bg-[#CC033B] dark:text-white bg-clip-text text-transparent"
+                                    style={{ fontSize: "24px", fontFamily: "Protest Riot, sans-serif" }}>
+                                    Kollective
+                                </span>
                             </div>
                             <button onClick={() => setMobileMenuOpen(false)}>
                                 <span className="material-symbols-outlined">close</span>
@@ -278,12 +280,12 @@ export const MainLayout = () => {
             {/* 🧭 Top Header Fixed Bar */}
             <header className="fixed top-0 w-full z-40 bg-surface/95 backdrop-blur-xl border-b border-white/5 md:ml-72 md:w-[calc(100%-16rem)]">
                 <div className="flex justify-between items-center pl-6 pr-12 h-16 w-full max-w-7xl mx-auto">
-                    <div className="flex items-center gap-4 md:hidden">
+                    <div className="flex items-center gap-1 md:hidden">
                         <button onClick={() => setMobileMenuOpen(true)} className="text-text-primary focus:outline-none">
                             <span className="material-symbols-outlined">menu</span>
                         </button>
-                        <div onClick={() => navigate('/')} className="w-8 h-8 bg-primary-container rounded flex items-center justify-center cursor-pointer">
-                            <span className="material-symbols-outlined text-white text-sm">shield</span>
+                        <div onClick={() => navigate('/')} className="flex items-center cursor-pointer">
+                            <img src="/Shield&WINGS.png" alt="Kollective Logo" className="h-12 w-auto" />
                         </div>
                     </div>
 
@@ -391,7 +393,7 @@ export const MainLayout = () => {
             {/* 🔒 Unauthenticated Log in Prompt Modal */}
             {isLoginPromptOpen && (
                 <Dialog open={isLoginPromptOpen} onOpenChange={setIsLoginPromptOpen}>
-                    <DialogContent className="max-w-[420px] bg-transparent backdrop-blur-xl text-white border border-white/10 rounded-2xl p-6 shadow-2xl">
+                    <DialogContent className="max-w-[420px] dark:bg-transparent bg-[#141414] backdrop-blur-xl text-white border border-white/10 rounded-2xl p-6 shadow-2xl">
                         <DialogHeader className="border-b border-white/10 pb-4 p-0 bg-transparent flex flex-row items-center justify-between">
                             <DialogTitle className="text-xl font-extrabold text-text-primary flex items-center gap-2">
                                 <span className="material-symbols-outlined text-primary-container text-2xl">lock</span>
@@ -487,6 +489,9 @@ export const MainLayout = () => {
                     </button>
                 </div>
             )}
+
+            {/* 💬 Global Direct Message Slide-Over Drawer */}
+            <DirectMessageDrawer />
         </div>
     );
 };

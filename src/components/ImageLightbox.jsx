@@ -156,7 +156,7 @@ export function ImageLightbox({ isOpen, images, activeIndex, setActiveIndex, onC
                     <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleParagraphPrev(); }}
-                        className="hidden md:flex absolute left-4 w-12 h-12 rounded-xl bg-black/60 hover:bg-neutral-800 border border-white/10 text-white transition-all items-center justify-center cursor-pointer active:scale-95 z-30 outline-none"
+                        className="hidden md:flex absolute left-4 w-12 h-12 rounded-xl bg-black/60 hover:bg-neutral-800 border dark:border-white/10 border-black/10 text-white transition-all items-center justify-center cursor-pointer active:scale-95 z-30 outline-none"
                         aria-label="Previous Slide"
                     >
                         <ChevronLeft className="w-6 h-6 stroke-[2.5px]" />
@@ -195,7 +195,7 @@ export function ImageLightbox({ isOpen, images, activeIndex, setActiveIndex, onC
                             onLoad={() => setIsImageLoaded(true)}
                             onError={() => setHasError(true)}
                             className={cn(
-                                "max-w-full max-h-full object-contain rounded-xl border border-white/10 shadow-2xl transition-opacity duration-200 pointer-events-none select-none",
+                                "max-w-full max-h-full object-contain rounded-xl border dark:border-white/10 border-black/10 shadow-2xl transition-opacity duration-200 pointer-events-none select-none",
                                 !isImageLoaded ? "opacity-0" : "opacity-100"
                             )}
                         />
@@ -206,7 +206,7 @@ export function ImageLightbox({ isOpen, images, activeIndex, setActiveIndex, onC
                     <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleNext(); }}
-                        className="hidden md:flex absolute right-4 w-12 h-12 rounded-xl bg-black/60 hover:bg-neutral-800 border border-white/10 text-white transition-all items-center justify-center cursor-pointer active:scale-95 z-30 outline-none"
+                        className="hidden md:flex absolute right-4 w-12 h-12 rounded-xl bg-black/60 hover:bg-neutral-800 border dark:border-white/10 border-black/10 text-white transition-all items-center justify-center cursor-pointer active:scale-95 z-30 outline-none"
                         aria-label="Next Slide"
                     >
                         <ChevronRight className="w-6 h-6 stroke-[2.5px]" />

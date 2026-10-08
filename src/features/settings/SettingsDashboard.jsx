@@ -67,7 +67,7 @@ export default function SettingsDashboard({ activeOrg: propActiveOrg }) {
     };
 
     return (
-        <div className="max-w-6xl mx-auto my-4 w-full animate-in fade-in duration-200 flex flex-col gap-6 text-left font-sans">
+        <div className="w-full my-4 animate-in fade-in duration-200 flex flex-col gap-6 text-left font-sans">
 
             {/* 🏢 Organization Switcher Bar: Transformed into an upscaled, brand-aware header card */}
             {memberships.length > 1 && (

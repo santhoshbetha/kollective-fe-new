@@ -1,13 +1,17 @@
-// src/features/settings/SettingsSubForms.jsx
 import React, { useState } from 'react';
 import { useUpdateEmailMutation, useUpdatePasswordMutation, useDeleteAccountMutation } from './useSettingsFeature';
+import { useAuthStore } from '../../store/auth/useAuthStore';
 import { AlertCircle, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 // 📧 Sub-Form A: Managing user contact address linkages
 export function EmailSettingsForm() {
     const mutation = useUpdateEmailMutation();
-    const [email, setEmail] = useState('');
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+    const currentUser = useAuthStore((state) => state.user);
+    const updateActiveProfile = useAuthStore((state) => state.updateActiveProfile);
+
+    const [email, setEmail] = useState(activeAccount?.email || currentUser?.email || '');
     const [password, setPassword] = useState('');
     const [statusMessage, setStatusMessage] = useState({ type: null, text: '' });
 
@@ -18,18 +22,21 @@ export function EmailSettingsForm() {
         setStatusMessage({ type: null, text: '' });
 
         mutation.mutate({ email: email.trim(), password: password.trim() }, {
-            onSuccess: () => {
+            onSuccess: (data) => {
+                const updatedEmail = data?.data?.user?.email || email.trim();
                 setStatusMessage({
                     type: 'success',
-                    text: "Verification link dispatched to your fresh target email address node."
+                    text: data?.message || "Email address updated successfully."
                 });
-                setEmail('');
+                if (updateActiveProfile) {
+                    updateActiveProfile({ email: updatedEmail });
+                }
                 setPassword('');
             },
-            onError: () => {
+            onError: (err) => {
                 setStatusMessage({
                     type: 'error',
-                    text: "Credentials verification failure. Transaction terminated."
+                    text: err.data?.error || err.message || "Failed to update email address."
                 });
             }
         });
@@ -196,10 +203,12 @@ export function DangerZoneSettingsForm() {
     const [password, setPassword] = useState('');
     const [confirmedDanger, setConfirmedDanger] = useState(false);
     const [requiresFinalVerify, setRequiresFinalVerify] = useState(false);
+    const [statusMessage, setStatusMessage] = useState({ type: null, text: '' });
 
     const handlePreSubmitCheck = (e) => {
         e.preventDefault();
         if (!password.trim() || !confirmedDanger) return;
+        setStatusMessage({ type: null, text: '' });
 
         // 🚀 THE INTERCEPTOR FIX: Reveals the tactical verification banner instead of thread-blocking window confirms
         setRequiresFinalVerify(true);
@@ -207,7 +216,17 @@ export function DangerZoneSettingsForm() {
 
     const handleExecutePurge = () => {
         if (!password.trim() || !confirmedDanger) return;
-        mutation.mutate({ password: password.trim() });
+        setStatusMessage({ type: null, text: '' });
+
+        mutation.mutate({ password: password.trim() }, {
+            onError: (err) => {
+                setRequiresFinalVerify(false);
+                setStatusMessage({
+                    type: 'error',
+                    text: err.data?.error || err.message || "Failed to delete account. Please verify your password."
+                });
+            }
+        });
     };
 
     return (
@@ -216,6 +235,18 @@ export function DangerZoneSettingsForm() {
                 <h2 className="text-2xl font-black text-rose-500 tracking-tight">Danger Zone</h2>
                 <p className="text-md text-text-secondary mt-0.5 font-medium">Permanent account destruction and decentralized data asset purging</p>
             </div>
+
+            {statusMessage.type && (
+                <div className={cn(
+                    "p-4 rounded-xl border flex items-start gap-3 text-sm font-medium animate-in slide-in-from-top-2 duration-150 max-w-md font-sans",
+                    statusMessage.type === 'success'
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                        : "bg-rose-500/10 border-rose-500/20 text-rose-400"
+                )}>
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                    <span>{statusMessage.text}</span>
+                </div>
+            )}
 
             <div className="p-4 bg-rose-500/5 rounded-xl border border-rose-500/10 text-base leading-relaxed text-rose-400 select-none max-w-xl font-semibold font-sans">
                 ⚠️ Warning: Committing this operation executes a destructive database purge chain. All authored pulses, historical media vaults, followed hashtags metadata, and connection channels will be wiped immediately from this node network map.
@@ -277,7 +308,7 @@ export function DangerZoneSettingsForm() {
                         disabled={requiresFinalVerify || mutation.isPending}
                         className="rounded border-white/10 text-rose-500 focus:ring-0 w-4 h-4 bg-white dark:bg-[#111111] cursor-pointer mt-0.5 shrink-0"
                     />
-                    <label htmlFor="dangerCheck" className="text-sm font-bold text-text-secondary cursor-pointer select-none leading-tight font-sans font-semibold">
+                    <label htmlFor="dangerCheck" className="text-md font-bold text-text-secondary cursor-pointer select-none leading-tight font-sans font-semibold">
                         I verify the risks and explicitly authorize profile data deletion
                     </label>
                 </div>

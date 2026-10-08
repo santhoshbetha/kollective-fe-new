@@ -358,7 +358,7 @@ export const LandingPage = () => {
                     <Dialog open={isLoginPromptOpen} onOpenChange={setIsLoginPromptOpen}>
                         <DialogContent className="max-w-[420px] bg-[#141414] text-white border border-white/10 rounded-2xl p-6 shadow-2xl font-sans">
                             <DialogHeader className="border-b border-white/10 pb-4 p-0 bg-transparent flex flex-row items-center justify-between">
-                                <DialogTitle className="text-xl font-extrabold text-white flex items-center gap-2 tracking-tight select-none">
+                                <DialogTitle className="text-xl font-extrabold dark:text-white text-black flex items-center gap-2 tracking-tight select-none">
                                     <span className="material-symbols-outlined text-primary-container text-2xl font-black">lock</span>
                                     Log in Required
                                 </DialogTitle>
@@ -387,7 +387,7 @@ export const LandingPage = () => {
                                 <button
                                     type="button"
                                     onClick={() => setIsLoginPromptOpen(false)}
-                                    className="w-full py-3 bg-[#222] hover:bg-white/10 text-text-secondary hover:text-white font-bold rounded-xl transition-all cursor-pointer text-xs uppercase tracking-wider border border-white/5 outline-none font-sans"
+                                    className="w-full py-3 dark:bg-[#222] hover:bg-white/10 text-text-secondary hover:text-white font-bold rounded-xl transition-all cursor-pointer text-xs uppercase tracking-wider border border-white/5 outline-none font-sans"
                                 >
                                     Cancel
                                 </button>
