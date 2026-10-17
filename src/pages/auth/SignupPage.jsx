@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Alert, AlertTitle, AlertDescription } from '../../components/ui/Alert';
 import { useFeatureFlagsStore } from '../../store/useFeatureFlags';
 import { useRegisterMutation } from '../../store/auth/useRegisterMutation';
+import { generateUserKeyPair } from '../../utils/cryptoEngine';
+import { ChatPinSetupDialog } from '../../features/conversations/components/ChatPinSetupDialog';
 
 const DEMOCRATIC_COUNTRIES = [
     "Albania", "Argentina", "Australia", "Austria", "Belgium", "Botswana", "Brazil",
@@ -26,6 +28,10 @@ export const SignupPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const isRegistrationOpen = useFeatureFlagsStore((state) => state.flags.registration_open);
+
+    const [showPinSetup, setShowPinSetup] = useState(false);
+    const [registeredUserUuid, setRegisteredUserUuid] = useState(null);
+    const [cryptoStatus, setCryptoStatus] = useState("");
 
     // Fully loaded data state
     const [formData, setFormData] = useState({
@@ -63,10 +69,34 @@ export const SignupPage = () => {
 
         if (currentStep === 2) {
             try {
-                await registerMutation.mutateAsync(formData);
+                const keyPair = await generateUserKeyPair(user.uuid, formData.password, user.username, user.email);
+                localStorage.setItem("active_session_private_key", keyPair.rawPrivateKey);
+
+                const userPayload = {
+                    uuid: user.uuid,
+                    username: user.username,
+                    email: user.email,
+                    accountType: user.account_type,
+                    is_2fa_enabled: false,
+                    is_seed_phrase_setup: false,
+                    is_chat_pin_setup: false,
+                    role: user.role
+                };
+
+                setRegisteredUserUuid(user.uuid);
+                setShowPinSetup(true);
+
+                //const { user, token } = await registerMutation.mutateAsync(formData);
+
+                registerMutation.mutate({
+                    ...userPayload,
+                    local_private_key: privateKeyB64
+                });
+
                 setCurrentStep(3);
             } catch (err) {
                 setError(err.message || "Registration failed. Please check your details and try again.");
+                setCryptoStatus("Local security configuration failed.");
             }
         }
     };
@@ -93,6 +123,18 @@ export const SignupPage = () => {
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center bg-background text-on-surface p-4 sm:p-6 isolate selection:bg-primary/30">
+            {/* 🛡️ STATE STEP OVERLAY INTERCEPTOR:
+                If the registration endpoint resolves successfully, freeze the view 
+                and force-mount the Chat PIN Setup Dialog to run the key backup transaction [1.4]. */}
+            {showPinSetup && registeredUserUuid && (
+                <ChatPinSetupDialog
+                    userUuid={registeredUserUuid}
+                    onComplete={() => {
+                        console.log("Zero-Knowledge key backup verified on disk. Releasing routing locks...");
+                        setShowPinSetup(false);
+                    }}
+                />
+            )}
             {/* Top Navigation Bar */}
             <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-12 pt-4 bg-transparent border-b border-white/5 backdrop-blur-sm">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>

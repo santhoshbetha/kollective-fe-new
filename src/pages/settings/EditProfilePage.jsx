@@ -57,26 +57,16 @@ export const EditProfilePage = () => {
     const isPendingTx = isSavingLocal || updateUserMutation.isPending;
 
     return (
-        <div className="max-w-[1000px] mx-auto py-6 px-4 font-sans text-left animate-in fade-in duration-200">
+        <div className="space-y-6 font-sans text-left animate-in fade-in duration-200">
 
             {/* Header Block Section */}
-            <div className="flex items-center gap-4 mb-8 select-none">
-                <button
-                    type="button"
-                    onClick={handleCancel}
-                    className="p-2.5 bg-black/[0.04] dark:bg-white/[0.04] hover:bg-black/[0.08] dark:hover:bg-white/[0.08] rounded-full transition-colors cursor-pointer text-text-primary dark:text-white border-none outline-none active:scale-95"
-                    aria-label="Return to settings layout"
-                >
-                    <ArrowLeft className="w-5 h-5 stroke-[2.5px]" />
-                </button>
-                <div>
-                    <h2 className="text-2xl font-black text-text-primary dark:text-white tracking-tight">Edit Profile</h2>
-                    <p className="text-sm text-text-secondary mt-0.5 font-medium">Update your profile information and appearance parameters</p>
-                </div>
+            <div className="border-b border-white/5 pb-4 select-none">
+                <h2 className="text-2xl font-black text-text-primary dark:text-white tracking-tight">Edit Profile</h2>
+                <p className="text-sm text-text-secondary mt-0.5 font-medium">Update your profile information and appearance parameters</p>
             </div>
 
             {/* Profile Graphics Canvas Settings Card Layout */}
-            <div className="bg-surface-container border border-black/10 dark:border-white/10 rounded-[24px] overflow-hidden shadow-2xl transition-colors">
+            <div className="bg-surface-container/40 border border-black/10 dark:border-white/10 rounded-2xl overflow-hidden shadow-xl transition-colors">
 
                 {/* Banner Upload Matrix Box */}
                 <div className="p-6 sm:p-8 pb-4">

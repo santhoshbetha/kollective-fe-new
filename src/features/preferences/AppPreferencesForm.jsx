@@ -66,6 +66,8 @@ export function AppPreferencesForm() {
     // Local Form state buffers
     const [localTheme, setLocalTheme] = useState(currentTheme);
     const [localLanguage, setLocalLanguage] = useState(currentLanguage);
+    const [committedTheme, setCommittedTheme] = useState(currentTheme);
+    const [committedLanguage, setCommittedLanguage] = useState(currentLanguage);
     const [selectedState, setSelectedState] = useState(userState || '');
     const [localStreetAddress, setLocalStreetAddress] = useState(streetAddress || '');
     const [isResolvingAddress, setIsResolvingAddress] = useState(false);
@@ -181,9 +183,11 @@ export function AppPreferencesForm() {
     };
 
     const handlePreferencesSubmit = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         setTheme(localTheme);
         setAppLanguage(localLanguage);
+        setCommittedTheme(localTheme);
+        setCommittedLanguage(localLanguage);
 
         try {
             await apiFetch('/api/v1/settings/preferences', {
@@ -226,11 +230,15 @@ export function AppPreferencesForm() {
                         <label className="text-xs font-extrabold text-text-secondary uppercase tracking-wider select-none">{t('lang_label')}</label>
                         <select
                             value={localLanguage}
-                            onChange={(e) => setLocalLanguage(e.target.value)}
-                            className="w-full bg-white dark:bg-[#111111] border border-white/10 dark:border-white/5 text-base font-bold rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container cursor-pointer transition-colors"
+                            onChange={(e) => {
+                                const newLang = e.target.value;
+                                setLocalLanguage(newLang);
+                                setAppLanguage(newLang);
+                            }}
+                            className="w-full bg-white dark:bg-surface-container border border-white/10 dark:border-white/5 text-base font-bold rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container cursor-pointer transition-colors"
                         >
                             {Object.keys(APP_LOCALES).map((key) => (
-                                <option key={key} value={key} className="bg-white dark:bg-[#111111]">{APP_LOCALES[key].label}</option>
+                                <option key={key} value={key} className="bg-white dark:bg-surface-container-low">{APP_LOCALES[key].label}</option>
                             ))}
                         </select>
                     </div>
@@ -239,20 +247,26 @@ export function AppPreferencesForm() {
                         <label className="text-xs font-extrabold text-text-secondary uppercase tracking-wider select-none">{t('theme_label')}</label>
                         <select
                             value={localTheme}
-                            onChange={(e) => setLocalTheme(e.target.value)}
-                            className="w-full bg-white dark:bg-[#111111] border border-white/10 dark:border-white/5 text-base font-bold rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container cursor-pointer transition-colors"
+                            onChange={(e) => {
+                                const newTheme = e.target.value;
+                                setLocalTheme(newTheme);
+                                setTheme(newTheme);
+                            }}
+                            className="w-full bg-white dark:bg-surface-container border border-white/10 dark:border-white/5 text-base font-bold rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-primary-container cursor-pointer transition-colors"
                         >
-                            <option value="dark" className="bg-white dark:bg-[#111111]">{t('theme_dark')}</option>
-                            <option value="dark-bluish" className="bg-white dark:bg-[#111111]">{t('theme_dark_bluish')}</option>
-                            <option value="light" className="bg-white dark:bg-[#111111]">{t('theme_light')}</option>
-                            <option value="light-bluish" className="bg-white dark:bg-[#111111]">{t('theme_light_bluish')}</option>
+                            <option value="dark" className="bg-white dark:bg-surface-container-low">{t('theme_dark')}</option>
+                            <option value="dark-bluish" className="bg-white dark:bg-surface-container-low">{t('theme_dark_bluish')}</option>
+                            <option value="dark-red" className="bg-white dark:bg-surface-container-low">{t('theme_dark_red')}</option>
+                            <option value="light" className="bg-white dark:bg-surface-container-low">{t('theme_light')}</option>
+                            <option value="light-bluish" className="bg-white dark:bg-surface-container-low">{t('theme_light_bluish')}</option>
+                            <option value="light-red" className="bg-white dark:bg-surface-container-low">{t('theme_light_red')}</option>
                         </select>
                     </div>
                 </div>
 
                 <button
                     type="submit"
-                    disabled={localTheme === currentTheme && localLanguage === currentLanguage}
+                    disabled={localTheme === committedTheme && localLanguage === committedLanguage}
                     className="px-5 py-2.5 bg-primary-container text-white font-black text-sm rounded-xl cursor-pointer border-none uppercase tracking-wider disabled:opacity-40 transition-all select-none outline-none active:scale-95"
                 >
                     {t('btn_save')}
@@ -269,16 +283,16 @@ export function AppPreferencesForm() {
                     <div onClick={() => navigate('/verify')} className="p-5 bg-surface-container-low border border-white/10 rounded-xl cursor-pointer transition-all hover:border-primary-container/40 flex flex-col justify-between group">
                         <div>
                             <span className="text-base font-extrabold dark:text-white block mb-1 tracking-tight group-hover:text-primary-container transition-colors">Choose Account Role</span>
-                            <p className="text-sm text-text-secondary font-medium leading-relaxed">Select your category and authenticate credentials with peer review boards.</p>
+                            <p className="text-md text-text-secondary font-medium leading-relaxed">Select your category and authenticate credentials with peer review boards.</p>
                         </div>
-                        <span className="text-primary-container font-mono font-bold text-[11px] uppercase mt-4 block tracking-wider select-none">Start Onboarding ➔</span>
+                        <span className="text-primary-container font-mono font-bold text-[14px] uppercase mt-4 block tracking-wider select-none">Start Onboarding ➔</span>
                     </div>
                     <div onClick={() => navigate('/verify/citizen')} className="p-5 bg-surface-container-low border border-white/10 rounded-xl cursor-pointer transition-all hover:border-primary-container/40 flex flex-col justify-between group">
                         <div>
                             <span className="text-base font-extrabold dark:text-white block mb-1 tracking-tight group-hover:text-primary-container transition-colors">Peer-to-Peer Vouching</span>
-                            <p className="text-sm text-text-secondary font-medium leading-relaxed">Verify other grassroots citizens in person or get vouched for by local trusted nodes.</p>
+                            <p className="text-md text-text-secondary font-medium leading-relaxed">Verify other grassroots citizens in person or get vouched for by local trusted nodes.</p>
                         </div>
-                        <span className="text-primary-container font-mono font-bold text-[11px] uppercase mt-4 block tracking-wider select-none">Enter Vouching Desk ➔</span>
+                        <span className="text-primary-container font-mono font-bold text-[14px] uppercase mt-4 block tracking-wider select-none">Enter Vouching Desk ➔</span>
                     </div>
                 </div>
             </div>
@@ -304,7 +318,7 @@ export function AppPreferencesForm() {
                         <p className="font-extrabold text-text-primary text-base tracking-tight">
                             State &amp; Regional Post Feeds
                         </p>
-                        <p className="text-text-secondary text-sm font-medium leading-relaxed">
+                        <p className="text-text-secondary text-md font-medium leading-relaxed">
                             Select and save your State or Province to opt in to state-level feeds, enabling you to view and publish posts specific to your state or regional community.
                         </p>
                     </div>
@@ -313,14 +327,14 @@ export function AppPreferencesForm() {
                 {/* Option Container: State/Province Selector + Auto-Save Actions Layout Grid */}
                 <div className="flex flex-col gap-3">
                     {activeSavedState ? (
-                        <div className="p-5 bg-surface-container-low border border-primary-container/20 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
+                        <div className="p-5 bg-surface-container-high/20 border border-primary-container/20 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
                             <div className="flex items-start gap-3">
                                 <span className="material-symbols-outlined text-primary-container text-[24px] shrink-0 font-bold">verified_user</span>
                                 <div className="space-y-0.5">
-                                    <span className="text-[11px] font-bold text-text-secondary uppercase tracking-wider block">Active Saved State / Province</span>
+                                    <span className="text-[14px] font-bold text-text-secondary uppercase tracking-wider block">Active Saved State / Province</span>
                                     <span className="text-lg font-black text-text-primary tracking-tight">{activeSavedState}</span>
                                     {cooldownDaysRemaining > 0 && (
-                                        <span className="text-xs font-semibold text-amber-500 flex items-center gap-1 mt-1.5 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded w-fit">
+                                        <span className="text-sm font-semibold text-amber-500 flex items-center gap-1 mt-1.5 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded w-fit">
                                             <Lock className="w-3.5 h-3.5" />
                                             <span>State change on cooldown (1 month limit). Available in {cooldownDaysRemaining} day(s).</span>
                                         </span>
@@ -365,10 +379,10 @@ export function AppPreferencesForm() {
                                         if (newSt) setPendingState(newSt);
                                     }}
                                     disabled={isSavingState || cooldownDaysRemaining > 0}
-                                    className="w-full bg-white dark:bg-[#111111] border border-white/10 dark:border-white/5 rounded-xl py-3 px-4 text-base font-bold text-text-primary focus:outline-none focus:border-primary-container cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                    className="w-full bg-white dark:bg-surface-container-low border border-white/10 dark:border-white/5 rounded-xl py-3 px-4 text-base font-bold text-text-primary focus:outline-none focus:border-primary-container cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                                 >
-                                    <option value="" className="bg-white dark:bg-[#111111]">Select your state / province</option>
-                                    {states.map((st) => <option key={st} value={st} className="bg-white dark:bg-[#111111]">{st}</option>)}
+                                    <option value="" className="bg-white dark:bg-surface-container-low">Select your state / province</option>
+                                    {states.map((st) => <option key={st} value={st} className="bg-white dark:bg-surface-container-low">{st}</option>)}
                                 </select>
                             </div>
                             <button
@@ -459,7 +473,7 @@ export function AppPreferencesForm() {
                             <p className="font-extrabold text-text-primary text-base tracking-tight">
                                 Optional: Add Street Address for Local Features &amp; Boundaries
                             </p>
-                            <p className="text-text-secondary text-sm font-medium leading-relaxed">
+                            <p className="text-text-secondary text-md font-medium leading-relaxed">
                                 Adding your street address is optional. Providing it allows our backend to automatically resolve your exact city and political voting districts, granting you access to location-based posts, local business directory, and community classifieds.
                             </p>
                         </div>
@@ -475,7 +489,7 @@ export function AppPreferencesForm() {
                                 value={localStreetAddress}
                                 onChange={(e) => setLocalStreetAddress(e.target.value)}
                                 placeholder="e.g. 100 Congress Ave, Austin, TX"
-                                className="flex-1 bg-white dark:bg-[#111111] border border-white/10 dark:border-white/5 rounded-xl py-3 px-4 text-base font-medium text-text-primary focus:outline-none focus:border-primary-container/60 transition-all placeholder:text-text-secondary/30"
+                                className="flex-1 bg-white dark:bg-surface-container-low border border-white/10 dark:border-white/5 rounded-xl py-3 px-4 text-base font-medium text-text-primary focus:outline-none focus:border-primary-container/60 transition-all placeholder:text-text-secondary/30"
                             />
                             <button
                                 type="button"
@@ -547,7 +561,7 @@ export function AppPreferencesForm() {
                         <span className="material-symbols-outlined text-[20px] text-primary-container font-bold">campaign</span>
                         <div className="flex flex-col">
                             <span className="text-base font-extrabold text-text-primary tracking-tight">Political &amp; Civic Governance Features</span>
-                            <span className="text-sm text-text-secondary font-medium">Opt in to civic action networks, governance campaign boards, or run for office platforms</span>
+                            <span className="text-md text-text-secondary font-medium">Opt in to civic action networks, governance campaign boards, or run for office platforms</span>
                         </div>
                     </div>
                     <Toggle checked={politicalOptIn} onChange={() => setPoliticalOptIn(!politicalOptIn)} />
@@ -587,9 +601,9 @@ export function AppPreferencesForm() {
             <div className="space-y-4 border-b border-white/5 pb-6 text-left mt-6">
                 <div className="flex items-center gap-2 font-bold text-sm select-none">
                     <span className="material-symbols-outlined text-[18px] text-primary-container font-bold">notifications_active</span>
-                    <h3 className="uppercase font-mono text-xs tracking-widest text-text-secondary">Notifications Channels</h3>
+                    <h3 className="uppercase font-mono text-md tracking-widest text-text-secondary">Notifications Channels</h3>
                 </div>
-                <div className="space-y-4 bg-white dark:bg-[#111111] border border-white/5 p-4 rounded-xl font-sans">
+                <div className="space-y-4 bg-white dark:bg-surface-container-high/20 border border-white/5 p-4 rounded-xl font-sans">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col text-left">
                             <span className="text-base font-extrabold text-text-primary tracking-tight">Push Notifications</span>
@@ -618,9 +632,9 @@ export function AppPreferencesForm() {
             <div className="space-y-4 border-b border-white/5 pb-6 text-left">
                 <div className="flex items-center gap-2 font-bold text-sm select-none">
                     <span className="material-symbols-outlined text-[18px] text-primary-container font-bold">security</span>
-                    <h3 className="uppercase font-mono text-xs tracking-widest text-text-secondary">Privacy &amp; Security Keys</h3>
+                    <h3 className="uppercase font-mono text-md tracking-widest text-text-secondary">Privacy &amp; Security Keys</h3>
                 </div>
-                <div className="space-y-4 bg-white dark:bg-[#111111] border border-white/5 p-4 rounded-xl font-sans">
+                <div className="space-y-4 bg-white dark:bg-surface-container-high/20 border border-white/5 p-4 rounded-xl font-sans">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col text-left">
                             <span className="text-base font-extrabold text-text-primary tracking-tight">Private Profile</span>
@@ -649,15 +663,25 @@ export function AppPreferencesForm() {
             <div className="space-y-4 border-b border-white/5 pb-6 text-left">
                 <div className="flex items-center gap-2 font-bold text-sm select-none">
                     <span className="material-symbols-outlined text-[18px] text-primary-container font-bold">palette</span>
-                    <h3 className="uppercase font-mono text-xs tracking-widest text-text-secondary">Appearance Settings</h3>
+                    <h3 className="uppercase font-mono text-md tracking-widest text-text-secondary">Appearance Settings</h3>
                 </div>
-                <div className="space-y-4 bg-white dark:bg-[#111111] border border-white/5 p-4 rounded-xl font-sans">
+                <div className="space-y-4 bg-white dark:bg-surface-container-high/20 border border-white/5 p-4 rounded-xl font-sans">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col text-left">
                             <span className="text-base font-extrabold text-text-primary tracking-tight">Dark Mode</span>
                             <span className="text-sm text-text-secondary font-medium">Use dark theme across the application context</span>
                         </div>
-                        <Toggle checked={localTheme === 'dark'} onChange={() => setLocalTheme(localTheme === 'dark' ? 'light' : 'dark')} />
+                        <Toggle
+                            checked={localTheme.startsWith('dark')}
+                            onChange={() => {
+                                const isDark = localTheme.startsWith('dark');
+                                const nextTheme = isDark
+                                    ? (localTheme === 'dark-red' ? 'light-red' : 'light')
+                                    : (localTheme === 'light-red' ? 'dark-red' : 'dark');
+                                setLocalTheme(nextTheme);
+                                setTheme(nextTheme);
+                            }}
+                        />
                     </div>
                 </div>
             </div>
@@ -670,14 +694,25 @@ export function AppPreferencesForm() {
                         handlePreferencesSubmit(e);
                         navigate('/home');
                     }}
-                    className="flex items-center gap-2 bg-primary-container text-white px-8 py-3.5 rounded-xl font-black hover:brightness-110 active:scale-95 transition-all crimson-glow cursor-pointer border-none shadow-md outline-none"
+                    disabled={localTheme === committedTheme && localLanguage === committedLanguage}
+                    className="flex items-center gap-2 bg-primary-container text-white px-8 py-3.5 rounded-xl font-black hover:brightness-110 active:scale-95 transition-all crimson-glow cursor-pointer border-none shadow-md outline-none disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                     <span className="material-symbols-outlined text-[16px] font-bold">save</span>
                     <span>Save Changes</span>
                 </button>
                 <button
                     type="button"
-                    onClick={() => navigate('/home')}
+                    onClick={() => {
+                        if (localTheme !== committedTheme) {
+                            setLocalTheme(committedTheme);
+                            setTheme(committedTheme);
+                        }
+                        if (localLanguage !== committedLanguage) {
+                            setLocalLanguage(committedLanguage);
+                            setAppLanguage(committedLanguage);
+                        }
+                        navigate('/home');
+                    }}
                     className="bg-surface-container-high border border-white/10 dark:border-white/5 hover:bg-surface-container-highest text-text-primary px-8 py-3.5 rounded-xl font-black transition-all cursor-pointer outline-none active:scale-95 text-xs font-bold font-mono"
                 >
                     <span>Cancel</span>

@@ -185,10 +185,10 @@ export function CreateActionPage() {
                                                     name="action_type"
                                                     type="radio"
                                                 />
-                                                <div className="p-5 rounded-xl border border-white/5 bg-[#0d1117] hover:bg-white/[0.01] transition-all group-hover:border-primary-container/30 peer-checked:border-primary-container peer-checked:bg-primary-container/10 h-full">
+                                                <div className="p-5 rounded-xl border border-white/5 dark:bg-[#0d1117] hover:bg-white/[0.01] transition-all group-hover:border-primary-container/30 peer-checked:border-primary-container peer-checked:bg-primary-container/10 h-full">
                                                     <div className="flex items-center gap-3 mb-2">
                                                         <span className="material-symbols-outlined text-primary-container">{item.icon}</span>
-                                                        <h3 className="font-black text-white text-base tracking-tight font-mono">{item.type}</h3>
+                                                        <h3 className="font-black dark:text-white text-base tracking-tight font-mono">{item.type}</h3>
                                                     </div>
                                                     <p className="text-xs text-text-secondary leading-relaxed font-sans font-normal">{item.desc}</p>
                                                 </div>
@@ -435,10 +435,10 @@ export function CreateActionPage() {
 
                             <div className="mt-6 flex items-center justify-between font-mono text-xs">
                                 <div className="flex -space-x-2 select-none font-sans">
-                                    <div className="w-8 h-8 rounded-full border-2 border-[#141414] bg-[#262626] flex items-center justify-center text-[11px] font-bold text-white uppercase tracking-wider">
+                                    <div className="w-8 h-8 rounded-full border-2 border-[#141414] dark:bg-[#262626] flex items-center justify-center text-[11px] font-bold dark:text-white uppercase tracking-wider">
                                         JD
                                     </div>
-                                    <div className="w-8 h-8 rounded-full border-2 border-[#141414] bg-[#1a1a1a] flex items-center justify-center text-[11px] font-bold text-text-secondary">
+                                    <div className="w-8 h-8 rounded-full border-2 border-[#141414] dark:bg-[#1a1a1a] flex items-center justify-center text-[11px] font-bold text-text-secondary">
                                         +0
                                     </div>
                                 </div>

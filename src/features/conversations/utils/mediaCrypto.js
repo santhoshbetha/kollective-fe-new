@@ -2,11 +2,13 @@
 import { apiFetch } from '../../../api/apiClient';
 
 /**
- * Encrypts a file locally in-browser using AES-GCM 256-bit keys before storage streaming [1.4].
+ * 🔒 MULTI-REGIONAL SECURE UPLOADER:
+ * Encrypts a file locally in-browser using AES-GCM 256-bit keys,
+ * requests a geographic presigned URL, and streams it to the closest region server [1].
  */
 export async function encryptAndUploadAttachment(file, targetPublicKeyPem) {
     try {
-        // 1️⃣ Generate a temporary single-use symmetric key and random initialization vector (IV)
+        // 1️⃣ Generate single-use symmetric key parameters locally in browser RAM
         const aesKey = await window.crypto.subtle.generateKey(
             { name: "AES-GCM", length: 256 },
             true,
@@ -14,7 +16,7 @@ export async function encryptAndUploadAttachment(file, targetPublicKeyPem) {
         );
         const iv = window.crypto.getRandomValues(new Uint8Array(12));
 
-        // 2️⃣ Convert the raw file into an ArrayBuffer and encrypt it locally in RAM
+        // 2️⃣ Convert the raw file asset structure to ArrayBuffer and encrypt locally
         const fileBuffer = await file.arrayBuffer();
         const encryptedFileBuffer = await window.crypto.subtle.encrypt(
             { name: "AES-GCM", iv: iv },
@@ -22,10 +24,9 @@ export async function encryptAndUploadAttachment(file, targetPublicKeyPem) {
             fileBuffer
         );
 
-        // 3️⃣ Export the raw AES key material so we can protect it via asymmetric encryption
         const rawAesKeyBytes = await window.crypto.subtle.exportKey("raw", aesKey);
 
-        // 4️⃣ Encrypt the filename locally to maintain metadata privacy parameters
+        // 3️⃣ Secure the filename metadata locally to protect privacy variables
         const encoder = new TextEncoder();
         const encFileNameBuffer = await window.crypto.subtle.encrypt(
             { name: "AES-GCM", iv: iv },
@@ -33,8 +34,9 @@ export async function encryptAndUploadAttachment(file, targetPublicKeyPem) {
             encoder.encode(file.name)
         );
 
-        // 5️⃣ Request a secure pre-signed upload URL from your backend for Cloudflare R2
-        const { upload_url, public_file_url } = await apiFetch('/api/v1/storage/presign', {
+        // 4️⃣ 📡 FETCH GEOGRAPHICALLY OPTIMIZED PRESIGNED TARGET URL
+        // Your Elixir node evaluates network latency metrics to assign the closest bucket
+        const response = await apiFetch('/api/v1/storage/presign', {
             method: 'POST',
             body: JSON.stringify({
                 content_type: "application/octet-stream",
@@ -42,15 +44,17 @@ export async function encryptAndUploadAttachment(file, targetPublicKeyPem) {
             })
         });
 
-        // 6️⃣ Stream the raw cipher text blob straight to your bucket via standard binary PUT
+        const { upload_url, public_file_url } = response?.data || response;
+        if (!upload_url) throw new Error("Storage target allocation rejected by cluster nodes.");
+
+        // 5️⃣ Stream raw binary ciphertext straight to the regional storage bucket bucket partition
         await fetch(upload_url, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/octet-stream' },
             body: encryptedFileBuffer
         });
 
-        // 7️⃣ RSA-Encrypt the AES symmetric key bytes using the recipient's public key
-        // This ensures ONLY the recipient can decrypt the key required to unpack the file later [1.4]!
+        // 6️⃣ RSA-Encrypt the symmetric AES key using the recipient's public key string
         const rsaKeyBuffer = convertPemToArrayBuffer(targetPublicKeyPem);
         const rsaPublicKey = await window.crypto.subtle.importKey(
             "spki",
@@ -66,7 +70,6 @@ export async function encryptAndUploadAttachment(file, targetPublicKeyPem) {
             rawAesKeyBytes
         );
 
-        // Convert tracking arrays to base64 strings safe for JSON network transmission
         return {
             file_url: public_file_url,
             file_iv: btoa(String.fromCharCode(...iv)),
@@ -75,12 +78,11 @@ export async function encryptAndUploadAttachment(file, targetPublicKeyPem) {
         };
 
     } catch (err) {
-        console.error("Local file cryptographic pipeline failure:", err);
-        throw new Error("Failed to secure file attachment parameters.");
+        console.error("❌ [REGIONAL MEDIA CRYPTO FATAL]:", err);
+        throw new Error("Failed to secure and route file attachment across regional data centers.");
     }
 }
 
-// Minimal helper to strip text PEM boundaries out of stored database strings
 function convertPemToArrayBuffer(pem) {
     const b64 = pem.replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n|\r/g, "");
     const byteString = window.atob(b64);

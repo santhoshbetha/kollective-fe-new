@@ -1,4 +1,3 @@
-// src/pages/MessagesPage.jsx
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -9,23 +8,39 @@ import { UserAvatar } from '../../components/accounts/UserAvatar';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { useConversationChannel } from '../../features/conversations/hooks/useConversationChannel';
 import { encryptAndUploadAttachment } from '../../features/conversations/utils/mediaCrypto';
+import { ChatKeyRecoveryDialog } from '../../features/conversations/components/ChatKeyRecoveryDialog';
+import { CreateGroupChatModal } from '../../features/conversations/components/CreateGroupChatModal';
+import InviteGroupMemberModal from '../../features/conversations/components/InviteGroupMemberModal';
 import { apiFetch } from '../../api/apiClient';
 import { cn } from '../../lib/utils';
 import {
     MessageCircle, Send, Smile, Paperclip, Search, Phone, Video,
-    Info, ImageIcon, File, Users, ArrowLeft, Loader2, Lock, ShieldX,
+    Info, ImageIcon, Users, UserPlus, ArrowLeft, Loader2, Lock, ShieldX,
     PanelLeftClose, PanelLeftOpen
 } from "lucide-react";
+import { SecureImagePreview } from '../../features/conversations/components/SecureImagePreview';
+import { SecureFileAttachment } from '../../features/conversations/components/SecureFileAttachment';
+import { useDeliveryReceipts } from '../../features/conversations/hooks/useDeliveryReceipts';
 
 export default function MessagesPage() {
     const navigate = useNavigate();
     const { conversationId: routeConvId } = useParams();
     const currentUser = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
+    const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0); // Holds numeric integer 0 to 100
+    const [isUploadingChunks, setIsUploadingChunks] = useState(false);
+
+
+    const [activeTypers, setActiveTypers] = useState({});
+    const typingTimeoutRef = useRef(null);
+
+    const [privateKey, setPrivateKey] = useState(localStorage.getItem("active_session_private_key") || null);
 
     // 🎨 SOLID RECONCILED HOOK STATES
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedConversation, setSelectedConversation] = useState(routeConvId || null);
+    const [localSelectedId, setLocalSelectedId] = useState(null);
     const [messageText, setMessageText] = useState("");
     const [showConversationList, setShowConversationList] = useState(true);
     const [isUploadingMedia, setIsUploadingMedia] = useState(false);
@@ -44,13 +59,6 @@ export default function MessagesPage() {
     const fileInputRef = useRef(null);
     const messagesContainerRef = useRef(null);
 
-    // Sync selected conversation id parameter state when route location changes direction
-    useEffect(() => {
-        if (routeConvId) {
-            setSelectedConversation(routeConvId);
-        }
-    }, [routeConvId]);
-
     // 📡 1. FETCH LIVE CONVERSATIONS INBOX STREAM VIA TANSTACK QUERY
     const { data: conversations = [], isLoading: isInboxLoading } = useQuery({
         queryKey: ['conversations', 'inbox'],
@@ -67,15 +75,18 @@ export default function MessagesPage() {
         refetchOnWindowFocus: true
     });
 
-    // Automatically select initial thread index on larger desktop grids
-    useEffect(() => {
-        if (!selectedConversation && conversations.length > 0) {
-            setSelectedConversation(conversations[0].id);
-        }
-    }, [conversations, selectedConversation]);
+    // Derive selected conversation reactively without cascading setState inside effects
+    const selectedConversation = routeConvId || localSelectedId || (conversations.length > 0 ? conversations[0]?.id : null);
+
+    const handleSelectConversation = (conversationId) => {
+        setLocalSelectedId(conversationId);
+        navigate(`/messages/${conversationId}`);
+        setShowConversationList(false);
+    };
 
     // 📡 2. BIND REAL-TIME PHOENIX WEBSOCKET CHANNEL LAYER
-    const { messages: socketMessages = [], isJoining, joinError, sendMessage } = useConversationChannel(selectedConversation);
+    const { messages: socketMessages = [], isJoining, joinError, sendMessage, channel } = useConversationChannel(selectedConversation);
+    const { enqueueMessageForDelivery } = useDeliveryReceipts(channel, socketMessages, currentUser?.id);
 
     // Filter conversation list categories dynamically
     const filteredConversations = useMemo(() => {
@@ -143,6 +154,90 @@ export default function MessagesPage() {
         }
     };
 
+    // 📡 Real-Time Socket Event Receivers Binding Layout:
+    useEffect(() => {
+        if (!channel) return;
+
+        channel.on("typing_receipt_broadcast", (payload) => {
+            setActiveTypers(prev => {
+                const updated = { ...prev };
+                if (payload.is_typing) {
+                    updated[payload.user_id] = payload.username;
+                } else {
+                    delete updated[payload.user_id];
+                }
+                return updated;
+            });
+        });
+
+    }, [channel]);
+
+    // ⌨️ KEYSTROKE INTERCEPT HEARTBEAT DISPATCHER:
+    const handleComposerInputChange = (textValue) => {
+        setMessageText(textValue);
+        if (!channel) return;
+
+        // Dispatch typing start signal immediately
+        channel.push("typing_heartbeat", { is_typing: true });
+
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+        // Stop typing indicator automatically after 1.5 seconds of keyboard silence
+        typingTimeoutRef.current = setTimeout(() => {
+            channel.push("typing_heartbeat", { is_typing: false });
+        }, 1500);
+    };
+
+    // If logged in but the private key isn't active in localStorage, lock the UI with the recovery modal
+    if (currentUser?.id && !privateKey) {
+        return (
+            <div>
+                <div className="max-w-7xl mx-auto min-h-[500px] flex items-center justify-center">
+                    <ChatKeyRecoveryDialog
+                        userUuid={currentUser.id}
+                        onRestored={(rawKey) => {
+                            setPrivateKey(rawKey);
+                            localStorage.setItem("active_session_private_key", rawKey);
+                        }}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    const handleSecureFileAttachmentUpload = async (targetFile) => {
+        if (!targetFile || !selectedConversation) return;
+
+        setIsUploadingChunks(true);
+        setUploadProgress(0);
+
+        try {
+            const recipientPublicKey = currentConversation.partner_public_key;
+
+            // Execute asynchronous client-side 1MB slicing and direct regional streaming loops
+            const trackingManifest = await fragmentAndUploadFile(
+                targetFile,
+                recipientPublicKey,
+                (progressPercent) => setUploadProgress(progressPercent) // Trigger reactive hooks
+            );
+
+            // Submit the finalized cryptographic structural manifest block down your open WebSocket channel frame
+            channel.push("new_group_comment", {
+                text: "[Attachment: Media Secured]",
+                media_payload: trackingManifest
+            });
+
+        } catch (err) {
+            console.error("Fragmentation pipe interrupted:", err);
+        } finally {
+            setIsUploadingChunks(false);
+            setUploadProgress(0);
+        }
+    };
+
+    const typerList = Object.values(activeTypers);
+    const someoneIsTyping = typerList.length > 0;
+
     return (
         <div className="max-w-7xl mx-auto px-2 sm:px-4 text-left font-sans bg-transparent text-text-primary antialiased">
             <div className="bg-white dark:bg-card border border-black/10 dark:border-white/10 overflow-hidden shadow-2xl h-[calc(100vh-120px)] rounded-none">
@@ -189,18 +284,32 @@ export default function MessagesPage() {
 
                                     {/* Collapse / Expand Toggle Button for Desktop */}
                                     <button
-                                        variant="outline"
-                                        size="sm"
+                                        type="button"
                                         onClick={toggleSidebar}
                                         title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                                        className="hidden lg:flex h-9 w-9 p-0 items-center justify-center border-black/10 dark:border-white/10 
+                                        className="hidden lg:flex h-9 w-9 p-0 items-center justify-center border border-black/10 dark:border-white/10 
                                         hover:bg-black/5 dark:hover:bg-white/5 text-neutral-600 dark:text-neutral-400 
-                                        hover:text-neutral-900 dark:hover:text-white shrink-0"
+                                        hover:text-neutral-900 dark:hover:text-white shrink-0 rounded-md"
                                     >
                                         {isSidebarCollapsed ?
                                             <PanelLeftOpen className="h-5 w-5" /> :
                                             <PanelLeftClose className="h-5 w-5" />}
                                     </button>
+
+                                    {/* Create Group Button */}
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setIsGroupModalOpen(true)}
+                                        title="Create Group"
+                                        className={cn(
+                                            "flex items-center gap-2 border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-xs font-mono font-bold tracking-wide uppercase text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white",
+                                            isSidebarCollapsed ? "md:p-2 md:h-9 md:w-9" : ""
+                                        )}
+                                    >
+                                        <Users className="h-3.5 w-3.5 stroke-[2.5px] shrink-0" />
+                                        <span className={isSidebarCollapsed ? "md:hidden" : ""}>New Group</span>
+                                    </Button>
                                 </div>
                             </div>
                             <div className={cn("relative", isSidebarCollapsed ? "md:hidden" : "")}>
@@ -237,8 +346,7 @@ export default function MessagesPage() {
                                                 if (conversation.isGroup || conversation.is_group) {
                                                     navigate(`/chats/group/${conversation.id}`);
                                                 } else {
-                                                    setSelectedConversation(conversation.id);
-                                                    setShowConversationList(false);
+                                                    handleSelectConversation(conversation.id);
                                                 }
                                             }}
                                             className={cn(
@@ -293,6 +401,7 @@ export default function MessagesPage() {
                                 </div>
                             )}
                         </div>
+
                     </div>
 
                     {/* 🛡️ RIGHT PANEL AREA: Active Conversation Viewport */}
@@ -333,6 +442,17 @@ export default function MessagesPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
+                                        {(currentConversation.isGroup || currentConversation.is_group) && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                title="Add Member"
+                                                onClick={() => setIsInviteModalOpen(true)}
+                                                className="h-9 w-9 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
+                                            >
+                                                <UserPlus className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                         <Button variant="ghost" size="icon" className="h-9 w-9 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"><Phone className="h-4 w-4" /></Button>
                                         <Button variant="ghost" size="icon" className="h-9 w-9 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"><Video className="h-4 w-4" /></Button>
                                         <Button variant="ghost" size="icon" className="h-9 w-9 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"><Info className="h-4 w-4" /></Button>
@@ -353,100 +473,104 @@ export default function MessagesPage() {
                                             <p className="text-neutral-500 dark:text-neutral-400 font-sans font-medium">{joinError}</p>
                                         </div>
                                     ) : socketMessages.length > 0 ? (
-                                        socketMessages.map((msg, index) => {
-                                            const isOwn = msg.author?.id === currentUser?.id || msg.sender_id === currentUser?.id || msg.author?.username === 'me';
-                                            const timestamp = msg.inserted_at ? new Date(msg.inserted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "00:00";
-
-                                            // Detect secure encrypted JSON attachment fields
-                                            let mediaPayload = null;
-                                            try {
-                                                if (msg.content?.startsWith('{') || msg.text?.startsWith('{')) {
-                                                    mediaPayload = JSON.parse(msg.content || msg.text);
-                                                }
-                                            } catch (e) { }
-
-                                            const msgType = mediaPayload?.type || msg.type || "text";
-                                            const textBody = mediaPayload ? mediaPayload.text : (msg.text || msg.content || "");
-
-                                            return (
-                                                <div key={msg.id || `msg-${index}`} className={cn("flex w-full mb-1 items-end gap-2 text-left animate-in fade-in duration-150", isOwn ? "justify-end" : "justify-start")}>
-                                                    <div className="flex flex-col max-w-[72%] gap-0.5 font-sans">
-                                                        <div className={cn("rounded-2xl px-4 py-3 shadow-sm border text-md font-medium leading-relaxed break-words",
-                                                            isOwn
-                                                                ? "bg-primary-container border-primary-container text-white rounded-br-none"
-                                                                : "bg-neutral-100 dark:bg-slate-800/90 border-black/5 dark:border-white/10 text-neutral-900 dark:text-slate-100 rounded-bl-none"
-                                                        )}>
-                                                            {msgType === "text" && <p>{textBody}</p>}
-                                                            {msgType === "image" && (
-                                                                <div className="space-y-1">
-                                                                    <div className="rounded-xl overflow-hidden border border-black/5 dark:border-white/10 bg-black/5 dark:bg-black/20">
-                                                                        <img src={mediaPayload?.file_url || msg.fileUrl || "/placeholder.svg"} alt="Secure share" className="max-w-full h-auto max-h-48 object-cover" />
-                                                                    </div>
-                                                                    <p className="text-[14px] font-mono text-neutral-500 dark:text-neutral-400 mt-1">🔒 Local AES-256 cipher container payload</p>
-                                                                </div>
-                                                            )}
-                                                            {msgType === "file" && (
-                                                                <div className="flex items-center gap-3 font-mono text-[14px]">
-                                                                    <div className="p-2 bg-black/5 dark:bg-white/5 rounded-xl border border-black/10 dark:border-white/10 text-primary-container"><File className="h-4 w-4 stroke-[2.5px]" /></div>
-                                                                    <div className="min-w-0 flex-1">
-                                                                        <p className="font-black text-neutral-900 dark:text-white truncate">🔒 Secure Asset Package</p>
-                                                                        <a href={mediaPayload?.file_url || msg.fileUrl} target="_blank" rel="noreferrer" className="text-primary-container underline font-bold text-[10px] hover:text-neutral-900 dark:hover:text-white transition-colors">Download Encrypted Binary</a>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <span className="text-[12px] font-mono font-bold text-neutral-500 dark:text-neutral-400 px-1 select-none mt-0.5">{timestamp} {msg.is_sending && "(sending...)"}</span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })
+                                        socketMessages.map((msg, index) => (
+                                            <MessageRow
+                                                key={msg.id || `msg-${index}`}
+                                                msg={msg}
+                                                currentUser={currentUser}
+                                                currentConversation={currentConversation}
+                                                channel={channel}
+                                                enqueueMessageForDelivery={enqueueMessageForDelivery}
+                                                privateKey={privateKey}
+                                            />
+                                        ))
                                     ) : (
-                                        <div className="py-32 text-center font-mono text-xs text-neutral-500 dark:text-neutral-600 select-none opacity-50">SECURE_DISCUSSION_THREAD_OPENED...</div>
+                                        <div className="py-32 text-center font-mono text-xs text-neutral-500 dark:text-neutral-600 select-none opacity-50">
+                                            SECURE_DISCUSSION_THREAD_OPENED...
+                                        </div>
                                     )}
                                 </div>
 
-                                {/* Message Input Composer Footer Bar */}
-                                <div className="border-t border-black/5 dark:border-white/10 p-4 bg-neutral-100/50 dark:bg-slate-950/40 shrink-0 select-none">
-                                    <div className="flex items-center gap-2 relative">
-                                        <input type="file" ref={fileInputRef} onChange={handleFileAttachmentChange} className="hidden" accept="image/*,application/pdf" />
+                                {/* 💬 THE REAL-TIME TYPING CHIP BANNER ACCELERATOR */}
+                                {someoneIsTyping && (
+                                    <div className="px-6 py-2 bg-[#141414] border-t border-white/5 flex items-center gap-2 select-none animate-in slide-in-from-bottom-2 duration-150 shrink-0 text-left">
+                                        <div className="flex gap-1 items-center bg-[#1f1f1f] px-2.5 py-1.5 rounded-full border border-white/5 rounded-bl-none shrink-0 shadow-sm">
+                                            <span className="w-1.5 h-1.5 bg-primary-container rounded-full animate-bounce duration-300" style={{ animationDelay: '0ms' }} />
+                                            <span className="w-1.5 h-1.5 bg-primary-container rounded-full animate-bounce duration-300" style={{ animationDelay: '150ms' }} />
+                                            <span className="w-1.5 h-1.5 bg-primary-container rounded-full animate-bounce duration-300" style={{ animationDelay: '300ms' }} />
+                                        </div>
+                                        <span className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-wider">
+                                            {typerList.length === 1 ? `@${typerList[0]} is drafting...` : "Multiple citizens are drafting matrices..."}
+                                        </span>
+                                    </div>
+                                )}
 
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            disabled={isUploadingMedia || isJoining}
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="h-10 w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl shrink-0"
-                                        >
-                                            {isUploadingMedia ? <Loader2 className="h-4 w-4 animate-spin text-primary-container" /> : <Paperclip className="h-5 w-5" />}
-                                        </Button>
+                                <div className="w-full bg-[#141414] border-t border-white/5 space-y-2 p-3">
 
-                                        <Button variant="ghost" size="icon" className="h-10 w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl shrink-0">
-                                            <ImageIcon className="h-5 w-5" />
-                                        </Button>
+                                    {isUploadingChunks && (
+                                        <div className="w-full space-y-1.5 select-none animate-in slide-in-from-bottom-2 duration-150 text-left font-mono">
+                                            <div className="flex justify-between items-center text-[10px] font-black uppercase text-neutral-500 tracking-wider">
+                                                <span className="flex items-center gap-1.5 text-primary-container">
+                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                                    Streaming Fragmented Cipher Matrix...
+                                                </span>
+                                                <span>{uploadProgress}%</span>
+                                            </div>
 
-                                        <Button variant="ghost" size="icon" className="h-10 w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl shrink-0">
-                                            <Smile className="h-5 w-5" />
-                                        </Button>
+                                            {/* 📊 Outside Gauge Progress Rail Track Container */}
+                                            <div className="w-full h-1.5 bg-[#181818] border border-white/5 rounded-full overflow-hidden relative">
+                                                <div
+                                                    className="h-full bg-primary-container rounded-full transition-all duration-300 ease-out"
+                                                    style={{ width: `${uploadProgress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
 
-                                        <Input
-                                            placeholder={isUploadingMedia ? "Encrypting asset package via AES-GCM..." : "Type a secure cipher message..."}
-                                            value={messageText}
-                                            onChange={(e) => setMessageText(e.target.value)}
-                                            className="h-11 bg-white dark:bg-background border-black/10 dark:border-white/10 focus:border-primary-container text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 rounded-xl"
-                                            onKeyPress={(e) => {
-                                                if (e.key === "Enter" && messageText.trim()) {
-                                                    handleSendMessage();
-                                                }
-                                            }}
-                                        />
-                                        <Button
-                                            size="icon"
-                                            onClick={handleSendMessage}
-                                            disabled={isUploadingMedia || isJoining}
-                                            className="h-10 w-10 bg-primary-container hover:brightness-105 rounded-xl shrink-0 border-none cursor-pointer"
-                                        >
-                                            <Send className="h-4 w-4 text-white" />
-                                        </Button>
+                                    {/* Message Input Composer Footer Bar */}
+                                    <div className="border-t border-black/5 dark:border-white/10 p-4 bg-neutral-100/50 dark:bg-slate-950/40 shrink-0 select-none">
+                                        <div className="flex items-center gap-2 relative">
+                                            <input type="file" ref={fileInputRef} onChange={handleFileAttachmentChange} className="hidden" accept="image/*,application/pdf" />
+
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                disabled={isUploadingMedia || isJoining}
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="h-10 w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl shrink-0"
+                                            >
+                                                {isUploadingMedia ? <Loader2 className="h-4 w-4 animate-spin text-primary-container" /> : <Paperclip className="h-5 w-5" />}
+                                            </Button>
+
+                                            <Button variant="ghost" size="icon" className="h-10 w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl shrink-0">
+                                                <ImageIcon className="h-5 w-5" />
+                                            </Button>
+
+                                            <Button variant="ghost" size="icon" className="h-10 w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl shrink-0">
+                                                <Smile className="h-5 w-5" />
+                                            </Button>
+
+                                            <Input
+                                                placeholder={isUploadingMedia ? "Encrypting asset package via AES-GCM..." : "Type a secure cipher message..."}
+                                                value={messageText}
+                                                onChange={(e) => handleComposerInputChange(e.target.value)}
+                                                className="h-11 bg-white dark:bg-background border-black/10 dark:border-white/10 focus:border-primary-container text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 rounded-xl"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" && !e.shiftKey && messageText.trim()) {
+                                                        e.preventDefault();
+                                                        handleSendMessage();
+                                                    }
+                                                }}
+                                            />
+                                            <Button
+                                                size="icon"
+                                                onClick={handleSendMessage}
+                                                disabled={isUploadingMedia || isJoining}
+                                                className="h-10 w-10 bg-primary-container hover:brightness-105 rounded-xl shrink-0 border-none cursor-pointer"
+                                            >
+                                                <Send className="h-4 w-4 text-white" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </>
@@ -461,9 +585,225 @@ export default function MessagesPage() {
                             </div>
                         )}
                     </div>
-
                 </div>
+
+                {/* Modals mounted at root viewport level */}
+                <CreateGroupChatModal
+                    isOpen={isGroupModalOpen}
+                    onClose={() => setIsGroupModalOpen(false)}
+                    onCreated={(newGroupId) => {
+                        handleSelectConversation(newGroupId);
+                    }}
+                />
+                <InviteGroupMemberModal
+                    isOpen={isInviteModalOpen}
+                    onClose={() => setIsInviteModalOpen(false)}
+                    conversationId={selectedConversation}
+                />
             </div>
+        </div>
+    );
+}
+
+function MessageRow({
+    msg,
+    currentUser,
+    currentConversation,
+    channel,
+    enqueueMessageForDelivery,
+    privateKey
+}) {
+    const [isExpired, setIsExpired] = useState(() => {
+        if (!msg.expires_at) return false;
+        return (msg.expires_at * 1000) - Date.now() <= 0;
+    });
+
+    useEffect(() => {
+        if (!msg.expires_at || isExpired) return;
+
+        const deadlineMs = (msg.expires_at * 1000) - Date.now();
+        if (deadlineMs <= 0) return;
+
+        const selfDestructTimer = setTimeout(() => {
+            setIsExpired(true);
+        }, deadlineMs);
+
+        return () => clearTimeout(selfDestructTimer);
+    }, [msg.expires_at, isExpired]);
+
+    if (isExpired) return null;
+
+    const isOwn = msg.author?.id === currentUser?.id || msg.sender_id === currentUser?.id || msg.author?.username === 'me';
+    const timestamp = msg.inserted_at ? new Date(msg.inserted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "00:00";
+    const isDeleted = msg.is_deleted || msg.content?.includes("🚫") || msg.text?.includes("🚫");
+
+    // Detect secure encrypted JSON attachment fields
+    let mediaPayload = null;
+    try {
+        if (msg.content?.startsWith('{') || msg.text?.startsWith('{')) {
+            mediaPayload = JSON.parse(msg.content || msg.text);
+        }
+    } catch {
+        // Plain text payload
+    }
+
+    const msgType = mediaPayload?.type || msg.type || "text";
+    const textBody = mediaPayload ? mediaPayload.text : (msg.text || msg.content || "");
+    const isReadByPartner = msg.is_read || msg.last_read_at || currentConversation?.last_read_at;
+
+    return (
+        <ObservedReadRow
+            messageId={msg.id}
+            isOwn={isOwn}
+            isRead={isReadByPartner}
+            onReadVisible={() => channel?.push("read_receipt", { message_id: msg.id })}
+        >
+            <ObservedMessageRow
+                messageId={msg.id}
+                isOwn={isOwn}
+                onVisible={enqueueMessageForDelivery}
+            >
+                <div className={cn(
+                    "flex w-full mb-1 items-end gap-2 text-left animate-in fade-in duration-150 relative group",
+                    msgType === "system_notice" ? "justify-center" : isOwn ? "justify-end" : "justify-start"
+                )}>
+                    {/* Hover actions: Only shown to the author and if the item isn't already deleted */}
+                    {isOwn && !isDeleted && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (window.confirm("Are you sure you want to permanently erase this message?")) {
+                                    channel?.push("delete_message", { message_id: msg.id });
+                                }
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-1/2 -translate-y-1/2 bg-[#1f1f1f] border border-white/5 hover:text-rose-400 p-1.5 rounded-lg text-neutral-500 font-mono text-[9px] font-black uppercase tracking-wider cursor-pointer outline-none z-10 mx-2"
+                            style={{ [isOwn ? 'left' : 'right']: '-45px' }}
+                        >
+                            Delete
+                        </button>
+                    )}
+
+                    <div className="flex flex-col max-w-[72%] gap-0.5 font-sans">
+                        <div className={cn(
+                            "rounded-2xl px-4 py-3 shadow-sm border text-md font-medium leading-relaxed break-words",
+                            isDeleted
+                                ? "bg-red-500/10 border-red-500/20 text-red-400 dark:bg-red-900/20 dark:border-red-800/50 italic"
+                                : msgType === "system_notice"
+                                    ? "bg-transparent border-transparent"
+                                    : isOwn
+                                        ? "bg-primary-container border-primary-container text-white rounded-br-none"
+                                        : "bg-neutral-100 dark:bg-slate-800/90 border-black/5 dark:border-white/10 text-neutral-900 dark:text-slate-100 rounded-bl-none"
+                        )}>
+                            {isDeleted ? (
+                                <p>🚫 Message deleted by sender 🚫</p>
+                            ) : msgType === "system_notice" ? (
+                                <div className="w-full py-2 flex items-center justify-center select-none font-mono text-[10px] tracking-wide text-neutral-500 uppercase animate-in fade-in duration-100">
+                                    <span className="bg-neutral-100 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-lg px-3 py-1 font-bold text-center block text-neutral-600 dark:text-neutral-400">
+                                        ⚡ {msg.text || textBody}
+                                    </span>
+                                </div>
+                            ) : msgType === "image" ? (
+                                <div className="space-y-1 w-64 sm:w-72 md:w-80">
+                                    <SecureImagePreview
+                                        mediaPayload={mediaPayload}
+                                        base64PrivateKey={privateKey || localStorage.getItem("active_session_private_key")}
+                                    />
+                                    {textBody && textBody !== "[Attachment: Media Secured]" && (
+                                        <p className="text-xs text-neutral-600 dark:text-neutral-300 font-medium px-1 mt-1.5 leading-normal">{textBody}</p>
+                                    )}
+                                </div>
+                            ) : msgType === "file" ? (
+                                <div className="space-y-1 w-64 sm:w-72 md:w-80">
+                                    <SecureFileAttachment
+                                        mediaPayload={mediaPayload}
+                                        base64PrivateKey={privateKey || localStorage.getItem("active_session_private_key")}
+                                        fallbackName={msg.fileName || "shared-document.pdf"}
+                                    />
+                                    {textBody && textBody !== "[Attachment: Media Secured]" && (
+                                        <p className="text-xs text-neutral-600 dark:text-neutral-400 font-medium px-1 mt-1 leading-normal">{textBody}</p>
+                                    )}
+                                </div>
+                            ) : (
+                                <p>{textBody}</p>
+                            )}
+                        </div>
+
+                        <span className="text-[12px] font-mono font-bold text-neutral-500 dark:text-neutral-400 px-1 select-none mt-0.5 flex items-center gap-1.5">
+                            {msgType === "system_notice" ? "" : timestamp}
+                            {msg.is_sending && "(sending...)"}
+                            {isOwn && (
+                                <span className="flex items-center text-[10px] shrink-0">
+                                    {msg.is_sending ? (
+                                        <span className="text-neutral-600 font-bold">...</span>
+                                    ) : (msg.delivered_count > 0 || msg.last_delivered_at) ? (
+                                        <span className="text-primary-container font-black tracking-tighter leading-none select-none">✓✓</span>
+                                    ) : (
+                                        <span className="text-neutral-500 font-black leading-none select-none">✓</span>
+                                    )}
+                                </span>
+                            )}
+                        </span>
+                    </div>
+                </div>
+            </ObservedMessageRow>
+        </ObservedReadRow>
+    );
+}
+
+function ObservedReadRow({ children, messageId, isOwn, isRead, onReadVisible }) {
+    const readElementRef = useRef(null);
+
+    useEffect(() => {
+        // Only run read confirmation handshakes if it is a message written by someone else and it hasn't been read yet
+        if (isOwn || isRead || !readElementRef.current || !onReadVisible) return;
+
+        const readObserver = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    onReadVisible(messageId);
+                    readObserver.disconnect();
+                }
+            },
+            { threshold: 0.8 } // Forces 80% of the bubble text to be visible to count as genuinely read
+        );
+
+        readObserver.observe(readElementRef.current);
+        return () => readObserver.disconnect();
+    }, [messageId, isOwn, isRead, onReadVisible]);
+
+    return (
+        <div ref={readElementRef} className="w-full">
+            {children}
+        </div>
+    );
+}
+
+function ObservedMessageRow({ children, messageId, isOwn, onVisible }) {
+    const rowElementRef = useRef(null);
+
+    useEffect(() => {
+        // If it is our own message, or the tracker is already processed, skip inspection
+        if (isOwn || !rowElementRef.current || !onVisible) return;
+
+        const visibilityObserver = new IntersectionObserver(
+            ([entry]) => {
+                // Trigger delivery tracking only when the message bubble enters the viewport bounds
+                if (entry.isIntersecting) {
+                    onVisible(messageId);
+                    visibilityObserver.disconnect();
+                }
+            },
+            { threshold: 0.1, rootMargin: '0px 0px -5% 0px' } // Fires when 10% of bubble is on-screen
+        );
+
+        visibilityObserver.observe(rowElementRef.current);
+
+        return () => visibilityObserver.disconnect();
+    }, [messageId, isOwn, onVisible]);
+
+    return (
+        <div ref={rowElementRef} className="w-full">
+            {children}
         </div>
     );
 }

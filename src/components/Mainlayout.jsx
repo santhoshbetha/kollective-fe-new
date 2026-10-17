@@ -236,7 +236,7 @@ export const MainLayout = () => {
                                     key={item.name}
                                     to={item.path}
                                     className={`flex items-center gap-4 rounded-xl px-4 py-3 text-sm ${currentPath === item.path
-                                        ? 'text-text-primary bg-surface-container-high/40 border-l-4 border-primary-container font-bold'
+                                        ? 'text-text-primary bg-surface-container-high/40 border-r-4 border-primary-container font-bold'
                                         : 'text-text-secondary hover:text-text-primary font-semibold'
                                         }`}
                                 >

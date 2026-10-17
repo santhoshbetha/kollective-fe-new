@@ -130,13 +130,13 @@ export function PostBusinessProposalPage() {
             {/* 🗺️ Breadcrumb & Navigation Actions Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-6 select-none text-left">
                 <div>
-                    <nav className="flex items-center gap-2 text-text-secondary text-[10px] font-mono font-bold mb-3 uppercase tracking-widest">
+                    <nav className="flex items-center gap-2 text-text-secondary text-[14px] font-mono font-bold mb-3 uppercase tracking-widest">
                         <span className="hover:text-white cursor-pointer transition-colors" onClick={() => navigate('/businesses')}>Businesses</span>
                         <ChevronDown className="w-3 h-3 text-text-secondary rotate-270" />
                         <span className="text-primary-container">Post Proposal Node</span>
                     </nav>
-                    <h1 className="font-headline-lg text-3xl font-black text-white tracking-tight">New Business Proposal</h1>
-                    <p className="text-text-secondary font-medium text-sm max-w-xl mt-1.5 leading-relaxed font-sans">
+                    <h1 className="font-headline-lg text-3xl font-black dark:text-white tracking-tight">New Business Proposal</h1>
+                    <p className="text-text-secondary font-medium text-lg max-w-xl mt-1.5 leading-relaxed font-sans">
                         Draft your initiative for community backing and investment. Scale solidarity networks and shared infrastructure.
                     </p>
                 </div>
@@ -167,7 +167,7 @@ export function PostBusinessProposalPage() {
 
                         <form onSubmit={handleSubmit} className="space-y-6 text-left">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Proposal Title *</label>
+                                <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Proposal Title *</label>
                                 <input
                                     name="title"
                                     value={formData.title}
@@ -180,12 +180,12 @@ export function PostBusinessProposalPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Detailed Description *</label>
+                                <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Detailed Description *</label>
                                 <textarea
                                     name="description"
                                     value={formData.description}
                                     onChange={handleInputChange}
-                                    className="w-full bg-white dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary dark:text-white focus:border-primary-container focus:outline-none transition-all text-sm placeholder:text-text-secondary/30 min-h-[160px] h-40 resize-none font-normal"
+                                    className="w-full bg-white dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary dark:text-white focus:border-primary-container focus:outline-none transition-all text-lg placeholder:text-text-secondary/30 min-h-[160px] h-40 resize-none font-normal"
                                     placeholder="Provide a detailed breakdown of your vision, the problem it solves, and how the community stands to gain..."
                                     required
                                 ></textarea>
@@ -193,7 +193,7 @@ export function PostBusinessProposalPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Category *</label>
+                                    <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Category *</label>
                                     <div className="relative group">
                                         <select
                                             name="category"
@@ -208,7 +208,7 @@ export function PostBusinessProposalPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Target Location *</label>
+                                    <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Target Location *</label>
                                     <div className="relative group">
                                         <input
                                             name="location"
@@ -226,12 +226,13 @@ export function PostBusinessProposalPage() {
                             <div className="space-y-4 pt-4 border-t border-black/5 dark:border-white/5 select-none font-mono">
                                 <div className="flex items-center gap-2 text-text-primary dark:text-white">
                                     <Landmark className="w-4 h-4 text-primary-container" />
-                                    <h4 className="font-bold text-xs uppercase tracking-wider">Financial & Investment Structure</h4>
+                                    <h4 className="font-bold text-md uppercase tracking-wider">Financial & Investment Structure</h4>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 font-sans">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono">Funding Goal (USD) *</label>
+                                        <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono">
+                                            Funding Goal (USD) *</label>
                                         <div className="relative group">
                                             <input
                                                 name="fundingGoal"
@@ -247,7 +248,8 @@ export function PostBusinessProposalPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono">Min Backing (USD)</label>
+                                        <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono">
+                                            Min Backing (USD)</label>
                                         <div className="relative group">
                                             <input
                                                 name="minInvest"
@@ -262,7 +264,8 @@ export function PostBusinessProposalPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono">Max Backing (USD)</label>
+                                        <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono">
+                                            Max Backing (USD)</label>
                                         <div className="relative group">
                                             <input
                                                 name="maxInvest"
@@ -300,8 +303,8 @@ export function PostBusinessProposalPage() {
                             <div className="absolute inset-0 bg-gradient-to-t from-[#141414] to-transparent opacity-90"></div>
                         </div>
                         <div className="p-5 space-y-2">
-                            <h3 className="font-bold text-xs uppercase tracking-wider text-primary-container font-mono">Proposal Clarity</h3>
-                            <p className="text-xs text-text-secondary leading-relaxed font-sans">
+                            <h3 className="font-bold text-md uppercase tracking-wider text-primary-container font-mono">Proposal Clarity</h3>
+                            <p className="text-md text-text-secondary leading-relaxed font-sans">
                                 Detail exactly how the requested capital will be utilized. Transparent budgeting and milestone planning attract the highest backer engagement.
                             </p>
                         </div>
@@ -312,15 +315,15 @@ export function PostBusinessProposalPage() {
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary-container/5 blur-xl rounded-full pointer-events-none"></div>
                         <div className="flex items-center gap-2.5 mb-5 text-text-secondary font-mono">
                             <span className="material-symbols-outlined text-sm">hub</span>
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">Collaboration Features</h3>
+                            <h3 className="text-md font-bold uppercase tracking-wider text-text-secondary">Collaboration Features</h3>
                         </div>
 
                         <ul className="space-y-4 font-sans">
                             <li className="flex gap-3 items-start">
                                 <span className="material-symbols-outlined text-primary-container text-base shrink-0 mt-0.5">visibility</span>
                                 <div>
-                                    <p className="font-bold text-xs text-text-primary uppercase tracking-wide font-mono">Global Visibility</p>
-                                    <p className="text-xs text-text-secondary leading-relaxed mt-0.5">
+                                    <p className="font-bold text-md text-text-primary uppercase tracking-wide font-mono">Global Visibility</p>
+                                    <p className="text-md text-text-secondary leading-relaxed mt-0.5">
                                         Your proposal is indexed across all Kollective nodes for maximized exposure.
                                     </p>
                                 </div>
@@ -328,8 +331,8 @@ export function PostBusinessProposalPage() {
                             <li className="flex gap-3 items-start">
                                 <span className="material-symbols-outlined text-primary-container text-base shrink-0 mt-0.5">groups</span>
                                 <div>
-                                    <p className="font-bold text-xs text-text-primary uppercase tracking-wide font-mono">Syndicate Matching</p>
-                                    <p className="text-xs text-text-secondary leading-relaxed mt-0.5">
+                                    <p className="font-bold text-md text-text-primary uppercase tracking-wide font-mono">Syndicate Matching</p>
+                                    <p className="text-md text-text-secondary leading-relaxed mt-0.5">
                                         Matches your proposal with active syndicates searching for matching categories.
                                     </p>
                                 </div>
@@ -337,8 +340,8 @@ export function PostBusinessProposalPage() {
                             <li className="flex gap-3 items-start">
                                 <span className="material-symbols-outlined text-primary-container text-base shrink-0 mt-0.5">contract</span>
                                 <div>
-                                    <p className="font-bold text-xs text-text-primary uppercase tracking-wide font-mono">Smart Backing</p>
-                                    <p className="text-xs text-text-secondary leading-relaxed mt-0.5">
+                                    <p className="font-bold text-md text-text-primary uppercase tracking-wide font-mono">Smart Backing</p>
+                                    <p className="text-md text-text-secondary leading-relaxed mt-0.5">
                                         Automated mechanisms secure transparent and verifiable capital backing.
                                     </p>
                                 </div>
@@ -353,24 +356,24 @@ export function PostBusinessProposalPage() {
                             <span>Priority Anti-Monopoly Ideas</span>
                         </div>
                         <div className="space-y-1">
-                            <h4 className="font-bold text-white text-xs uppercase tracking-wider font-mono">Needed Community Proposals</h4>
-                            <p className="text-xs text-text-secondary leading-relaxed font-sans">
+                            <h4 className="font-bold dark:text-white text-md uppercase tracking-wider font-mono">Needed Community Proposals</h4>
+                            <p className="text-md text-text-secondary leading-relaxed font-sans">
                                 We strongly encourage proposals that establish people-centered alternatives to corporate giants:
                             </p>
                         </div>
-                        <ul className="space-y-2 text-xs text-text-secondary font-mono">
-                            <li className="flex items-start gap-2.5 bg-[#0d1117] p-3 rounded-xl border border-white/5">
+                        <ul className="space-y-2 text-md text-text-secondary font-mono">
+                            <li className="flex items-start gap-2.5 dark:bg-[#0d1117] p-3 rounded-xl border border-white/5">
                                 <span className="material-symbols-outlined text-primary-container text-sm shrink-0 mt-0.5">local_cafe</span>
                                 <div className="font-sans text-left">
-                                    <strong className="text-white block font-bold text-xs font-mono uppercase tracking-wide">Coffee Shops & Eateries</strong>
-                                    <span className="text-text-secondary text-xs mt-0.5 block leading-relaxed">Displace corporate chains like Starbucks, McDonald's & Wendy's with local co-ops & fair-wage diners.</span>
+                                    <strong className="dark:text-white block font-bold text-lg font-mono uppercase tracking-wide">Coffee Shops & Eateries</strong>
+                                    <span className="text-text-secondary text-md mt-0.5 block leading-relaxed">Displace corporate chains like Starbucks, McDonald's & Wendy's with local co-ops & fair-wage diners.</span>
                                 </div>
                             </li>
-                            <li className="flex items-start gap-2.5 bg-[#0d1117] p-3 rounded-xl border border-white/5">
+                            <li className="flex items-start gap-2.5 dark:bg-[#0d1117] p-3 rounded-xl border border-white/5">
                                 <span className="material-symbols-outlined text-emerald-400 text-sm shrink-0 mt-0.5">medical_services</span>
                                 <div className="font-sans text-left">
-                                    <strong className="text-white block font-bold text-xs font-mono uppercase tracking-wide">Low-Cost Medical & Clinics</strong>
-                                    <span className="text-text-secondary text-xs mt-0.5 block leading-relaxed">Create people-pro, low-margin health centers & pharmacies to beat monopolies like CVS & Walgreens.</span>
+                                    <strong className="dark:text-white block font-bold text-lg font-mono uppercase tracking-wide">Low-Cost Medical & Clinics</strong>
+                                    <span className="text-text-secondary text-md mt-0.5 block leading-relaxed">Create people-pro, low-margin health centers & pharmacies to beat monopolies like CVS & Walgreens.</span>
                                 </div>
                             </li>
                         </ul>
@@ -379,10 +382,10 @@ export function PostBusinessProposalPage() {
                     {/* Proposal Guidelines Checklist */}
                     <div className="bg-[#141414] rounded-2xl p-6 border border-white/5 space-y-4 text-left select-none font-sans">
                         <div className="flex items-center justify-between font-mono">
-                            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Proposal Guidelines</h4>
+                            <h4 className="text-md font-bold dark:text-white uppercase tracking-wider">Proposal Guidelines</h4>
                             <span className="material-symbols-outlined text-text-secondary text-base">info</span>
                         </div>
-                        <div className="space-y-2.5 text-xs text-text-secondary font-medium leading-relaxed">
+                        <div className="space-y-2.5 text-md text-text-secondary font-medium leading-relaxed">
                             <div className="flex items-start gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-primary-container shrink-0 mt-1.5"></span>
                                 <span>Define target outcomes and timeline metrics clearly.</span>

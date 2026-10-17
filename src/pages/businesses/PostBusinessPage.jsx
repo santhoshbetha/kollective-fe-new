@@ -393,7 +393,7 @@ export function PostBusinessPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             <div className="md:col-span-2 lg:col-span-3 space-y-2">
-                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Street Address</label>
+                                <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Street Address</label>
                                 <input
                                     name="address"
                                     value={formData.address}
@@ -405,7 +405,7 @@ export function PostBusinessPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">City</label>
+                                <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">City</label>
                                 <input
                                     name="city"
                                     value={formData.city}
@@ -417,7 +417,7 @@ export function PostBusinessPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">State/Province</label>
+                                <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">State/Province</label>
                                 <input
                                     name="state"
                                     value={formData.state}
@@ -429,7 +429,7 @@ export function PostBusinessPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Postal Code</label>
+                                <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Postal Code</label>
                                 <input
                                     name="zip"
                                     value={formData.zip}
@@ -441,7 +441,7 @@ export function PostBusinessPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Business Email</label>
+                                <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Business Email</label>
                                 <input
                                     name="email"
                                     value={formData.email}
@@ -453,7 +453,7 @@ export function PostBusinessPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Phone Number</label>
+                                <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Phone Number</label>
                                 <input
                                     name="phone"
                                     value={formData.phone}
@@ -465,7 +465,7 @@ export function PostBusinessPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Website</label>
+                                <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Website</label>
                                 <input
                                     name="website"
                                     value={formData.website}
@@ -487,7 +487,7 @@ export function PostBusinessPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Year Established</label>
+                                <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Year Established</label>
                                 <input
                                     name="established"
                                     value={formData.established}
@@ -499,7 +499,7 @@ export function PostBusinessPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Number of Employees</label>
+                                <label className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">Number of Employees</label>
                                 <div className="relative group">
                                     <select
                                         name="employees"
@@ -517,12 +517,12 @@ export function PostBusinessPage() {
                             </div>
                             {/* 🚀 REFACTOR LOCK: Replaced raw text hours box with dual precise time dropdown panels */}
                             <div className="md:col-span-2 space-y-2 select-none font-mono">
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary block mb-1">Operational Business Hours *</label>
+                                <label className="text-[14px] font-bold uppercase tracking-wider text-text-secondary block mb-1">Operational Business Hours *</label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                                     {/* Start Opening Time Picker */}
                                     <div className="space-y-1">
-                                        <span className="text-[9px] text-text-secondary/60 uppercase tracking-widest block">Opening Hours</span>
+                                        <span className="text-[12px] text-text-secondary/60 uppercase tracking-widest block">Opening Hours</span>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <button type="button" className="w-full bg-white dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-2.5 text-text-primary dark:text-white focus:border-primary-container transition-all text-xs flex items-center justify-between cursor-pointer font-sans font-medium outline-none">
@@ -542,7 +542,7 @@ export function PostBusinessPage() {
 
                                     {/* End Closing Time Picker */}
                                     <div className="space-y-1">
-                                        <span className="text-[9px] text-text-secondary/60 uppercase tracking-widest block">Closing Hours</span>
+                                        <span className="text-[12px] text-text-secondary/60 uppercase tracking-widest block">Closing Hours</span>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <button type="button" className="w-full bg-white dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-2.5 text-text-primary dark:text-white focus:border-primary-container transition-all text-xs flex items-center justify-between cursor-pointer font-sans font-medium outline-none">
@@ -575,15 +575,19 @@ export function PostBusinessPage() {
                                 </div>
                                 <div className="flex flex-wrap gap-2 select-none">
                                     {availableTags.map((tag) => (
-                                        <button key={tag} type="button" onClick={() => toggleTag(tag, false)} className="px-3.5 py-1.5 bg-[#0d1117] border border-white/5 rounded-full flex items-center gap-2 text-xs cursor-pointer text-text-secondary hover:text-white hover:border-white/10 transition-all font-medium">
+                                        <button key={tag} type="button" onClick={() => toggleTag(tag, false)} className="px-3.5 py-1.5 dark:bg-[#0d1117] border border-white/5 rounded-full flex items-center gap-2 text-xs cursor-pointer text-text-secondary hover:text-white hover:border-white/10 transition-all font-medium">
                                             <span>{tag}</span>
                                             <Plus className="w-3 h-3" />
                                         </button>
                                     ))}
                                 </div>
                                 <div className="flex gap-2 max-w-sm">
-                                    <input value={customTag} onChange={(e) => setCustomTag(e.target.value)} placeholder="Enter custom service..." className="flex-1 bg-[#0d1117] border border-white/10 rounded-xl px-4 py-2 text-white text-xs focus:border-primary-container focus:outline-none transition-all font-medium" type="text" />
-                                    <button type="button" onClick={handleAddCustomTag} className="px-4 py-2 bg-[#262626] border border-white/5 rounded-xl text-xs text-white hover:text-primary-container hover:bg-white/5 transition-all font-mono font-bold cursor-pointer">Add</button>
+                                    <input
+                                        value={customTag}
+                                        onChange={(e) => setCustomTag(e.target.value)}
+                                        placeholder="Enter custom service..."
+                                        className="flex-1 dark:bg-[#0d1117] bg-white border border-white/10 rounded-xl px-4 py-2 dark:text-white text-md focus:border-primary-container focus:outline-none transition-all font-medium" type="text" />
+                                    <button type="button" onClick={handleAddCustomTag} className="px-4 py-2 bg-[#262626] border border-white/5 rounded-xl text-md dark:text-white hover:text-primary-container hover:bg-white/5 transition-all font-mono font-bold cursor-pointer">Add</button>
                                 </div>
                             </div>
                         </div>
@@ -611,14 +615,14 @@ export function PostBusinessPage() {
                         </div>
 
                         <div className="space-y-1.5 pt-2">
-                            <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">
+                            <label className="text-[14px] font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">
                                 Or enter Image URL directly
                             </label>
                             <input
                                 name="image"
                                 value={formData.image.startsWith('data:') ? '[Cropped Upload Image]' : formData.image}
                                 onChange={handleInputChange}
-                                className="w-full bg-[#0d1117] border border-white/10 rounded-xl px-4 py-2.5 text-white text-xs focus:border-primary-container focus:outline-none transition-all font-medium"
+                                className="w-full dark:bg-[#0d1117] bg-white border border-white/10 rounded-xl px-4 py-2.5 dark:text-white text-md focus:border-primary-container focus:outline-none transition-all font-medium"
                                 placeholder="Enter image URL..."
                                 type="text"
                             />
@@ -627,7 +631,7 @@ export function PostBusinessPage() {
 
                     {/* 🌟 Redesigned Live Preview Card Module */}
                     <section className="bg-surface-container border border-primary-container/10 p-6 rounded-2xl relative overflow-hidden text-left flex flex-col gap-4">
-                        <div className="flex items-center gap-2 text-primary-container font-mono font-bold text-[10px] uppercase tracking-widest select-none">
+                        <div className="flex items-center gap-2 text-primary-container font-mono font-bold text-[14px] uppercase tracking-widest select-none">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>
                             Live Registry Preview Status
                         </div>
@@ -653,18 +657,18 @@ export function PostBusinessPage() {
                             <h4 className="font-headline-md text-base font-black dark:text-white truncate tracking-tight pt-1">
                                 {formData.name || 'Your Enterprise Name'}
                             </h4>
-                            <p className="text-xs text-text-secondary leading-relaxed line-clamp-4 font-normal min-h-[4rem]">
+                            <p className="text-sm text-text-secondary leading-relaxed line-clamp-4 font-normal min-h-[4rem]">
                                 {formData.description || 'Provide an enterprise description on the left column panels to view it updated here in real time...'}
                             </p>
 
                             {/* Dynamic Metadata Attributes Row */}
                             <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/5 font-sans">
                                 <div>
-                                    <p className="text-[10px] uppercase font-bold tracking-wider text-text-secondary/50 font-mono select-none">Category</p>
+                                    <p className="text-[14px] uppercase font-bold tracking-wider text-text-secondary/50 font-mono select-none">Category</p>
                                     <p className="text-white font-bold text-xs truncate mt-0.5">{formData.category}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] uppercase font-bold tracking-wider text-text-secondary/50 font-mono select-none">Location</p>
+                                    <p className="text-[14px] uppercase font-bold tracking-wider text-text-secondary/50 font-mono select-none">Location</p>
                                     <p className="text-white font-bold text-xs truncate mt-0.5">
                                         {formData.city || 'City'}{formData.state ? `, ${formData.state}` : ''}
                                     </p>
@@ -672,7 +676,7 @@ export function PostBusinessPage() {
                             </div>
 
                             {/* Dynamic Hours Selector Reflection */}
-                            <div className="pt-2 font-mono text-[10px] text-text-secondary/60 flex items-center gap-1.5 select-none">
+                            <div className="pt-2 font-mono text-[14px] text-text-secondary/60 flex items-center gap-1.5 select-none">
                                 <span className="material-symbols-outlined text-sm text-primary-container">schedule</span>
                                 <span>Hours: {formatTimeDisplay(startTime)} - {formatTimeDisplay(endTime)}</span>
                             </div>

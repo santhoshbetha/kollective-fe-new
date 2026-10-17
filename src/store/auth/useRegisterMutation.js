@@ -50,5 +50,15 @@ export function useRegisterMutation() {
                 queryClient.clear();
             }
         },
+        /*onError: (error) => {
+            console.error("Registration error", error);
+            setSession(null, null);
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_token');
+            localStorage.removeItem('socket_token');
+            localStorage.removeItem('auth_user');
+            queryClient.clear();
+            navigate('/login');
+        }*/
     });
 }

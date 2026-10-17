@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { apiFetch } from '../../api/apiClient';
 import { UserHoverCard } from '../accounts/UserHoverCard';
@@ -72,7 +73,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate,
         if (e) e.stopPropagation();
         setShowMenu(false);
         if (authorHandle) {
-            navigator.clipboard.writeText(authorHandle).catch(() => {});
+            navigator.clipboard.writeText(authorHandle).catch(() => { });
             toast.success(`Mention handle ${authorHandle} copied!`);
             navigate(`/timeline?mention=${encodeURIComponent(authorHandle)}`);
         }
@@ -906,7 +907,7 @@ export const PostCard = React.memo(function PostCard({
                             </div>
 
                             {/* Interactive Campaign/Action Button Core Interface */}
-                            <button
+                            <Button
                                 onClick={(e) => { e.stopPropagation(); handleJoinActionClick(); }}
                                 className={cn(
                                     "px-5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all cursor-pointer shadow-md active:scale-95 border",
@@ -916,7 +917,7 @@ export const PostCard = React.memo(function PostCard({
                                 )}
                             >
                                 {isActionJoined ? '✓ Joined Action' : 'Join the Action'}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </article>

@@ -106,6 +106,65 @@ export function useConversationChannel(conversationId) {
         };
     }, [socket, conversationId]);
 
+    // Inside your useConversationChannel hook composition mount block:
+    useEffect(() => {
+        if (!channel) return;
+
+        // 📡 STANDARD INBOUND MESSAGE CAPTURE
+        channel.on("new_message", (incomingMsg) => {
+            setMessages((prev) => {
+                if (prev.some(m => m.id === incomingMsg.id || (incomingMsg.nonce && m.nonce === incomingMsg.nonce))) {
+                    return prev.map(m => (incomingMsg.nonce && m.nonce === incomingMsg.nonce) ? incomingMsg : m);
+                }
+                return [...prev, incomingMsg];
+            });
+        });
+
+        // 🚀 INTERCEPT MEMBERSHIP SIGNATURE INJECTIONS:
+        // Captures structural channel alerts and appends transient, code-only notice chips
+        // straight into your local view state array without writing anything to the server database.
+        channel.on("member_joined", (payload) => {
+            const structuralNoticeChip = {
+                id: `notice-${Date.now()}-${Math.random()}`,
+                type: "system_notice",
+                text: `@${payload.username} has joined the distributed discussion cluster and linked public key keys.`,
+                inserted_at: new Date().toISOString(),
+                author: { id: "system", username: "system" }
+            };
+
+            setMessages((prev) => [...prev, structuralNoticeChip]);
+        });
+
+        // Capture distributed tick updates
+        channel.on("delivery_receipt_bump", (receipt) => {
+            setMessages((prev) => prev.map(m => {
+                if (!m.is_sending) {
+                    return { ...m, last_delivered_at: receipt.delivered_at, delivered_count: (m.delivered_count || 0) + 1 };
+                }
+                return m;
+            }));
+        });
+
+        channel.on("message_deleted", (payload) => {
+            setMessages((prev) => prev.map(msg => {
+                if (String(msg.id) === String(payload.message_id)) {
+                    return {
+                        ...msg,
+                        type: "text", // Re-assert as a text card layout fallback type
+                        content: payload.deleted_text,
+                        text: payload.deleted_text,
+                        is_deleted: true, // Tag state variables to lock down future interaction options
+                        fileUrl: null,    // Instantly wipe encrypted attachment pointers from browser RAM
+                        fileName: null
+                    };
+                }
+                return msg;
+            }));
+        });
+
+    }, [channel]);
+
+
     // 🚀 WRAPPED ASYNCHRONOUS MESSAGE SENDER (DUAL WS + REST TRANSPORT)
     const sendMessage = useCallback(async (textPayload) => {
         if (!conversationId) return Promise.reject('No conversation selected.');
@@ -175,7 +234,8 @@ export function useConversationChannel(conversationId) {
         messages,
         isJoining,
         joinError,
-        sendMessage
+        sendMessage,
+        channel
     };
 }
 

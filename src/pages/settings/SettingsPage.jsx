@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 // ⚡ LAZY LOAD TAB MODULES FOR INSTANT PAGE INITIALIZATION & ZERO FLICKER
 const AppPreferencesForm = lazy(() => import('../../features/preferences/AppPreferencesForm').then(m => ({ default: m.AppPreferencesForm })));
+const EditProfilePage = lazy(() => import('./EditProfilePage').then(m => ({ default: m.EditProfilePage })));
 const EmailSettingsForm = lazy(() => import('../../features/settings/SettingsSubForms').then(m => ({ default: m.EmailSettingsForm })));
 const PasswordSettingsForm = lazy(() => import('../../features/settings/SettingsSubForms').then(m => ({ default: m.PasswordSettingsForm })));
 const DangerZoneSettingsForm = lazy(() => import('../../features/settings/SettingsSubForms').then(m => ({ default: m.DangerZoneSettingsForm })));
@@ -75,10 +76,6 @@ export const SettingsPage = () => {
     ];
 
     const handleTabChange = (tabId) => {
-        if (tabId === 'profile') {
-            navigate('/settings/profile');
-            return;
-        }
         if (tabId !== activeSettingsTab) {
             setActiveSettingsTab(tabId);
             setSearchParams({ tab: tabId }, { replace: true });
@@ -185,7 +182,7 @@ export const SettingsPage = () => {
                 {/* Profile Shortcut Card Element Row Banner */}
                 {activeSettingsTab === 'index' && (
                     <div
-                        onClick={() => navigate('/settings/profile')}
+                        onClick={() => handleTabChange('profile')}
                         className="mb-6 p-4 bg-surface-container-lowest/50 border border-white/10 hover:border-primary-container/40 rounded-xl flex items-center justify-between cursor-pointer hover:bg-surface-container-high/40 hover:shadow-lg transition-all group select-none"
                     >
                         <div className="flex items-center gap-4 min-w-0">
@@ -199,7 +196,7 @@ export const SettingsPage = () => {
                                     <span>Edit Profile</span>
                                     <span className="material-symbols-outlined text-sm opacity-50 group-hover:translate-x-1 transition-transform font-bold">arrow_forward</span>
                                 </h3>
-                                <p className="text-sm text-text-secondary mt-0.5 font-medium truncate">
+                                <p className="text-md text-text-secondary mt-0.5 font-medium truncate">
                                     Update your profile picture, banner, and personal information
                                 </p>
                             </div>
@@ -222,6 +219,11 @@ export const SettingsPage = () => {
                         {visitedTabs.has('index') && (
                             <div className={activeSettingsTab === 'index' ? 'block' : 'hidden'}>
                                 <AppPreferencesForm />
+                            </div>
+                        )}
+                        {visitedTabs.has('profile') && (
+                            <div className={activeSettingsTab === 'profile' ? 'block' : 'hidden'}>
+                                <EditProfilePage />
                             </div>
                         )}
                         {visitedTabs.has('invitations') && (

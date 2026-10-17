@@ -187,196 +187,182 @@
     --inverse-on-surface: #111823;
 }
 
-:rootN {
-    /* --- Core Base Radii Fallbacks Anchor (Brutalist Sharp Edges) --- */
-    --radius: 0px;
-    --radius-card: 0px;
-    --radius-pill: 9999px;
+.light-red {
+    /* ==========================================================================
+     Constructivist / Communism-Inspired Theme: Light Mode (Parchment & Crimson)
+     ========================================================================== */
+    --background: #fbf9f5;
+    --foreground: #1c1917;
 
-    /* --- Brand Primary Palette & Base Tokens (Light Mode - Revolutionary Crimson) --- */
-    --primary: #d60000;
-    --primary-container: #a30000;
-    --primary-fixed: #ffdfdf;
-    --primary-fixed-dim: #ffbaba;
+    --card: #ffffff;
+    --card-foreground: #1c1917;
+    --popover: #ffffff;
+    --popover-foreground: #1c1917;
+
+    --primary: #dc2626;
+    --primary-container: #dc2626;
+    --primary-foreground: #ffffff;
+    --primary-fixed: #fee2e2;
+    --primary-fixed-dim: #fca5a5;
     --on-primary: #ffffff;
     --on-primary-container: #ffffff;
-    --on-primary-fixed: #4a0000;
-    --on-primary-fixed-variant: #7a0000;
-    --inverse-primary: #ff8e8e;
+    --on-primary-fixed: #450a0a;
+    --on-primary-fixed-variant: #991b1b;
+    --inverse-primary: #fca5a5;
 
-    /* --- Secondary Accents & Communist Yellow Tokens (Agitprop Propaganda Yellow) --- */
-    --secondary: #ffd700;
-    --secondary-container: #ffea00;
-    --secondary-fixed: #fffde0;
-    --secondary-fixed-dim: #fff9a6;
-    --on-secondary: #000000;
-    --on-secondary-container: #2b2400;
-    --on-secondary-fixed: #1a1500;
-    --on-secondary-fixed-variant: #423800;
-    --gold-muted: #cfa900;
+    --secondary: #eab308;
+    --secondary-container: #f59e0b;
+    --secondary-fixed: #fef9c3;
+    --secondary-fixed-dim: #fef08a;
+    --on-secondary: #1c1917;
+    --on-secondary-container: #451a03;
+    --on-secondary-fixed: #451a03;
+    --on-secondary-fixed-variant: #78350f;
+    --gold-muted: #ca8a04;
 
-    /* --- Tertiary Digital Accent Tokens (Industrial Steel Blue) --- */
-    --tertiary: #3b4e5e;
-    --tertiary-container: #d9e2ec;
-    --tertiary-fixed: #d9e2ec;
-    --tertiary-fixed-dim: #bcccdc;
-    --on-tertiary: #ffffff;
-    --on-tertiary-container: #0f2438;
-    --on-tertiary-fixed: #0f2438;
-    --on-tertiary-fixed-variant: #293b4a;
+    --muted: #f4f1ea;
+    --muted-foreground: #78716c;
 
-    /* --- Error Framework --- */
-    --error: #b51c1c;
-    --error-container: #ffd8d8;
+    --accent: #eee9df;
+    --accent-foreground: #1c1917;
+
+    --destructive: #991b1b;
+    --destructive-foreground: #ffffff;
+    --error: #dc2626;
+    --error-container: #fee2e2;
     --on-error: #ffffff;
-    --on-error-container: #660505;
+    --on-error-container: #7f1d1d;
 
-    /* --- Semantic Interface Layers (Stark Propaganda Paper / Off-White) --- */
-    --background: #f7f6f0;
-    --on-background: #000000;
-    --text-primary: #000000;
-    --text-secondary: #4a4a4a;
-    --foreground: #000000;
-    --muted: #e3dec3;
-    --muted-foreground: #545247;
-    --border: #b8b39a;
-    --input: #b8b39a;
-    --ring: #d60000;
-    --outline: #9e9981;
-    --outline-variant: #b8b39a;
+    --border: #e6e0d4;
+    --input: #e6e0d4;
+    --ring: #dc2626;
 
-    /* --- Surface Structure Levels (Industrial Base Layers) --- */
-    --surface: #edeae1;
-    --surface-dim: #e3dec3;
+    --chart-1: #dc2626;
+    --chart-2: #ca8a04;
+    --chart-3: #292524;
+    --chart-4: #854d0e;
+    --chart-5: #991b1b;
+
+    --sidebar: #f5f2eb;
+    --sidebar-foreground: #292524;
+    --sidebar-primary: #dc2626;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #eae4d6;
+    --sidebar-accent-foreground: #1c1917;
+    --sidebar-border: #e6e0d4;
+    --sidebar-ring: #dc2626;
+
+    --on-background: #1c1917;
+    --text-primary: #1c1917;
+    --text-secondary: #78716c;
+    --outline: #e6e0d4;
+    --outline-variant: #f4f1ea;
+
+    --surface: #ffffff;
+    --surface-dim: #f4f1ea;
     --surface-bright: #ffffff;
-    --surface-variant: #e3dec3;
-    --surface-ink: #000000;
-    --surface-tint: #d60000;
-    --surface-crimson-low: #ffebeb;
+    --surface-variant: #f4f1ea;
+    --surface-ink: #1c1917;
+    --surface-tint: #dc2626;
+    --surface-crimson-low: #fef2f2;
     --surface-container-lowest: #ffffff;
-    --surface-container-low: #f4f1e8;
-    --surface-container: #edeae1;
-    --surface-container-high: #e1dbce;
-    --surface-container-highest: #d3ccbd;
-    --inverse-surface: #000000;
-    --inverse-on-surface: #f7f6f0;
+    --surface-container-low: #fbf9f5;
+    --surface-container: #f5f2eb;
+    --surface-container-high: #eae4d6;
+    --surface-container-highest: #e6e0d4;
+    --on-surface: #1c1917;
+    --on-surface-variant: #78716c;
+    --inverse-surface: #1c1917;
+    --inverse-on-surface: #fbf9f5;
 }
 
-.darkN {
+.dark-red {
     /* ==========================================================================
-     Base shadcn / Tailwind v4 Tokens (Dark Mode Override - Maximum Stark Contrast)
+     Constructivist / Communism-Inspired Theme: Dark Mode (Iron Slate & High-Vis Crimson)
      ========================================================================== */
-    --background: #000000;
-    /* Pure Black background for extreme contrast */
-    --foreground: #ffffff;
-    /* Laser White text */
-    --card: #0a0a0a;
-    --card-foreground: #ffffff;
-    --popover: #050505;
-    --popover-foreground: #ffffff;
+    --background: #12100e;
+    --foreground: #f5f5f4;
 
-    --primary: #ff1a1a;
-    /* Hyper-vibrant high-contrast crimson */
-    --primary-foreground: #000000;
-    --secondary: #ffea00;
-    /* Piercing industrial yellow */
-    --secondary-foreground: #000000;
+    --card: #1c1917;
+    --card-foreground: #f5f5f4;
+    --popover: #1c1917;
+    --popover-foreground: #f5f5f4;
 
-    --muted: #1a1a1a;
-    --muted-foreground: #b3b3b3;
-    --accent: #1f1d00;
-    --accent-foreground: #ffea00;
-
-    --destructive: #ff3333;
-    --destructive-foreground: #ffffff;
-
-    /* High contrast stark borders using pure red opacity or bright contrast lines */
-    --border: rgba(255, 26, 26, 0.35);
-    --input: rgba(255, 26, 26, 0.35);
-    --ring: #ff1a1a;
-
-    /* Constructivist / High-Contrast Chart Colors */
-    --chart-1: #ff1a1a;
-    /* Vivid Soviet Red */
-    --chart-2: #ffea00;
-    /* Vivid Agitprop Yellow */
-    --chart-3: #ffffff;
-    /* Stark White */
-    --chart-4: #5c7080;
-    /* Heavy Industrial Iron */
-    --chart-5: #a10000;
-    /* Deep Dried Crimson */
-
-    --sidebar: #050505;
-    --sidebar-foreground: #ffffff;
-    --sidebar-primary: #b3b3b3;
-    --sidebar-primary-foreground: #000000;
-    --sidebar-accent: #330000;
-    --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: rgba(255, 26, 26, 0.2);
-    --sidebar-ring: #ff1a1a;
-
-    /* ==========================================================================
-     Mapped Legacy / Material Design 3 Tokens (Dark Mode Override)
-     ========================================================================== */
-    --primary-container: #b30000;
-    --primary-fixed: #ffdfdf;
-    --primary-fixed-dim: #ffbaba;
-    --on-primary: #000000;
+    --primary: #ef4444;
+    --primary-container: #dc2626;
+    --primary-foreground: #ffffff;
+    --primary-fixed: #fee2e2;
+    --primary-fixed-dim: #fca5a5;
+    --on-primary: #ffffff;
     --on-primary-container: #ffffff;
-    --on-primary-fixed: #4a0000;
-    --on-primary-fixed-variant: #7a0000;
-    --inverse-primary: #ff8e8e;
+    --on-primary-fixed: #450a0a;
+    --on-primary-fixed-variant: #991b1b;
+    --inverse-primary: #fca5a5;
 
-    --secondary-container: #cfa900;
-    --secondary-fixed: #fffde0;
-    --secondary-fixed-dim: #fff9a6;
-    --on-secondary: #000000;
-    --on-secondary-container: #fff9a6;
-    --on-secondary-fixed: #1a1500;
-    --on-secondary-fixed-variant: #423800;
-    --gold-muted: #ffea00;
+    --secondary: #eab308;
+    --secondary-container: #d97706;
+    --secondary-fixed: #fef9c3;
+    --secondary-fixed-dim: #fef08a;
+    --on-secondary: #12100e;
+    --on-secondary-container: #fef9c3;
+    --on-secondary-fixed: #451a03;
+    --on-secondary-fixed-variant: #78350f;
+    --gold-muted: #eab308;
 
-    /* Tertiary / Digital Accent */
-    --tertiary: #52667a;
-    --tertiary-container: #182d42;
-    --tertiary-fixed: #d9e2ec;
-    --tertiary-fixed-dim: #bcccdc;
-    --on-tertiary: #ffffff;
-    --on-tertiary-container: #d9e2ec;
-    --on-tertiary-fixed: #0f2438;
-    --on-tertiary-fixed-variant: #293b4a;
+    --muted: #292524;
+    --muted-foreground: #a8a29e;
 
-    /* Errors & Destructive */
-    --error: #ff3333;
-    --error-container: #800000;
+    --accent: #292524;
+    --accent-foreground: #f5f5f4;
+
+    --destructive: #b91c1c;
+    --destructive-foreground: #ffffff;
+    --error: #ef4444;
+    --error-container: #7f1d1d;
     --on-error: #ffffff;
-    --on-error-container: #ffd8d8;
+    --on-error-container: #fee2e2;
 
-    /* Text & Boundaries */
-    --on-background: #ffffff;
-    --text-primary: #ffffff;
-    --text-secondary: #b3b3b3;
-    --outline: rgba(255, 255, 255, 0.3);
-    --outline-variant: rgba(255, 255, 255, 0.15);
+    --border: #2e2a27;
+    --input: #2e2a27;
+    --ring: #ef4444;
 
-    /* Surface Structure System (Utilitarian Stacked Tiers) */
-    --surface: #0a0a0a;
-    --surface-dim: #000000;
-    --surface-bright: #1f1f1f;
-    --surface-variant: var(--muted);
-    --surface-ink: #000000;
-    --surface-tint: #ff1a1a;
-    --surface-crimson-low: #380000;
-    --surface-container-lowest: #000000;
-    --surface-container-low: #050505;
-    --surface-container: #0a0a0a;
-    --surface-container-high: #141414;
-    --surface-container-highest: #1f1f1f;
-    --on-surface: #ffffff;
-    --on-surface-variant: #b3b3b3;
-    --inverse-surface: #ffffff;
-    --inverse-on-surface: #0a0a0a;
+    --chart-1: #ef4444;
+    --chart-2: #facc15;
+    --chart-3: #fafaf9;
+    --chart-4: #f87171;
+    --chart-5: #ca8a04;
+
+    --sidebar: #171412;
+    --sidebar-foreground: #d6d3d1;
+    --sidebar-primary: #ef4444;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #24201d;
+    --sidebar-accent-foreground: #fafaf9;
+    --sidebar-border: #292524;
+    --sidebar-ring: #ef4444;
+
+    --on-background: #f5f5f4;
+    --text-primary: #f5f5f4;
+    --text-secondary: #a8a29e;
+    --outline: rgba(255, 255, 255, 0.15);
+    --outline-variant: rgba(255, 255, 255, 0.08);
+
+    --surface: #1c1917;
+    --surface-dim: #12100e;
+    --surface-bright: #292524;
+    --surface-variant: #292524;
+    --surface-ink: #12100e;
+    --surface-tint: #ef4444;
+    --surface-crimson-low: #2b0b0e;
+    --surface-container-lowest: #0c0a09;
+    --surface-container-low: #141210;
+    --surface-container: #1c1917;
+    --surface-container-high: #24201d;
+    --surface-container-highest: #2e2a27;
+    --on-surface: #f5f5f4;
+    --on-surface-variant: #a8a29e;
+    --inverse-surface: #f5f5f4;
+    --inverse-on-surface: #12100e;
 }
 
 .dark-bluish {
@@ -686,7 +672,9 @@
         -webkit-font-smoothing: antialiased;
     }
 
-    input, select, textarea {
+    input,
+    select,
+    textarea {
         color: var(--text-primary);
     }
 

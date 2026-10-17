@@ -183,18 +183,18 @@ export function PollsPage() {
                     </h4>
                     <div className="space-y-4">
                         <div>
-                            <div className="flex justify-between text-xs font-mono mb-1.5 select-none">
+                            <div className="flex justify-between text-md font-mono mb-1.5 select-none">
                                 <span className="text-text-secondary">Community Quorum</span>
                                 <span className="text-text-primary font-bold">64%</span>
                             </div>
                             <div className="h-2 w-full bg-[#0d1117] border border-white/5 rounded-full overflow-hidden">
                                 <div className="h-full bg-primary-container rounded-full shadow-[0_0_8px_var(--color-primary-container)]" style={{ width: '64%' }}></div>
                             </div>
-                            <p className="text-xs text-text-secondary/80 mt-2 leading-relaxed font-sans">
+                            <p className="text-md text-text-secondary/80 mt-2 leading-relaxed font-sans">
                                 Requires minimum 50% participation from verified citizens for binding decisions.
                             </p>
                         </div>
-                        <div className="border-t border-white/5 pt-4 space-y-2.5 font-mono text-xs select-none">
+                        <div className="border-t border-white/5 pt-4 space-y-2.5 font-mono text-md select-none">
                             <div className="flex justify-between">
                                 <span className="text-text-secondary">Total Votes Cast</span>
                                 <span className="text-text-primary font-bold">25,340</span>
@@ -213,7 +213,7 @@ export function PollsPage() {
 
                 {/* Recent Closed Results Historic Card Module */}
                 <div className="glass-panel rounded-2xl p-6 bg-surface-container-low border border-white/5 shadow-xl">
-                    <h4 className="text-xs font-bold text-text-primary mb-4 uppercase tracking-wider flex items-center gap-2 font-mono select-none">
+                    <h4 className="text-md font-bold text-text-primary mb-4 uppercase tracking-wider flex items-center gap-2 font-mono select-none">
                         <span className="material-symbols-outlined text-[18px] text-text-secondary">lock</span>
                         Recent Results
                     </h4>
@@ -224,7 +224,7 @@ export function PollsPage() {
                             <div className="h-3 bg-white/[0.02] rounded w-1/2" />
                         </div>
                     ) : sidebarData.list.length === 0 ? (
-                        <p className="text-xs text-text-secondary/50 font-mono italic">NO_CLOSED_POLLS_LOGGED</p>
+                        <p className="text-md text-text-secondary/50 font-mono italic">NO_CLOSED_POLLS_LOGGED</p>
                     ) : (
                         <div className="space-y-4">
                             {sidebarData.list.map((poll) => {

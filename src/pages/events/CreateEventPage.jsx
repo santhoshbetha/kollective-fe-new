@@ -245,7 +245,7 @@ export function CreateEventPage() {
             {/* Headline Header & Cover Image Preview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center border-b border-black/5 dark:border-white/5 pb-8">
                 <div className="md:col-span-2 space-y-3 text-left select-none">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-container/10 border border-primary-container/20 text-primary-container font-mono font-bold text-[10px] uppercase tracking-widest">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-container/10 border border-primary-container/20 text-primary-container font-mono font-bold text-[14px] uppercase tracking-widest">
                         <Sparkles className="w-3.5 h-3.5" /> Create New Node Manifest
                     </span>
                     <h2 className="text-3xl font-black tracking-tight text-text-primary dark:text-white">
@@ -257,7 +257,7 @@ export function CreateEventPage() {
                 </div>
 
                 <div className="w-full max-w-sm mx-auto bg-black/[0.01] dark:bg-surface-container rounded-2xl p-4 shadow-xl flex flex-col gap-3">
-                    <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase tracking-wider text-text-secondary select-none">
+                    <div className="flex justify-between items-center text-[14px] font-mono font-bold uppercase tracking-wider text-text-secondary select-none">
                         <span className="flex items-center gap-1.5"><UploadCloud className="w-4 h-4 text-primary-container" /> Aspect Preview</span>
                         <button
                             type="button"
@@ -315,7 +315,7 @@ export function CreateEventPage() {
                     <div className="space-y-4">
                         {/* Title Input Row */}
                         <div className="space-y-1.5 font-mono text-left">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">
+                            <label className="text-[14px] font-black uppercase tracking-widest text-text-secondary select-none">
                                 Event Title <span className="text-primary-container font-black">*</span>
                             </label>
                             <div className="relative">
@@ -330,7 +330,7 @@ export function CreateEventPage() {
                                     required
                                 />
                             </div>
-                            <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[9px] select-none">
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[12px] select-none">
                                 <span className="font-black text-text-secondary uppercase tracking-wider mr-1">Ideas:</span>
                                 {['Community Workshop', 'Tech Summit', 'Townhall Gathering', 'Action Rally'].map((chip) => (
                                     <button
@@ -348,7 +348,7 @@ export function CreateEventPage() {
                         {/* Description Textarea Row */}
                         <div className="space-y-1.5 font-mono text-left">
                             <div className="flex items-center justify-between select-none">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary">
+                                <label className="text-[14px] font-black uppercase tracking-widest text-text-secondary">
                                     Description <span className="text-primary-container font-black">*</span>
                                 </label>
                                 <div className="flex items-center gap-1">
@@ -375,12 +375,12 @@ export function CreateEventPage() {
                                     onChange={(e) => setDescription(e.target.value)}
                                     rows={5}
                                     maxLength={2000}
-                                    className="w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary focus:border-primary-container focus:outline-none transition-colors font-sans font-medium resize-none leading-relaxed placeholder:text-text-secondary/30"
+                                    className="w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-lg text-text-primary focus:border-primary-container focus:outline-none transition-colors font-sans font-medium resize-none leading-relaxed placeholder:text-text-secondary/30"
                                     placeholder="Describe your event parameters, agenda, topics, speakers, and instructions for attendees..."
                                     required
                                 />
                             </div>
-                            <div className="flex justify-between items-center text-[9px] font-mono text-text-secondary/60 select-none">
+                            <div className="flex justify-between items-center text-[14px] font-mono text-text-secondary/60 select-none">
                                 <span>Clear details improve attendee engagement metrics</span>
                                 <span className={cn(description.length > 1800 ? "text-amber-500 font-bold" : "")}>{description.length}/2000</span>
                             </div>
@@ -404,7 +404,7 @@ export function CreateEventPage() {
                         <div className="space-y-4 text-left">
                             {/* Attendance Format Mode Selector */}
                             <div className="space-y-1.5 select-none font-mono">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Event Format</label>
+                                <label className="text-[14px] font-black uppercase tracking-widest text-text-secondary">Event Format</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[
                                         { id: 'In-Person', label: 'In-Person', icon: MapPin },
@@ -419,7 +419,7 @@ export function CreateEventPage() {
                                                 type="button"
                                                 onClick={() => setFormatType(item.id)}
                                                 className={cn(
-                                                    "flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border transition-all cursor-pointer text-[10px] font-bold outline-none",
+                                                    "flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border transition-all cursor-pointer text-[14px] font-bold outline-none",
                                                     active
                                                         ? "bg-primary-container/15 border-primary-container text-primary-container shadow-sm shadow-primary-container/10"
                                                         : "bg-black/[0.01] dark:bg-[#0d1117] border-black/10 dark:border-white/5 text-text-secondary hover:text-text-primary dark:hover:text-white"
@@ -435,7 +435,7 @@ export function CreateEventPage() {
 
                             {/* Dropdown Category popovers */}
                             <div className="space-y-1.5 font-mono">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">Category Selection</label>
+                                <label className="text-[14px] font-black uppercase tracking-widest text-text-secondary select-none">Category Selection</label>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <button
@@ -486,7 +486,7 @@ export function CreateEventPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 {/* Start Date Selector */}
                                 <div className="space-y-1.5 font-mono">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">Start Date *</label>
+                                    <label className="text-[14px] font-black uppercase tracking-widest text-text-secondary select-none">Start Date *</label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <button
@@ -515,7 +515,7 @@ export function CreateEventPage() {
 
                                 {/* Start Time Dropdown */}
                                 <div className="space-y-1.5 font-mono">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">Start Time *</label>
+                                    <label className="text-[14px] font-black uppercase tracking-widest text-text-secondary select-none">Start Time *</label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <button
@@ -554,7 +554,7 @@ export function CreateEventPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 {/* End Date Selector */}
                                 <div className="space-y-1.5 font-mono">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">End Date</label>
+                                    <label className="text-[14px] font-black uppercase tracking-widest text-text-secondary select-none">End Date</label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <button
@@ -583,7 +583,7 @@ export function CreateEventPage() {
 
                                 {/* End Time Dropdown */}
                                 <div className="space-y-1.5 font-mono">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary select-none">End Time</label>
+                                    <label className="text-[14px] font-black uppercase tracking-widest text-text-secondary select-none">End Time</label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <button
@@ -631,7 +631,7 @@ export function CreateEventPage() {
                             </div>
                             <div>
                                 <h4 className="font-extrabold text-text-primary dark:text-white text-sm uppercase tracking-wider font-mono">Location &amp; Capacity</h4>
-                                <p className="text-xs text-text-secondary font-medium mt-0.5">Venue parameters and audience scaling strategy</p>
+                                <p className="text-md text-text-secondary font-medium mt-0.5">Venue parameters and audience scaling strategy</p>
                             </div>
                         </div>
                     </div>
@@ -639,7 +639,7 @@ export function CreateEventPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                         {/* Venue Destination Text Input Field */}
                         <div className="lg:col-span-2 space-y-2">
-                            <div className="flex justify-between items-center select-none font-mono text-[10px] text-text-secondary">
+                            <div className="flex justify-between items-center select-none font-mono text-[14px] text-text-secondary">
                                 <label className="font-extrabold uppercase tracking-wider">Venue Location / Virtual Link *</label>
                                 <span className="font-black uppercase tracking-widest">{formatType === 'Online' ? '🌐 Virtual Stream' : '📍 Physical Address'}</span>
                             </div>
@@ -660,7 +660,7 @@ export function CreateEventPage() {
                             </div>
 
                             {/* Interactive Quick Presets Selector Row */}
-                            <div className="flex flex-wrap items-center gap-1.5 pt-1 select-none font-mono text-[9px]">
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1 select-none font-mono text-[12px]">
                                 <span className="font-bold text-text-secondary uppercase tracking-wider mr-1">Quick Presets:</span>
                                 {[
                                     { label: 'City Hall Auditorium', val: 'City Hall Main Auditorium, 100 Civic Center Plaza' },
@@ -681,7 +681,7 @@ export function CreateEventPage() {
 
                         {/* Capacity Attendance Caps Counter Input */}
                         <div className="space-y-2">
-                            <div className="flex justify-between items-center select-none font-mono text-[10px] text-text-secondary">
+                            <div className="flex justify-between items-center select-none font-mono text-[14px] text-text-secondary">
                                 <label className="font-extrabold uppercase tracking-wider">Capacity Strategy</label>
                                 <span className="font-black uppercase tracking-widest text-primary-container">{capacity ? `${capacity} RSVPs` : 'Unlimited'}</span>
                             </div>
@@ -725,7 +725,7 @@ export function CreateEventPage() {
                 </section>
                 {/* 🚀 Master Action Form Controls Bar Row */}
                 <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 rounded-2xl shadow-xl transition-colors select-none">
-                    <p className="text-text-secondary text-xs max-w-sm text-center sm:text-left leading-relaxed font-sans font-medium">
+                    <p className="text-text-secondary text-md max-w-sm text-center sm:text-left leading-relaxed font-sans font-medium">
                         Please verify all required parameters marked with <span className="text-primary-container font-black">*</span> are logged before deploying item manifest onto feed index tables.
                     </p>
                     <div className="flex items-center gap-3 w-full sm:w-auto font-mono text-xs uppercase font-bold tracking-wider">
@@ -752,7 +752,7 @@ export function CreateEventPage() {
             </form>
 
             {/* 📝 Copyright Page Footer Signature */}
-            <footer className="pt-12 text-center text-[10px] font-black uppercase tracking-widest text-text-secondary/20 pb-4 font-mono select-none pointer-events-none">
+            <footer className="pt-12 text-center text-[14px] font-black uppercase tracking-widest text-text-secondary/20 pb-4 font-mono select-none pointer-events-none">
                 © {new Date().getFullYear()} Kollective. Built for revolutionary community leadership. All Rights Reserved.
             </footer>
         </div>

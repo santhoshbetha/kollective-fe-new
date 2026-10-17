@@ -28,7 +28,6 @@ import SettingsDashboard from './features/settings/SettingsDashboard';
 import { MutesPage } from './pages/MutesPage';
 import { BlocksPage } from './pages/BlocksPage';
 import { FiltersPage } from './pages/FiltersPage';
-import { EditProfilePage } from './pages/settings/EditProfilePage';
 import { BookmarksPage } from './pages/bookmarks/BookmarksPage';
 import { NotificationsPage } from './pages/notifications/NotificationsPage';
 import { SuggestionsPage } from './pages/SuggestionsPage';
@@ -175,7 +174,7 @@ export default function App() {
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/settings/invitations" element={<InvitationsList />} />
                   <Route path="/settings/organization" element={<SettingsDashboard />} />
-                  <Route path="/settings/profile" element={<EditProfilePage />} />
+                  <Route path="/settings/profile" element={<Navigate to="/settings?tab=profile" replace />} />
                   <Route path="/settings/mutes" element={<MutesPage />} />
                   <Route path="/settings/blocks" element={<BlocksPage />} />
                   <Route path="/settings/filters" element={<FiltersPage />} />

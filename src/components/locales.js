@@ -11,8 +11,10 @@ export const APP_LOCALES = {
             theme_label: 'Visual Application Theme',
             theme_dark: 'Deep Charcoal (Dark)',
             theme_dark_bluish: 'Midnight Bluish (Dark Bluish)',
+            theme_dark_red: 'Constructivist Crimson (Dark Red)',
             theme_light: 'Alabaster Crisp (Light)',
             theme_light_bluish: 'Social Sky (Light Bluish)',
+            theme_light_red: 'Parchment Vanguard (Light Red)',
             btn_save: 'Commit Preferences',
             broadcast_placeholder: "What's breaking across your local grid node?",
             nav_back: 'Back'
@@ -28,8 +30,10 @@ export const APP_LOCALES = {
             theme_label: 'Tema Visual de la Aplicación',
             theme_dark: 'Carbono Profundo (Oscuro)',
             theme_dark_bluish: 'Azul Noche (Oscuro Azulado)',
+            theme_dark_red: 'Carmesí Constructivista (Rojo Oscuro)',
             theme_light: 'Alabaster Claro (Claro)',
             theme_light_bluish: 'Azul Celeste (Claro Azulado)',
+            theme_light_red: 'Vanguardia Pergamino (Rojo Claro)',
             btn_save: 'Confirmar Preferencias',
             broadcast_placeholder: '¿Qué se está rompiendo en las coordenadas de tu nodo de red local?',
             nav_back: 'Volver'
@@ -45,8 +49,10 @@ export const APP_LOCALES = {
             theme_label: 'Thème Visuel de l\'Application',
             theme_dark: 'Charbon Profond (Sombre)',
             theme_dark_bluish: 'Bleu Nuit (Sombre Bleu)',
+            theme_dark_red: 'Cramoisi Constructiviste (Rouge Sombre)',
             theme_light: 'Alabaster Clair (Clair)',
             theme_light_bluish: 'Bleu Ciel (Clair Bleu)',
+            theme_light_red: 'Parchemin Vanguard (Rouge Clair)',
             btn_save: 'Valider les Préférences',
             broadcast_placeholder: 'Qu\'est-ce qui rompt dans les coordonnées de votre nœud de réseau local ?',
             nav_back: 'Retour'

@@ -5,18 +5,19 @@ import { createJSONStorage } from 'zustand/middleware';
 const applyThemeToDOM = (themeName) => {
   if (typeof window !== 'undefined') {
     const root = window.document.documentElement;
+    root.classList.remove('light', 'dark', 'dark-bluish', 'light-bluish', 'dark-red', 'light-red');
     if (themeName === 'dark-bluish') {
       root.classList.add('dark', 'dark-bluish');
-      root.classList.remove('light', 'light-bluish');
     } else if (themeName === 'light-bluish') {
       root.classList.add('light', 'light-bluish');
-      root.classList.remove('dark', 'dark-bluish');
+    } else if (themeName === 'dark-red') {
+      root.classList.add('dark', 'dark-red');
+    } else if (themeName === 'light-red') {
+      root.classList.add('light', 'light-red');
     } else if (themeName === 'dark') {
       root.classList.add('dark');
-      root.classList.remove('light', 'dark-bluish', 'light-bluish');
     } else {
       root.classList.add('light');
-      root.classList.remove('dark', 'dark-bluish', 'light-bluish');
     }
   }
 };
@@ -47,7 +48,8 @@ export const useStore = create(
     }),
 
     toggleTheme: () => set((state) => {
-      const nextTheme = (state.theme === 'light' || state.theme === 'light-bluish') ? 'dark' : 'light';
+      const isLightVariant = state.theme.startsWith('light');
+      const nextTheme = isLightVariant ? 'dark' : 'light';
       localStorage.setItem('kollective-theme', nextTheme);
       applyThemeToDOM(nextTheme);
       return { theme: nextTheme };
