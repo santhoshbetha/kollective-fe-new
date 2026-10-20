@@ -21,6 +21,7 @@ import {
 import { SecureImagePreview } from '../../features/conversations/components/SecureImagePreview';
 import { SecureFileAttachment } from '../../features/conversations/components/SecureFileAttachment';
 import { useDeliveryReceipts } from '../../features/conversations/hooks/useDeliveryReceipts';
+import { GroupRosterSidebar } from '../../features/conversations/components/GroupRosterSidebar';
 
 export default function MessagesPage() {
     const navigate = useNavigate();
@@ -29,6 +30,8 @@ export default function MessagesPage() {
     const queryClient = useQueryClient();
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+    const [isRosterOpen, setIsRosterOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState("all"); // "all" | "direct" | "groups" | "requests"
     const [uploadProgress, setUploadProgress] = useState(0); // Holds numeric integer 0 to 100
     const [isUploadingChunks, setIsUploadingChunks] = useState(false);
 
@@ -93,10 +96,24 @@ export default function MessagesPage() {
         if (!Array.isArray(conversations)) return [];
         return conversations.filter((conv) => {
             if (!conv) return false;
-            const partnerName = conv.other_user?.username || conv.other_user?.name || conv.title || "";
-            return partnerName.toLowerCase().includes(searchQuery.toLowerCase());
+            const partnerName = conv.other_user?.username || conv.other_user?.name || conv.title || conv.name || "";
+            const matchesSearch = partnerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (conv.last_message?.text || conv.last_message?.content || "").toLowerCase().includes(searchQuery.toLowerCase());
+
+            if (!matchesSearch) return false;
+
+            if (activeTab === "groups") {
+                return conv.isGroup === true || conv.is_group === true || conv.type === "group" || conv.type === "cause";
+            }
+            if (activeTab === "direct") {
+                return !conv.isGroup && !conv.is_group && conv.type !== "cause" && !conv.is_request && conv.status !== "pending";
+            }
+            if (activeTab === "requests") {
+                return conv.is_request === true || conv.status === "pending";
+            }
+            return true;
         });
-    }, [conversations, searchQuery]);
+    }, [conversations, searchQuery, activeTab]);
 
     const currentConversation = useMemo(() => {
         return conversations.find((c) => String(c.id) === String(selectedConversation)) || null;
@@ -170,7 +187,22 @@ export default function MessagesPage() {
             });
         });
 
-    }, [channel]);
+        // 👥 Real-time member events: refresh room signatures & participants
+        channel.on("member_joined", () => {
+            if (selectedConversation) {
+                queryClient.invalidateQueries({ queryKey: ['conversations', selectedConversation, 'participants'] });
+            }
+            queryClient.invalidateQueries({ queryKey: ['conversations', 'inbox'] });
+        });
+
+        channel.on("member_left", () => {
+            if (selectedConversation) {
+                queryClient.invalidateQueries({ queryKey: ['conversations', selectedConversation, 'participants'] });
+            }
+            queryClient.invalidateQueries({ queryKey: ['conversations', 'inbox'] });
+        });
+
+    }, [channel, selectedConversation, queryClient]);
 
     // ⌨️ KEYSTROKE INTERCEPT HEARTBEAT DISPATCHER:
     const handleComposerInputChange = (textValue) => {
@@ -321,6 +353,30 @@ export default function MessagesPage() {
                                     className="pl-10 h-11 bg-white dark:bg-background border-black/10 dark:border-white/10 focus:border-primary-container text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 rounded-xl"
                                 />
                             </div>
+
+                            {/* Category Filter Tabs Strip */}
+                            <div className={cn("flex items-center gap-1.5 mt-3 overflow-x-auto no-scrollbar", isSidebarCollapsed ? "md:hidden" : "")}>
+                                {[
+                                    { id: "all", label: "All" },
+                                    { id: "direct", label: "Direct" },
+                                    { id: "groups", label: "Groups" },
+                                    { id: "requests", label: "Requests" }
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={cn(
+                                            "px-2.5 py-1 text-[11px] font-mono font-bold rounded-lg border transition-all cursor-pointer whitespace-nowrap",
+                                            activeTab === tab.id
+                                                ? "bg-primary-container text-white border-primary-container shadow-sm"
+                                                : "bg-white/60 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/10"
+                                        )}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Scrolling List Content */}
@@ -342,13 +398,7 @@ export default function MessagesPage() {
                                             key={conversation.id}
                                             type="button"
                                             title={isSidebarCollapsed ? convTitle : undefined}
-                                            onClick={() => {
-                                                if (conversation.isGroup || conversation.is_group) {
-                                                    navigate(`/chats/group/${conversation.id}`);
-                                                } else {
-                                                    handleSelectConversation(conversation.id);
-                                                }
-                                            }}
+                                            onClick={() => handleSelectConversation(conversation.id)}
                                             className={cn(
                                                 "w-full p-4 flex items-start gap-3 hover:bg-black/5 dark:hover:bg-white/[0.04] transition-colors border-none border-l-4 border-l-transparent text-left cursor-pointer relative group",
                                                 isSidebarCollapsed ? "md:justify-center md:px-2 md:py-3.5" : "",
@@ -453,13 +503,44 @@ export default function MessagesPage() {
                                                 <UserPlus className="h-4 w-4" />
                                             </Button>
                                         )}
+                                        {/* 👥 Room Roster & Key Signature Matrix Toggle Button */}
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            title={isRosterOpen ? "Hide Room Roster" : "View Room Roster & Signatures"}
+                                            onClick={() => setIsRosterOpen(prev => !prev)}
+                                            className={cn(
+                                                "h-9 w-9 transition-colors",
+                                                isRosterOpen
+                                                    ? "text-primary-container bg-primary-container/10 dark:bg-primary-container/20 border border-primary-container/20 font-bold"
+                                                    : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
+                                            )}
+                                        >
+                                            <Users className="h-4 w-4" />
+                                        </Button>
                                         <Button variant="ghost" size="icon" className="h-9 w-9 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"><Phone className="h-4 w-4" /></Button>
                                         <Button variant="ghost" size="icon" className="h-9 w-9 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"><Video className="h-4 w-4" /></Button>
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"><Info className="h-4 w-4" /></Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            title="Room Details & Signatures"
+                                            onClick={() => setIsRosterOpen(prev => !prev)}
+                                            className={cn(
+                                                "h-9 w-9 transition-colors",
+                                                isRosterOpen
+                                                    ? "text-primary-container bg-primary-container/10 dark:bg-primary-container/20"
+                                                    : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
+                                            )}
+                                        >
+                                            <Info className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 </div>
 
-                                {/* Scrollable Message List Viewport */}
+                                {/* Active Conversation Body + GroupRosterSidebar Framework */}
+                                <div className="flex-1 flex min-h-0 overflow-hidden relative">
+                                    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+                                        {/* Scrollable Message List Viewport */}
                                 <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-neutral-50/50 dark:bg-background/80">
                                     {isJoining ? (
                                         <div className="py-24 text-center text-neutral-500 dark:text-neutral-400 font-mono text-xs flex flex-col items-center gap-2 opacity-60 select-none">
@@ -573,7 +654,18 @@ export default function MessagesPage() {
                                         </div>
                                     </div>
                                 </div>
-                            </>
+                            </div>
+
+                            {/* 👥 Group Roster Sidebar Component */}
+                            <GroupRosterSidebar
+                                conversationId={selectedConversation}
+                                isOpen={isRosterOpen}
+                                onClose={() => setIsRosterOpen(false)}
+                                conversation={currentConversation}
+                                onInviteMember={() => setIsInviteModalOpen(true)}
+                            />
+                        </div>
+                    </>
                         ) : (
                             /* Unselected Thread Fallback Window View */
                             <div className="flex-1 flex items-center justify-center text-neutral-500 dark:text-neutral-400 bg-neutral-50/50 dark:bg-background/80 select-none font-mono text-xs">

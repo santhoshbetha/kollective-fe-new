@@ -1,14 +1,29 @@
 // src/features/notifications/NotificationRow.jsx
-import React from 'react';
+import { useState } from 'react';
 import { useToggleFollowUser } from './useNotificationsFeature';
-import { Heart, MessageSquare, Award, Calendar, Bell, Check } from 'lucide-react';
-import { cn } from "@/lib/utils"; // Adjust to your local helper path
+import { Heart, MessageSquare, Award, Calendar, Bell, Scale } from 'lucide-react';
+import { ModerationAppealForm } from '../moderation/components/ModerationAppealForm';
+import { cn } from "@/lib/utils";
 
 export function NotificationRow({ item }) {
     const toggleFollowUser = useToggleFollowUser();
+    const [isAppealOpen, setIsAppealOpen] = useState(false);
 
     // Check both potential backend unread indicators
     const isUnread = Boolean(item?.unread || item?.is_read === false || item?.read === false);
+
+    const isModerationNotice = Boolean(
+        item?.type === 'report' ||
+        item?.type === 'moderation' ||
+        item?.type === 'soft_delete' ||
+        item?.metadata?.sub_type === 'post_rejected' ||
+        item?.title?.toLowerCase().includes('soft-delete') ||
+        item?.title?.toLowerCase().includes('moderation') ||
+        item?.description?.toLowerCase().includes('soft-delete') ||
+        item?.description?.toLowerCase().includes('rejected') ||
+        item?.preview?.toLowerCase().includes('soft-delete') ||
+        item?.preview?.toLowerCase().includes('rejected')
+    );
 
     // Handle inline optimistic updates for follower relationships
     const handleFollowBack = (e, username) => {
@@ -39,8 +54,13 @@ export function NotificationRow({ item }) {
                         />
                     </div>
                 ) : (
-                    <div className="w-12 h-12 rounded-xl bg-surface-container-highest border border-white/5 flex items-center justify-center flex-shrink-0 select-none">
-                        {item?.type === 'event' ? (
+                    <div className={cn(
+                        "w-12 h-12 rounded-xl border border-white/5 flex items-center justify-center flex-shrink-0 select-none",
+                        isModerationNotice ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : "bg-surface-container-highest"
+                    )}>
+                        {isModerationNotice ? (
+                            <Scale className="w-5 h-5 text-amber-400 stroke-[2.5px]" />
+                        ) : item?.type === 'event' ? (
                             <Calendar className="w-5 h-5 text-primary-container" />
                         ) : (
                             <Bell className="w-5 h-5 text-primary-container" />
@@ -76,6 +96,11 @@ export function NotificationRow({ item }) {
                                     <strong className="font-extrabold">{item.user?.name || 'System'}</strong> {item.title}
                                 </p>
                             )}
+                            {isModerationNotice && (
+                                <p className="text-text-primary">
+                                    <strong className="font-extrabold text-amber-400">Governance Notice:</strong> {item.title || item.preview || "A moderation soft-delete action was executed on your content."}
+                                </p>
+                            )}
 
                             {item?.description && (
                                 <p className="text-sm text-text-secondary mt-1 font-medium leading-relaxed">{item.description}</p>
@@ -109,6 +134,19 @@ export function NotificationRow({ item }) {
                                 <span>Community Highlight</span>
                             </span>
                         )}
+                        {isModerationNotice && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsAppealOpen(true);
+                                }}
+                                className="px-4 py-1.5 rounded-xl font-bold uppercase tracking-wider active:scale-95 transition-all cursor-pointer border text-[10px] outline-none bg-primary-container text-white border-primary-container crimson-glow font-extrabold flex items-center gap-1.5"
+                            >
+                                <Scale className="w-3.5 h-3.5 stroke-[2.5px]" />
+                                <span>Dispute Soft-Delete</span>
+                            </button>
+                        )}
                         {item?.type === 'follow' && (
                             <button
                                 type="button"
@@ -127,6 +165,12 @@ export function NotificationRow({ item }) {
                     </div>
                 </div>
             </div>
+
+            <ModerationAppealForm
+                isOpen={isAppealOpen}
+                onClose={() => setIsAppealOpen(false)}
+                incidentId={item?.incident_id || item?.incidentId || item?.post_id || item?.target_id || item?.id}
+            />
         </div>
     );
 }

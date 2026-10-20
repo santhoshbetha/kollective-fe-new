@@ -1,5 +1,5 @@
 // src/features/moderation/components/ModerationAppealForm.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { apiFetch } from '../../../api/apiClient';
 import { Scale, X, ShieldCheck, Loader2, FileText, AlertCircle } from 'lucide-react';
@@ -9,6 +9,9 @@ export function ModerationAppealForm({ isOpen, onClose, incidentId, onSubmitted 
     const [reason, setReason] = useState("");
     const [statusMessage, setStatusMessage] = useState("");
     const [isError, setIsError] = useState(false);
+    const [customIncidentId, setCustomIncidentId] = useState("");
+
+    const effectiveIncidentId = incidentId || customIncidentId;
 
     // 🚀 TANSTACK DISPUTE INGRESS MUTATION
     const appealMutation = useMutation({
@@ -39,11 +42,11 @@ export function ModerationAppealForm({ isOpen, onClose, incidentId, onSubmitted 
 
     const handleFormSubmit = (e) => {
         e.preventDefault();
-        if (!reason.trim() || !incidentId) return;
+        if (!reason.trim() || !effectiveIncidentId) return;
 
         setStatusMessage("Signing transaction parameters across regions...");
         appealMutation.mutate({
-            incident_id: incidentId,
+            incident_id: effectiveIncidentId,
             reason: reason.trim()
         });
     };
@@ -75,6 +78,29 @@ export function ModerationAppealForm({ isOpen, onClose, incidentId, onSubmitted 
 
                 {/* Form Input Control Group */}
                 <form onSubmit={handleFormSubmit} className="space-y-4">
+                    {incidentId ? (
+                        <div className="flex items-center justify-between p-2.5 bg-[#181818] border border-white/5 rounded-xl font-mono text-xs select-none">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Target Item ID:</span>
+                            <span className="text-primary-container font-bold truncate max-w-[200px]" title={String(incidentId)}>
+                                {String(incidentId)}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-mono font-black uppercase tracking-wider text-neutral-400 block ml-1">
+                                Target Incident or Content ID
+                            </label>
+                            <input
+                                type="text"
+                                required
+                                disabled={appealMutation.isPending}
+                                value={customIncidentId}
+                                onChange={(e) => setCustomIncidentId(e.target.value)}
+                                placeholder="Enter Incident or Post ULID (e.g., 01JAX...)"
+                                className="w-full bg-[#181818] border border-white/10 py-2.5 px-4 text-xs text-white rounded-xl focus:border-primary-container focus:outline-none placeholder:text-neutral-600 font-mono"
+                            />
+                        </div>
+                    )}
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-mono font-black uppercase tracking-wider text-neutral-400 block ml-1">
                             Dispute Justification &amp; Context
@@ -118,7 +144,7 @@ export function ModerationAppealForm({ isOpen, onClose, incidentId, onSubmitted 
                         </button>
                         <button
                             type="submit"
-                            disabled={appealMutation.isPending || !reason.trim()}
+                            disabled={appealMutation.isPending || !reason.trim() || !effectiveIncidentId}
                             className="px-4 py-2.5 bg-primary-container text-white rounded-xl disabled:opacity-40 border-none outline-none shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
                         >
                             {appealMutation.isPending ? (

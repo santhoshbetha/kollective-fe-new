@@ -5,7 +5,7 @@ const defaultReports = [
   {
     id: "RPT-302",
     category: "hate_speech",
-    preview_text: "Targeted hate speech against our local community organizers in Sector 4.",
+    preview_text: "Targeted hate speech 22 against our local community organizers in Sector 4.",
     reporter: "alice_w",
     target_account: "troll_master",
     status: "open"
@@ -274,52 +274,8 @@ window.fetch = async function (input, init) {
 
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  // 1. GET /api/v1/admin/reports?status=...
-  if (url.includes("/api/v1/admin/reports") && !url.includes("/resolve") && method === "GET") {
-    await delay(300);
-    const parsedUrl = new URL(url, window.location.origin);
-    const statusFilter = parsedUrl.searchParams.get("status") || "open";
-    const reports = getReports().filter(r => r.status === statusFilter);
-    return new Response(JSON.stringify({ data: reports }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" }
-    });
-  }
-
-  // 2. POST /api/v1/admin/reports/:id/resolve
-  if (url.includes("/api/v1/admin/reports/") && url.includes("/resolve") && method === "POST") {
-    await delay(400);
-    const match = url.match(/\/api\/v1\/admin\/reports\/([^\/]+)\/resolve/);
-    if (match) {
-      const reportId = match[1];
-      const body = JSON.parse(init.body || "{}");
-      const action = body.action || "dismiss";
-
-      let reports = getReports();
-      const report = reports.find(r => r.id === reportId);
-      if (report) {
-        report.status = "resolved";
-        saveReports(reports);
-
-        // Add to audit trail
-        let logs = getAuditLogs();
-        const newLog = {
-          id: Date.now(),
-          operator_id: 99,
-          action: action.toUpperCase(),
-          target_id: reportId,
-          inserted_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
-        };
-        logs.unshift(newLog);
-        saveAuditLogs(logs);
-      }
-
-      return new Response(JSON.stringify({ success: true }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
-  }
+  // 1-2. /api/v1/admin/reports endpoints (GET /api/v1/admin/reports, POST /api/v1/admin/reports/:id/resolve)
+  // Bypassed mockFetch so apiFetch calls reach live Elixir backend ReportController.
 
   // 3. GET /api/v1/admin/root/audit_logs
   if (url.includes("/api/v1/admin/root/audit_logs") && method === "GET") {
@@ -482,57 +438,71 @@ window.fetch = async function (input, init) {
     });
   }
 
-  // 15. GET /api/v1/admin/incidents
-  if (url.includes("/api/v1/admin/incidents") && !url.includes("/restore") && !url.includes("/ban") && method === "GET") {
-    await delay(300);
-    const match = url.match(/\/api\/v1\/admin\/incidents\/([^\/]+)/);
-    if (match) {
-      const incidentId = match[1];
-      const incident = getIncidents().find(i => i.incident_id === incidentId);
-      return new Response(JSON.stringify({ data: incident }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
-    } else {
-      const openIncidents = getIncidents().filter(i => i.status === "open");
-      return new Response(JSON.stringify({ data: openIncidents }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
-  }
-
-  // 16. POST /api/v1/admin/incidents/:id/restore or /ban
-  if (url.includes("/api/v1/admin/incidents/") && (url.includes("/restore") || url.includes("/ban")) && method === "POST") {
+  // 14b. POST /api/v1/moderation/appeals
+  if (url.includes("/api/v1/moderation/appeals") && method === "POST") {
     await delay(400);
-    const match = url.match(/\/api\/v1\/admin\/incidents\/([^\/]+)\/(restore|ban)/);
-    if (match) {
-      const incidentId = match[1];
-      const action = match[2]; // 'restore' or 'ban'
-      let incidentsList = getIncidents();
-      const incident = incidentsList.find(i => i.incident_id === incidentId);
-      if (incident) {
-        incident.status = action === "restore" ? "restored" : "banned";
-        saveIncidents(incidentsList);
-
-        // Add to audit trail
-        let logs = getAuditLogs();
-        const newLog = {
-          id: Date.now(),
-          operator_id: 99,
-          action: action === "restore" ? "RESOLVE_INCIDENT" : "BAN_INCIDENT",
-          target_id: incident.target_user.username,
-          inserted_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
-        };
-        logs.unshift(newLog);
-        saveAuditLogs(logs);
-      }
-      return new Response(JSON.stringify({ success: true, message: `Incident successfully processed with ${action}.` }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
+    return new Response(JSON.stringify({
+      status: "success",
+      message: "Your appeal has been safely broadcast to the governance mesh."
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
   }
+
+  // 14c. GET /api/v1/admin/moderation_appeals/pending
+  if (url.includes("/api/v1/admin/moderation_appeals/pending") && method === "GET") {
+    await delay(300);
+    return new Response(JSON.stringify({
+      data: [
+        {
+          id: "appeal-01JABCXYZ",
+          incident_id: "inc-01JABCDEF1234567890",
+          reason: "The citation in my post was historical context from an official archive, not promotional or spam content. Please review paragraph 3.",
+          country_code: "US",
+          user_id: "usr-42",
+          status: "pending",
+          inserted_at: new Date().toISOString()
+        },
+        {
+          id: "appeal-02KDEFUVW",
+          incident_id: "inc-02KDEF890123456789",
+          reason: "This was a legitimate citizen election report regarding ballot box polling stations in District 4. Soft-delete was a false positive by automated filter.",
+          country_code: "GB",
+          user_id: "usr-88",
+          status: "pending",
+          inserted_at: new Date(Date.now() - 3600000).toISOString()
+        },
+        {
+          id: "appeal-03LMNPQRST",
+          incident_id: "inc-03LMN4567890123456",
+          reason: "My academic peer-reviewed dataset was flagged mistakenly as duplicate text. Attached verification link to dataset repository.",
+          country_code: "DE",
+          user_id: "usr-104",
+          status: "pending",
+          inserted_at: new Date(Date.now() - 7200000).toISOString()
+        }
+      ]
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 14d. POST /api/v1/admin/moderation_appeals/:id/adjudicate
+  if (url.includes("/api/v1/admin/moderation_appeals/") && url.includes("/adjudicate") && method === "POST") {
+    await delay(300);
+    return new Response(JSON.stringify({
+      status: "success",
+      message: "Verdicts registered. Operational telemetry updated across regions."
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 15-16. /api/v1/admin/incidents endpoints (GET /api/v1/admin/incidents, POST /api/v1/admin/incidents/:id/restore or /ban)
+  // Bypassed mockFetch so apiFetch calls reach live Elixir backend ScholarIncidentController / MeshIncidentController.
 
   // 17. POST /api/v1/sessions/switch_context
   if (url.includes("/api/v1/sessions/switch_context") && method === "POST") {
@@ -713,5 +683,147 @@ window.fetch = async function (input, init) {
     });
   }
 
+  // 28. GET /chat_groups/:conversation_id/members fallback
+  if (url.includes("/chat_groups/") && url.includes("/members") && method === "GET") {
+    try {
+      const liveRes = await originalFetch.apply(this, arguments);
+      if (liveRes.ok) return liveRes;
+    } catch (e) {
+      // Backend offline, fallback to mock matrix below
+    }
+    await delay(200);
+    return new Response(JSON.stringify({
+      data: [
+        {
+          id: "usr-mesh-01",
+          username: "elena_thorne",
+          name: "Elena Thorne",
+          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
+          public_key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA10x82vA7K929qLNmT9Q0\n-----END PUBLIC KEY-----"
+        },
+        {
+          id: "usr-mesh-02",
+          username: "marcus_vane",
+          name: "Marcus Vane",
+          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+          public_key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA98bA7K929qLNmT9Q010x\n-----END PUBLIC KEY-----"
+        },
+        {
+          id: "usr-mesh-03",
+          username: "alice_w",
+          name: "Alice Wright",
+          avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+          public_key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz7Yp1929qLNmT9Q0333x\n-----END PUBLIC KEY-----"
+        }
+      ]
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 29. POST /chat_groups/:conversation_id/invite fallback
+  if (url.includes("/chat_groups/") && url.includes("/invite") && method === "POST") {
+    try {
+      const liveRes = await originalFetch.apply(this, arguments);
+      if (liveRes.ok) return liveRes;
+    } catch (e) {
+      // Backend offline fallback
+    }
+    await delay(300);
+    return new Response(JSON.stringify({
+      status: "success",
+      message: "Citizen authorization written to group ledger successfully!"
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  // 30. GET /conversations fallback
+  if (url.includes("/conversations") && method === "GET" && !url.includes("/members") && !url.includes("/accept") && !url.includes("/decline")) {
+    try {
+      const liveRes = await originalFetch.apply(this, arguments);
+      if (liveRes.ok) return liveRes;
+    } catch (e) {
+      // Backend offline fallback
+    }
+    await delay(150);
+    return new Response(JSON.stringify({
+      data: [
+        {
+          id: "conv-mesh-01",
+          name: "District 4 Infrastructure Council",
+          isGroup: true,
+          is_group: true,
+          type: "cause",
+          unread_count: 2,
+          isOnline: true,
+          updated_at: new Date().toISOString(),
+          last_message: {
+            text: "Solar microgrid node deployed in sector 7.",
+            sender: "elena_thorne"
+          },
+          other_user: {
+            id: "usr-mesh-01",
+            username: "elena_thorne",
+            name: "Elena Thorne",
+            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
+            public_key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA10x82vA7K929qLNmT9Q0\n-----END PUBLIC KEY-----"
+          },
+          participants: [
+            {
+              id: "usr-mesh-01",
+              username: "elena_thorne",
+              name: "Elena Thorne",
+              avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
+              public_key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA10x82vA7K929qLNmT9Q0\n-----END PUBLIC KEY-----"
+            },
+            {
+              id: "usr-mesh-02",
+              username: "marcus_vane",
+              name: "Marcus Vane",
+              avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+              public_key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA98bA7K929qLNmT9Q010x\n-----END PUBLIC KEY-----"
+            },
+            {
+              id: "usr-mesh-03",
+              username: "alice_w",
+              name: "Alice Wright",
+              avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+              public_key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz7Yp1929qLNmT9Q0333x\n-----END PUBLIC KEY-----"
+            }
+          ]
+        },
+        {
+          id: "conv-mesh-02",
+          name: "Marcus Vane",
+          isGroup: false,
+          is_group: false,
+          type: "direct",
+          unread_count: 0,
+          isOnline: true,
+          updated_at: new Date().toISOString(),
+          last_message: {
+            text: "The telemetry packet was signed and verified.",
+            sender: "marcus_vane"
+          },
+          other_user: {
+            id: "usr-mesh-02",
+            username: "marcus_vane",
+            name: "Marcus Vane",
+            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+            public_key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA98bA7K929qLNmT9Q010x\n-----END PUBLIC KEY-----"
+          }
+        }
+      ]
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
   return originalFetch.apply(this, arguments);
 };
+
+

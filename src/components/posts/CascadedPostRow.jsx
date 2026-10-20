@@ -13,8 +13,11 @@ import {
     ShieldBan,
     Filter,
     Flag,
-    GlobeLock
+    GlobeLock,
+    Scale,
+    Clock
 } from 'lucide-react';
+import { ModerationAppealForm } from '../../features/moderation/components/ModerationAppealForm';
 import { PostContent } from './PostContent';
 import { ImageLightbox } from '../ImageLightbox';
 import { usePostsStore } from '../../store/usePostsStore';
@@ -72,6 +75,8 @@ export const CascadedPostRow = React.memo(function C({
 
     const [carouselOpen, setCarouselOpen] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
+    const [isAppealOpen, setIsAppealOpen] = useState(false);
+    const [hasAppealed, setHasAppealed] = useState(false);
 
     const authorHandle = post?.author?.handle || `@${post?.author?.name?.toLowerCase().replace(/\s+/g, '') || 'anonymous'}@kollective.social`;
     const allImages = post?.images && post.images.length > 0
@@ -421,6 +426,112 @@ export const CascadedPostRow = React.memo(function C({
     };
 
     console.log("CascadedPostRow: post", post)
+
+    const isSoftDeleted = Boolean(
+        post?.is_deleted ||
+        post?.soft_deleted ||
+        post?.status === 'soft_deleted' ||
+        post?.status === 'rejected' ||
+        post?.status === 'resolved_deleted' ||
+        post?.status === 'deleted' ||
+        post?.deleted === true
+    );
+    const isAppealed = Boolean(
+        post?.status === 'appealed' ||
+        hasAppealed
+    );
+
+    if (isSoftDeleted) {
+        if (!isSelf) {
+            return (
+                <div className={cn(
+                    "flex items-center justify-between gap-3 p-4 border-b border-[#262626] bg-[#141414] text-neutral-400 font-sans text-xs select-none",
+                    depth > 1 ? "pl-[88px]" : depth === 1 ? "pl-[32px]" : "pl-6"
+                )}>
+                    <div className="flex items-center gap-2">
+                        <Scale className="w-4 h-4 text-neutral-500 shrink-0" />
+                        <span className="italic">This post was soft-deleted by platform moderation.</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-neutral-600 uppercase tracking-wider">Removed</span>
+                </div>
+            );
+        }
+
+        return (
+            <div className={cn(
+                "flex flex-col gap-3 p-6 border-b border-[#262626] bg-[#141414] text-left relative",
+                isFocus ? "bg-[#181818]" : "",
+                depth > 1 ? "pl-[88px]" : depth === 1 ? "pl-[32px]" : "pl-6"
+            )}>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <UserHoverCard author={post?.author}>
+                            <UserAvatar user={post?.author} className="w-10 h-10" showStatus={false} />
+                        </UserHoverCard>
+                        <div className="flex flex-col min-w-0">
+                            <span className="font-bold text-text-primary text-sm truncate">{post?.author?.name}</span>
+                            <span className="text-xs text-text-secondary font-mono truncate">{authorHandle} • {post?.time || "Recently"}</span>
+                        </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        Soft-Deleted
+                    </span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wide">
+                        <Scale className="w-4 h-4 stroke-[2.5px]" />
+                        <span>Content Soft-Deleted by Moderation</span>
+                    </div>
+                    <p className="text-xs text-neutral-300 font-sans leading-relaxed">
+                        This publication has been soft-deleted and removed from public threads following governance moderation. As the author, you have the right to dispute this action.
+                    </p>
+                    {(post?.rejection_reason || post?.reason) && (
+                        <div className="p-2.5 bg-black/40 border border-white/5 rounded-lg text-xs font-mono text-neutral-300">
+                            <span className="text-neutral-500 font-black uppercase text-[10px] block mb-0.5 tracking-wider">Adjudication Note:</span>
+                            {post?.rejection_reason || post?.reason}
+                        </div>
+                    )}
+                    {(post?.text || post?.content) && (
+                        <div className="p-2.5 bg-white/5 border border-white/5 rounded-lg text-xs font-sans text-neutral-400 italic line-clamp-2">
+                            "{post?.text || post?.content}"
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex items-center justify-between pt-1 font-mono">
+                    {isAppealed ? (
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-2 rounded-xl">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>Dispute Under Review by Governance Council</span>
+                        </div>
+                    ) : (
+                        <>
+                            <span className="text-[11px] text-neutral-500">Appeal routes directly to your country zone operator matrix.</span>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsAppealOpen(true);
+                                }}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-primary-container text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all cursor-pointer border-none shadow-md"
+                            >
+                                <Scale className="w-3.5 h-3.5 stroke-[2.5px]" />
+                                <span>Dispute Soft-Delete</span>
+                            </button>
+                        </>
+                    )}
+                </div>
+
+                <ModerationAppealForm
+                    isOpen={isAppealOpen}
+                    onClose={() => setIsAppealOpen(false)}
+                    incidentId={post?.incident_id || post?.id}
+                    onSubmitted={() => setHasAppealed(true)}
+                />
+            </div>
+        );
+    }
 
     // Determine verification role channel type
     //const channelType = post?.author?.type === 'organization' ? 'organization' : post?.author?.verified ? 'journalist' : 'standard';

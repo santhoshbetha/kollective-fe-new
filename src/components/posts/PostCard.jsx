@@ -21,6 +21,8 @@ import { getReplyCount, getReblogCount, getLikeCount } from '../../utils/postHel
 import { KollectiveImagePlayer } from '../../components/KollectiveImagePlayer';
 import { cn } from "@/lib/utils";
 
+import { ModerationAppealForm } from '../../features/moderation/components/ModerationAppealForm';
+
 import {
     ExternalLink,
     Link as LinkIcon,
@@ -31,7 +33,9 @@ import {
     ShieldBan,
     Filter,
     Flag,
-    GlobeLock
+    GlobeLock,
+    Scale,
+    Clock
 } from 'lucide-react';
 
 const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate, menuRef, menuPosition) => {
@@ -303,6 +307,8 @@ export const PostCard = React.memo(function PostCard({
     const activeAccount = useAuthStore((state) => state.activeAccount);
 
     const toggleBookmarkMutation = useToggleBookmark();
+    const [isAppealOpen, setIsAppealOpen] = useState(false);
+    const [hasAppealed, setHasAppealed] = useState(false);
 
     const getDisplayPostDebug = (rawPost) => {
         console.log("here! getDisplayPost rawPost 1: ", rawPost);
@@ -665,6 +671,128 @@ export const PostCard = React.memo(function PostCard({
     }, [navigate, displayPost?.id, post?.id]);
 
     console.log("PostCard Post 22 : ", post?.id, post?.content, post?.likes_count);
+
+    const isSoftDeleted = Boolean(
+        post?.is_deleted ||
+        post?.soft_deleted ||
+        displayPost?.is_deleted ||
+        displayPost?.soft_deleted ||
+        post?.status === 'soft_deleted' ||
+        post?.status === 'rejected' ||
+        post?.status === 'resolved_deleted' ||
+        post?.status === 'deleted' ||
+        displayPost?.status === 'soft_deleted' ||
+        displayPost?.status === 'rejected' ||
+        displayPost?.status === 'resolved_deleted' ||
+        displayPost?.status === 'deleted' ||
+        post?.deleted === true ||
+        displayPost?.deleted === true
+    );
+    const isAppealed = Boolean(
+        post?.status === 'appealed' ||
+        displayPost?.status === 'appealed' ||
+        hasAppealed
+    );
+
+    // SOFT-DELETED / GOVERNANCE ADJUDICATED POST STYLE
+    if (isSoftDeleted) {
+        if (!isSelf) {
+            return (
+                <div className={cn(
+                    "p-4 border-b border-[#262626] bg-[#141414] text-neutral-400 font-sans flex items-center justify-between gap-3 text-xs select-none",
+                    isLast ? "border-transparent" : "border-black/20 dark:border-white/10"
+                )}>
+                    <div className="flex items-center gap-2.5">
+                        <Scale className="w-4 h-4 text-neutral-500 shrink-0" />
+                        <span className="italic">This post was soft-deleted by platform moderation.</span>
+                    </div>
+                    <span className="font-mono text-[10px] text-neutral-600 uppercase tracking-wider">Removed</span>
+                </div>
+            );
+        }
+
+        return (
+            <>
+                <article className={cn(
+                    "p-6 flex flex-col gap-4 border-b border-[#262626] bg-[#141414] transition-all relative select-none",
+                    isLast ? "border-transparent" : "border-black/20 dark:border-white/10",
+                    standalone ? "glass-card rounded-[20px] border border-amber-500/20 shadow-xl" : "border-l-4 border-l-amber-500/60"
+                )}>
+                    {/* Header info */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-[#1A1616]">
+                                <UserHoverCard author={author}>
+                                    <UserAvatar user={author} className="w-10 h-10" showStatus={false} />
+                                </UserHoverCard>
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="font-bold text-text-primary text-sm truncate">{author?.name}</span>
+                                <span className="text-xs text-text-secondary font-mono truncate">{authorHandle} • {displayPost?.time || "Recently"}</span>
+                            </div>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            Soft-Deleted
+                        </span>
+                    </div>
+
+                    {/* Moderation Explanation Box */}
+                    <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-2.5 text-left">
+                        <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wide">
+                            <Scale className="w-4 h-4 stroke-[2.5px]" />
+                            <span>Content Soft-Deleted by Moderation</span>
+                        </div>
+                        <p className="text-xs text-neutral-300 font-sans leading-relaxed">
+                            This publication has been soft-deleted and removed from public discovery feeds following governance moderation review. As the author, you have the right to submit a formal dispute to the regional governance panel.
+                        </p>
+                        {(displayPost?.rejection_reason || post?.rejection_reason || post?.reason) && (
+                            <div className="p-2.5 bg-black/40 border border-white/5 rounded-lg text-xs font-mono text-neutral-300">
+                                <span className="text-neutral-500 font-black uppercase text-[10px] block mb-0.5 tracking-wider">Adjudication Note:</span>
+                                {displayPost?.rejection_reason || post?.rejection_reason || post?.reason}
+                            </div>
+                        )}
+                        {(displayPost?.text || displayPost?.content || post?.text || post?.content) && (
+                            <div className="p-2.5 bg-white/5 border border-white/5 rounded-lg text-xs font-sans text-neutral-400 italic line-clamp-2">
+                                "{displayPost?.text || displayPost?.content || post?.text || post?.content}"
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Dispute Actions */}
+                    <div className="flex items-center justify-between pt-1 font-mono">
+                        {isAppealed ? (
+                            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-2 rounded-xl">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>Dispute Under Review by Governance Council</span>
+                            </div>
+                        ) : (
+                            <>
+                                <span className="text-[11px] text-neutral-500">Appeal routes directly to your country zone operator matrix.</span>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsAppealOpen(true);
+                                    }}
+                                    className="flex items-center gap-1.5 px-4 py-2 bg-primary-container text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all cursor-pointer border-none shadow-md"
+                                >
+                                    <Scale className="w-3.5 h-3.5 stroke-[2.5px]" />
+                                    <span>Dispute Soft-Delete</span>
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </article>
+
+                <ModerationAppealForm
+                    isOpen={isAppealOpen}
+                    onClose={() => setIsAppealOpen(false)}
+                    incidentId={displayPost?.incident_id || post?.incident_id || displayPost?.id || post?.id}
+                    onSubmitted={() => setHasAppealed(true)}
+                />
+            </>
+        );
+    }
 
     // SYSTEM AI POST STYLE
     if (post?.isSystem) {

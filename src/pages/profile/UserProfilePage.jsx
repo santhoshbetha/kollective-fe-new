@@ -11,7 +11,8 @@ import { PostCard } from '../../components/posts/PostCard';
 import VerificationBadge from '../../components/VerificationBadge';
 import UserAvatar from '../../components/accounts/UserAvatar';
 import { TrendingWidget } from '../../components/TrendingWidget';
-import { ArrowLeft, Loader2, CheckCircle2, AlertTriangle, ShieldCheck, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2, AlertTriangle, ShieldCheck, MessageSquare, Scale } from 'lucide-react';
+import { ModerationAppealForm } from '../../features/moderation/components/ModerationAppealForm';
 import { useDirectMessageStore } from '../../store/useDirectMessageStore';
 import {
   useProfileQuery,
@@ -35,6 +36,7 @@ export function UserProfilePage() {
   const [connectionView, setConnectionView] = useState(null); // 🚀 NEW: Tracks 'followers' | 'following' view overlays;
   const [isFollowing, setIsFollowing] = useState(false);
   const [showCorrectionLog, setShowCorrectionLog] = useState(false);
+  const [isProfileAppealOpen, setIsProfileAppealOpen] = useState(false);
 
   const cleanUsername = (username || '').toLowerCase().replace('@', '');
 
@@ -462,6 +464,36 @@ export function UserProfilePage() {
               </div>
             )}
 
+            {/* ⚖️ Soft-Delete Governance Dispute Banner */}
+            {isOwnProfile && (profile.badge_type?.toLowerCase() === 'warned' || profile.has_soft_deletes || profile.under_moderation || profile.active_incident) && (
+              <div className="border border-amber-600/40 bg-amber-500/5 p-5 rounded-xl flex flex-col gap-3 font-mono w-full max-w-2xl animate-in fade-in duration-300">
+                <div className="text-sm text-amber-400 font-bold tracking-wider uppercase flex items-center gap-2">
+                  <Scale className="w-5 h-5 stroke-[2.5px]" />
+                  GOVERNANCE NOTICE: MODERATION ACTIONS RECORDED
+                </div>
+                <p className="text-xs text-text-secondary font-sans leading-relaxed">
+                  One or more publications or actions under your identity have been soft-deleted by regional moderators. You retain the right to dispute these actions before the Sovereign Governance Council.
+                </p>
+                <div className="flex flex-wrap gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileAppealOpen(true)}
+                    className="px-5 py-2.5 bg-primary-container text-white text-xs uppercase tracking-wider font-bold transition-all cursor-pointer border-none rounded-xl hover:brightness-110 active:scale-95 shadow-md flex items-center gap-2"
+                  >
+                    <Scale className="w-4 h-4 stroke-[2.5px]" />
+                    <span>Dispute Soft-Delete</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/verify/dispute')}
+                    className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-neutral-300 text-xs uppercase tracking-wider font-bold transition-all cursor-pointer border-none rounded-xl"
+                  >
+                    Open Dispute Desk ➔
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Core Followers Statistics row metrics counters */}
             <div className="flex gap-8 border-t border-white/5 pt-4 w-full max-w-2xl font-mono text-sm">
               <button
@@ -726,6 +758,12 @@ export function UserProfilePage() {
       <div className="w-80 shrink-0 hidden lg:flex flex-col gap-6">
         <TrendingWidget />
       </div>
+
+      <ModerationAppealForm
+        isOpen={isProfileAppealOpen}
+        onClose={() => setIsProfileAppealOpen(false)}
+        incidentId={profile?.active_incident_id || profile?.id}
+      />
     </div>
   );
 }

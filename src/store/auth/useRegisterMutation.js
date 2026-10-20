@@ -7,17 +7,18 @@ export function useRegisterMutation() {
     const setSession = useAuthStore((state) => state.setSession);
 
     return useMutation({
-        mutationFn: async (formData) => {
-            const isOrg = formData.accountType === 'organization';
+        mutationFn: async (registrationPayload) => {
+            const isOrg = registrationPayload.accountType === 'organization';
             const userPayload = {
-                email: formData.email,
-                password: formData.password,
-                username: (formData.username || '').replace(/^@/, ''),
+                email: registrationPayload.email,
+                password: registrationPayload.password,
+                username: (registrationPayload.username || '').replace(/^@/, ''),
                 type: isOrg ? 'organization' : 'citizen',
-                display_name: isOrg ? formData.organizationName : formData.fullName,
-                representative_name: isOrg ? formData.fullName : undefined,
-                date_of_birth: !isOrg ? formData.dob : undefined,
-                country: formData.country,
+                display_name: isOrg ? registrationPayload.organizationName : registrationPayload.fullName,
+                representative_name: isOrg ? registrationPayload.fullName : undefined,
+                date_of_birth: !isOrg ? registrationPayload.dob : undefined,
+                country: registrationPayload.country,
+                public_key: registrationPayload.public_key,
             };
 
             const res = await apiFetch('/api/users/register', {

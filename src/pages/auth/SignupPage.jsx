@@ -69,32 +69,24 @@ export const SignupPage = () => {
 
         if (currentStep === 2) {
             try {
-                const keyPair = await generateUserKeyPair(user.uuid, formData.password, user.username, user.email);
-                localStorage.setItem("active_session_private_key", keyPair.rawPrivateKey);
+                setCryptoStatus("Generating local cryptographic keypair...");
+                const { publicKeyPem, privateKeyB64 } = await generateUserKeyPair();
+                localStorage.setItem("active_session_private_key", privateKeyB64);
 
-                const userPayload = {
-                    uuid: user.uuid,
-                    username: user.username,
-                    email: user.email,
-                    accountType: user.account_type,
-                    is_2fa_enabled: false,
-                    is_seed_phrase_setup: false,
-                    is_chat_pin_setup: false,
-                    role: user.role
-                };
-
-                setRegisteredUserUuid(user.uuid);
-                setShowPinSetup(true);
-
-                //const { user, token } = await registerMutation.mutateAsync(formData);
-
-                registerMutation.mutate({
-                    ...userPayload,
-                    local_private_key: privateKeyB64
+                const res = await registerMutation.mutateAsync({
+                    ...formData,
+                    public_key: publicKeyPem
                 });
+
+                const registeredUser = res?.data?.user || res?.user;
+                if (registeredUser?.id) {
+                    setRegisteredUserUuid(registeredUser.id);
+                    setShowPinSetup(true);
+                }
 
                 setCurrentStep(3);
             } catch (err) {
+                console.error("Registration error:", err);
                 setError(err.message || "Registration failed. Please check your details and try again.");
                 setCryptoStatus("Local security configuration failed.");
             }

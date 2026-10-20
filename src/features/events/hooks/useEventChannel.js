@@ -33,7 +33,7 @@ export function useEventChannel(eventId) {
             .receive('ok', (initialPayload) => {
                 console.log(`📡 Successfully connected to Event Room: ${eventTopic}`);
 
-                // Unpack the preloaded comments array passed in the join handshake token [INDEX]
+                // Unpack the preloaded comments array passed in the join handshake token 
                 const initialComments = initialPayload?.comments || [];
                 setComments(initialComments);
 
@@ -51,7 +51,7 @@ export function useEventChannel(eventId) {
             });
 
         // 2️⃣ LISTEN FOR REAL-TIME NEW COMMENTS
-        // Captures clean comments or shadow-ban variations seamlessly [INDEX]
+        // Captures clean comments or shadow-ban variations seamlessly 
         eventRoomChannel.on('new_comment', (commentPayload) => {
             console.log('💬 Real-time Comment Received inside Event Room:', commentPayload);
 

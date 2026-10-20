@@ -200,27 +200,27 @@ export const SecurityBlacklistsPanel = ({ onCommandStart, onCommandComplete }) =
 
             {/* 🛡️ 1. EMERGENCY LOCKDOWN & RAM SHIELD BAR */}
             <div className={cn(
-                "p-6 rounded-3xl border shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-colors",
+                "p-6 sm:p-8 rounded-[32px] border shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-colors",
                 isLockdownActive
                     ? "bg-rose-500/10 border-rose-500/30 text-rose-900 dark:text-rose-100"
-                    : "bg-white dark:bg-[#141414] border-black/10 dark:border-white/10"
+                    : "bg-white dark:bg-[#141414] border-neutral-200/80 dark:border-white/10"
             )}>
                 <div className="flex items-center gap-4">
                     <div className={cn(
-                        "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border",
+                        "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border shadow-md",
                         isLockdownActive
                             ? "bg-rose-500/20 border-rose-500/40 text-rose-500 animate-pulse"
                             : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
                     )}>
-                        {isLockdownActive ? <ShieldAlert className="w-6 h-6 stroke-[2.5px]" /> : <ShieldCheck className="w-6 h-6 stroke-[2.5px]" />}
+                        {isLockdownActive ? <ShieldAlert className="w-7 h-7 stroke-[2.5px]" /> : <ShieldCheck className="w-7 h-7 stroke-[2.5px]" />}
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h3 className="font-black text-lg text-text-primary dark:text-white tracking-tight">
+                        <div className="flex items-center gap-2.5">
+                            <h3 className="font-black text-xl sm:text-2xl text-neutral-900 dark:text-white tracking-tight">
                                 Platform Security Shield
                             </h3>
                             <span className={cn(
-                                "px-2.5 py-0.5 rounded text-[14px] font-mono font-black uppercase tracking-wider border",
+                                "px-2.5 py-0.5 rounded-lg text-xs font-mono font-black uppercase tracking-wider border",
                                 isLockdownActive
                                     ? "bg-rose-500/20 border-rose-500/40 text-rose-600 dark:text-rose-400"
                                     : "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
@@ -228,7 +228,7 @@ export const SecurityBlacklistsPanel = ({ onCommandStart, onCommandComplete }) =
                                 {isLockdownActive ? "LOCKDOWN_ACTIVE" : "SHIELD_OPERATIONAL"}
                             </span>
                         </div>
-                        <p className="text-md text-text-secondary mt-1 font-medium leading-relaxed">
+                        <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 mt-1 font-medium leading-relaxed">
                             {isLockdownActive
                                 ? "Emergency Lockdown active! All new platform submissions are routed to PENDING review."
                                 : "Sub-millisecond RAM firewall monitoring active botnets, IP strikes, and bad-actor filters."}
@@ -242,7 +242,7 @@ export const SecurityBlacklistsPanel = ({ onCommandStart, onCommandComplete }) =
                         disabled={toggleLockdownMutation.isPending}
                         onClick={() => toggleLockdownMutation.mutate(!isLockdownActive)}
                         className={cn(
-                            "flex-1 md:flex-none px-5 py-3 rounded-xl font-mono text-xs font-black uppercase tracking-wider transition-all cursor-pointer border shadow-sm flex items-center justify-center gap-2 outline-none active:scale-95 disabled:opacity-50",
+                            "flex-1 md:flex-none px-6 py-4 rounded-2xl font-mono text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer border shadow-sm flex items-center justify-center gap-2.5 outline-none active:scale-95 disabled:opacity-50",
                             isLockdownActive
                                 ? "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-600 shadow-emerald-600/20"
                                 : "bg-rose-600 hover:bg-rose-500 text-white border-rose-600 shadow-rose-600/20"
@@ -257,7 +257,7 @@ export const SecurityBlacklistsPanel = ({ onCommandStart, onCommandComplete }) =
                         disabled={flushCooldownsMutation.isPending}
                         onClick={() => flushCooldownsMutation.mutate()}
                         title="Flush all 1-hour RAM cooldowns and strike counts"
-                        className="px-4 py-3 bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] border border-black/10 dark:border-white/10 text-text-primary dark:text-white rounded-xl font-mono text-xs font-black transition-all cursor-pointer flex items-center gap-2 outline-none active:scale-95 disabled:opacity-50 shrink-0"
+                        className="px-5 py-4 bg-neutral-100 hover:bg-neutral-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white rounded-2xl font-mono text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center gap-2 outline-none active:scale-95 disabled:opacity-50 shrink-0"
                     >
                         {flushCooldownsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                         <span className="hidden sm:inline">Flush RAM Cooldowns</span>
@@ -268,19 +268,19 @@ export const SecurityBlacklistsPanel = ({ onCommandStart, onCommandComplete }) =
             {/* 🌐 2. IP & CIDR BLACKLIST MATRIX GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Left Card: IP / CIDR Blacklist */}
-                <div className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/10 p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col justify-between">
+                <div className="bg-white dark:bg-[#141414] border border-neutral-200/80 dark:border-white/10 p-6 sm:p-8 rounded-[32px] shadow-xl flex flex-col justify-between">
                     <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <h4 className="text-base sm:text-lg font-black font-mono text-text-primary dark:text-white tracking-tight uppercase flex items-center gap-2">
+                        <div className="flex items-center justify-between mb-4 border-b border-neutral-200/60 dark:border-white/5 pb-4">
+                            <h4 className="text-lg sm:text-xl font-black font-mono text-neutral-900 dark:text-white tracking-tight uppercase flex items-center gap-2.5">
                                 <Globe className="w-5 h-5 text-rose-500 stroke-[2.5px]" />
                                 <span>IP / CIDR Network Blacklist</span>
                             </h4>
-                            <span className="px-2.5 py-0.5 rounded text-[14px] font-mono font-black bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
+                            <span className="px-3 py-1 rounded-xl text-xs font-mono font-black bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
                                 {blacklistedIps.length} BLOCKED
                             </span>
                         </div>
-                        <p className="text-md text-text-secondary leading-relaxed font-medium mb-5">
-                            Block malicious IP addresses or entire CIDR subnets (e.g. <code className="font-mono bg-black/5 dark:bg-white/10 px-1 py-0.5 rounded">192.168.1.100</code> or <code className="font-mono bg-black/5 dark:bg-white/10 px-1 py-0.5 rounded">10.0.0.0/16</code>) directly in sub-millisecond RAM firewall cache.
+                        <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 leading-relaxed font-medium mb-6">
+                            Block malicious IP addresses or entire CIDR subnets (e.g. <code className="font-mono bg-neutral-100 dark:bg-white/10 px-1.5 py-0.5 rounded">192.168.1.100</code> or <code className="font-mono bg-neutral-100 dark:bg-white/10 px-1.5 py-0.5 rounded">10.0.0.0/16</code>) directly in sub-millisecond RAM firewall cache.
                         </p>
 
                         {/* Add IP Form */}
@@ -289,19 +289,19 @@ export const SecurityBlacklistsPanel = ({ onCommandStart, onCommandComplete }) =
                                 e.preventDefault();
                                 if (ipInput.trim()) addIpMutation.mutate(ipInput.trim());
                             }}
-                            className="flex items-center gap-2 mb-6"
+                            className="flex items-center gap-3 mb-6"
                         >
                             <input
                                 type="text"
                                 placeholder="Enter IP or CIDR (e.g. 192.168.1.100)"
                                 value={ipInput}
                                 onChange={(e) => setIpInput(e.target.value)}
-                                className="flex-1 bg-black/[0.02] dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm font-mono font-bold text-text-primary dark:text-white placeholder:text-text-secondary/50 outline-none focus:border-primary-container transition-colors"
+                                className="flex-1 bg-neutral-50 dark:bg-white/[0.04] border border-neutral-200 dark:border-white/10 rounded-2xl px-4 py-3.5 text-sm sm:text-base font-mono font-bold text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all"
                             />
                             <button
                                 type="submit"
                                 disabled={addIpMutation.isPending || !ipInput.trim()}
-                                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer border-none outline-none active:scale-95 disabled:opacity-40 flex items-center gap-1.5 shrink-0"
+                                className="px-6 py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs sm:text-sm font-black uppercase tracking-wider rounded-2xl transition-all cursor-pointer border-none outline-none active:scale-95 disabled:opacity-40 flex items-center gap-2 shrink-0 shadow-md"
                             >
                                 {addIpMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 stroke-[2.5px]" />}
                                 <span>Ban IP</span>
@@ -309,27 +309,27 @@ export const SecurityBlacklistsPanel = ({ onCommandStart, onCommandComplete }) =
                         </form>
 
                         {/* IP List */}
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                        <div className="space-y-2.5 max-h-[340px] overflow-y-auto custom-scrollbar pr-1">
                             {blacklistedIps.length > 0 ? (
                                 blacklistedIps.map((ip) => (
-                                    <div key={ip} className="flex items-center justify-between p-3.5 bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 rounded-xl text-sm font-mono font-bold">
-                                        <div className="flex items-center gap-2 text-text-primary dark:text-white">
-                                            <span className="w-2 h-2 rounded-full bg-rose-500" />
+                                    <div key={ip} className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-white/[0.03] border border-neutral-200/60 dark:border-white/5 rounded-2xl text-sm sm:text-base font-mono font-bold">
+                                        <div className="flex items-center gap-2.5 text-neutral-900 dark:text-white">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
                                             <span>{ip}</span>
                                         </div>
                                         <button
                                             type="button"
                                             disabled={pardonIpMutation.isPending && pardonIpMutation.variables === ip}
                                             onClick={() => pardonIpMutation.mutate(ip)}
-                                            className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-black rounded-lg transition-all cursor-pointer outline-none flex items-center gap-1"
+                                            className="px-3.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-black rounded-xl transition-all cursor-pointer outline-none flex items-center gap-1.5"
                                         >
-                                            <ShieldCheck className="w-3.5 h-3.5" />
+                                            <ShieldCheck className="w-4 h-4" />
                                             <span>Pardon</span>
                                         </button>
                                     </div>
                                 ))
                             ) : (
-                                <div className="py-8 text-center text-md font-mono text-text-secondary opacity-60 select-none border border-dashed border-black/10 dark:border-white/10 rounded-xl">
+                                <div className="py-12 text-center text-sm font-mono text-neutral-500 opacity-60 select-none border border-dashed border-neutral-300 dark:border-white/10 rounded-2xl">
                                     No active IP address or CIDR blocks registered in RAM firewall.
                                 </div>
                             )}
@@ -338,18 +338,18 @@ export const SecurityBlacklistsPanel = ({ onCommandStart, onCommandComplete }) =
                 </div>
 
                 {/* Right Card: Shadow-Ban Filters */}
-                <div className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/10 p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col justify-between">
+                <div className="bg-white dark:bg-[#141414] border border-neutral-200/80 dark:border-white/10 p-6 sm:p-8 rounded-[32px] shadow-xl flex flex-col justify-between">
                     <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <h4 className="text-base sm:text-lg font-black font-mono text-text-primary dark:text-white tracking-tight uppercase flex items-center gap-2">
+                        <div className="flex items-center justify-between mb-4 border-b border-neutral-200/60 dark:border-white/5 pb-4">
+                            <h4 className="text-lg sm:text-xl font-black font-mono text-neutral-900 dark:text-white tracking-tight uppercase flex items-center gap-2.5">
                                 <EyeOff className="w-5 h-5 text-amber-500 stroke-[2.5px]" />
                                 <span>Shadow-Ban Filters</span>
                             </h4>
-                            <span className="px-2.5 py-0.5 rounded text-[14px] font-mono font-black bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+                            <span className="px-3 py-1 rounded-xl text-xs font-mono font-black bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
                                 {shadowbannedUsers.length} SHADOWED
                             </span>
                         </div>
-                        <p className="text-md text-text-secondary leading-relaxed font-medium mb-5">
+                        <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 leading-relaxed font-medium mb-6">
                             Apply stealth censorship rules to bad-actor handles or user IDs. Shadow-banned accounts remain unaware while their output is suppressed from public feeds.
                         </p>
 
@@ -359,19 +359,19 @@ export const SecurityBlacklistsPanel = ({ onCommandStart, onCommandComplete }) =
                                 e.preventDefault();
                                 if (shadowInput.trim()) addShadowbanMutation.mutate(shadowInput.trim());
                             }}
-                            className="flex items-center gap-2 mb-6"
+                            className="flex items-center gap-3 mb-6"
                         >
                             <input
                                 type="text"
                                 placeholder="Enter username handle (e.g. bad_actor)"
                                 value={shadowInput}
                                 onChange={(e) => setShadowInput(e.target.value)}
-                                className="flex-1 bg-black/[0.02] dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm font-mono font-bold text-text-primary dark:text-white placeholder:text-text-secondary/50 outline-none focus:border-primary-container transition-colors"
+                                className="flex-1 bg-neutral-50 dark:bg-white/[0.04] border border-neutral-200 dark:border-white/10 rounded-2xl px-4 py-3.5 text-sm sm:text-base font-mono font-bold text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all"
                             />
                             <button
                                 type="submit"
                                 disabled={addShadowbanMutation.isPending || !shadowInput.trim()}
-                                className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer border-none outline-none active:scale-95 disabled:opacity-40 flex items-center gap-1.5 shrink-0"
+                                className="px-6 py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs sm:text-sm font-black uppercase tracking-wider rounded-2xl transition-all cursor-pointer border-none outline-none active:scale-95 disabled:opacity-40 flex items-center gap-2 shrink-0 shadow-md"
                             >
                                 {addShadowbanMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4 stroke-[2.5px]" />}
                                 <span>Shadow-Ban</span>
@@ -379,27 +379,27 @@ export const SecurityBlacklistsPanel = ({ onCommandStart, onCommandComplete }) =
                         </form>
 
                         {/* Shadowban List */}
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                        <div className="space-y-2.5 max-h-[340px] overflow-y-auto custom-scrollbar pr-1">
                             {shadowbannedUsers.length > 0 ? (
                                 shadowbannedUsers.map((handle) => (
-                                    <div key={handle} className="flex items-center justify-between p-3.5 bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 rounded-xl text-sm font-mono font-bold">
-                                        <div className="flex items-center gap-2 text-text-primary dark:text-white">
-                                            <span className="w-2 h-2 rounded-full bg-amber-500" />
+                                    <div key={handle} className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-white/[0.03] border border-neutral-200/60 dark:border-white/5 rounded-2xl text-sm sm:text-base font-mono font-bold">
+                                        <div className="flex items-center gap-2.5 text-neutral-900 dark:text-white">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
                                             <span>@{handle}</span>
                                         </div>
                                         <button
                                             type="button"
                                             disabled={removeShadowbanMutation.isPending && removeShadowbanMutation.variables === handle}
                                             onClick={() => removeShadowbanMutation.mutate(handle)}
-                                            className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-600 dark:text-rose-400 font-mono text-xs font-black rounded-lg transition-all cursor-pointer outline-none flex items-center gap-1"
+                                            className="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-600 dark:text-rose-400 font-mono text-xs font-black rounded-xl transition-all cursor-pointer outline-none flex items-center gap-1.5"
                                         >
-                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <Trash2 className="w-4 h-4" />
                                             <span>Remove</span>
                                         </button>
                                     </div>
                                 ))
                             ) : (
-                                <div className="py-8 text-center text-md font-mono text-text-secondary opacity-60 select-none border border-dashed border-black/10 dark:border-white/10 rounded-xl">
+                                <div className="py-12 text-center text-sm font-mono text-neutral-500 opacity-60 select-none border border-dashed border-neutral-300 dark:border-white/10 rounded-2xl">
                                     No active shadow-ban filters currently registered.
                                 </div>
                             )}

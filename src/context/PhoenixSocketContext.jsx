@@ -259,5 +259,6 @@ const defaultSocketContext = {
 };
 
 export const useSocket = () => useContext(PhoenixSocketContext) || defaultSocketContext;
+export const usePhoenixSocket = useSocket;
 
 

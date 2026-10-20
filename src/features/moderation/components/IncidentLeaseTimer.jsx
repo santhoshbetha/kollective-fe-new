@@ -1,20 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Clock } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export const IncidentLeaseTimer = ({ expiresAtUnix, onTimeout }) => {
-    const calculateTimeRemaining = () => {
-        const nowUnix = Math.floor(Date.now() / 1000);
-        const totalDifferenceSeconds = expiresAtUnix - nowUnix;
-        return Math.max(0, totalDifferenceSeconds);
-    };
+const getTimeRemaining = (expiresAtUnix) => {
+    if (!expiresAtUnix) return 0;
+    let expUnix = expiresAtUnix;
+    if (typeof expiresAtUnix === 'string') {
+        const parsed = Date.parse(expiresAtUnix);
+        if (!isNaN(parsed)) {
+            expUnix = Math.floor(parsed / 1000);
+        } else {
+            expUnix = Number(expiresAtUnix);
+        }
+    } else if (typeof expiresAtUnix === 'number' && expiresAtUnix > 10000000000) {
+        expUnix = Math.floor(expiresAtUnix / 1000);
+    }
+    const nowUnix = Math.floor(Date.now() / 1000);
+    return Math.max(0, expUnix - nowUnix);
+};
 
-    const [secondsLeft, setSecondsLeft] = useState(calculateTimeRemaining());
+export const IncidentLeaseTimer = ({ expiresAtUnix, onTimeout, className }) => {
+    const [secondsLeft, setSecondsLeft] = useState(() => getTimeRemaining(expiresAtUnix));
 
     useEffect(() => {
-        // Recalculate immediately whenever the backend lease stamp changes
-        setSecondsLeft(calculateTimeRemaining());
-
         const timerInterval = setInterval(() => {
-            const remaining = calculateTimeRemaining();
+            const remaining = getTimeRemaining(expiresAtUnix);
             setSecondsLeft(remaining);
 
             if (remaining <= 0) {
@@ -24,7 +34,7 @@ export const IncidentLeaseTimer = ({ expiresAtUnix, onTimeout }) => {
         }, 1000);
 
         return () => clearInterval(timerInterval);
-    }, [expiresAtUnix]);
+    }, [expiresAtUnix, onTimeout]);
 
     // Format integer seconds cleanly to mm:ss notation templates
     const formatTime = (totalSeconds) => {
@@ -34,23 +44,36 @@ export const IncidentLeaseTimer = ({ expiresAtUnix, onTimeout }) => {
     };
 
     if (secondsLeft <= 0) {
-        return <span className="text-red-600 font-bold uppercase animate-pulse text-xs">Lease Expired / Reaped</span>;
+        return (
+            <span className={cn(
+                "inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border select-none",
+                "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/50 animate-pulse",
+                className
+            )}>
+                Lease Expired / Reaped
+            </span>
+        );
     }
 
     // Calculate danger boundary coloring states (Warn operator if under 2 minutes left)
     const isDangerZone = secondsLeft < 120;
 
     return (
-        <div className={`flex items-center gap-1.5 p-1 rounded font-mono text-xs border ${isDangerZone
-                ? 'bg-red-50 text-red-600 border-red-200 animate-pulse'
-                : 'bg-green-50 text-green-700 border-green-200'
-            }`}>
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        <div className={cn(
+            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-xs font-bold border transition-colors select-none",
+            isDangerZone
+                ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/50 animate-pulse'
+                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50',
+            className
+        )}>
+            <Clock className="w-3.5 h-3.5 shrink-0" />
             <span>
                 Time Remaining: <strong>{formatTime(secondsLeft)}</strong>
             </span>
         </div>
     );
 };
+
+export default IncidentLeaseTimer;
+
+

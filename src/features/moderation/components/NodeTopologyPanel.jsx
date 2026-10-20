@@ -1,8 +1,8 @@
-// src/features/moderation/components/NodeTopologyPanel.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMeshTopology } from '../hooks/useMeshTopology';
-import { Server, Activity, Globe, RefreshCw, Cpu, Wifi, AlertTriangle, Loader2, ZapOff } from 'lucide-react';
+import { Server, Activity, Globe, RefreshCw, Cpu, Wifi, AlertTriangle, Loader2, Network } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { ConfirmRecoveryModal } from './ConfirmRecoveryModal';
 
 export function NodeTopologyPanel() {
     const {
@@ -18,26 +18,28 @@ export function NodeTopologyPanel() {
     const [confirmTargetNode, setConfirmTargetNode] = useState(null);
 
     const handleRecoveryClick = (nodeName) => {
-        if (confirmTargetNode === nodeName) {
-            triggerForcePartitionRecovery(nodeName);
-            setConfirmTargetNode(null);
-        } else {
-            setConfirmTargetNode(nodeName);
-        }
+        setConfirmTargetNode(nodeName);
+    };
+
+    const handleConfirmRecovery = async () => {
+        if (!confirmTargetNode) return;
+        const target = confirmTargetNode;
+        await triggerForcePartitionRecovery(target);
+        setConfirmTargetNode(null);
     };
 
     return (
-        <div className="w-full max-w-5xl mx-auto space-y-6 p-6 bg-[#141414] border border-white/5 rounded-[28px] shadow-2xl font-sans text-left text-neutral-200 select-none animate-in fade-in duration-200">
+        <div className="w-full max-w-7xl mx-auto space-y-8 p-6 sm:p-8 bg-[#141414] border border-white/5 rounded-[32px] shadow-2xl font-sans text-left text-neutral-200 select-none animate-in fade-in duration-200">
 
             {/* Top Toolbar Ribbon Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-white/5">
-                <div className="flex items-center gap-2.5">
-                    <div className="p-2 bg-primary-container/10 border border-primary-container/20 rounded-xl text-primary-container shrink-0">
-                        <Activity className="w-4 h-4 stroke-[2.5px]" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/5">
+                <div className="flex items-center gap-3.5">
+                    <div className="p-3.5 bg-primary-container/10 border border-primary-container/20 rounded-2xl text-primary-container shrink-0 shadow-sm">
+                        <Activity className="w-6 h-6 stroke-[2.5px]" />
                     </div>
                     <div>
-                        <h3 className="text-base font-black text-white tracking-tight">Mesh Cluster Topology</h3>
-                        <p className="text-[11px] font-medium text-neutral-400 leading-none mt-0.5">
+                        <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">Mesh Cluster Topology</h3>
+                        <p className="text-sm sm:text-base font-medium text-neutral-400 mt-1 leading-relaxed">
                             Real-time tracking and healing of self-hosted server nodes running over libcluster.
                         </p>
                     </div>
@@ -47,40 +49,41 @@ export function NodeTopologyPanel() {
                     type="button"
                     disabled={isLoading || isRecovering}
                     onClick={refreshTopology}
-                    className="p-2.5 bg-[#181818] border border-white/10 text-neutral-400 hover:text-white rounded-xl transition-all cursor-pointer outline-none flex items-center justify-center disabled:opacity-40"
+                    className="p-3.5 bg-[#181818] border border-white/10 text-neutral-400 hover:text-white rounded-2xl transition-all cursor-pointer outline-none flex items-center justify-center disabled:opacity-40 self-end sm:self-auto hover:border-white/20"
+                    title="Refresh Topology"
                 >
-                    <RefreshCw className={cn("w-4 h-4 stroke-[2.5px]", isLoading && "animate-spin text-primary-container")} />
+                    <RefreshCw className={cn("w-5 h-5 stroke-[2.5px]", isLoading && "animate-spin text-primary-container")} />
                 </button>
             </div>
 
             {/* Network Infrastructure Summary Metrics Cards Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 bg-[#181818] border border-white/5 rounded-2xl flex items-center gap-4">
-                    <Server className="w-5 h-5 text-primary-container stroke-[2px]" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="p-6 sm:p-7 bg-[#181818] border border-white/5 rounded-3xl flex items-center gap-5 shadow-sm">
+                    <Server className="w-8 h-8 text-primary-container stroke-[2px] shrink-0" />
                     <div>
-                        <span className="block font-mono text-[9px] font-black uppercase text-neutral-500 tracking-wider">Active Cluster Size</span>
-                        <span className="text-xl font-mono font-black text-white block mt-1">{meshData.nodes?.length || 0} Nodes</span>
+                        <span className="block font-mono text-xs sm:text-sm font-black uppercase text-neutral-400 tracking-wider">Active Cluster Size</span>
+                        <span className="text-2xl sm:text-3xl font-mono font-black text-white block mt-1.5">{meshData.nodes?.length || 0} Nodes</span>
                     </div>
                 </div>
 
-                <div className="p-4 bg-[#181818] border border-white/5 rounded-2xl flex items-center gap-4">
-                    <Cpu className="w-5 h-5 text-emerald-400 stroke-[2px]" />
+                <div className="p-6 sm:p-7 bg-[#181818] border border-white/5 rounded-3xl flex items-center gap-5 shadow-sm">
+                    <Cpu className="w-8 h-8 text-emerald-400 stroke-[2px] shrink-0" />
                     <div>
-                        <span className="block font-mono text-[9px] font-black uppercase text-neutral-500 tracking-wider">Routing Protocol</span>
-                        <span className="text-xs font-mono font-black text-neutral-200 tracking-wide block mt-1.5 truncate max-w-[180px]">
+                        <span className="block font-mono text-xs sm:text-sm font-black uppercase text-neutral-400 tracking-wider">Routing Protocol</span>
+                        <span className="text-base sm:text-lg font-mono font-black text-neutral-100 tracking-wide block mt-1.5 truncate max-w-[200px]">
                             {meshData.network_protocol || "Erlang_Distribution"}
                         </span>
                     </div>
                 </div>
 
-                <div className="p-4 bg-[#181818] border border-white/5 rounded-2xl flex items-center gap-4">
-                    <Wifi className="w-5 h-5 text-primary-container stroke-[2px]" />
+                <div className="p-6 sm:p-7 bg-[#181818] border border-white/5 rounded-3xl flex items-center gap-5 shadow-sm">
+                    <Wifi className="w-8 h-8 text-primary-container stroke-[2px] shrink-0" />
                     <div>
-                        <span className="block font-mono text-[9px] font-black uppercase text-neutral-500 tracking-wider">Mesh Core Status</span>
-                        <span className={cn("text-xs font-mono font-black tracking-wider uppercase block mt-1.5 flex items-center gap-1.5",
+                        <span className="block font-mono text-xs sm:text-sm font-black uppercase text-neutral-400 tracking-wider">Mesh Core Status</span>
+                        <span className={cn("text-base sm:text-lg font-mono font-black tracking-wider uppercase block mt-1.5 flex items-center gap-2",
                             isRecovering ? "text-amber-400 animate-pulse" : "text-emerald-400"
                         )}>
-                            <span className={cn("w-2 h-2 rounded-full bg-green-500", isRecovering ? "bg-amber-400 animate-ping" : "bg-green-500")} />
+                            <span className={cn("w-2.5 h-2.5 rounded-full bg-green-500 shrink-0", isRecovering ? "bg-amber-400 animate-ping" : "bg-green-500")} />
                             <span>{isRecovering ? "HEALING_MESH..." : "OPERATIONAL"}</span>
                         </span>
                     </div>
@@ -88,77 +91,77 @@ export function NodeTopologyPanel() {
             </div>
 
             {/* Dynamic Real-Time Nodes Grid Panel Canvas */}
-            <div className="space-y-2">
-                <label className="text-[10px] font-mono font-black uppercase tracking-wider text-neutral-500 ml-1">
+            <div className="space-y-4">
+                <label className="text-xs sm:text-sm font-mono font-black uppercase tracking-wider text-neutral-400 ml-1">
                     Inter-Connected Infrastructure Node Grid Mapping
                 </label>
 
                 {networkError && (
-                    <div className="p-4 bg-rose-500/5 border border-rose-500/10 text-rose-400 rounded-xl flex items-center gap-3 text-xs font-medium animate-in slide-in-from-top-2">
-                        <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
+                    <div className="p-5 bg-rose-500/5 border border-rose-500/10 text-rose-400 rounded-2xl flex items-center gap-3.5 text-sm font-medium animate-in slide-in-from-top-2">
+                        <AlertTriangle className="w-6 h-6 text-rose-500 shrink-0" />
                         <span>{networkError}</span>
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
                     {isLoading && meshData.nodes?.length === 0 ? (
-                        <div className="col-span-full py-20 text-center font-mono text-xs text-neutral-500 flex flex-col items-center justify-center gap-2 opacity-60 h-48">
-                            <Loader2 className="w-4 h-4 animate-spin text-primary-container" />
+                        <div className="col-span-full py-24 text-center font-mono text-sm text-neutral-500 flex flex-col items-center justify-center gap-3 opacity-60 h-56">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary-container" />
                             <span>COMPILING LIVE DISTRIBUTED CLUSTER MAPS...</span>
                         </div>
                     ) : meshData.nodes?.length > 0 ? (
                         meshData.nodes.map((node, index) => {
-                            const isNodePendingHeal = confirmTargetNode === node.node_name;
+                            const isNodePendingHeal = isRecovering && confirmTargetNode === node.node_name;
                             return (
                                 <div
                                     key={node.node_name || `node-${index}`}
                                     className={cn(
-                                        "p-4 bg-[#181818] border rounded-2xl flex flex-col justify-between gap-4 transition-all relative overflow-hidden",
-                                        node.is_local ? "border-primary-container/30 ring-1 ring-primary-container/10 shadow-md" : "border-white/5"
+                                        "p-6 sm:p-7 bg-[#181818] border rounded-3xl flex flex-col justify-between gap-6 transition-all relative overflow-hidden shadow-md",
+                                        node.is_local ? "border-primary-container/30 ring-1 ring-primary-container/10 shadow-lg" : "border-white/5"
                                     )}
                                 >
                                     <div className="w-full flex items-start justify-between gap-4">
-                                        <div className="min-w-0 flex items-start gap-3">
-                                            <div className={cn("p-2 rounded-xl mt-0.5 shrink-0 border",
+                                        <div className="min-w-0 flex items-start gap-4">
+                                            <div className={cn("p-3 rounded-2xl mt-0.5 shrink-0 border",
                                                 node.is_local ? "bg-primary-container/10 text-primary-container border-primary-container/20" : "bg-white/5 text-neutral-400 border-white/5"
                                             )}>
-                                                <Globe className="w-4 h-4 stroke-[2px]" />
+                                                <Globe className="w-6 h-6 stroke-[2px]" />
                                             </div>
 
                                             <div className="min-w-0">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="text-xs font-mono font-black text-white truncate max-w-[150px] sm:max-w-xs block leading-tight">
+                                                <div className="flex items-center gap-2.5 flex-wrap">
+                                                    <span className="text-base sm:text-lg font-mono font-black text-white truncate max-w-[180px] sm:max-w-xs block leading-tight">
                                                         {node.node_name}
                                                     </span>
                                                     {node.is_local && (
-                                                        <span className="text-[8px] font-mono font-black text-primary-container bg-primary-container/10 border border-primary-container/20 px-1.5 py-0.2 rounded shadow-sm">
+                                                        <span className="text-xs font-mono font-black text-primary-container bg-primary-container/10 border border-primary-container/20 px-2.5 py-1 rounded-lg shadow-sm">
                                                             LOCAL_MASTER
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className="text-[10px] font-mono text-neutral-500 font-bold mt-1.5 uppercase tracking-wider">
-                                                    Geographic Zone: <span className="text-neutral-300 font-black">{node.zone}</span>
+                                                <p className="text-xs sm:text-sm font-mono text-neutral-400 font-bold mt-2 uppercase tracking-wider">
+                                                    Geographic Zone: <span className="text-neutral-200 font-black">{node.zone}</span>
                                                 </p>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-1.5 font-mono text-[9px] font-black uppercase text-emerald-400 bg-emerald-500/5 px-2 py-0.5 border border-emerald-500/10 rounded tracking-wider select-none shrink-0 shadow-sm mt-0.5">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                                        <div className="flex items-center gap-2 font-mono text-xs font-black uppercase text-emerald-400 bg-emerald-500/5 px-3 py-1.5 border border-emerald-500/10 rounded-xl tracking-wider select-none shrink-0 shadow-sm mt-0.5">
+                                            <span className="w-2 h-2 rounded-full bg-green-400" />
                                             <span>ONLINE</span>
                                         </div>
                                     </div>
 
                                     {/* 🛠️ FORCE PARTITION HEAL INTERACTION BAR BUTTON TIER */}
-                                    <div className="w-full pt-2 border-t border-white/5 flex justify-end font-mono text-[10px] font-black uppercase tracking-wider">
+                                    <div className="w-full pt-4 border-t border-white/5 flex justify-end font-mono text-xs sm:text-sm font-black uppercase tracking-wider">
                                         <button
                                             type="button"
                                             disabled={isRecovering}
                                             onClick={() => handleRecoveryClick(node.node_name)}
                                             className={cn(
-                                                "px-3 py-1.5 border rounded-xl flex items-center gap-1.5 cursor-pointer outline-none transition-all active:scale-95",
+                                                "px-4 py-2.5 border rounded-xl flex items-center gap-2 cursor-pointer outline-none transition-all active:scale-95",
                                                 isNodePendingHeal
                                                     ? "bg-amber-600 border-amber-600 text-white hover:brightness-105 animate-pulse"
-                                                    : "bg-transparent border-white/10 text-neutral-500 hover:text-amber-400 hover:border-amber-500/30"
+                                                    : "bg-transparent border-white/10 text-neutral-400 hover:text-amber-400 hover:border-amber-500/30"
                                             )}
                                         >
                                             {isNodePendingHeal ? (
@@ -173,8 +176,8 @@ export function NodeTopologyPanel() {
                             );
                         })
                     ) : (
-                        isLoading && (<div className="col-span-full py-12 text-center font-mono text-xs text-neutral-500 flex flex-col items-center justify-center gap-2 opacity-60">
-                            <AlertTriangle className="w-5 h-5" />
+                        isLoading && (<div className="col-span-full py-16 text-center font-mono text-sm text-neutral-500 flex flex-col items-center justify-center gap-3 opacity-60">
+                            <AlertTriangle className="w-6 h-6" />
                             <span>NO ACTIVE INFRASTRUCTURE NODES DETECTED IN LIVE CLUSTER MAP.</span>
                         </div>)
                     )}
@@ -182,11 +185,12 @@ export function NodeTopologyPanel() {
 
                 {/* Recovery Confirmation Overlay Panel */}
                 <ConfirmRecoveryModal
+                    key={confirmTargetNode || 'none'}
                     isOpen={!!confirmTargetNode}
                     targetNode={confirmTargetNode || ''}
                     onConfirm={handleConfirmRecovery}
                     onCancel={() => setConfirmTargetNode(null)}
-                    isSubmitting={isSubmittingRecovery}
+                    isSubmitting={isRecovering}
                 />
             </div>
         </div>

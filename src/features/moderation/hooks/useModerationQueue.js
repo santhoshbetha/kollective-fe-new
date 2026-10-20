@@ -1,5 +1,5 @@
 // src/features/moderation/hooks/useModerationQueue.js
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { apiFetch } from '../../../api/apiClient';
 
 export function useModerationQueue() {
@@ -43,22 +43,38 @@ export function useModerationQueue() {
         if (!incidentId) return;
         setActionPending(true);
         try {
-            await apiFetch(`/api/v1/admin/incidents/${incidentId}/resolve`, {
-                method: 'POST',
-                body: JSON.stringify({ action: actionType })
-            });
+            if (actionType === "release") {
+                await apiFetch(`/api/v1/admin/incidents/${incidentId}/release`, {
+                    method: 'POST'
+                });
+            } else {
+                await apiFetch(`/api/v1/admin/incidents/${incidentId}/resolve`, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: actionType })
+                });
+            }
 
             // Evict ticket from local view variables loop state upon successful resolution
             setLeasedIncidents(prev => prev.filter(t => t.id !== incidentId));
             setActiveIncident(null);
 
-            // Automatically queue up and steal the next item to keep operational speeds high
-            fetchAndLeaseNextTicket();
+            // Automatically queue up and lease the next item to keep operational speeds high if resolved
+            if (actionType !== "release") {
+                fetchAndLeaseNextTicket();
+            }
         } catch (err) {
             console.error("Adjudication command failed:", err);
         } finally {
             setActionPending(false);
         }
+    }, [fetchAndLeaseNextTicket]);
+
+    // ⚡ 3. EVICT AND ADVANCE QUEUE (When resolution is performed via useMutation directly)
+    const evictLeasedIncident = useCallback((incidentId) => {
+        if (!incidentId) return;
+        setLeasedIncidents(prev => prev.filter(t => t.id !== incidentId));
+        setActiveIncident(null);
+        fetchAndLeaseNextTicket();
     }, [fetchAndLeaseNextTicket]);
 
     return {
@@ -69,6 +85,8 @@ export function useModerationQueue() {
         actionPending,
         queueError,
         fetchAndLeaseNextTicket,
-        resolveLeasedIncident
+        resolveLeasedIncident,
+        evictLeasedIncident
     };
 }
+

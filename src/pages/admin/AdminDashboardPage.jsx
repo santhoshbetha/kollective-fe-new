@@ -1,5 +1,5 @@
 // src/pages/AdminDashboardPage.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     ApprovalIndex,
@@ -8,20 +8,24 @@ import {
     Rules,
     UserIndex
 } from '../../features/admin/AdminSubComponents';
+import { InfrastructureCenter } from '../../features/moderation/components/InfrastructureCenter';
+import { AppealAdjudicationQueue } from '../../features/moderation/components/AppealAdjudicationQueue';
 import {
     UserCheck,
     Flag,
     Users,
     Gavel,
     BookOpen,
-    ArrowLeft
+    ArrowLeft,
+    Server,
+    Scale
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 const AdminDashboardPage = () => {
     const navigate = useNavigate();
 
-    // Switchboard state matrix tracker: 'approvals' | 'reports' | 'users' | 'logs' | 'rules'
+    // Switchboard state matrix tracker: 'approvals' | 'reports' | 'appeals' | 'users' | 'logs' | 'rules' | 'infrastructure'
     const [activeAdminTab, setActiveAdminTab] = useState('approvals');
 
     const adminMenu = [
@@ -36,6 +40,12 @@ const AdminDashboardPage = () => {
             label: 'Abuse Reports',
             icon: Flag,
             desc: 'Resolve citizen moderation flags'
+        },
+        {
+            id: 'appeals',
+            label: 'Governance Appeals',
+            icon: Scale,
+            desc: 'Review & adjudicate member disputes'
         },
         {
             id: 'users',
@@ -54,6 +64,12 @@ const AdminDashboardPage = () => {
             label: 'Collective Bylaws',
             icon: BookOpen,
             desc: 'Configure instance guidelines'
+        },
+        {
+            id: 'infrastructure',
+            label: 'Mesh Infrastructure',
+            icon: Server,
+            desc: 'Cluster topology & Oban metrics'
         }
     ];
 
@@ -129,9 +145,11 @@ const AdminDashboardPage = () => {
             <div className="flex-1 min-w-0 bg-surface-container border border-outline-variant rounded-card p-5 sm:p-8 shadow-2xl min-h-[600px] relative">
                 {activeAdminTab === 'approvals' && <ApprovalIndex />}
                 {activeAdminTab === 'reports' && <ReportsIndex />}
+                {activeAdminTab === 'appeals' && <AppealAdjudicationQueue />}
                 {activeAdminTab === 'users' && <UserIndex />}
                 {activeAdminTab === 'logs' && <ModerationLog />}
                 {activeAdminTab === 'rules' && <Rules />}
+                {activeAdminTab === 'infrastructure' && <InfrastructureCenter />}
             </div>
 
         </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { Socket } from 'phoenix';
 
 const IncidentClusterContext = createContext(null);
@@ -8,8 +8,10 @@ export const IncidentClusterProvider = ({ children, userToken }) => {
 
     useEffect(() => {
         // 1️⃣ INITIALIZE THE ELIXIR BEAM SOCKET CONNECTION
-        const socketUrl = process.env.REACT_APP_WS_URL || "ws://localhost:4000/socket";
-        const socket = new Socket(socketUrl, { params: { token: userToken } });
+        const socketUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_WS_URL) 
+            || "ws://localhost:4000/socket";
+        const effectiveToken = userToken || (typeof localStorage !== 'undefined' ? localStorage.getItem("user_token") : null);
+        const socket = new Socket(socketUrl, { params: { token: effectiveToken } });
         socket.connect();
 
         // 2️⃣ JOIN THE CORRECT ADMIN NOTIFICATION TOPOLOGY CHANNEL
@@ -65,4 +67,6 @@ export const IncidentClusterProvider = ({ children, userToken }) => {
     );
 };
 
-export const useIncidentCluster = () => useContext(IncidentClusterContext);
+const defaultClusterContext = { incidents: [], setIncidents: () => {} };
+// eslint-disable-next-line react-refresh/only-export-components
+export const useIncidentCluster = () => useContext(IncidentClusterContext) || defaultClusterContext;

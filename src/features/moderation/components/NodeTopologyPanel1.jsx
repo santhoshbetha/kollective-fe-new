@@ -19,7 +19,7 @@ export function NodeTopologyPanel() {
                     <div>
                         <h3 className="text-base font-black text-white tracking-tight">Mesh Cluster Topology</h3>
                         <p className="text-[11px] font-medium text-neutral-400 leading-none mt-0.5">
-                            Real-time tracking of self-healing server nodes running over libcluster [INDEX].
+                            Real-time tracking of self-healing server nodes running over libcluster .
                         </p>
                     </div>
                 </div>

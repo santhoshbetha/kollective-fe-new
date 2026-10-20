@@ -44,6 +44,7 @@ import { NetworkPage } from './pages/NetworkPage';
 import { FollowedTagsPage } from './pages/FollowedTagsPage';
 import RootAdminDashboard from './pages/admin/RootAdminDashboard';
 import ModerationDashboard from './pages/admin/ModerationDashboard';
+import InfrastructurePage from './pages/admin/InfrastructurePage';
 import UnifiedOnboardingOrchestrator from './pages/UnifiedOnboardingOrchestrator';
 import CitizenVerificationDashboard from './pages/CitizenVerificationDashboard';
 import ActivistJuryPortal from './components/ActivistJuryPortal';
@@ -87,10 +88,8 @@ import MessagesPage from './pages/messages/MessagesPage';
 export default function App() {
   // ⚡ ATOMIC OBSERVATION: Tracks initialization states cleanly
   const isHydrated = useAuthStore((state) => state.isHydrated);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isLoggingIn = useAuthStore((state) => state.isLoggingIn);
   const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
-  const executeLogout = useAuthStore((state) => state.executeLogout);
 
   // 🛡️ Failsafe: Ensure store hydration flag is unlocked even if onRehydrateStorage fired early
   React.useEffect(() => {
@@ -226,6 +225,10 @@ export default function App() {
                     {/* Admin & Moderation Dashboards */}
                     <Route path="/admin/root" element={<RootAdminDashboard />} />
                     <Route path="/admin/moderation" element={<ModerationDashboard />} />
+                    <Route path="/admin/appeals" element={<ModerationDashboard initialTab="appeals" />} />
+                    <Route path="/kollective/admin/appeals" element={<ModerationDashboard initialTab="appeals" />} />
+                    <Route path="/admin/infrastructure" element={<InfrastructurePage />} />
+                    <Route path="/kollective/admin/infrastructure" element={<InfrastructurePage />} />
 
                     <Route path="/kollective/admin/candidacy" element={<CandidacyReviewPanel />} />
 

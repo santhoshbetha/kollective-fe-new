@@ -55,6 +55,7 @@ export async function encryptAndUploadAttachment(file, targetPublicKeyPem) {
         });
 
         // 6️⃣ RSA-Encrypt the symmetric AES key using the recipient's public key string
+        // This ensures ONLY the recipient can decrypt the key required to unpack the file later [1.4]!
         const rsaKeyBuffer = convertPemToArrayBuffer(targetPublicKeyPem);
         const rsaPublicKey = await window.crypto.subtle.importKey(
             "spki",
@@ -70,6 +71,7 @@ export async function encryptAndUploadAttachment(file, targetPublicKeyPem) {
             rawAesKeyBytes
         );
 
+        // Convert tracking arrays to base64 strings safe for JSON network transmission
         return {
             file_url: public_file_url,
             file_iv: btoa(String.fromCharCode(...iv)),
@@ -83,6 +85,7 @@ export async function encryptAndUploadAttachment(file, targetPublicKeyPem) {
     }
 }
 
+// Minimal helper to strip text PEM boundaries out of stored database strings
 function convertPemToArrayBuffer(pem) {
     const b64 = pem.replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n|\r/g, "");
     const byteString = window.atob(b64);

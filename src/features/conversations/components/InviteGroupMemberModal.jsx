@@ -1,11 +1,11 @@
-// src/features/conversations/components/InviteGroupMemberModal.jsx
 import React, { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../../api/apiClient';
 import { UserPlus, X, ShieldCheck, Loader2, User, AlertCircle } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
 export default function InviteGroupMemberModal({ isOpen, onClose, conversationId }) {
+    const queryClient = useQueryClient();
     const [usernameInput, setUsernameInput] = useState("");
     const [feedback, setFeedback] = useState("");
     const [isError, setIsError] = useState(false);
@@ -13,7 +13,7 @@ export default function InviteGroupMemberModal({ isOpen, onClose, conversationId
     // 🚀 MUTATION DISPATCH TRIGGER
     const inviteMutation = useMutation({
         mutationFn: async (targetUsername) => {
-            return await apiFetch(`/api/v1/admin/chat_groups/${conversationId}/invite`, {
+            return await apiFetch(`/api/v1/chat_groups/${conversationId}/invite`, {
                 method: 'POST',
                 body: JSON.stringify({ username: targetUsername })
             });
@@ -22,6 +22,10 @@ export default function InviteGroupMemberModal({ isOpen, onClose, conversationId
             setIsError(false);
             setFeedback("Citizen authorization written to group ledger successfully!");
             setUsernameInput("");
+            if (conversationId) {
+                queryClient.invalidateQueries({ queryKey: ['conversations', conversationId, 'participants'] });
+            }
+            queryClient.invalidateQueries({ queryKey: ['conversations', 'inbox'] });
             setTimeout(() => {
                 setFeedback("");
                 onClose();
