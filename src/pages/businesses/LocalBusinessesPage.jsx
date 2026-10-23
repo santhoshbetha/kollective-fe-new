@@ -12,6 +12,34 @@ import { PostAdModal } from '../../components/modals/PostAdModal';
 import { Filter, ChevronDown, Search, X, MapPin, Star, CheckCircle2, Compass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const DISTANCE_OPTIONS = [
+    { label: '5 miles', value: '5' },
+    { label: '10 miles', value: '10' },
+    { label: '25 miles', value: '25' },
+    { label: '40 miles', value: '40' },
+    { label: '100 miles', value: '100' },
+];
+
+const BUSINESS_CATEGORIES = [
+    'All',
+    'Food & Beverage',
+    'Grocery Store',
+    'Healthcare',
+    'Legal Services',
+    'Tax Services',
+    'Retail & Crafts',
+    'Transportation',
+    'Fitness & Wellness',
+    'Beauty & Personal Care',
+    'Agriculture',
+    'Professional Services',
+    'Cleaning Services',
+    'Movers',
+    'Technology',
+    'Construction',
+    'Manufacturing'
+];
+
 export const LocalBusinessesPage = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('businesses'); // 'businesses' | 'proposals'
@@ -33,11 +61,15 @@ export const LocalBusinessesPage = () => {
     const [scopeMode, setScopeMode] = useState(hasAddressOrCoords ? '100_miles' : 'state');
 
     useEffect(() => {
-        if (!hasAddressOrCoords && scopeMode === '100_miles' && hasState) {
-            setScopeMode('state');
-        } else if (hasAddressOrCoords && scopeMode === 'state') {
-            setScopeMode('100_miles');
-        }
+        setScopeMode((prev) => {
+            if (!hasAddressOrCoords && prev === '100_miles' && hasState) {
+                return 'state';
+            }
+            if (hasAddressOrCoords && prev === 'state') {
+                return '100_miles';
+            }
+            return prev;
+        });
     }, [hasAddressOrCoords, hasState]);
 
     // Normalized effective state (e.g., 'CA')
@@ -53,14 +85,6 @@ export const LocalBusinessesPage = () => {
         }
         return null;
     }, [currentUser]);
-
-    const DISTANCE_OPTIONS = [
-        { label: '5 miles', value: '5' },
-        { label: '10 miles', value: '10' },
-        { label: '25 miles', value: '25' },
-        { label: '40 miles', value: '40' },
-        { label: '100 miles', value: '100' },
-    ];
 
     const [isPostAdOpen, setIsPostAdOpen] = useState(false);
     const [isClassifiedsOpen, setIsClassifiedsOpen] = useState(false);
@@ -122,23 +146,7 @@ export const LocalBusinessesPage = () => {
         }
     }, [activeTab, businesses, proposals, searchQuery, scopeMode, effectiveUserState, selectedDistance, userCoords]);
 
-    const categories = ['All',
-        'Food & Beverage',
-        'Grocery Store',
-        'Healthcare',
-        'Legal Services',
-        'Tax Services',
-        'Retail & Crafts',
-        'Transportation',
-        'Fitness & Wellness',
-        'Beauty & Personal Care',
-        'Agriculture',
-        'Professional Services',
-        'Cleaning Services',
-        'Movers',
-        'Technology',
-        'Construction',
-        'Manufacturing'];
+    const categories = BUSINESS_CATEGORIES;
 
     if (!canAccessBusinesses) {
         return (

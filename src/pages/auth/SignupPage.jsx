@@ -100,7 +100,7 @@ export const SignupPage = () => {
 
                 setCurrentStep(3);
             } catch (err) {
-                setError(err.message || "Registration failed. Please check your details and try again.");
+                setError(err?.message || "Registration failed. Please check your details and try again.");
                 setCryptoStatus("");
             } finally {
                 setIsSubmitting(false);

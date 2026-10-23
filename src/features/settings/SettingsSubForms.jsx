@@ -45,7 +45,7 @@ export function EmailSettingsForm() {
             onError: (err) => {
                 setStatusMessage({
                     type: 'error',
-                    text: err.data?.error || err.message || "Failed to update email address."
+                    text: err?.data?.error || err?.message || "Failed to update email address."
                 });
             }
         });
@@ -435,7 +435,7 @@ export function DangerZoneSettingsForm() {
                 setRequiresFinalVerify(false);
                 setStatusMessage({
                     type: 'error',
-                    text: err.data?.error || err.message || "Failed to delete account. Please verify your password."
+                    text: err?.data?.error || err?.message || "Failed to delete account. Please verify your password."
                 });
             }
         });

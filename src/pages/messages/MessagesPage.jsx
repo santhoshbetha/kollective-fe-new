@@ -182,7 +182,7 @@ export default function MessagesPage() {
 
             queryClient.invalidateQueries({ queryKey: ['conversations', 'inbox'] });
         } catch (err) {
-            toast.error(err.message || "Failed to encrypt and stream attachment.");
+            toast.error(err?.message || "Failed to encrypt and stream attachment.");
         } finally {
             setIsUploadingMedia(false);
             setPendingAttachment(null);
@@ -784,17 +784,24 @@ function MessageRow({
     });
 
     useEffect(() => {
-        if (!msg.expires_at || isExpired) return;
+        if (!msg.expires_at) {
+            setIsExpired(false);
+            return;
+        }
 
         const deadlineMs = (msg.expires_at * 1000) - Date.now();
-        if (deadlineMs <= 0) return;
+        if (deadlineMs <= 0) {
+            setIsExpired(true);
+            return;
+        }
 
+        setIsExpired(false);
         const selfDestructTimer = setTimeout(() => {
             setIsExpired(true);
         }, deadlineMs);
 
         return () => clearTimeout(selfDestructTimer);
-    }, [msg.expires_at, isExpired]);
+    }, [msg.expires_at]);
 
     const handleReadVisible = useCallback(() => {
         channel?.push("read_receipt", { message_id: msg.id });

@@ -1,5 +1,5 @@
 // src/features/events/EventsFeed.jsx
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useEventsQuery, useToggleEventInterest, useFilterEvents } from './useEventsFeature';
 import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
@@ -11,6 +11,26 @@ import { cn } from '@/lib/utils';
 import { Calendar as DayCalendar } from '../../components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
 import { VirtuosoGrid } from 'react-virtuoso';
+
+const DISTANCE_OPTIONS = [
+    { label: '5 miles', value: '5' },
+    { label: '10 miles', value: '10' },
+    { label: '25 miles', value: '25' },
+    { label: '40 miles', value: '40' },
+    { label: '100 miles', value: '100' },
+];
+
+const EVENT_CATEGORIES = [
+    'All', 'Music', 'Business & professional', 'Food & drink', 'Community & culture',
+    'Performing & visual arts', 'Film, media, & entertainment', 'Fitness & Wellness',
+    'Technology', 'Travel & outdoor', 'Charity & causes', 'Religion & spirituality',
+    'Family & education', 'Seasonal & holiday'
+];
+
+const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 export function EventsFeed({ navigate }) {
     const { events, eventsLoading } = useEventsQuery();
@@ -57,26 +77,8 @@ export function EventsFeed({ navigate }) {
     const [currentYear, setCurrentYear] = useState(2026);
     const [currentMonth, setCurrentMonth] = useState(6); // July
 
-    const DISTANCE_OPTIONS = [
-        { label: '5 miles', value: '5' },
-        { label: '10 miles', value: '10' },
-        { label: '25 miles', value: '25' },
-        { label: '40 miles', value: '40' },
-        { label: '100 miles', value: '100' },
-    ];
-
-    const categories = [
-        'All', 'Music', 'Business & professional', 'Food & drink', 'Community & culture',
-        'Performing & visual arts', 'Film, media, & entertainment', 'Fitness & Wellness',
-        'Technology', 'Travel & outdoor', 'Charity & causes', 'Religion & spirituality',
-        'Family & education', 'Seasonal & holiday'
-    ];
-
-    const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    const displayMonthName = monthNames[currentMonth];
+    const categories = EVENT_CATEGORIES;
+    const displayMonthName = MONTH_NAMES[currentMonth];
 
     const handlePrevMonth = () => {
         if (currentMonth === 0) {
@@ -203,25 +205,50 @@ export function EventsFeed({ navigate }) {
         });
     }, [events, filteredEventsData, searchQuery, locationQuery, formatFilter, categoryFilter, effectiveUserState, hasAddressOrCoords]);
 
-    const getDaysInMonth = (year, month) => {
-        const date = new Date(year, month, 1);
+    const calendarDays = useMemo(() => {
+        const date = new Date(currentYear, currentMonth, 1);
         const days = [];
         const firstDayIndex = date.getDay();
-        const prevMonthLastDate = new Date(year, month, 0).getDate();
+        const prevMonthLastDate = new Date(currentYear, currentMonth, 0).getDate();
 
         for (let i = firstDayIndex - 1; i >= 0; i--) {
-            days.push({ day: prevMonthLastDate - i, isCurrentMonth: false, month: month === 0 ? 11 : month - 1, year: month === 0 ? year - 1 : year });
+            days.push({ day: prevMonthLastDate - i, isCurrentMonth: false, month: currentMonth === 0 ? 11 : currentMonth - 1, year: currentMonth === 0 ? currentYear - 1 : currentYear });
         }
-        const lastDate = new Date(year, month + 1, 0).getDate();
+        const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
         for (let i = 1; i <= lastDate; i++) {
-            days.push({ day: i, isCurrentMonth: true, month, year });
+            days.push({ day: i, isCurrentMonth: true, month: currentMonth, year: currentYear });
         }
         const remainingCells = 42 - days.length;
         for (let i = 1; i <= remainingCells; i++) {
-            days.push({ day: i, isCurrentMonth: false, month: month === 11 ? 0 : month + 1, year: month === 11 ? year + 1 : year });
+            days.push({ day: i, isCurrentMonth: false, month: currentMonth === 11 ? 0 : currentMonth + 1, year: currentMonth === 11 ? currentYear + 1 : currentYear });
         }
         return days;
-    };
+    }, [currentYear, currentMonth]);
+
+    const todayDate = useMemo(() => {
+        const now = new Date();
+        return { day: now.getDate(), month: now.getMonth(), year: now.getFullYear() };
+    }, []);
+
+    const handleInterestToggle = useCallback((id) => {
+        setFilteredEventsData((prev) => {
+            if (!prev) return prev;
+            return prev.map((item) => {
+                if (item.id === id) {
+                    const nextInterested = !item.isInterested;
+                    return {
+                        ...item,
+                        isInterested: nextInterested,
+                        interestedCount: nextInterested
+                            ? (item.interestedCount || 0) + 1
+                            : Math.max(0, (item.interestedCount || 1) - 1)
+                    };
+                }
+                return item;
+            });
+        });
+        interestMutation.mutate(id);
+    }, [interestMutation]);
 
     const getEventsForDay = (dayObj) => {
         const { day, isCurrentMonth, month, year } = dayObj;
@@ -652,26 +679,7 @@ export function EventsFeed({ navigate }) {
                                     <div className="h-full animate-in fade-in duration-150">
                                         <EventCard
                                             event={event}
-                                            onInterestToggle={(id) => {
-                                                if (filteredEventsData) {
-                                                    setFilteredEventsData((prev) =>
-                                                        prev?.map((item) => {
-                                                            if (item.id === id) {
-                                                                const nextInterested = !item.isInterested;
-                                                                return {
-                                                                    ...item,
-                                                                    isInterested: nextInterested,
-                                                                    interestedCount: nextInterested
-                                                                        ? (item.interestedCount || 0) + 1
-                                                                        : Math.max(0, (item.interestedCount || 1) - 1)
-                                                                };
-                                                            }
-                                                            return item;
-                                                        })
-                                                    );
-                                                }
-                                                interestMutation.mutate(id);
-                                            }}
+                                            onInterestToggle={handleInterestToggle}
                                             isPending={interestMutation.isPending}
                                         />
                                     </div>
@@ -738,12 +746,12 @@ export function EventsFeed({ navigate }) {
 
                     {/* Main Calendar Month Sub-Blocks Grid Array */}
                     <div className="grid grid-cols-7 border-l border-t border-white/5">
-                        {getDaysInMonth(currentYear, currentMonth).map((dayObj) => {
+                        {calendarDays.map((dayObj) => {
                             const dayEvents = getEventsForDay(dayObj);
                             const isToday =
-                                dayObj.day === new Date().getDate() &&
-                                dayObj.month === new Date().getMonth() &&
-                                dayObj.year === new Date().getFullYear();
+                                dayObj.day === todayDate.day &&
+                                dayObj.month === todayDate.month &&
+                                dayObj.year === todayDate.year;
 
                             return (
                                 <div

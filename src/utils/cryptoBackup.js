@@ -60,8 +60,7 @@ export async function backupPrivateKeyToServer(userUuid, rawPrivateKeyB64, pinSt
             body: JSON.stringify({ backup: payload })
         });
 
-    } catch (err) {
-        console.error("Failed to compile secure zero-knowledge backup payload:", err);
+    } catch {
         throw new Error("Local crypto backup initialization aborted.");
     }
 }
@@ -105,8 +104,7 @@ export async function recoverPrivateKeyFromServer(encryptedJsonBlob, base64Salt,
         );
 
         return decoder.decode(decryptedBuffer); // Returns raw original base64 private key string
-    } catch (err) {
-        console.warn("Decryption failed. Invalid Chat Recovery PIN provided.");
+    } catch {
         throw new Error("invalid_pin_key_mismatch");
     }
 }

@@ -1,5 +1,5 @@
 // src/features/search/useGlobalSearch.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
 
@@ -54,69 +54,72 @@ export function useGlobalSearchQuery(searchTerm) {
 export function useInvalidateBookmarkTrigger() {
     const queryClient = useQueryClient();
 
-    return {
-        /**
-         * Surgically drops an unbookmarked entity node from all active infinite pages
-         */
-        ejectFromBookmarksCache: (targetPostId) => {
-            if (!targetPostId) return;
+    /**
+     * Surgically drops an unbookmarked entity node from all active infinite pages
+     */
+    const ejectFromBookmarksCache = useCallback((targetPostId) => {
+        if (!targetPostId) return;
 
-            queryClient.setQueriesData({ queryKey: ['bookmarks'] }, (oldCache) => {
-                if (!oldCache || !oldCache.pages) return oldCache;
+        queryClient.setQueriesData({ queryKey: ['bookmarks'] }, (oldCache) => {
+            if (!oldCache || !oldCache.pages) return oldCache;
 
+            return {
+                ...oldCache,
+                pages: oldCache.pages.map((page) => {
+                    const postsList = page?.data || page?.posts || (Array.isArray(page) ? page : []);
+
+                    // Structural execution: Filter out the targeted post node cleanly
+                    const alteredList = postsList.filter(post => post?.id !== targetPostId);
+
+                    if (Array.isArray(page)) return alteredList;
+                    return {
+                        ...page,
+                        data: page?.data ? alteredList : undefined,
+                        posts: page?.posts ? alteredList : undefined
+                    };
+                })
+            };
+        });
+
+        // Simultaneously alert cross-timeline caches that the bookmark icon flag flipped off
+        const flipBookmarkOff = (oldCache) => {
+            if (!oldCache) return oldCache;
+            const updateItem = (item) =>
+                item?.id === targetPostId ? { ...item, bookmarked: false, isBookmarked: false } : item;
+
+            if (Array.isArray(oldCache)) return oldCache.map(updateItem);
+            if (Array.isArray(oldCache.pages)) {
                 return {
                     ...oldCache,
                     pages: oldCache.pages.map((page) => {
-                        const postsList = page?.data || page?.posts || (Array.isArray(page) ? page : []);
-
-                        // Structural execution: Filter out the targeted post node cleanly
-                        const alteredList = postsList.filter(post => post?.id !== targetPostId);
-
-                        if (Array.isArray(page)) return alteredList;
+                        if (Array.isArray(page)) return page.map(updateItem);
                         return {
                             ...page,
-                            data: page?.data ? alteredList : undefined,
-                            posts: page?.posts ? alteredList : undefined
+                            data: Array.isArray(page?.data) ? page.data.map(updateItem) : page?.data,
+                            posts: Array.isArray(page?.posts) ? page.posts.map(updateItem) : page?.posts
                         };
                     })
                 };
-            });
+            }
+            return oldCache;
+        };
 
-            // Simultaneously alert cross-timeline caches that the bookmark icon flag flipped off
-            const flipBookmarkOff = (oldCache) => {
-                if (!oldCache) return oldCache;
-                const updateItem = (item) =>
-                    item?.id === targetPostId ? { ...item, bookmarked: false, isBookmarked: false } : item;
+        queryClient.setQueriesData({ queryKey: ['proposals'] }, flipBookmarkOff);
+        queryClient.setQueriesData({ queryKey: ['timeline'] }, flipBookmarkOff);
+    }, [queryClient]);
 
-                if (Array.isArray(oldCache)) return oldCache.map(updateItem);
-                if (Array.isArray(oldCache.pages)) {
-                    return {
-                        ...oldCache,
-                        pages: oldCache.pages.map((page) => {
-                            if (Array.isArray(page)) return page.map(updateItem);
-                            return {
-                                ...page,
-                                data: Array.isArray(page?.data) ? page.data.map(updateItem) : page?.data,
-                                posts: Array.isArray(page?.posts) ? page.posts.map(updateItem) : page?.posts
-                            };
-                        })
-                    };
-                }
-                return oldCache;
-            };
+    /**
+     * Hard-invalidation fallback to forcefully reload all active lists if an edge-case crash occurs
+     */
+    const forceHardRefresh = useCallback(async () => {
+        await queryClient.invalidateQueries({
+            queryKey: ['bookmarks'],
+            refetchType: 'active'
+        });
+    }, [queryClient]);
 
-            queryClient.setQueriesData({ queryKey: ['proposals'] }, flipBookmarkOff);
-            queryClient.setQueriesData({ queryKey: ['timeline'] }, flipBookmarkOff);
-        },
-
-        /**
-         * Hard-invalidation fallback to forcefully reload all active lists if an edge-case crash occurs
-         */
-        forceHardRefresh: async () => {
-            await queryClient.invalidateQueries({
-                queryKey: ['bookmarks'],
-                refetchType: 'active'
-            });
-        }
-    };
+    return useMemo(() => ({
+        ejectFromBookmarksCache,
+        forceHardRefresh
+    }), [ejectFromBookmarksCache, forceHardRefresh]);
 }

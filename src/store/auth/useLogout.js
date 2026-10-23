@@ -1,3 +1,4 @@
+import { useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from './useAuthStore';
 import { useTimelineBufferStore } from '../useTimelineBufferStore';
@@ -7,11 +8,19 @@ export function useLogout() {
     const clearSession = useAuthStore((state) => state.clearSession);
     const clearBuffer = useTimelineBufferStore((state) => state.clearBuffer);
     const setIsLoggingOut = useAuthStore((state) => state.setIsLoggingOut);
+    const logoutTimerRef = useRef(null);
 
-    const logout = (onComplete) => {
+    useEffect(() => {
+        return () => {
+            if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+        };
+    }, []);
+
+    const logout = useCallback((onComplete) => {
         setIsLoggingOut(true);
 
-        setTimeout(() => {
+        if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+        logoutTimerRef.current = setTimeout(() => {
             // 1. Clear layout arrays and pending server streams
             clearBuffer();
 
@@ -31,7 +40,7 @@ export function useLogout() {
             setIsLoggingOut(false);
             if (onComplete) onComplete();
         }, 500);
-    };
+    }, [clearBuffer, clearSession, queryClient, setIsLoggingOut]);
 
     return logout;
 }
