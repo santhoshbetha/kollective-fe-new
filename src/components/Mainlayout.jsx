@@ -19,6 +19,7 @@ import {
 } from './ui/Dialog';
 import { Button } from './ui/button';
 import { DirectMessageDrawer } from '../features/conversations/DirectMessageDrawer';
+import { GlobalSearchBar } from '../features/search/GlobalSearchBar';
 
 export const MainLayout = () => {
     const location = useLocation();
@@ -116,7 +117,7 @@ export const MainLayout = () => {
         <div className={`${theme === 'dark' ? 'dark' : ''} bg-surface text-text-primary min-h-screen custom-scrollbar flex flex-col`}>
 
             {/* 🖥️ Side Navigation Shell - Desktop */}
-            <aside className="fixed left-0 top-0 h-screen w-72 bg-surface-container-lowestX bg-transparent border-r border-white/5 hidden md:flex flex-col z-50">
+            <aside className="fixed left-0 top-0 h-screen w-72 bg-surface-container-lowest bg-transparent border-r border-white/5 hidden md:flex flex-col z-50">
                 <div className="flex flex-col gap-2 p-6 h-full">
                     {/* Logo */}
                     <div onClick={() => navigate('/')} className="mb-8 px-2 flex items-center gap-0 cursor-pointer hover:opacity-90">
@@ -172,7 +173,7 @@ export const MainLayout = () => {
                             <div
                                 onClick={() => {
                                     const username = (activeAccount?.handle || user.handle || 'user').replace('@', '');
-                                    navigate(`/profile/@${username}`, { state: { fromCard: true } });
+                                    navigate(`/profile/${username}`, { state: { fromCard: true } });
                                 }}
                                 className="mt-6 p-3.5 bg-surface-container-low rounded-xl border border-white/5 flex items-center gap-3 cursor-pointer hover:bg-surface-container-high/40 transition-colors"
                             >
@@ -289,17 +290,8 @@ export const MainLayout = () => {
                         </div>
                     </div>
 
-                    <div className="hidden md:flex flex-1 items-center gap-4">
-                        <div className="relative w-full max-w-2xl">
-                            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary text-[22px]">
-                                search
-                            </span>
-                            <input
-                                className="w-full bg-surface-container-lowest/40 border border-white/10 rounded-full py-3 pl-12 pr-5 text-body-md font-label-md focus:outline-none focus:border-primary-container transition-colors placeholder-text-text-secondary/50 text-text-primary"
-                                placeholder="Search the Kollective..."
-                                type="text"
-                            />
-                        </div>
+                    <div className="hidden md:flex flex-1 items-center max-w-xl mx-4">
+                        <GlobalSearchBar />
                     </div>
 
                     {isAuthenticated && (
@@ -339,13 +331,14 @@ export const MainLayout = () => {
             </header>
 
             {/* 🖼️ Main Content Viewport */}
-            <main className="md:ml-72 pt-20 pb-24 px-6 min-h-screen flex-1">
+            <main className={`md:ml-72 min-h-screen flex-1 ${currentPath.startsWith('/messages') ? 'pt-16 md:pt-20 pb-2 md:pb-6 px-1 sm:px-4 md:px-6' : 'pt-20 pb-24 px-6'}`}>
                 {/* Render nested child view routes dynamically via React Router v7 */}
                 <Outlet />
             </main>
 
             {/* 📱 Mobile Bottom Navigation Menu */}
-            <nav className="fixed bottom-0 w-full bg-surface/90 backdrop-blur-xl border-t border-white/5 md:hidden z-50 flex justify-around items-center h-16">
+            {!currentPath.startsWith('/messages') && (
+                <nav className="fixed bottom-0 w-full bg-surface/90 backdrop-blur-xl border-t border-white/5 md:hidden z-50 flex justify-around items-center h-16">
                 <Link
                     to="/home"
                     className={`flex flex-col items-center gap-0.5 ${currentPath === '/home' ? 'text-primary-container font-bold' : 'text-text-secondary'}`}
@@ -384,6 +377,7 @@ export const MainLayout = () => {
                     <span className="text-[14px]">Organize</span>
                 </Link>
             </nav>
+            )}
 
             {/* 📝 Floating Create Post Dialog */}
             {isCreateOpen && (

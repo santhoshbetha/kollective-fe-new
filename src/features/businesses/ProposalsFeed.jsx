@@ -2,12 +2,36 @@
 import React, { useMemo } from 'react';
 import { useProposalsQuery } from './useProposalsFeature';
 import { BusinessProposalCard } from './BusinessProposalCard';
-import { Virtuoso } from 'react-virtuoso';
+import { VirtuosoGrid } from 'react-virtuoso';
 import { cn } from '../../lib/utils';
+
+import { isItemInScope } from '../../utils/geoUtils';
+
+const ProposalsGridFooter = () => (
+    <div className="py-8 text-center border-t border-white/5 font-mono text-[10px] text-text-secondary/30 select-none uppercase tracking-wider">
+        proposal_stream_index_calculation_complete
+    </div>
+);
+const proposalsGridComponents = { Footer: ProposalsGridFooter };
+
+// 💀 Custom Pulse Skeleton Loader Panel Component
+const ProposalSkeleton = () => (
+    <div className="glass-card p-6 rounded-2xl border border-white/5 animate-pulse space-y-6 bg-[#141414]">
+        <div className="flex justify-between items-center">
+            <div className="w-12 h-12 bg-white/[0.04] rounded-xl"></div>
+            <div className="h-6 bg-white/[0.04] rounded w-16"></div>
+        </div>
+        <div className="h-6 bg-white/[0.04] rounded w-2/3"></div>
+        <div className="h-4 bg-white/[0.02] rounded w-full"></div>
+    </div>
+);
 
 export function ProposalsFeed({
     searchQuery = '',
-    activeCategory = 'All'
+    activeCategory = 'All',
+    scopeMode = '100_miles',
+    effectiveUserState = '',
+    userCoords = null
 }) {
     // Pull real-time proposal stream list direct from TanStack cache bounds
     const { proposals = [], proposalsLoading } = useProposalsQuery();
@@ -19,28 +43,24 @@ export function ProposalsFeed({
         const categoryTarget = activeCategory.split(' ')[0].toLowerCase();
 
         return proposals.filter(prop => {
+            // 📍 Geographic Scope Enforcement (100 Miles vs Statewide)
+            if (!isItemInScope(prop, scopeMode, effectiveUserState, 100, userCoords)) {
+                return false;
+            }
+
             const matchesCategory = activeCategory === 'All' ||
                 (prop.category || '').toLowerCase().includes(categoryTarget);
 
             const matchesSearch = !queryLower ||
                 (prop.title || '').toLowerCase().includes(queryLower) ||
-                (prop.description || '').toLowerCase().includes(queryLower);
+                (prop.description || '').toLowerCase().includes(queryLower) ||
+                (prop.location || '').toLowerCase().includes(queryLower) ||
+                (prop.city || '').toLowerCase().includes(queryLower) ||
+                (prop.category || '').toLowerCase().includes(queryLower);
 
             return matchesCategory && matchesSearch;
         });
-    }, [proposals, searchQuery, activeCategory]);
-
-    // 💀 Custom Pulse Skeleton Loader Panel Component
-    const ProposalSkeleton = () => (
-        <div className="glass-card p-6 rounded-2xl border border-white/5 animate-pulse space-y-6 bg-[#141414]">
-            <div className="flex justify-between items-center">
-                <div className="w-12 h-12 bg-white/[0.04] rounded-xl"></div>
-                <div className="h-6 bg-white/[0.04] rounded w-16"></div>
-            </div>
-            <div className="h-6 bg-white/[0.04] rounded w-2/3"></div>
-            <div className="h-4 bg-white/[0.02] rounded w-full"></div>
-        </div>
-    );
+    }, [proposals, searchQuery, activeCategory, scopeMode, effectiveUserState, userCoords]);
 
     if (proposalsLoading) {
         return (
@@ -53,11 +73,19 @@ export function ProposalsFeed({
 
     if (filteredProposals.length === 0) {
         return (
-            <div className="glass-card rounded-[24px] p-12 text-center border border-white/5 bg-[#141414] font-mono text-md text-text-secondary/80 select-none">
-                <span className="material-symbols-outlined text-4xl text-text-secondary/80 mb-1 mr-1 block">
+            <div className="glass-card rounded-[24px] p-12 text-center border border-white/5 bg-[#141414] font-mono text-md text-text-secondary/80 select-none space-y-3">
+                <span className="material-symbols-outlined text-4xl text-text-secondary/60 mb-1 mr-1 block">
                     deck
                 </span>
-                NO_COMMUNITY_PROPOSALS_LOGGED_IN_THIS_SCOPE
+                <p className="font-bold text-text-primary text-base">
+                    No proposals found {scopeMode === '100_miles' ? 'within 100 miles' : `in ${effectiveUserState || 'your state'}`}
+                    {searchQuery ? ` matching "${searchQuery}"` : ''}
+                </p>
+                <p className="text-xs text-text-secondary/60 max-w-md mx-auto">
+                    {scopeMode === '100_miles'
+                        ? 'Try expanding your scope to "Entire State" or drafting a new community proposal for your area!'
+                        : 'No community proposals are currently logged in your state for this criteria.'}
+                </p>
             </div>
         );
     }
@@ -106,39 +134,13 @@ export function ProposalsFeed({
 
             {/* 🏆 THE VIRTUOSO GRID CORE ENGINE CHANNEL */}
             <div className="w-full relative">
-                <Virtuoso
+                <VirtuosoGrid
                     useWindowScroll
                     data={filteredProposals}
-                    computeItemKey={(index, prop) => prop?.id || index}
-                    initialItemCount={Math.min(filteredProposals.length, 4)}
-                    increaseViewportBy={300}
-                    overscan={150}
-
-                    // 🚀 MULTI-COLUMN CONVERSION GRID: Overrides internal list node tags safely into Tailwind rows
-                    components={{
-                        List: React.forwardRef(({ children, style, ...props }, ref) => (
-                            <div
-                                {...props}
-                                ref={ref}
-                                style={{ ...style }}
-                                // 🎯 Spans 1 full column on mobile layouts and 2 identical grid-cols on desktops/MDs
-                                className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full"
-                            >
-                                {children}
-                            </div>
-                        )),
-                        Item: React.forwardRef(({ children, ...props }, ref) => (
-                            <div {...props} ref={ref} className="h-full flex flex-col">
-                                {children}
-                            </div>
-                        )),
-                        Footer: () => (
-                            <div className="py-8 text-center border-t border-white/5 font-mono text-[10px] text-text-secondary/30 select-none uppercase tracking-wider">
-                                proposal_stream_index_calculation_complete
-                            </div>
-                        )
-                    }}
-
+                    computeItemKey={(_index, prop) => prop?.id || prop?.title}
+                    listClassName="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full"
+                    itemClassName="h-full flex flex-col"
+                    components={proposalsGridComponents}
                     itemContent={(index, prop) => (
                         <div className="h-full animate-in fade-in duration-150">
                             <BusinessProposalCard prop={prop} />

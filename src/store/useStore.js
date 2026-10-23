@@ -157,10 +157,10 @@ export const useStore = create(
     // =========================================================================
     politicalOptIn: false,
     politicalCountry: 'US', // 'US' | 'CA' | 'GB' | 'IN' | 'MX' | 'AR' | 'BR' | 'CO' | 'CL' | 'VE' | 'PE' | 'EC' | 'UY' | 'PY' | 'BO' | 'HN' | 'NI' | 'CR' | 'PA' | 'DO' | 'PR'
-    userState: '',
+    userState: import.meta.env.DEV ? 'CA' : '',
     stateUpdatedAt: null,
-    streetAddress: '',
-    userCity: '',
+    streetAddress: import.meta.env.DEV ? '123 Market St' : '',
+    userCity: import.meta.env.DEV ? 'San Francisco' : '',
     districtFederal: '',
     districtStateLower: '',
     districtStateUpper: '',

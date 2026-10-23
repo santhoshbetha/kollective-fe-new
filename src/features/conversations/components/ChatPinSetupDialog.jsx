@@ -1,11 +1,11 @@
 // src/features/conversations/components/ChatPinSetupDialog.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { backupPrivateKeyToServer } from '../../../utils/cryptoBackup';
 import { ShieldCheck, KeyRound, Loader2, AlertCircle, AlertTriangle } from 'lucide-react';
 
-export function ChatPinSetupDialog({ userUuid, onComplete }) {
+export function ChatPinSetupDialog({ userUuid, onComplete, onSkip = null, redirectOnComplete = '/feed', publicKey = null, onCancel = null }) {
     const navigate = useNavigate();
     const [pin, setPin] = useState("");
     const [confirmPin, setConfirmPin] = useState("");
@@ -14,18 +14,27 @@ export function ChatPinSetupDialog({ userUuid, onComplete }) {
 
     // ⚠️ SKIP BACKUP CONFIRMATION INTERCEPT STATE
     const [showSkipWarning, setShowSkipWarning] = useState(false);
+    const completeTimerRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (completeTimerRef.current) clearTimeout(completeTimerRef.current);
+        };
+    }, []);
 
     const backupMutation = useMutation({
         mutationFn: async (pinString) => {
             const rawSk = localStorage.getItem("active_session_private_key");
             if (!rawSk) throw new Error("Local private key matrix not resolved in browser memory.");
-            return await backupPrivateKeyToServer(userUuid, rawSk, pinString);
+            return await backupPrivateKeyToServer(userUuid, rawSk, pinString, publicKey);
         },
         onSuccess: () => {
             setStatusText("Backup finalized successfully!");
-            setTimeout(() => {
-                if (onComplete) onComplete();
-                navigate('/feed');
+            completeTimerRef.current = setTimeout(() => {
+                if (onComplete) onComplete({ skipped: false });
+                if (redirectOnComplete) {
+                    navigate(redirectOnComplete);
+                }
             }, 1200);
         },
         onError: (err) => {
@@ -50,13 +59,28 @@ export function ChatPinSetupDialog({ userUuid, onComplete }) {
     };
 
     const handleAbsoluteSkipConfirm = () => {
-        console.warn("User bypassed Zero-Knowledge server backup lanes.");
-        if (onComplete) onComplete();
-        navigate('/feed');
+        if (onSkip) {
+            onSkip();
+        } else if (onComplete) {
+            onComplete({ skipped: true });
+        }
+        if (redirectOnComplete) {
+            navigate(redirectOnComplete);
+        }
     };
     return (
         <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
-            <div className="bg-[#141414] border border-white/10 rounded-[28px] max-w-sm w-full p-6 space-y-4 shadow-2xl text-left transform animate-in zoom-in-95 duration-200">
+            <div className="bg-[#141414] border border-white/10 rounded-[28px] max-w-sm w-full p-6 space-y-4 shadow-2xl text-left transform animate-in zoom-in-95 duration-200 relative">
+                {onCancel && (
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="absolute top-4 right-4 text-neutral-400 hover:text-white p-1 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                        title="Cancel"
+                    >
+                        ✕
+                    </button>
+                )}
 
                 {/* 🚨 SCREEN A: THE "SKIP BACKUP" CRITICAL WARNING NOTICE BOX */}
                 {showSkipWarning ? (
@@ -66,12 +90,12 @@ export function ChatPinSetupDialog({ userUuid, onComplete }) {
                                 <AlertTriangle className="w-6 h-6 stroke-[2.5px]" />
                             </div>
                             <h3 className="text-base font-black text-white tracking-tight">Bypass Cloud Sync?</h3>
-                            <p className="text-xs text-neutral-400 font-medium leading-relaxed max-w-[270px] mx-auto mt-1">
+                            <p className="text-md text-neutral-400 font-medium leading-relaxed max-w-[270px] mx-auto mt-1">
                                 If you skip this backup, your private keys will exist **only** on this current browser instance [1.4].
                             </p>
                         </div>
 
-                        <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl text-neutral-300 space-y-1.5 font-medium text-[11px] leading-relaxed">
+                        <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl text-neutral-300 space-y-1.5 font-medium text-[14px] leading-relaxed">
                             <p className="font-bold text-amber-400 flex items-center gap-1">
                                 <AlertCircle className="w-3.5 h-3.5" />
                                 Permanent History Loss Risk:

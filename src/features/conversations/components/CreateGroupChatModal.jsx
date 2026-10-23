@@ -1,15 +1,21 @@
 // src/features/conversations/components/CreateGroupChatModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../../api/apiClient';
 import { Users, X, ShieldCheck, Loader2, MessageSquare, Terminal } from 'lucide-react';
-import { cn } from '../../../lib/utils';
 
 export function CreateGroupChatModal({ isOpen, onClose, onCreated }) {
     const queryClient = useQueryClient();
     const [groupTitle, setGroupTitle] = useState("");
     const [groupPurpose, setGroupPurpose] = useState("");
     const [statusMessage, setStatusMessage] = useState("");
+    const closeTimerRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+        };
+    }, []);
 
     // 🚀 DISTRIBUTED GROUP PROVISION MUTATION
     const createGroupMutation = useMutation({
@@ -23,7 +29,7 @@ export function CreateGroupChatModal({ isOpen, onClose, onCreated }) {
             setStatusMessage("Group cluster room allocated!");
             queryClient.invalidateQueries({ queryKey: ['conversations', 'inbox'] });
 
-            setTimeout(() => {
+            closeTimerRef.current = setTimeout(() => {
                 const freshRoom = response?.data || response;
                 if (onCreated && freshRoom?.id) onCreated(freshRoom.id);
                 setGroupTitle("");
@@ -33,7 +39,6 @@ export function CreateGroupChatModal({ isOpen, onClose, onCreated }) {
             }, 1000);
         },
         onError: (err) => {
-            console.error("Mesh group creation aborted:", err);
             setStatusMessage(err?.message || "Failed to inject group to distributed Mnesia matrix.");
         }
     });
@@ -60,7 +65,9 @@ export function CreateGroupChatModal({ isOpen, onClose, onCreated }) {
                 <div className="flex items-center justify-between border-b border-white/5 pb-3">
                     <div className="flex items-center gap-2">
                         <Users className="w-5 h-5 text-primary-container stroke-[2.5px]" />
-                        <h3 className="text-base font-black text-white tracking-tight">Establish Mesh Group Room</h3>
+                        <h3 className="text-base font-black text-white tracking-tight">
+                            Establish Mesh Group Room
+                        </h3>
                     </div>
                     <button
                         type="button"

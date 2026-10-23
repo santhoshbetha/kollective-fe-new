@@ -5,8 +5,15 @@ import { ScheduleWidget } from '../../components/ScheduleWidget';
 import { useOrganizeActionsQuery } from '../../features/organize/useOrganizeFeature';
 import { ActionCard } from '../../features/organize/ActionCard';
 import { useAuthStore } from '../../store/auth/useAuthStore';
-import { Virtuoso } from 'react-virtuoso';
+import { VirtuosoGrid } from 'react-virtuoso';
 import { cn } from "@/lib/utils"; // Adjust to match your project layout utilities
+
+const OrganizeGridFooter = () => (
+    <div className="py-8 text-center border-t border-white/5 font-mono text-[10px] text-text-secondary/20 select-none uppercase tracking-wider mt-6">
+        action_directory_matrix_rendered_cleanly
+    </div>
+);
+const organizeGridComponents = { Footer: OrganizeGridFooter };
 
 export const OrganizePage = () => {
     const navigate = useNavigate();
@@ -96,38 +103,13 @@ export const OrganizePage = () => {
                         </div>
                     ) : (
                         /* 🎨 PERFORMANCE GRID LAYER: Virtuoso virtualization engine running responsive columns */
-                        <Virtuoso
+                        <VirtuosoGrid
                             useWindowScroll
                             data={filteredActions}
-                            computeItemKey={(index, action) => action?.id || index}
-                            initialItemCount={Math.min(filteredActions.length, 4)}
-                            increaseViewportBy={300}
-                            overscan={150}
-
-                            components={{
-                                List: React.forwardRef(({ children, style, ...props }, ref) => (
-                                    <div
-                                        {...props}
-                                        ref={ref}
-                                        style={{ ...style }}
-                                        // 🎯 Locks in 1 row on mobile, and spans into 2 columns on wide xl viewports
-                                        className="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full"
-                                    >
-                                        {children}
-                                    </div>
-                                )),
-                                Item: React.forwardRef(({ children, ...props }, ref) => (
-                                    <div {...props} ref={ref} className="h-full flex flex-col">
-                                        {children}
-                                    </div>
-                                )),
-                                Footer: () => (
-                                    <div className="py-8 text-center border-t border-white/5 font-mono text-[10px] text-text-secondary/20 select-none uppercase tracking-wider mt-6">
-                                        action_directory_matrix_rendered_cleanly
-                                    </div>
-                                )
-                            }}
-
+                            computeItemKey={(_index, action) => action?.id || action?.title}
+                            listClassName="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full"
+                            itemClassName="h-full flex flex-col"
+                            components={organizeGridComponents}
                             itemContent={(index, action) => (
                                 <div className="h-full animate-in fade-in duration-150">
                                     <ActionCard action={action} setToastMessage={setToastMessage} />

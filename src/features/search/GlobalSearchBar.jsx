@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGlobalSearchQuery, useInvalidateBookmarkTrigger } from './useGlobalSearch';
-import { Search, X, MessageSquare, Building2, Layers, BookmarkX } from 'lucide-react';
+import { Search, X, MessageSquare, Building2, Layers, BookmarkX, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export function GlobalSearchBar() {
@@ -19,7 +19,8 @@ export function GlobalSearchBar() {
     const hasResults = searchResults && (
         (searchResults.posts?.length > 0) ||
         (searchResults.businesses?.length > 0) ||
-        (searchResults.proposals?.length > 0)
+        (searchResults.proposals?.length > 0) ||
+        (searchResults.accounts?.length > 0)
     );
 
     // Close dropdown instantly if user clicks outside container limits
@@ -39,7 +40,7 @@ export function GlobalSearchBar() {
             <div className="relative group w-full">
                 <Search className={cn(
                     "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors pointer-events-none",
-                    isOpen ? "text-primary-container" : "text-text-secondary/40"
+                    isOpen ? "text-primary-container" : "text-text-secondary/50"
                 )} />
                 <input
                     type="text"
@@ -49,8 +50,14 @@ export function GlobalSearchBar() {
                         setSearchValue(e.target.value);
                         setIsOpen(true);
                     }}
-                    placeholder="Search posts, cooperatives, or proposals..."
-                    className="w-full bg-white dark:bg-[#141414] text-text-primary dark:text-white border border-black/10 dark:border-white/10 rounded-xl py-3 pl-11 pr-10 text-sm focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/10 transition-all font-medium placeholder:text-text-secondary/50"
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && searchVal.trim()) {
+                            setIsOpen(false);
+                            navigate(`/explore?q=${encodeURIComponent(searchVal.trim())}`);
+                        }
+                    }}
+                    placeholder="Search posts, cooperatives, proposals..."
+                    className="w-full bg-surface-container-lowest/50 dark:bg-[#141414] text-text-primary dark:text-white border border-black/10 dark:border-white/10 rounded-full py-2.5 pl-11 pr-10 text-sm focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all font-medium placeholder:text-text-secondary/50 shadow-sm"
                 />
                 {searchVal && (
                     <button
@@ -65,9 +72,10 @@ export function GlobalSearchBar() {
                     </button>
                 )}
             </div>
+
             {/* Floating Dropdown System Results Portal */}
             {isOpen && searchVal.trim().length > 1 && (
-                <div className="absolute top-[calc(100%+8px)] inset-x-0 bg-white dark:bg-[#141414] border border-black/10 dark:border-white/10 shadow-2xl rounded-2xl max-h-[480px] overflow-y-auto custom-scrollbar p-2 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-4 text-text-primary dark:text-white">
+                <div className="absolute top-[calc(100%+8px)] inset-x-0 bg-white dark:bg-[#141414] border border-black/10 dark:border-white/10 shadow-2xl rounded-2xl max-h-[480px] overflow-y-auto custom-scrollbar p-2 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-3 text-text-primary dark:text-white z-50">
 
                     {isPending && (
                         <div className="py-6 text-center font-mono text-[10px] text-text-secondary/40 select-none uppercase tracking-widest animate-pulse">
@@ -83,6 +91,38 @@ export function GlobalSearchBar() {
 
                     {!isPending && hasResults && (
                         <>
+                            {/* Category Module: Citizen Accounts */}
+                            {searchResults.accounts?.length > 0 && (
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-1.5 px-3 py-1 font-mono text-[10px] uppercase font-bold text-text-secondary tracking-wider select-none">
+                                        <Users className="w-3 h-3 text-sky-400" />
+                                        <span>Citizens & Organizers</span>
+                                    </div>
+                                    {searchResults.accounts.map((user) => (
+                                        <div
+                                            key={`search-user-${user.id}`}
+                                            onClick={() => {
+                                                const handle = (user.username || user.handle || user.id || '').replace('@', '');
+                                                navigate(`/profile/${handle}`);
+                                                setIsOpen(false);
+                                            }}
+                                            className="w-full px-3 py-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/[0.04] cursor-pointer transition-colors text-left flex items-center gap-3"
+                                        >
+                                            <img
+                                                src={user.avatar_url || user.avatar || "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png"}
+                                                alt={user.name || user.username}
+                                                className="w-8 h-8 rounded-full object-cover shrink-0 border border-black/5 dark:border-white/10"
+                                                onError={(e) => { e.target.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'; }}
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <h4 className="text-xs font-black text-text-primary dark:text-white truncate">{user.name || user.username}</h4>
+                                                <p className="text-[11px] text-text-secondary truncate">@{user.username || user.handle}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             {/* Category Module: Collective Timeline Posts */}
                             {searchResults.posts?.length > 0 && (
                                 <div className="space-y-1">
@@ -94,14 +134,32 @@ export function GlobalSearchBar() {
                                         <div
                                             key={`search-post-${post.id}`}
                                             onClick={() => {
-                                                navigate(`/timeline/post/${post.id}`);
+                                                navigate(`/post/${post.id}`);
                                                 setIsOpen(false);
                                             }}
-                                            className="w-full px-3 py-2.5 rounded-xl hover:bg-white/[0.02] cursor-pointer transition-colors group flex items-start justify-between gap-4"
+                                            className="w-full px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/[0.04] cursor-pointer transition-colors group flex items-start justify-between gap-3 text-left"
                                         >
-                                            <p className="text-xs text-text-secondary group-hover:text-white transition-colors line-clamp-1 flex-1 font-medium text-left">
-                                                {post.content || post.text}
-                                            </p>
+                                            <div className="flex-1 min-w-0">
+                                                {post.author && (
+                                                    <div className="flex items-center gap-1.5 mb-1">
+                                                        <img
+                                                            src={post.author.avatar || '/default-avatar.jpg'}
+                                                            alt={post.author.name}
+                                                            className="w-4 h-4 rounded-full object-cover shrink-0"
+                                                            onError={(e) => { e.target.src = 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'; }}
+                                                        />
+                                                        <span className="text-[11px] font-bold text-text-primary dark:text-white truncate">
+                                                            {post.author.name}
+                                                        </span>
+                                                        <span className="text-[10px] text-text-secondary truncate">
+                                                            {post.author.handle || (post.author.username && `@${post.author.username}`)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <p className="text-xs text-text-secondary group-hover:text-text-primary dark:group-hover:text-white transition-colors line-clamp-2 font-medium">
+                                                    {post.text || post.content?.replace(/<[^>]+>/g, '') || post.content}
+                                                </p>
+                                            </div>
 
                                             {/* Surgical Cache Eviction shortcut for testing triggers inline */}
                                             {(post.bookmarked || post.isBookmarked) && (
@@ -112,7 +170,7 @@ export function GlobalSearchBar() {
                                                         e.stopPropagation();
                                                         ejectFromBookmarksCache(post.id);
                                                     }}
-                                                    className="opacity-0 group-hover:opacity-100 px-2 py-0.5 rounded border border-red-500/30 bg-red-500/10 text-red-400 font-mono text-[8px] uppercase font-bold transition-opacity hover:bg-red-500/20 flex items-center gap-1 outline-none cursor-pointer"
+                                                    className="opacity-0 group-hover:opacity-100 px-2 py-0.5 rounded border border-red-500/30 bg-red-500/10 text-red-400 font-mono text-[8px] uppercase font-bold transition-opacity hover:bg-red-500/20 flex items-center gap-1 outline-none cursor-pointer shrink-0 mt-0.5"
                                                 >
                                                     <BookmarkX className="w-2.5 h-2.5" />
                                                     <span>Eject</span>
@@ -137,9 +195,9 @@ export function GlobalSearchBar() {
                                                 navigate(`/businesses/${biz.id}`);
                                                 setIsOpen(false);
                                             }}
-                                            className="w-full px-3 py-2.5 rounded-xl hover:bg-white/[0.02] cursor-pointer transition-colors text-left"
+                                            className="w-full px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/[0.04] cursor-pointer transition-colors text-left"
                                         >
-                                            <h4 className="text-xs font-black text-white">{biz.name}</h4>
+                                            <h4 className="text-xs font-black text-text-primary dark:text-white">{biz.name}</h4>
                                             <p className="text-[11px] text-text-secondary line-clamp-1 mt-0.5 font-normal">{biz.description}</p>
                                         </div>
                                     ))}
@@ -160,9 +218,9 @@ export function GlobalSearchBar() {
                                                 navigate(`/proposals/${prop.id}`);
                                                 setIsOpen(false);
                                             }}
-                                            className="w-full px-3 py-2.5 rounded-xl hover:bg-white/[0.02] cursor-pointer transition-colors text-left"
+                                            className="w-full px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/[0.04] cursor-pointer transition-colors text-left"
                                         >
-                                            <h4 className="text-xs font-black text-white">{prop.title}</h4>
+                                            <h4 className="text-xs font-black text-text-primary dark:text-white">{prop.title || prop.name}</h4>
                                             <p className="text-[11px] text-text-secondary line-clamp-1 mt-0.5 font-normal">{prop.description}</p>
                                         </div>
                                     ))}
@@ -172,7 +230,7 @@ export function GlobalSearchBar() {
                     )}
 
                     {/* Index compilation status anchor */}
-                    <div className="p-2 text-center border-t border-white/5 font-mono text-[9px] text-text-secondary/20 select-none uppercase tracking-widest mt-1">
+                    <div className="p-2 text-center border-t border-black/5 dark:border-white/5 font-mono text-[9px] text-text-secondary/30 select-none uppercase tracking-widest mt-1">
                         // pipeline_query_stream_live
                     </div>
                 </div>

@@ -597,6 +597,10 @@ let businesses = [
     name: 'Tech Repair Pro',
     description: 'Professional electronics repair service specializing in smartphones, laptops, and tablets. Quick turnaround with warranty on all repairs.',
     address: '123 Main Street, San Francisco, CA',
+    city: 'San Francisco',
+    state: 'CA',
+    origin_state: 'CA',
+    distanceMiles: 2.1,
     phone: '(555) 123-4567',
     email: 'contact@techrepairpro.com',
     website: 'techrepairpro.com',
@@ -607,7 +611,7 @@ let businesses = [
     reviewsCount: 247,
     rating: 4.8,
     verified: true,
-    open: false,
+    open: true,
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLyIUm-ffCTttHnuM7rD5R7cEVQwQZwSvj1Z5OAaqLt0klmRC4Pd5B7RpDg5uhfR3V5AkJhs5x_JZtkJtbKBBQ7YMzTYCFvgZ9H4nTT0dSRsyTtMY0Aps1bHurYbf6_9hjpP2_kRTdJjnowvPXIGVVCx8M4nyWg8Zqxo4qrqmJ1D-JMsX7AQvJAy3OlWlRDfIzZKZsfD0VUBrktjTpkaWlwt-MWHcU15-2BsvJoumYTTHgqWHhbdqwCRM3b0oMEMbX6iwlkVnlM74',
     established: 2018,
     employees: '5-10',
@@ -618,6 +622,10 @@ let businesses = [
     name: 'Green Leaf Cafe',
     description: 'Organic coffee shop and bakery serving locally sourced ingredients. Cozy atmosphere perfect for work or meetings.',
     address: '456 Oak Avenue, San Francisco, CA',
+    city: 'San Francisco',
+    state: 'CA',
+    origin_state: 'CA',
+    distanceMiles: 4.8,
     phone: '(555) 234-5678',
     email: 'hello@greenleafcafe.com',
     website: 'greenleafcafe.com',
@@ -627,8 +635,8 @@ let businesses = [
     category: 'Food & Beverage',
     reviewsCount: 512,
     rating: 4.9,
-    verified: false,
-    open: false,
+    verified: true,
+    open: true,
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmwzjkz0TtWGC-JpL-ORaBeIFi_MoxRoD1yx1Z573i0NT2dYBzqJO6xAjbu9e1I8lqs168bRhITX6oVC0pS_t6_EG-SnUs9C7fT8RNNHIlteb0JFCUa-6rjk_9eFkt8SjJgaK6M5pf8XEhJp2b7AYSsqa3oZAaXQ_PXE4ii9Br-WQZsq0ItNtWCurnw4dKKzHB9dvF6JyWIAUDr4hgG5FzbGF22eqUxbMfyEFrqwuGQoGNkt2W-ALr7qJ0HMmecYy6fQuEq1DEgbo',
     established: 2021,
     employees: '1-5',
@@ -639,6 +647,10 @@ let businesses = [
     name: 'FitZone Gym',
     description: 'State-of-the-art fitness center with personal trainers, group classes, and modern equipment. First week free!',
     address: '789 Muscle Lane, San Francisco, CA',
+    city: 'San Francisco',
+    state: 'CA',
+    origin_state: 'CA',
+    distanceMiles: 8.5,
     phone: '24/7 Access',
     email: 'info@fitzonegym.com',
     website: 'fitzonegym.com',
@@ -654,6 +666,81 @@ let businesses = [
     established: 2019,
     employees: '6-20',
     services: ['Personal Training', 'Cardio Deck', 'Strength Training', 'Sauna']
+  },
+  {
+    id: 'biz-4',
+    name: 'Pacific Coast Farm Co-op',
+    description: 'Direct-from-farm community grocer providing zero-mile fresh produce, organic dairy, and pantry goods.',
+    address: '100 Coastal Hwy, Monterey, CA',
+    city: 'Monterey',
+    state: 'CA',
+    origin_state: 'CA',
+    distanceMiles: 75.0,
+    phone: '(555) 345-6789',
+    email: 'hello@pacificcoastcoop.org',
+    website: 'pacificcoastcoop.org',
+    hours: 'Daily: 8AM-7PM',
+    owner: 'ElenaRocha',
+    ownerAvatar: '',
+    category: 'Grocery Store',
+    reviewsCount: 318,
+    rating: 4.9,
+    verified: true,
+    open: true,
+    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80',
+    established: 2020,
+    employees: '10-25',
+    services: ['Farm Direct Produce', 'Co-op Bulk Goods', 'Local Delivery']
+  },
+  {
+    id: 'biz-5',
+    name: 'SoCal Solar Collective',
+    description: 'Worker-owned solar installation and microgrid design collective serving southern California communities.',
+    address: '500 Sunset Blvd, Los Angeles, CA',
+    city: 'Los Angeles',
+    state: 'CA',
+    origin_state: 'CA',
+    distanceMiles: 380.0,
+    phone: '(555) 890-1234',
+    email: 'info@socalsolar.coop',
+    website: 'socalsolar.coop',
+    hours: 'Mon-Fri: 8AM-5PM',
+    owner: 'SolarUnion',
+    ownerAvatar: '',
+    category: 'Technology',
+    reviewsCount: 145,
+    rating: 4.8,
+    verified: true,
+    open: true,
+    image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=600&q=80',
+    established: 2022,
+    employees: '15-30',
+    services: ['Solar Installation', 'Battery Storage', 'Community Solar Shares']
+  },
+  {
+    id: 'biz-6',
+    name: 'Lone Star Community Hardware',
+    description: 'Tool lending library and community hardware hub supplying independent contractors in central Texas.',
+    address: '400 Congress Ave, Austin, TX',
+    city: 'Austin',
+    state: 'TX',
+    origin_state: 'TX',
+    distanceMiles: 1500.0,
+    phone: '(555) 901-2345',
+    email: 'info@lonestarhardware.com',
+    website: 'lonestarhardware.com',
+    hours: 'Daily: 7AM-8PM',
+    owner: 'AustinMakers',
+    ownerAvatar: '',
+    category: 'Retail & Crafts',
+    reviewsCount: 88,
+    rating: 4.6,
+    verified: true,
+    open: true,
+    image: 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?auto=format&fit=crop&w=600&q=80',
+    established: 2017,
+    employees: '5-10',
+    services: ['Tool Library', 'Bulk Hardware', 'Workshop Rental']
   }
 ];
 
@@ -662,6 +749,11 @@ let proposals = [
     id: 'prop-1',
     title: 'Community Co-Working Space',
     description: 'A decentralized hub for creators and activists featuring high-speed fiber mesh networks and solar-powered workstations.',
+    location: '120 Market Street, San Francisco, CA',
+    city: 'San Francisco',
+    state: 'CA',
+    origin_state: 'CA',
+    distanceMiles: 3.2,
     fundingGoal: 450000,
     fundingCollected: 292500,
     percent: 65,
@@ -676,6 +768,11 @@ let proposals = [
     id: 'prop-2',
     title: 'Urban Ag-Tech Initiative',
     description: 'Transforming vacant industrial lots into vertical hydroponic farms providing fresh organic produce to the inner city community.',
+    location: '550 Broadway, Oakland, CA',
+    city: 'Oakland',
+    state: 'CA',
+    origin_state: 'CA',
+    distanceMiles: 9.5,
     fundingGoal: 280000,
     fundingCollected: 246400,
     percent: 88,
@@ -690,20 +787,30 @@ let proposals = [
     id: 'prop-3',
     title: 'District Micro-Grid',
     description: 'Implementing a blockchain-based energy sharing network allowing households to trade surplus solar power directly.',
+    location: '200 Santa Clara St, San Jose, CA',
+    city: 'San Jose',
+    state: 'CA',
+    origin_state: 'CA',
+    distanceMiles: 48.0,
     fundingGoal: 1500000,
     fundingCollected: 180000,
     percent: 12,
     daysLeft: 45,
     minInvest: 500,
     maxInvest: 25000,
-    category: 'Sustainable Energy',
+    category: 'Technology',
     participants: '89 Members',
     status: 'New'
   },
   {
     id: 'prop-4',
     title: 'People-First Coffee & Dining Co-op',
-    description: 'A community-owned coffee house and fresh bistro initiative designed to provide ethical, fair-wage dining while outshining corporate monopolies like Starbucks, McDonald’s, and Wendy’s.',
+    description: 'A community-owned coffee house and fresh bistro initiative designed to provide ethical, fair-wage dining while outshining corporate monopolies.',
+    location: '900 K Street, Sacramento, CA',
+    city: 'Sacramento',
+    state: 'CA',
+    origin_state: 'CA',
+    distanceMiles: 87.0,
     fundingGoal: 180000,
     fundingCollected: 126000,
     percent: 70,
@@ -717,7 +824,12 @@ let proposals = [
   {
     id: 'prop-5',
     title: 'People-Pro Low-Cost Clinic & Medical Co-op',
-    description: 'Establishment of a low-margin community clinic and direct-cost pharmacy providing affordable medical care and prescriptions to counter monopolies like CVS and Walgreens.',
+    description: 'Establishment of a low-margin community clinic and direct-cost pharmacy providing affordable medical care and prescriptions.',
+    location: '1500 Broadway, San Diego, CA',
+    city: 'San Diego',
+    state: 'CA',
+    origin_state: 'CA',
+    distanceMiles: 500.0,
     fundingGoal: 350000,
     fundingCollected: 280000,
     percent: 80,
@@ -727,6 +839,25 @@ let proposals = [
     category: 'Healthcare',
     participants: '410 Members',
     status: 'Hot'
+  },
+  {
+    id: 'prop-6',
+    title: 'Lone Star Energy Cooperative',
+    description: 'Independent solar storage and microgrid initiative organized by local Texas landowners and co-ops.',
+    location: '800 Brazos St, Austin, TX',
+    city: 'Austin',
+    state: 'TX',
+    origin_state: 'TX',
+    distanceMiles: 1520.0,
+    fundingGoal: 500000,
+    fundingCollected: 310000,
+    percent: 62,
+    daysLeft: 22,
+    minInvest: 100,
+    maxInvest: 10000,
+    category: 'Technology',
+    participants: '180 Members',
+    status: 'Active'
   }
 ];
 
@@ -821,23 +952,45 @@ export const getBusinesses = async () => {
   return [...businesses];
 };
 
-export const filterBusinesses = async ({ distance, state, latitude, longitude } = {}) => {
+export const filterBusinesses = async ({ distance, state, latitude, longitude, scopeMode } = {}) => {
   await delay(LATENCY);
   let result = [...businesses];
 
-  if (distance) {
-    const maxMiles = parseFloat(distance);
+  if (scopeMode === 'state' || (!distance && state && scopeMode !== '100_miles')) {
+    result = result.filter(b => {
+      const bState = b.origin_state || b.state || b.address || b.location || '';
+      return bState.toLowerCase().includes(state.toLowerCase());
+    });
+  } else if (distance || scopeMode === '100_miles') {
+    const maxMiles = parseFloat(distance || 100);
     if (!isNaN(maxMiles)) {
       result = result.filter(b => {
         if (typeof b.distanceMiles === 'number') return b.distanceMiles <= maxMiles;
         return true;
       });
     }
-  } else if (state) {
-    result = result.filter(b => {
-      const bState = b.origin_state || b.state || b.address || b.location || '';
-      return bState.toLowerCase().includes(state.toLowerCase());
+  }
+
+  return result;
+};
+
+export const filterProposals = async ({ distance, state, latitude, longitude, scopeMode } = {}) => {
+  await delay(LATENCY);
+  let result = [...proposals];
+
+  if (scopeMode === 'state' || (!distance && state && scopeMode !== '100_miles')) {
+    result = result.filter(p => {
+      const pState = p.origin_state || p.state || p.location || '';
+      return pState.toLowerCase().includes(state.toLowerCase());
     });
+  } else if (distance || scopeMode === '100_miles') {
+    const maxMiles = parseFloat(distance || 100);
+    if (!isNaN(maxMiles)) {
+      result = result.filter(p => {
+        if (typeof p.distanceMiles === 'number') return p.distanceMiles <= maxMiles;
+        return true;
+      });
+    }
   }
 
   return result;
@@ -1086,7 +1239,9 @@ let events = [
     date: 'Jan 14, 2025',
     displayDate: 'Tuesday, Jan 14 • 9:00 AM - 5:00 PM',
     time: '9:00 AM - 5:00 PM',
-    location: 'San Francisco Convention Center',
+    location: 'San Francisco Convention Center, CA',
+    state: 'CA',
+    origin_state: 'CA',
     organizer: 'TechCorp Collective',
     organizerAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAu7YhxoiL-OMJMUJ-KnRcDxZ6QClZDclG2CnX9VQYX6ia_V6GmZJSDJyOwhTe0gFFo-OE_TLoksCSMUJuqcb6rlItePpW5DVg10oIYlEKtA7X0HMXGOdUDOKvbGjrjVr760pWGtrurxR1EnG6nS-brlqku55hplOA0zd72APB70w6lZVoBrZS-WRl2_o3Mi_NOPssHMn8ZTB09kDCdBnoUxpOYi6ZcUTHXHGp1Mo3bMpB6WmBcVCkSSplxGbYxFRX1scG0a6ZbJEI',
     category: 'Politics',
@@ -1129,7 +1284,9 @@ let events = [
     date: 'Jan 17, 2025',
     displayDate: 'Friday, Jan 17 • 2:00 PM - 5:00 PM',
     time: '2:00 PM - 5:00 PM',
-    location: 'Online via Kollective99 Stream',
+    location: 'San Francisco Hub & Online Stream, CA',
+    state: 'CA',
+    origin_state: 'CA',
     organizer: 'EarthWatch',
     organizerAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBmM1MOsrx_Oxh9mLlPIv9wjEUWU4Nkq0oMUmGWV--VNEjchJsUZuthMCzgMcfXQ435-Sfs9WizGdYZzXkW0AKbb11mdu2GFrz_sPS_Xg7tRdE3BFS6AD8G1S1vo7lexQqVY_rSdz844c5nlF1LWqRLHasAPetQ3FnuGO0W6Xu2MihFdRY4E9lQZDfiBQZCsqcVebZUjV2Xk5WIM8QzVeG9txnaZaBXdNthJD9-0Fi65BZ7pxeiBj_cduG-ortRW5FZCr5CCqkpcEo',
     category: 'Environment',
@@ -1152,6 +1309,48 @@ let events = [
         replies: []
       }
     ]
+  },
+  {
+    id: 'event-3',
+    title: 'Lone Star Civic Hackathon',
+    description: 'Austin community developers build sovereign local tools for mutual aid and disaster response.',
+    date: 'Jan 20, 2025',
+    displayDate: 'Monday, Jan 20 • 10:00 AM - 6:00 PM',
+    time: '10:00 AM - 6:00 PM',
+    location: 'Austin Tech Center, Austin, TX',
+    state: 'TX',
+    origin_state: 'TX',
+    organizer: 'Austin Mutual Aid',
+    organizerAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c',
+    category: 'Technology',
+    format: 'In-Person',
+    image: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=600&q=80',
+    attendeesCount: 340,
+    interestedCount: 890,
+    isInterested: false,
+    isAttending: false,
+    comments: []
+  },
+  {
+    id: 'event-4',
+    title: 'Empire State Tenant Organizing Forum',
+    description: 'City-wide coalition meeting on tenant union protections and cooperative housing models.',
+    date: 'Jan 22, 2025',
+    displayDate: 'Wednesday, Jan 22 • 6:00 PM - 9:00 PM',
+    time: '6:00 PM - 9:00 PM',
+    location: 'Brooklyn Community Hall, Brooklyn, NY',
+    state: 'NY',
+    origin_state: 'NY',
+    organizer: 'NY Tenant Union',
+    organizerAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAu7YhxoiL-OMJMUJ-KnRcDxZ6QClZDclG2CnX9VQYX6ia_V6GmZJSDJyOwhTe0gFFo-OE_TLoksCSMUJuqcb6rlItePpW5DVg10oIYlEKtA7X0HMXGOdUDOKvbGjrjVr760pWGtrurxR1EnG6nS-brlqku55hplOA0zd72APB70w6lZVoBrZS-WRl2_o3Mi_NOPssHMn8ZTB09kDCdBnoUxpOYi6ZcUTHXHGp1Mo3bMpB6WmBcVCkSSplxGbYxFRX1scG0a6ZbJEI',
+    category: 'Community & culture',
+    format: 'In-Person',
+    image: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=600&q=80',
+    attendeesCount: 512,
+    interestedCount: 1100,
+    isInterested: false,
+    isAttending: false,
+    comments: []
   }
 ];
 

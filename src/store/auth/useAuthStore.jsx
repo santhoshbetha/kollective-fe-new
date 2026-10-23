@@ -33,6 +33,8 @@ export const DEFAULT_MOCK_USER = {
     name: 'Julian Thorne1',
     username: 'j_thorne',
     handle: '@j_thorne',
+    state: 'CA',
+    street_address: '123 Market St',
     avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDkj_L45i8SmnUNelsTSM7xt_t_GV39eYINp6PEQVVLlXUxSvJaNjQYzESvNDMuqrIwONlm6hWBLqOoS8riEyh-1rKUOHRC9C0nsco1tez2QwPMohMyfQvIRlEG3LSpzE_csuDr2MokaO0fyDbrBtLG8zyRK0UE4YoMGHfKU7mmL9pHuChnByhBWfv5g3nPIU3ijvm7g9FXRvV2fzc5TP7CmY_3iFzk73u23dxjIYRKOVsoB-DnXNeLelemr06EtW5rrGyER3EA6c',
     email: 'j_thorne@kollective.social',
     role: 'root_admin',
@@ -194,6 +196,9 @@ export const useAuthStore = create(
 
                 // 4. Force state persistence layer to thoroughly purge browser disk arrays
                 useAuthStore.persist.clearStorage();
+
+                // 5. 🔐 Purge zero-knowledge active session cryptographic private key
+                localStorage.removeItem('active_session_private_key');
             },
 
             // Universal aliases mapping across endpoints, layers, and network interception hooks
@@ -235,6 +240,14 @@ export const useAuthStore = create(
                             updates.user = {
                                 ...currentState.user,
                                 memberships: DEFAULT_MOCK_USER.memberships
+                            };
+                        }
+
+                        if (isDev && currentState.user && !currentState.user.state) {
+                            updates.user = {
+                                ...(updates.user || currentState.user),
+                                state: DEFAULT_MOCK_USER.state,
+                                street_address: (updates.user || currentState.user).street_address || DEFAULT_MOCK_USER.street_address
                             };
                         }
 

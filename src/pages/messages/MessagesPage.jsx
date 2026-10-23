@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "../../components/ui/button";
@@ -16,12 +16,14 @@ import { cn } from '../../lib/utils';
 import {
     MessageCircle, Send, Smile, Paperclip, Search, Phone, Video,
     Info, ImageIcon, Users, UserPlus, ArrowLeft, Loader2, Lock, ShieldX,
-    PanelLeftClose, PanelLeftOpen
+    PanelLeftClose, PanelLeftOpen, Plus, X, Trash2
 } from "lucide-react";
 import { SecureImagePreview } from '../../features/conversations/components/SecureImagePreview';
 import { SecureFileAttachment } from '../../features/conversations/components/SecureFileAttachment';
 import { useDeliveryReceipts } from '../../features/conversations/hooks/useDeliveryReceipts';
 import { GroupRosterSidebar } from '../../features/conversations/components/GroupRosterSidebar';
+import { EmojiSelector } from '../../components/EmojiSelector';
+import { toast } from 'sonner';
 
 export default function MessagesPage() {
     const navigate = useNavigate();
@@ -32,12 +34,12 @@ export default function MessagesPage() {
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [isRosterOpen, setIsRosterOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("all"); // "all" | "direct" | "groups" | "requests"
-    const [uploadProgress, setUploadProgress] = useState(0); // Holds numeric integer 0 to 100
-    const [isUploadingChunks, setIsUploadingChunks] = useState(false);
-
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [pendingAttachment, setPendingAttachment] = useState(null);
 
     const [activeTypers, setActiveTypers] = useState({});
     const typingTimeoutRef = useRef(null);
+    const isTypingRef = useRef(false);
 
     const [privateKey, setPrivateKey] = useState(localStorage.getItem("active_session_private_key") || null);
 
@@ -60,6 +62,8 @@ export default function MessagesPage() {
     };
 
     const fileInputRef = useRef(null);
+    const imageInputRef = useRef(null);
+    const messageInputRef = useRef(null);
     const messagesContainerRef = useRef(null);
 
     // 📡 1. FETCH LIVE CONVERSATIONS INBOX STREAM VIA TANSTACK QUERY
@@ -70,7 +74,6 @@ export default function MessagesPage() {
                 const res = await apiFetch('/api/v1/conversations');
                 return Array.isArray(res) ? res : (res?.data || []);
             } catch (err) {
-                console.warn('apiFetch bypassed for conversations inbox:', err);
                 return [];
             }
         },
@@ -133,10 +136,17 @@ export default function MessagesPage() {
         const textToSend = messageText.trim();
         setMessageText("");
 
+        // Reset typing indicator immediately upon sending
+        if (isTypingRef.current && channel) {
+            isTypingRef.current = false;
+            channel.push("typing_heartbeat", { is_typing: false });
+        }
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
         try {
             await sendMessage(textToSend);
         } catch (err) {
-            console.error("WebSocket text message transmission rejected:", err);
+            toast.error("Failed to deliver message. Check connection.");
         }
     };
 
@@ -144,11 +154,19 @@ export default function MessagesPage() {
         const targetFile = e.target.files?.[0];
         if (!targetFile || !selectedConversation) return;
 
+        // Instant visual feedback for selected attachment!
+        setPendingAttachment({
+            name: targetFile.name,
+            size: targetFile.size,
+            type: targetFile.type
+        });
         setIsUploadingMedia(true);
+
         try {
             // Fetch public keys assigned directly on participant records to sign E2EE payloads
             const recipientPublicKeyPem = activePartner?.public_key || localStorage.getItem(`pubkey:${activePartner?.id}`);
             if (!recipientPublicKeyPem) {
+                toast.error("Recipient public key not resolved. Cannot secure attachment container.");
                 throw new Error("Recipient public key not resolved. Cannot secure attachment container.");
             }
 
@@ -164,18 +182,21 @@ export default function MessagesPage() {
 
             queryClient.invalidateQueries({ queryKey: ['conversations', 'inbox'] });
         } catch (err) {
-            console.error("Local file cryptographic pipeline failure:", err);
+            toast.error(err.message || "Failed to encrypt and stream attachment.");
         } finally {
             setIsUploadingMedia(false);
+            setPendingAttachment(null);
             if (fileInputRef.current) fileInputRef.current.value = "";
+            if (imageInputRef.current) imageInputRef.current.value = "";
         }
     };
 
     // 📡 Real-Time Socket Event Receivers Binding Layout:
     useEffect(() => {
+        setActiveTypers({});
         if (!channel) return;
 
-        channel.on("typing_receipt_broadcast", (payload) => {
+        const handleTypingBroadcast = (payload) => {
             setActiveTypers(prev => {
                 const updated = { ...prev };
                 if (payload.is_typing) {
@@ -185,37 +206,49 @@ export default function MessagesPage() {
                 }
                 return updated;
             });
-        });
+        };
 
-        // 👥 Real-time member events: refresh room signatures & participants
-        channel.on("member_joined", () => {
+        const handleMemberChange = () => {
             if (selectedConversation) {
                 queryClient.invalidateQueries({ queryKey: ['conversations', selectedConversation, 'participants'] });
             }
             queryClient.invalidateQueries({ queryKey: ['conversations', 'inbox'] });
-        });
+        };
 
-        channel.on("member_left", () => {
-            if (selectedConversation) {
-                queryClient.invalidateQueries({ queryKey: ['conversations', selectedConversation, 'participants'] });
+        const typingRef = channel.on("typing_receipt_broadcast", handleTypingBroadcast);
+        const joinedRef = channel.on("member_joined", handleMemberChange);
+        const leftRef = channel.on("member_left", handleMemberChange);
+
+        return () => {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = null;
             }
-            queryClient.invalidateQueries({ queryKey: ['conversations', 'inbox'] });
-        });
-
+            isTypingRef.current = false;
+            if (typeof channel.off === 'function') {
+                channel.off("typing_receipt_broadcast", typingRef);
+                channel.off("member_joined", joinedRef);
+                channel.off("member_left", leftRef);
+            }
+        };
     }, [channel, selectedConversation, queryClient]);
 
-    // ⌨️ KEYSTROKE INTERCEPT HEARTBEAT DISPATCHER:
+    // ⌨️ THROTTLED KEYSTROKE INTERCEPT HEARTBEAT:
     const handleComposerInputChange = (textValue) => {
         setMessageText(textValue);
         if (!channel) return;
 
-        // Dispatch typing start signal immediately
-        channel.push("typing_heartbeat", { is_typing: true });
+        // Only send heartbeat once when typing starts, avoiding WebSocket spam on every keypress
+        if (!isTypingRef.current) {
+            isTypingRef.current = true;
+            channel.push("typing_heartbeat", { is_typing: true });
+        }
 
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
         // Stop typing indicator automatically after 1.5 seconds of keyboard silence
         typingTimeoutRef.current = setTimeout(() => {
+            isTypingRef.current = false;
             channel.push("typing_heartbeat", { is_typing: false });
         }, 1500);
     };
@@ -231,41 +264,12 @@ export default function MessagesPage() {
                             setPrivateKey(rawKey);
                             localStorage.setItem("active_session_private_key", rawKey);
                         }}
+                        onClose={() => navigate('/home')}
                     />
                 </div>
             </div>
         );
     }
-
-    const handleSecureFileAttachmentUpload = async (targetFile) => {
-        if (!targetFile || !selectedConversation) return;
-
-        setIsUploadingChunks(true);
-        setUploadProgress(0);
-
-        try {
-            const recipientPublicKey = currentConversation.partner_public_key;
-
-            // Execute asynchronous client-side 1MB slicing and direct regional streaming loops
-            const trackingManifest = await fragmentAndUploadFile(
-                targetFile,
-                recipientPublicKey,
-                (progressPercent) => setUploadProgress(progressPercent) // Trigger reactive hooks
-            );
-
-            // Submit the finalized cryptographic structural manifest block down your open WebSocket channel frame
-            channel.push("new_group_comment", {
-                text: "[Attachment: Media Secured]",
-                media_payload: trackingManifest
-            });
-
-        } catch (err) {
-            console.error("Fragmentation pipe interrupted:", err);
-        } finally {
-            setIsUploadingChunks(false);
-            setUploadProgress(0);
-        }
-    };
 
     const typerList = Object.values(activeTypers);
     const someoneIsTyping = typerList.length > 0;
@@ -283,79 +287,86 @@ export default function MessagesPage() {
                     )}>
                         {/* Sidebar Header and Search inputs */}
                         <div className={cn(
-                            "p-6 border-b border-black/5 dark:border-white/10 shrink-0 select-none bg-neutral-100/50 dark:bg-card/60 transition-all",
-                            isSidebarCollapsed ? "md:p-3" : "p-6"
+                            "border-b border-black/5 dark:border-white/10 shrink-0 bg-neutral-100/50 dark:bg-card/60 transition-all",
+                            isSidebarCollapsed ? "p-3" : "p-4"
                         )}>
                             <div className={cn(
-                                "flex items-center justify-between",
-                                isSidebarCollapsed ? "md:flex-col md:gap-3 md:justify-center" : "mb-4"
+                                "flex items-center justify-between gap-2",
+                                isSidebarCollapsed ? "flex-col gap-3 justify-center" : "mb-3"
                             )}>
                                 <h2 className={cn(
-                                    "text-lg font-black flex items-center gap-2 text-neutral-900 dark:text-white tracking-tight",
-                                    isSidebarCollapsed ? "md:justify-center" : ""
+                                    "text-lg font-black flex items-center gap-2 text-neutral-900 dark:text-white tracking-tight shrink-0",
+                                    isSidebarCollapsed ? "justify-center" : ""
                                 )}
                                     title={isSidebarCollapsed ? "Conversations" : undefined}
                                 >
                                     <MessageCircle className="h-5 w-5 text-primary-container stroke-[2.5px] shrink-0" />
-                                    <span className={isSidebarCollapsed ? "md:hidden" : ""}>Conversations</span>
+                                    <span className={isSidebarCollapsed ? "hidden" : "truncate"}>Conversations</span>
                                 </h2>
-                                <div className="flex items-center gap-1.5">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        title="Groups"
-                                        className={cn(
-                                            "gap-2 border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-xs font-mono font-bold tracking-wide uppercase text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white",
-                                            isSidebarCollapsed ? "md:p-2 md:h-9 md:w-9" : ""
-                                        )}
+
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    {/* Browse Groups Button */}
+                                    <button
+                                        type="button"
+                                        title="Browse Groups"
                                         onClick={() => navigate("/chats/groups")}
+                                        className="h-8 w-8 flex items-center justify-center rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
                                     >
-                                        <Users className="h-3.5 w-3.5 stroke-[2.5px] shrink-0" />
-                                        <span className={isSidebarCollapsed ? "md:hidden" : ""}>Groups</span>
-                                    </Button>
+                                        <Users className="h-4 w-4 stroke-[2px]" />
+                                    </button>
+
+                                    {/* Create Group Button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsGroupModalOpen(true)}
+                                        title="Create Mesh Group"
+                                        className={cn(
+                                            "h-8 px-2.5 flex items-center gap-1.5 rounded-lg bg-primary-container text-white font-semibold text-xs hover:brightness-110 shadow-sm transition-all cursor-pointer",
+                                            isSidebarCollapsed ? "hidden" : "flex"
+                                        )}
+                                    >
+                                        <Plus className="h-3.5 w-3.5 stroke-[2.5px]" />
+                                        <span className="hidden sm:inline">New Group</span>
+                                    </button>
 
                                     {/* Collapse / Expand Toggle Button for Desktop */}
                                     <button
                                         type="button"
                                         onClick={toggleSidebar}
                                         title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                                        className="hidden lg:flex h-9 w-9 p-0 items-center justify-center border border-black/10 dark:border-white/10 
-                                        hover:bg-black/5 dark:hover:bg-white/5 text-neutral-600 dark:text-neutral-400 
-                                        hover:text-neutral-900 dark:hover:text-white shrink-0 rounded-md"
+                                        className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
                                     >
                                         {isSidebarCollapsed ?
-                                            <PanelLeftOpen className="h-5 w-5" /> :
-                                            <PanelLeftClose className="h-5 w-5" />}
+                                            <PanelLeftOpen className="h-4 w-4" /> :
+                                            <PanelLeftClose className="h-4 w-4" />}
                                     </button>
-
-                                    {/* Create Group Button */}
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => setIsGroupModalOpen(true)}
-                                        title="Create Group"
-                                        className={cn(
-                                            "flex items-center gap-2 border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-xs font-mono font-bold tracking-wide uppercase text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white",
-                                            isSidebarCollapsed ? "md:p-2 md:h-9 md:w-9" : ""
-                                        )}
-                                    >
-                                        <Users className="h-3.5 w-3.5 stroke-[2.5px] shrink-0" />
-                                        <span className={isSidebarCollapsed ? "md:hidden" : ""}>New Group</span>
-                                    </Button>
                                 </div>
                             </div>
-                            <div className={cn("relative", isSidebarCollapsed ? "md:hidden" : "")}>
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500 stroke-[2.5px]" />
-                                <Input
+
+                            {/* Search Bar Input */}
+                            <div className={cn("relative", isSidebarCollapsed ? "hidden" : "block")}>
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500 pointer-events-none stroke-[2px] transition-colors" />
+                                <input
+                                    type="text"
                                     placeholder="Search conversations..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 h-11 bg-white dark:bg-background border-black/10 dark:border-white/10 focus:border-primary-container text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 rounded-xl"
+                                    className="w-full pl-9 pr-9 h-10 bg-white dark:bg-background border border-black/15 dark:border-white/15 rounded-xl text-sm text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-all outline-none focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/25 dark:focus:ring-primary-container/35 shadow-sm"
                                 />
+                                {searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchQuery("")}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 hover:text-neutral-600 dark:hover:text-white flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                        title="Clear search"
+                                    >
+                                        <X className="h-3.5 w-3.5 stroke-[2.5px]" />
+                                    </button>
+                                )}
                             </div>
 
                             {/* Category Filter Tabs Strip */}
-                            <div className={cn("flex items-center gap-1.5 mt-3 overflow-x-auto no-scrollbar", isSidebarCollapsed ? "md:hidden" : "")}>
+                            <div className={cn("flex items-center gap-1.5 mt-2.5 overflow-x-auto no-scrollbar", isSidebarCollapsed ? "hidden" : "flex")}>
                                 {[
                                     { id: "all", label: "All" },
                                     { id: "direct", label: "Direct" },
@@ -541,131 +552,193 @@ export default function MessagesPage() {
                                 <div className="flex-1 flex min-h-0 overflow-hidden relative">
                                     <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
                                         {/* Scrollable Message List Viewport */}
-                                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-neutral-50/50 dark:bg-background/80">
-                                    {isJoining ? (
-                                        <div className="py-24 text-center text-neutral-500 dark:text-neutral-400 font-mono text-xs flex flex-col items-center gap-2 opacity-60 select-none">
-                                            <Loader2 className="w-5 h-5 animate-spin text-primary-container" />
-                                            <span>DECRYPTING CIPHER MATRICES...</span>
+                                        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-neutral-50/50 dark:bg-background/80">
+                                            {isJoining ? (
+                                                <div className="py-24 text-center text-neutral-500 dark:text-neutral-400 font-mono text-xs flex flex-col items-center gap-2 opacity-60 select-none">
+                                                    <Loader2 className="w-5 h-5 animate-spin text-primary-container" />
+                                                    <span>DECRYPTING CIPHER MATRICES...</span>
+                                                </div>
+                                            ) : joinError ? (
+                                                <div className="py-20 text-center text-rose-500 font-mono text-xs space-y-2">
+                                                    <ShieldX className="w-8 h-8 mx-auto stroke-[1.5px]" />
+                                                    <p className="font-black uppercase tracking-wider">Access Restrained</p>
+                                                    <p className="text-neutral-500 dark:text-neutral-400 font-sans font-medium">{joinError}</p>
+                                                </div>
+                                            ) : socketMessages.length > 0 ? (
+                                                socketMessages.map((msg) => (
+                                                    <MessageRow
+                                                        key={msg.id || msg.client_id || `${msg.sender_id || 'msg'}-${msg.inserted_at || msg.text}`}
+                                                        msg={msg}
+                                                        currentUser={currentUser}
+                                                        currentConversation={currentConversation}
+                                                        channel={channel}
+                                                        enqueueMessageForDelivery={enqueueMessageForDelivery}
+                                                        privateKey={privateKey}
+                                                    />
+                                                ))
+                                            ) : (
+                                                <div className="py-32 text-center font-mono text-xs text-neutral-500 dark:text-neutral-600 select-none opacity-50">
+                                                    SECURE_DISCUSSION_THREAD_OPENED...
+                                                </div>
+                                            )}
                                         </div>
-                                    ) : joinError ? (
-                                        <div className="py-20 text-center text-rose-500 font-mono text-xs space-y-2">
-                                            <ShieldX className="w-8 h-8 mx-auto stroke-[1.5px]" />
-                                            <p className="font-black uppercase tracking-wider">Access Restrained</p>
-                                            <p className="text-neutral-500 dark:text-neutral-400 font-sans font-medium">{joinError}</p>
-                                        </div>
-                                    ) : socketMessages.length > 0 ? (
-                                        socketMessages.map((msg, index) => (
-                                            <MessageRow
-                                                key={msg.id || `msg-${index}`}
-                                                msg={msg}
-                                                currentUser={currentUser}
-                                                currentConversation={currentConversation}
-                                                channel={channel}
-                                                enqueueMessageForDelivery={enqueueMessageForDelivery}
-                                                privateKey={privateKey}
-                                            />
-                                        ))
-                                    ) : (
-                                        <div className="py-32 text-center font-mono text-xs text-neutral-500 dark:text-neutral-600 select-none opacity-50">
-                                            SECURE_DISCUSSION_THREAD_OPENED...
-                                        </div>
-                                    )}
-                                </div>
 
-                                {/* 💬 THE REAL-TIME TYPING CHIP BANNER ACCELERATOR */}
-                                {someoneIsTyping && (
-                                    <div className="px-6 py-2 bg-[#141414] border-t border-white/5 flex items-center gap-2 select-none animate-in slide-in-from-bottom-2 duration-150 shrink-0 text-left">
-                                        <div className="flex gap-1 items-center bg-[#1f1f1f] px-2.5 py-1.5 rounded-full border border-white/5 rounded-bl-none shrink-0 shadow-sm">
-                                            <span className="w-1.5 h-1.5 bg-primary-container rounded-full animate-bounce duration-300" style={{ animationDelay: '0ms' }} />
-                                            <span className="w-1.5 h-1.5 bg-primary-container rounded-full animate-bounce duration-300" style={{ animationDelay: '150ms' }} />
-                                            <span className="w-1.5 h-1.5 bg-primary-container rounded-full animate-bounce duration-300" style={{ animationDelay: '300ms' }} />
-                                        </div>
-                                        <span className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-wider">
-                                            {typerList.length === 1 ? `@${typerList[0]} is drafting...` : "Multiple citizens are drafting matrices..."}
-                                        </span>
-                                    </div>
-                                )}
-
-                                <div className="w-full bg-[#141414] border-t border-white/5 space-y-2 p-3">
-
-                                    {isUploadingChunks && (
-                                        <div className="w-full space-y-1.5 select-none animate-in slide-in-from-bottom-2 duration-150 text-left font-mono">
-                                            <div className="flex justify-between items-center text-[10px] font-black uppercase text-neutral-500 tracking-wider">
-                                                <span className="flex items-center gap-1.5 text-primary-container">
-                                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                                    Streaming Fragmented Cipher Matrix...
+                                        {/* 💬 THE REAL-TIME TYPING CHIP BANNER ACCELERATOR */}
+                                        {someoneIsTyping && (
+                                            <div className="px-6 py-2 bg-[#141414] border-t border-white/5 flex items-center gap-2 select-none animate-in slide-in-from-bottom-2 duration-150 shrink-0 text-left">
+                                                <div className="flex gap-1 items-center bg-[#1f1f1f] px-2.5 py-1.5 rounded-full border border-white/5 rounded-bl-none shrink-0 shadow-sm">
+                                                    <span className="w-1.5 h-1.5 bg-primary-container rounded-full animate-bounce duration-300" style={{ animationDelay: '0ms' }} />
+                                                    <span className="w-1.5 h-1.5 bg-primary-container rounded-full animate-bounce duration-300" style={{ animationDelay: '150ms' }} />
+                                                    <span className="w-1.5 h-1.5 bg-primary-container rounded-full animate-bounce duration-300" style={{ animationDelay: '300ms' }} />
+                                                </div>
+                                                <span className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-wider">
+                                                    {typerList.length === 1 ? `@${typerList[0]} is drafting...` : "Multiple citizens are drafting matrices..."}
                                                 </span>
-                                                <span>{uploadProgress}%</span>
                                             </div>
+                                        )}
 
-                                            {/* 📊 Outside Gauge Progress Rail Track Container */}
-                                            <div className="w-full h-1.5 bg-[#181818] border border-white/5 rounded-full overflow-hidden relative">
-                                                <div
-                                                    className="h-full bg-primary-container rounded-full transition-all duration-300 ease-out"
-                                                    style={{ width: `${uploadProgress}%` }}
-                                                />
+                                        <div className="w-full bg-[#141414] border-t border-white/5 space-y-2 p-3">
+                                            {/* Message Input Composer Footer Bar */}
+                                            <div className="border-t border-black/5 dark:border-white/10 p-3 sm:p-4 bg-neutral-100/50 dark:bg-slate-950/40 shrink-0">
+                                                {/* 📎 Instant visual feedback for pending/uploading attachment */}
+                                                {pendingAttachment && (
+                                                    <div className="flex items-center justify-between bg-primary-container/10 border border-primary-container/20 rounded-xl px-3 py-2 text-xs animate-in fade-in slide-in-from-bottom-1 duration-150 mb-2">
+                                                        <div className="flex items-center gap-2 truncate">
+                                                            {isUploadingMedia ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin text-primary-container shrink-0" />
+                                                            ) : (
+                                                                <Paperclip className="h-4 w-4 text-primary-container shrink-0" />
+                                                            )}
+                                                            <span className="font-mono font-medium truncate text-neutral-800 dark:text-neutral-200">
+                                                                {pendingAttachment.name}
+                                                            </span>
+                                                            <span className="text-[10px] text-neutral-500 shrink-0">
+                                                                ({(pendingAttachment.size / 1024).toFixed(1)} KB)
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-[10px] font-mono text-primary-container uppercase font-bold shrink-0 ml-2">
+                                                            Encrypting & Uploading...
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex items-center gap-1 sm:gap-2 relative">
+                                                    {/* Hidden file input for documents & all files */}
+                                                    <input
+                                                        type="file"
+                                                        ref={fileInputRef}
+                                                        onChange={handleFileAttachmentChange}
+                                                        className="hidden"
+                                                        accept="image/*,application/pdf,.doc,.docx,.txt"
+                                                    />
+
+                                                    {/* Hidden file input for photos & images */}
+                                                    <input
+                                                        type="file"
+                                                        ref={imageInputRef}
+                                                        onChange={handleFileAttachmentChange}
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                    />
+
+                                                    {/* File / Document Attachment Button */}
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        disabled={isUploadingMedia || isJoining}
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        title="Attach Document or File"
+                                                        className="h-8 w-8 sm:h-10 sm:w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-lg sm:rounded-xl shrink-0 cursor-pointer transition-colors p-0"
+                                                    >
+                                                        {isUploadingMedia ? <Loader2 className="h-4 w-4 animate-spin text-primary-container" /> : <Paperclip className="h-4 w-4 sm:h-5 sm:w-5" />}
+                                                    </Button>
+
+                                                    {/* Image Attachment Button */}
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        disabled={isUploadingMedia || isJoining}
+                                                        onClick={() => imageInputRef.current?.click()}
+                                                        title="Attach Image"
+                                                        className="h-8 w-8 sm:h-10 sm:w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-lg sm:rounded-xl shrink-0 cursor-pointer transition-colors p-0"
+                                                    >
+                                                        <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                    </Button>
+
+                                                    {/* Emoji Picker Button & Popover */}
+                                                    <div className="relative shrink-0">
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => setShowEmojiPicker(prev => !prev)}
+                                                            title="Insert Emojis"
+                                                            className={cn(
+                                                                "h-8 w-8 sm:h-10 sm:w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-lg sm:rounded-xl shrink-0 cursor-pointer transition-colors p-0",
+                                                                showEmojiPicker && "text-primary-container bg-primary-container/10"
+                                                            )}
+                                                        >
+                                                            <Smile className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                        </Button>
+
+                                                        {showEmojiPicker && (
+                                                            <EmojiSelector
+                                                                onSelect={(emoji) => {
+                                                                    setMessageText(prev => prev + emoji);
+                                                                    setShowEmojiPicker(false);
+                                                                    messageInputRef.current?.focus();
+                                                                }}
+                                                                onClose={() => setShowEmojiPicker(false)}
+                                                                className="bottom-12 sm:bottom-14 left-0 z-50"
+                                                            />
+                                                        )}
+                                                    </div>
+
+                                                    {/* Instant-focus Text Input */}
+                                                    <input
+                                                        ref={messageInputRef}
+                                                        type="text"
+                                                        disabled={isUploadingMedia || isJoining}
+                                                        placeholder={isUploadingMedia ? "Encrypting asset package via AES-GCM..." : "Type a secure cipher message..."}
+                                                        value={messageText}
+                                                        onChange={(e) => handleComposerInputChange(e.target.value)}
+                                                        className="flex-1 min-w-0 h-9 sm:h-11 px-2.5 sm:px-4 bg-white dark:bg-background border border-black/10 dark:border-white/10 rounded-lg sm:rounded-xl text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-container/30 focus:border-primary-container transition-all"
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === "Enter" && !e.shiftKey && messageText.trim()) {
+                                                                e.preventDefault();
+                                                                handleSendMessage();
+                                                            }
+                                                        }}
+                                                    />
+
+                                                    {/* Send Button */}
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        onClick={handleSendMessage}
+                                                        disabled={!messageText.trim() || isUploadingMedia || isJoining}
+                                                        className="h-8 w-8 sm:h-10 sm:w-10 bg-primary-container hover:brightness-105 active:scale-95 rounded-lg sm:rounded-xl shrink-0 border-none cursor-pointer transition-all disabled:opacity-40 p-0"
+                                                        title="Send Message"
+                                                    >
+                                                        <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                                    </Button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-
-                                    {/* Message Input Composer Footer Bar */}
-                                    <div className="border-t border-black/5 dark:border-white/10 p-4 bg-neutral-100/50 dark:bg-slate-950/40 shrink-0 select-none">
-                                        <div className="flex items-center gap-2 relative">
-                                            <input type="file" ref={fileInputRef} onChange={handleFileAttachmentChange} className="hidden" accept="image/*,application/pdf" />
-
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                disabled={isUploadingMedia || isJoining}
-                                                onClick={() => fileInputRef.current?.click()}
-                                                className="h-10 w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl shrink-0"
-                                            >
-                                                {isUploadingMedia ? <Loader2 className="h-4 w-4 animate-spin text-primary-container" /> : <Paperclip className="h-5 w-5" />}
-                                            </Button>
-
-                                            <Button variant="ghost" size="icon" className="h-10 w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl shrink-0">
-                                                <ImageIcon className="h-5 w-5" />
-                                            </Button>
-
-                                            <Button variant="ghost" size="icon" className="h-10 w-10 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl shrink-0">
-                                                <Smile className="h-5 w-5" />
-                                            </Button>
-
-                                            <Input
-                                                placeholder={isUploadingMedia ? "Encrypting asset package via AES-GCM..." : "Type a secure cipher message..."}
-                                                value={messageText}
-                                                onChange={(e) => handleComposerInputChange(e.target.value)}
-                                                className="h-11 bg-white dark:bg-background border-black/10 dark:border-white/10 focus:border-primary-container text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 rounded-xl"
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter" && !e.shiftKey && messageText.trim()) {
-                                                        e.preventDefault();
-                                                        handleSendMessage();
-                                                    }
-                                                }}
-                                            />
-                                            <Button
-                                                size="icon"
-                                                onClick={handleSendMessage}
-                                                disabled={isUploadingMedia || isJoining}
-                                                className="h-10 w-10 bg-primary-container hover:brightness-105 rounded-xl shrink-0 border-none cursor-pointer"
-                                            >
-                                                <Send className="h-4 w-4 text-white" />
-                                            </Button>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            {/* 👥 Group Roster Sidebar Component */}
-                            <GroupRosterSidebar
-                                conversationId={selectedConversation}
-                                isOpen={isRosterOpen}
-                                onClose={() => setIsRosterOpen(false)}
-                                conversation={currentConversation}
-                                onInviteMember={() => setIsInviteModalOpen(true)}
-                            />
-                        </div>
-                    </>
+                                    {/* 👥 Group Roster Sidebar Component */}
+                                    <GroupRosterSidebar
+                                        conversationId={selectedConversation}
+                                        isOpen={isRosterOpen}
+                                        onClose={() => setIsRosterOpen(false)}
+                                        conversation={currentConversation}
+                                        onInviteMember={() => setIsInviteModalOpen(true)}
+                                    />
+                                </div>
+                            </>
                         ) : (
                             /* Unselected Thread Fallback Window View */
                             <div className="flex-1 flex items-center justify-center text-neutral-500 dark:text-neutral-400 bg-neutral-50/50 dark:bg-background/80 select-none font-mono text-xs">
@@ -723,6 +796,10 @@ function MessageRow({
         return () => clearTimeout(selfDestructTimer);
     }, [msg.expires_at, isExpired]);
 
+    const handleReadVisible = useCallback(() => {
+        channel?.push("read_receipt", { message_id: msg.id });
+    }, [channel, msg.id]);
+
     if (isExpired) return null;
 
     const isOwn = msg.author?.id === currentUser?.id || msg.sender_id === currentUser?.id || msg.author?.username === 'me';
@@ -748,7 +825,7 @@ function MessageRow({
             messageId={msg.id}
             isOwn={isOwn}
             isRead={isReadByPartner}
-            onReadVisible={() => channel?.push("read_receipt", { message_id: msg.id })}
+            onReadVisible={handleReadVisible}
         >
             <ObservedMessageRow
                 messageId={msg.id}
@@ -756,7 +833,7 @@ function MessageRow({
                 onVisible={enqueueMessageForDelivery}
             >
                 <div className={cn(
-                    "flex w-full mb-1 items-end gap-2 text-left animate-in fade-in duration-150 relative group",
+                    "flex w-full mb-1 items-end gap-2 text-left animate-in fade-in duration-150 group",
                     msgType === "system_notice" ? "justify-center" : isOwn ? "justify-end" : "justify-start"
                 )}>
                     {/* Hover actions: Only shown to the author and if the item isn't already deleted */}
@@ -768,10 +845,11 @@ function MessageRow({
                                     channel?.push("delete_message", { message_id: msg.id });
                                 }
                             }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-1/2 -translate-y-1/2 bg-[#1f1f1f] border border-white/5 hover:text-rose-400 p-1.5 rounded-lg text-neutral-500 font-mono text-[9px] font-black uppercase tracking-wider cursor-pointer outline-none z-10 mx-2"
-                            style={{ [isOwn ? 'left' : 'right']: '-45px' }}
+                            title="Delete message"
+                            className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all self-center p-1.5 rounded-lg text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/20 font-mono text-[9px] font-black uppercase tracking-wider cursor-pointer outline-none shrink-0 flex items-center gap-1 border border-transparent hover:border-rose-500/20"
                         >
-                            Delete
+                            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                            <span className="hidden sm:inline">Delete</span>
                         </button>
                     )}
 

@@ -5,7 +5,7 @@ import { apiFetch } from "../api/apiClient";
  * 🔒 ZERO-KNOWLEDGE SERVER BACKUP:
  * Encrypts the raw base64 Private Key using a user Chat PIN locally in browser RAM [1.4].
  */
-export async function backupPrivateKeyToServer(userUuid, rawPrivateKeyB64, pinString) {
+export async function backupPrivateKeyToServer(userUuid, rawPrivateKeyB64, pinString, publicKeyPem = null) {
     try {
         const encoder = new TextEncoder();
 
@@ -50,7 +50,8 @@ export async function backupPrivateKeyToServer(userUuid, rawPrivateKeyB64, pinSt
 
         const payload = {
             encrypted_private_key_backup: JSON.stringify(backupBlob),
-            backup_salt: btoa(String.fromCharCode(...salt))
+            backup_salt: btoa(String.fromCharCode(...salt)),
+            ...(publicKeyPem ? { public_key: publicKeyPem } : {})
         };
 
         // 5️⃣ Push the sealed matrix bundle up to your Elixir user accounts contexts route [1.4]

@@ -1,12 +1,15 @@
 // src/pages/LocalBusinessesPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { LocalBusinessesFeed } from '../../features/businesses/LocalBusinessesFeed';
 import { ProposalsFeed } from '../../features/businesses/ProposalsFeed';
+import { useBusinessesQuery } from '../../features/businesses/useBusinessesFeature';
+import { useProposalsQuery } from '../../features/businesses/useProposalsFeature';
+import { isItemInScope } from '../../utils/geoUtils';
 import { PostAdModal } from '../../components/modals/PostAdModal';
-import { Filter, ChevronDown, Search, X } from 'lucide-react';
+import { Filter, ChevronDown, Search, X, MapPin, Star, CheckCircle2, Compass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const LocalBusinessesPage = () => {
@@ -26,6 +29,31 @@ export const LocalBusinessesPage = () => {
     const hasState = Boolean((userState && userState.trim()) || currentUser?.state || currentUser?.origin_state);
     const canAccessBusinesses = hasAddressOrCoords || hasState;
 
+    // 🎯 Scope Mode: '100_miles' vs 'state' (User toggleable)
+    const [scopeMode, setScopeMode] = useState(hasAddressOrCoords ? '100_miles' : 'state');
+
+    useEffect(() => {
+        if (!hasAddressOrCoords && scopeMode === '100_miles' && hasState) {
+            setScopeMode('state');
+        } else if (hasAddressOrCoords && scopeMode === 'state') {
+            setScopeMode('100_miles');
+        }
+    }, [hasAddressOrCoords, hasState]);
+
+    // Normalized effective state (e.g., 'CA')
+    const effectiveUserState = useMemo(() => {
+        const raw = userState || currentUser?.state || currentUser?.origin_state || currentUser?.political_location?.state || '';
+        return String(raw).toUpperCase().trim();
+    }, [userState, currentUser]);
+
+    // User coordinates
+    const userCoords = useMemo(() => {
+        if (currentUser?.latitude && currentUser?.longitude) {
+            return { latitude: currentUser.latitude, longitude: currentUser.longitude };
+        }
+        return null;
+    }, [currentUser]);
+
     const DISTANCE_OPTIONS = [
         { label: '5 miles', value: '5' },
         { label: '10 miles', value: '10' },
@@ -34,16 +62,65 @@ export const LocalBusinessesPage = () => {
         { label: '100 miles', value: '100' },
     ];
 
-    const [businessPage, setBusinessPage] = useState(1);
-    const [proposalPage, setProposalPage] = useState(1);
-    const itemsPerPage = 6;
     const [isPostAdOpen, setIsPostAdOpen] = useState(false);
     const [isClassifiedsOpen, setIsClassifiedsOpen] = useState(false);
 
+    // Live search query data hooks
+    const { businesses = [] } = useBusinessesQuery();
+    const { proposals = [] } = useProposalsQuery();
+    const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+    const searchContainerRef = useRef(null);
+
+    // Close search dropdown on click outside
     useEffect(() => {
-        setBusinessPage(1);
-        setProposalPage(1);
-    }, [activeCategory, searchQuery]);
+        const handleClickOutside = (e) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+                setIsSearchDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // 🔍 Dropdown Quick-Results (like GlobalSearchBar, strictly respecting 100 miles or State toggle)
+    const dropdownSearchResults = useMemo(() => {
+        if (!searchQuery || !searchQuery.trim()) return [];
+        const query = searchQuery.toLowerCase().trim();
+        const maxDist = selectedDistance ? parseFloat(selectedDistance) : 100;
+
+        if (activeTab === 'businesses') {
+            const list = Array.isArray(businesses) ? businesses : [];
+            return list.filter((biz) => {
+                if (!isItemInScope(biz, scopeMode, effectiveUserState, maxDist, userCoords)) {
+                    return false;
+                }
+
+                const matchesName = (biz.name || '').toLowerCase().includes(query);
+                const matchesDesc = (biz.description || '').toLowerCase().includes(query);
+                const matchesCat = (biz.category || '').toLowerCase().includes(query);
+                const matchesAddr = (biz.address || '').toLowerCase().includes(query);
+                const matchesCity = (biz.city || '').toLowerCase().includes(query);
+                const matchesServices = Array.isArray(biz.services) && biz.services.some(s => String(s).toLowerCase().includes(query));
+
+                return matchesName || matchesDesc || matchesCat || matchesAddr || matchesCity || matchesServices;
+            }).slice(0, 8);
+        } else {
+            const list = Array.isArray(proposals) ? proposals : [];
+            return list.filter((prop) => {
+                if (!isItemInScope(prop, scopeMode, effectiveUserState, 100, userCoords)) {
+                    return false;
+                }
+
+                const matchesTitle = (prop.title || '').toLowerCase().includes(query);
+                const matchesDesc = (prop.description || '').toLowerCase().includes(query);
+                const matchesCat = (prop.category || '').toLowerCase().includes(query);
+                const matchesLoc = (prop.location || '').toLowerCase().includes(query);
+                const matchesCity = (prop.city || '').toLowerCase().includes(query);
+
+                return matchesTitle || matchesDesc || matchesCat || matchesLoc || matchesCity;
+            }).slice(0, 8);
+        }
+    }, [activeTab, businesses, proposals, searchQuery, scopeMode, effectiveUserState, selectedDistance, userCoords]);
 
     const categories = ['All',
         'Food & Beverage',
@@ -62,42 +139,6 @@ export const LocalBusinessesPage = () => {
         'Technology',
         'Construction',
         'Manufacturing'];
-
-    const renderPagination = (currentPage, totalPages, onPageChange) => {
-        if (totalPages <= 1) return null;
-        return (
-            <div className="flex justify-center items-center gap-2 mt-8 pb-4">
-                <button
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="flex items-center justify-center w-9 h-9 rounded-xl bg-surface-container-high border border-white/5 text-text-secondary hover:text-white disabled:opacity-40 transition-all cursor-pointer"
-                >
-                    <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-                </button>
-                {Array.from({ length: totalPages }, (_, idx) => {
-                    const page = idx + 1;
-                    const isActive = currentPage === page;
-                    return (
-                        <button
-                            key={page}
-                            onClick={() => onPageChange(page)}
-                            className={`w-9 h-9 rounded-xl text-sm font-bold transition-all border ${isActive ? 'bg-primary-container text-white border-primary-container crimson-glow font-bold' : 'bg-surface-container-high border-white/5 text-text-secondary'
-                                }`}
-                        >
-                            {page}
-                        </button>
-                    );
-                })}
-                <button
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="flex items-center justify-center w-9 h-9 rounded-xl bg-surface-container-high border border-white/5 text-text-secondary hover:text-white disabled:opacity-40 transition-all cursor-pointer"
-                >
-                    <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-                </button>
-            </div>
-        );
-    };
 
     if (!canAccessBusinesses) {
         return (
@@ -123,7 +164,7 @@ export const LocalBusinessesPage = () => {
         );
     }
 
-    const hasActiveFilters = Boolean(searchQuery || activeCategory !== 'All' || selectedDistance);
+    const hasActiveFilters = Boolean(searchQuery.trim() || activeCategory !== 'All' || selectedDistance || scopeMode !== (hasAddressOrCoords ? '100_miles' : 'state'));
 
     return (
         <div className="max-w-[1280px] mx-auto flex flex-col gap-12 pb-20 w-full relative">
@@ -196,7 +237,7 @@ export const LocalBusinessesPage = () => {
                 </div>
 
                 {/* Collapsible Search & Filter Accordion Card */}
-                <section className="mb-8 bg-surface-container border border-outline-variant rounded-card shadow-2xl overflow-hidden font-sans transition-all">
+                <section className={cn("mb-8 bg-surface-container border border-outline-variant rounded-card shadow-2xl font-sans transition-all", isSearchExpanded ? "overflow-visible" : "overflow-hidden")}>
                     {/* Accordion Trigger Header */}
                     <button
                         type="button"
@@ -229,85 +270,302 @@ export const LocalBusinessesPage = () => {
                     {/* Expandable Filter Panel */}
                     <div
                         className={cn(
-                            "transition-all duration-300 ease-out overflow-hidden px-6",
+                            "transition-all duration-300 ease-out px-6",
                             isSearchExpanded
-                                ? "max-h-[2000px] opacity-100 pb-8 border-t border-outline-variant/40 pt-6"
-                                : "max-h-0 opacity-0 py-0 border-t-0"
+                                ? "max-h-[2000px] opacity-100 pb-8 border-t border-outline-variant/40 pt-6 overflow-visible"
+                                : "max-h-0 opacity-0 py-0 border-t-0 overflow-hidden"
                         )}
                     >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                            {/* Search Input */}
-                            <div className="space-y-2 flex flex-col">
-                                <label className="text-lg font-bold text-text-secondary uppercase tracking-widest">
-                                    {activeTab === 'businesses' ? 'Search Businesses' : 'Search Proposals'}
-                                </label>
+                            {/* Search Input Box with Scope Switcher & Live Dropdown (like GlobalSearchBar) */}
+                            <div ref={searchContainerRef} className="space-y-2 flex flex-col relative z-20">
+                                <div className="flex items-center justify-between flex-wrap gap-2 select-none">
+                                    <label className="text-sm font-bold text-text-secondary uppercase tracking-widest font-mono">
+                                        {activeTab === 'businesses' ? 'Search Businesses' : 'Search Proposals'}
+                                    </label>
+
+                                    {/* 🎛️ Scope Switcher Pill: Within 100 Miles vs Entire State */}
+                                    <div className="inline-flex items-center bg-[#0d1117] p-0.5 rounded-xl border border-white/10 text-xs font-mono font-bold select-none">
+                                        <button
+                                            type="button"
+                                            onClick={() => setScopeMode('100_miles')}
+                                            className={cn(
+                                                "px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer border-none text-[11px]",
+                                                scopeMode === '100_miles'
+                                                    ? "bg-primary-container text-white shadow-sm font-extrabold"
+                                                    : "text-text-secondary hover:text-white bg-transparent"
+                                            )}
+                                            title="Limit results to 100 miles radius"
+                                        >
+                                            <Compass className="w-3.5 h-3.5" />
+                                            <span>Within 100 Miles</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setScopeMode('state')}
+                                            className={cn(
+                                                "px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer border-none text-[11px]",
+                                                scopeMode === 'state'
+                                                    ? "bg-primary-container text-white shadow-sm font-extrabold"
+                                                    : "text-text-secondary hover:text-white bg-transparent"
+                                            )}
+                                            title="Limit results to your entire state"
+                                        >
+                                            <MapPin className="w-3.5 h-3.5" />
+                                            <span>Entire State {effectiveUserState ? `(${effectiveUserState})` : ''}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <div className="relative group">
-                                    <Search className="w-4 h-4 text-text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors group-focus-within:text-primary" />
+                                    <Search className={cn(
+                                        "w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors",
+                                        isSearchDropdownOpen ? "text-primary-container" : "text-text-secondary group-focus-within:text-primary-container"
+                                    )} />
                                     <input
-                                        className="w-full bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 text-[16px] rounded-card pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/40 outline-none transition-all"
-                                        placeholder={activeTab === 'businesses' ? 'Search businesses by name, description...' : 'Search proposals...'}
+                                        className="w-full bg-[#0d1117] border border-white/10 focus:border-primary-container text-sm rounded-xl pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/40 outline-none transition-all shadow-sm"
+                                        placeholder={
+                                            activeTab === 'businesses'
+                                                ? (scopeMode === '100_miles' ? 'Search local businesses within 100 miles...' : `Search businesses in ${effectiveUserState || 'state'}...`)
+                                                : (scopeMode === '100_miles' ? 'Search community proposals within 100 miles...' : `Search proposals in ${effectiveUserState || 'state'}...`)
+                                        }
                                         type="text"
                                         value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onFocus={() => setIsSearchDropdownOpen(true)}
+                                        onChange={(e) => {
+                                            setSearchQuery(e.target.value);
+                                            setIsSearchDropdownOpen(true);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                setIsSearchDropdownOpen(false);
+                                            }
+                                        }}
                                     />
                                     {searchQuery && (
                                         <button
                                             type="button"
-                                            onClick={() => setSearchQuery('')}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary p-0.5 rounded-md bg-transparent border-none cursor-pointer"
+                                            onClick={() => {
+                                                setSearchQuery('');
+                                                setIsSearchDropdownOpen(false);
+                                            }}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary p-0.5 rounded bg-transparent border-none cursor-pointer"
                                             aria-label="Clear search text"
                                         >
                                             <X className="w-4 h-4" />
                                         </button>
                                     )}
                                 </div>
-                                <p className="text-[14px] text-text-secondary/60 italic">
-                                    Search across business names, services, and descriptions
-                                </p>
+
+                                {/* Floating Dropdown System Results Portal (GlobalSearchBar styled, scoped) */}
+                                {isSearchDropdownOpen && searchQuery.trim().length > 0 && (
+                                    <div className="absolute top-[calc(100%+6px)] inset-x-0 bg-[#141414] border border-white/10 shadow-2xl rounded-2xl max-h-[440px] overflow-y-auto custom-scrollbar p-2 animate-in fade-in slide-from-top-2 duration-150 flex flex-col gap-2 z-50 text-text-primary">
+                                        {/* Header Bar */}
+                                        <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/5 font-mono text-[11px] text-text-secondary select-none">
+                                            <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-primary-container">
+                                                {scopeMode === '100_miles' ? <Compass className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
+                                                <span>
+                                                    {scopeMode === '100_miles'
+                                                        ? `Within 100 Miles Radius`
+                                                        : `State Scope: ${effectiveUserState || 'Local State'}`}
+                                                </span>
+                                            </div>
+                                            <span className="text-[10px] text-text-secondary/60 font-mono">
+                                                {dropdownSearchResults.length} {dropdownSearchResults.length === 1 ? 'match' : 'matches'}
+                                            </span>
+                                        </div>
+
+                                        {/* Results List */}
+                                        {dropdownSearchResults.length > 0 ? (
+                                            <div className="space-y-1">
+                                                {dropdownSearchResults.map((item) => {
+                                                    if (activeTab === 'businesses') {
+                                                        const distLabel = typeof item.distanceMiles === 'number'
+                                                            ? `${item.distanceMiles} mi away`
+                                                            : (item.city || item.address || 'Local');
+                                                        return (
+                                                            <div
+                                                                key={`biz-dropdown-${item.id}`}
+                                                                onClick={() => {
+                                                                    navigate(`/businesses/${item.id}`);
+                                                                    setIsSearchDropdownOpen(false);
+                                                                }}
+                                                                className="w-full px-3 py-2.5 rounded-xl hover:bg-white/[0.04] cursor-pointer transition-colors group flex items-start gap-3 text-left border border-transparent hover:border-white/5"
+                                                            >
+                                                                <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-white/5 border border-white/10 relative">
+                                                                    <img
+                                                                        src={item.image || item.profile_image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=120&q=80'}
+                                                                        alt={item.name}
+                                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=120&q=80'; }}
+                                                                    />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2 mb-0.5">
+                                                                        <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-primary-container/10 text-primary-container border border-primary-container/20 font-bold truncate">
+                                                                            {item.category || 'Business'}
+                                                                        </span>
+                                                                        {item.verified && (
+                                                                            <span className="text-[9px] font-mono font-bold uppercase px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-0.5">
+                                                                                <CheckCircle2 className="w-2.5 h-2.5" />
+                                                                                Verified
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <h4 className="text-xs font-bold text-white group-hover:text-primary-container transition-colors truncate">
+                                                                        {item.name}
+                                                                    </h4>
+                                                                    <div className="flex items-center gap-2 mt-1 text-[11px] text-text-secondary truncate font-mono">
+                                                                        <span className="flex items-center gap-1 text-amber-400">
+                                                                            <Star className="w-3 h-3 fill-amber-400 shrink-0" />
+                                                                            <span>{item.rating || 5.0}</span>
+                                                                        </span>
+                                                                        <span>•</span>
+                                                                        <span className="flex items-center gap-1 truncate text-text-secondary/80">
+                                                                            <MapPin className="w-3 h-3 text-text-secondary/60 shrink-0" />
+                                                                            <span className="truncate">{distLabel}</span>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    } else {
+                                                        const percent = item.percent || 0;
+                                                        const distLabel = typeof item.distanceMiles === 'number'
+                                                            ? `${item.distanceMiles} mi away`
+                                                            : (item.city || item.location || 'Local');
+                                                        return (
+                                                            <div
+                                                                key={`prop-dropdown-${item.id}`}
+                                                                onClick={() => {
+                                                                    navigate(`/proposals/${item.id}`);
+                                                                    setIsSearchDropdownOpen(false);
+                                                                }}
+                                                                className="w-full px-3 py-2.5 rounded-xl hover:bg-white/[0.04] cursor-pointer transition-colors group flex items-start gap-3 text-left border border-transparent hover:border-white/5"
+                                                            >
+                                                                <div className="w-12 h-12 rounded-lg bg-primary-container/10 border border-primary-container/20 flex items-center justify-center text-primary-container shrink-0">
+                                                                    <span className="material-symbols-outlined text-2xl">
+                                                                        {item.category === 'Infrastructure' ? 'deck' : item.category === 'Agriculture' ? 'agriculture' : 'electric_bolt'}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2 mb-0.5">
+                                                                        <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-primary-container/10 text-primary-container border border-primary-container/20 font-bold truncate">
+                                                                            {item.category || 'Proposal'}
+                                                                        </span>
+                                                                        <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                                                            {item.status || 'Active'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <h4 className="text-xs font-bold text-white group-hover:text-primary-container transition-colors truncate">
+                                                                        {item.title}
+                                                                    </h4>
+                                                                    <div className="flex items-center gap-2 mt-1 text-[11px] text-text-secondary truncate font-mono">
+                                                                        <span className="text-primary-container font-bold">{percent}% funded</span>
+                                                                        <span>•</span>
+                                                                        <span className="flex items-center gap-1 truncate text-text-secondary/80">
+                                                                            <MapPin className="w-3 h-3 text-text-secondary/60 shrink-0" />
+                                                                            <span className="truncate">{distLabel}</span>
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="py-8 px-4 text-center font-mono text-xs text-text-secondary/60 select-none flex flex-col items-center gap-2">
+                                                <span className="material-symbols-outlined text-3xl text-text-secondary/40">
+                                                    {activeTab === 'businesses' ? 'storefront' : 'deck'}
+                                                </span>
+                                                <p className="uppercase tracking-widest text-[11px] font-bold text-text-secondary">
+                                                    No {activeTab} found {scopeMode === '100_miles' ? 'within 100 miles' : `in ${effectiveUserState || 'your state'}`} matching "{searchQuery}"
+                                                </p>
+                                                <p className="text-[10px] text-text-secondary/40 normal-case">
+                                                    {scopeMode === '100_miles'
+                                                        ? 'Search is currently confined to a 100-mile commutable regional radius.'
+                                                        : `Search is strictly limited to enterprises located within ${effectiveUserState || 'your state'}.`}
+                                                </p>
+                                                {scopeMode === '100_miles' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setScopeMode('state')}
+                                                        className="mt-2 px-3 py-1.5 rounded-lg bg-primary-container/20 border border-primary-container/40 text-primary-container hover:bg-primary-container hover:text-white text-xs font-bold font-mono transition-all cursor-pointer"
+                                                    >
+                                                        Switch to Entire State Scope
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Status footer anchor */}
+                                        <div className="p-2 text-center border-t border-white/5 font-mono text-[9px] text-text-secondary/30 select-none uppercase tracking-widest mt-1">
+                                            // local_enterprise_index_active
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Distance Filter */}
-                            {hasAddressOrCoords ? (
+                            {/* Distance Filter Panel */}
+                            {scopeMode === '100_miles' ? (
                                 <div className="space-y-2 flex flex-col">
-                                    <label className="text-lg font-bold text-text-secondary uppercase tracking-widest">
-                                        Filter by Distance
-                                    </label>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-bold text-text-secondary uppercase tracking-widest font-mono">
+                                            Filter by Distance
+                                        </label>
+                                        <span className="text-[11px] font-mono text-primary-container font-bold">
+                                            Max: {selectedDistance ? `${selectedDistance} mi` : '100 mi'}
+                                        </span>
+                                    </div>
                                     <div className="relative group">
                                         <select
                                             value={selectedDistance}
                                             onChange={(e) => setSelectedDistance(e.target.value)}
-                                            className="w-full bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 text-[16px] rounded-card px-4 py-3 text-text-primary outline-none transition-all cursor-pointer"
+                                            className="w-full bg-[#0d1117] border border-white/10 focus:border-primary-container text-sm rounded-xl px-4 py-3 text-text-primary outline-none transition-all cursor-pointer shadow-sm"
                                         >
-                                            <option value="" className="bg-[#18181b] text-text-primary">All Distances</option>
+                                            <option value="" className="bg-[#18181b] text-text-primary">Within 100 miles (Default)</option>
                                             {DISTANCE_OPTIONS.map((opt) => (
                                                 <option key={opt.value} value={opt.value} className="bg-[#18181b] text-text-primary">
-                                                    {opt.label}
+                                                    Within {opt.label}
                                                 </option>
                                             ))}
                                         </select>
                                     </div>
-                                    <p className="text-[14px] text-text-secondary/60 italic">
-                                        Radius based on your address location
+                                    <p className="text-[12px] text-text-secondary/60 italic font-mono">
+                                        Commutable regional perimeter centered on your neighborhood
                                     </p>
                                 </div>
-                            ) : hasState ? (
+                            ) : (
                                 <div className="space-y-2 flex flex-col">
-                                    <label className="text-lg font-bold text-text-secondary uppercase tracking-widest">
-                                        Location Scope
+                                    <label className="text-sm font-bold text-text-secondary uppercase tracking-widest font-mono">
+                                        Geographical Scope
                                     </label>
-                                    <div className="flex items-center gap-2 bg-primary-container/10 border border-primary-container/20 px-4 py-3 rounded-card text-sm font-bold text-primary-container">
-                                        <span className="material-symbols-outlined text-[18px]">location_on</span>
-                                        <span>Showing in {userState || currentUser?.state || currentUser?.origin_state}</span>
+                                    <div className="flex items-center justify-between bg-primary-container/10 border border-primary-container/20 px-4 py-2.5 rounded-xl text-sm font-bold text-primary-container font-mono">
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="w-4 h-4 text-primary-container shrink-0" />
+                                            <span>Statewide: {effectiveUserState || 'Your State'}</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setScopeMode('100_miles')}
+                                            className="text-[11px] uppercase tracking-wider text-white underline hover:text-primary-container bg-transparent border-none cursor-pointer"
+                                        >
+                                            Switch to 100mi
+                                        </button>
                                     </div>
+                                    <p className="text-[12px] text-text-secondary/60 italic font-mono">
+                                        Showing all verified enterprises across {effectiveUserState || 'your entire state'}
+                                    </p>
                                 </div>
-                            ) : null}
+                            )}
                         </div>
 
                         {/* Categories Selection */}
                         <div className="mt-8">
-                            <label className="text-lg font-bold text-text-secondary uppercase tracking-widest block mb-4">
-                                Categories
+                            <label className="text-sm font-bold text-text-secondary uppercase tracking-widest font-mono block mb-3">
+                                Filter by Category
                             </label>
                             <div className="flex flex-wrap items-center gap-2 w-full">
                                 {categories.map((cat) => {
@@ -318,10 +576,10 @@ export const LocalBusinessesPage = () => {
                                             key={cat}
                                             onClick={() => setActiveCategory(cat)}
                                             className={cn(
-                                                "px-4 py-2 border rounded-full text-xs font-bold cursor-pointer transition-all shrink-0",
+                                                "px-3.5 py-1.5 border rounded-xl text-xs font-bold cursor-pointer transition-all shrink-0 font-mono",
                                                 isActive
                                                     ? "bg-primary-container border-primary-container text-white crimson-glow"
-                                                    : "bg-surface-container-low border-outline-variant text-text-secondary hover:border-primary-container hover:bg-surface-container-high hover:text-text-primary"
+                                                    : "bg-surface-container-low border-white/10 text-text-secondary hover:border-primary-container hover:bg-surface-container-high hover:text-text-primary"
                                             )}
                                         >
                                             {cat}
@@ -339,19 +597,17 @@ export const LocalBusinessesPage = () => {
                         searchQuery={searchQuery}
                         activeCategory={activeCategory}
                         selectedDistance={selectedDistance}
-                        renderPagination={renderPagination}
-                        itemsPerPage={itemsPerPage}
-                        currentPage={businessPage}
-                        onPageChange={setBusinessPage}
+                        scopeMode={scopeMode}
+                        effectiveUserState={effectiveUserState}
+                        userCoords={userCoords}
                     />
                 ) : (
                     <ProposalsFeed
                         searchQuery={searchQuery}
                         activeCategory={activeCategory}
-                        renderPagination={renderPagination}
-                        itemsPerPage={itemsPerPage}
-                        currentPage={proposalPage}
-                        onPageChange={setProposalPage}
+                        scopeMode={scopeMode}
+                        effectiveUserState={effectiveUserState}
+                        userCoords={userCoords}
                     />
                 )}
             </div>
@@ -476,9 +732,7 @@ export const LocalBusinessesPage = () => {
             <PostAdModal
                 isOpen={isPostAdOpen}
                 onClose={() => setIsPostAdOpen(false)}
-                onAdCreated={(newAd) => {
-                    console.log('Ad successfully broadcasted:', newAd);
-                }}
+                onAdCreated={() => setIsPostAdOpen(false)}
             />
 
         </div>

@@ -1,16 +1,16 @@
 // src/features/events/EventsFeed.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useEventsQuery, useToggleEventInterest, useFilterEvents } from './useEventsFeature';
 import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { EventCard } from '../../components/events/EventCard';
-import { getDisplayLocation } from '../../utils/eventUtils';
+import { getDisplayLocation, isEventInState, normalizeState, getEventState } from '../../utils/eventUtils';
 import { Filter, ChevronDown, Search, MapPin, Calendar as CalendarIcon, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Calendar as DayCalendar } from '../../components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
-import { Virtuoso } from 'react-virtuoso';
+import { VirtuosoGrid } from 'react-virtuoso';
 
 export function EventsFeed({ navigate }) {
     const { events, eventsLoading } = useEventsQuery();
@@ -22,9 +22,26 @@ export function EventsFeed({ navigate }) {
     const streetAddress = useStore((state) => state.streetAddress);
     const currentUser = useAuthStore((state) => state.user);
 
-    const hasAddressOrCoords = Boolean((streetAddress && streetAddress.trim()) || currentUser?.street_address || currentUser?.latitude);
-    const hasState = Boolean((userState && userState.trim()) || currentUser?.state || currentUser?.origin_state);
+    const detectedUserState = (
+        userState?.trim() ||
+        currentUser?.state?.trim() ||
+        currentUser?.origin_state?.trim() ||
+        currentUser?.political_location?.state?.trim() ||
+        (currentUser?.location ? getEventState({ location: currentUser.location }) : null) ||
+        ''
+    );
+
+    const hasAddressOrCoords = Boolean(
+        (streetAddress && streetAddress.trim()) ||
+        currentUser?.street_address ||
+        currentUser?.latitude
+    );
+    const hasState = Boolean(detectedUserState);
     const canAccessLocalizedFeatures = hasAddressOrCoords || hasState;
+
+    const effectiveUserState = detectedUserState;
+    const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+    const searchContainerRef = useRef(null);
 
     // 🎛️ Filter & Search Control States
     const [selectedDate, setSelectedDate] = useState(null);
@@ -115,19 +132,64 @@ export function EventsFeed({ navigate }) {
         setFilteredEventsData(null);
     };
 
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+                setIsSearchDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // 🔍 Dropdown Quick-Results (like GlobalSearchBar, but strictly limited to user's geographical state)
+    const dropdownSearchResults = useMemo(() => {
+        if (!searchQuery || !searchQuery.trim()) return [];
+        const query = searchQuery.toLowerCase().trim();
+        const activeEventsList = Array.isArray(events) ? events : [];
+
+        return activeEventsList.filter((event) => {
+            // 🚨 STRICT GEOGRAPHICAL BOUNDARY: Search should not show events outside user's state
+            if (effectiveUserState && !isEventInState(event, effectiveUserState)) {
+                return false;
+            }
+
+            const locStr = getDisplayLocation(event?.location, event) || '';
+            const matchesTitle = (event?.title || '').toLowerCase().includes(query);
+            const matchesDesc = (event?.description || '').toLowerCase().includes(query);
+            const matchesOrg = String(event?.organizer || event?.organizerName || '').toLowerCase().includes(query);
+            const matchesLoc = locStr.toLowerCase().includes(query);
+            const matchesCategory = String(event?.category || '').toLowerCase().includes(query);
+            const matchesTags = Array.isArray(event?.tags) && event.tags.some(t => String(t).toLowerCase().includes(query));
+
+            return matchesTitle || matchesDesc || matchesOrg || matchesLoc || matchesCategory || matchesTags;
+        }).slice(0, 8);
+    }, [events, searchQuery, effectiveUserState]);
+
     // 🚀 PERFORMANCE OPTIMIZATION: Memoize filtration process to eliminate lagging frames
     const filteredEvents = useMemo(() => {
         const activeEventsList = Array.isArray(filteredEventsData) ? filteredEventsData : events;
         if (!activeEventsList) return [];
+        const cleanQuery = searchQuery.toLowerCase().trim();
 
         return activeEventsList.filter((event) => {
-            const locStr = getDisplayLocation(event?.location, event);
+            const locStr = getDisplayLocation(event?.location, event) || '';
 
-            const matchesSearch = !searchQuery ||
-                (event?.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (event?.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                String(event?.organizer || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (locStr && locStr.toLowerCase().includes(searchQuery.toLowerCase()));
+            // 🎯 STRICT GEOGRAPHICAL BOUNDARY: Search should not show events outside user's state
+            if (effectiveUserState && (cleanQuery || !hasAddressOrCoords)) {
+                if (!isEventInState(event, effectiveUserState)) {
+                    return false;
+                }
+            }
+
+            const matchesSearch = !cleanQuery ||
+                (event?.title || '').toLowerCase().includes(cleanQuery) ||
+                (event?.description || '').toLowerCase().includes(cleanQuery) ||
+                String(event?.organizer || event?.organizerName || '').toLowerCase().includes(cleanQuery) ||
+                locStr.toLowerCase().includes(cleanQuery) ||
+                String(event?.category || '').toLowerCase().includes(cleanQuery) ||
+                (Array.isArray(event?.tags) && event.tags.some(t => String(t).toLowerCase().includes(cleanQuery)));
 
             const matchesLocation = !locationQuery || (locStr && locStr.toLowerCase().includes(locationQuery.toLowerCase()));
 
@@ -139,7 +201,7 @@ export function EventsFeed({ navigate }) {
 
             return matchesSearch && matchesLocation && matchesFormat && matchesCategory;
         });
-    }, [events, filteredEventsData, searchQuery, locationQuery, formatFilter, categoryFilter]);
+    }, [events, filteredEventsData, searchQuery, locationQuery, formatFilter, categoryFilter, effectiveUserState, hasAddressOrCoords]);
 
     const getDaysInMonth = (year, month) => {
         const date = new Date(year, month, 1);
@@ -177,9 +239,18 @@ export function EventsFeed({ navigate }) {
     };
 
     const [toastMessage, setToastMessage] = useState('');
+    const toastTimeoutRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+        };
+    }, []);
+
     const showToast = (msg) => {
         setToastMessage(msg);
-        setTimeout(() => setToastMessage(''), 3000);
+        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+        toastTimeoutRef.current = setTimeout(() => setToastMessage(''), 3000);
     };
 
     if (!canAccessLocalizedFeatures) {
@@ -199,7 +270,7 @@ export function EventsFeed({ navigate }) {
         );
     }
     return (
-        <div className="p-4 bg-[#090d12]X">
+        <div className="p-4 bg-[#090d12]">
             {/* 🥞 Toast Notice Banner Indicator Popup Overlay */}
             {toastMessage && (
                 <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-surface-container-high 
@@ -267,7 +338,7 @@ export function EventsFeed({ navigate }) {
             </div>
 
             {/* Collapsible Search/Filter Card Accordion Container */}
-            <section className="mb-12 bg-surface-container border border-white/5 rounded-2xl shadow-2xl overflow-hidden font-sans bg-[#141414]">
+            <section className={cn("mb-12 bg-surface-container border border-white/5 rounded-2xl shadow-2xl font-sans bg-[#141414]", isSearchExpanded ? "overflow-visible" : "overflow-hidden")}>
                 <button
                     type="button"
                     onClick={() => setIsSearchExpanded(!isSearchExpanded)}
@@ -282,26 +353,142 @@ export function EventsFeed({ navigate }) {
                     <ChevronDown className={cn("w-5 h-5 text-text-secondary transition-transform duration-300", isSearchExpanded && "rotate-180")} />
                 </button>
                 {/* Expandable Inner Filter Content Box Grid */}
-                <div className={cn("transition-all duration-300 ease-out overflow-hidden px-6", isSearchExpanded ? "max-h-[2000px] opacity-100 pb-8 border-t border-white/5 pt-6" : "max-h-0 opacity-0 py-0 border-t-0")}>
+                <div className={cn("transition-all duration-300 ease-out px-6", isSearchExpanded ? "max-h-[2000px] opacity-100 pb-8 border-t border-white/5 pt-6 overflow-visible" : "max-h-0 opacity-0 py-0 border-t-0 overflow-hidden")}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Search Input Box */}
-                        <div className="space-y-2 flex flex-col">
-                            <label className="text-sm font-bold text-text-secondary uppercase tracking-widest font-mono select-none">Search Events</label>
+                        {/* Search Input Box with State-Scoped Dropdown */}
+                        <div ref={searchContainerRef} className="space-y-2 flex flex-col relative z-20">
+                            <div className="flex items-center justify-between select-none">
+                                <label className="text-sm font-bold text-text-secondary uppercase tracking-widest font-mono">Search Events</label>
+                                {effectiveUserState && (
+                                    <span className="text-[11px] text-primary-container font-mono flex items-center gap-1 font-bold">
+                                        <MapPin className="w-3 h-3 text-primary-container" />
+                                        <span>Scope: {effectiveUserState}</span>
+                                    </span>
+                                )}
+                            </div>
                             <div className="relative group">
-                                <Search className="w-4 h-4 text-text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none group-focus-within:text-primary-container" />
+                                <Search className={cn(
+                                    "w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors",
+                                    isSearchDropdownOpen ? "text-primary-container" : "text-text-secondary group-focus-within:text-primary-container"
+                                )} />
                                 <input
-                                    className="w-full bg-[#0d1117] border border-white/10 focus:border-primary-container text-sm rounded-xl pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/30 outline-none transition-all"
-                                    placeholder="Find parties, meetups, conferences..."
+                                    className="w-full bg-[#0d1117] border border-white/10 focus:border-primary-container text-sm rounded-xl pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/30 outline-none transition-all shadow-sm"
+                                    placeholder={effectiveUserState ? `Search events in ${effectiveUserState}...` : "Find parties, meetups, conferences..."}
                                     type="text"
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onFocus={() => setIsSearchDropdownOpen(true)}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        setIsSearchDropdownOpen(true);
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            setIsSearchDropdownOpen(false);
+                                        }
+                                    }}
                                 />
                                 {searchQuery && (
-                                    <button type="button" onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary p-0.5 rounded bg-transparent border-none cursor-pointer">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchQuery('');
+                                            setIsSearchDropdownOpen(false);
+                                        }}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary p-0.5 rounded bg-transparent border-none cursor-pointer"
+                                    >
                                         <X className="w-4 h-4" />
                                     </button>
                                 )}
                             </div>
+
+                            {/* Floating Dropdown System Results Portal (like GlobalSearchBar, limited to user's state) */}
+                            {isSearchDropdownOpen && searchQuery.trim().length > 0 && (
+                                <div className="absolute top-[calc(100%+6px)] inset-x-0 bg-[#141414] border border-white/10 shadow-2xl rounded-2xl max-h-[440px] overflow-y-auto custom-scrollbar p-2 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-2 z-50 text-text-primary">
+                                    {/* Scoped State Header Bar */}
+                                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/5 font-mono text-[11px] text-text-secondary select-none">
+                                        <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-primary-container">
+                                            <MapPin className="w-3.5 h-3.5" />
+                                            <span>{effectiveUserState ? `Events in ${effectiveUserState}` : 'Local Event Search'}</span>
+                                        </div>
+                                        <span className="text-[10px] text-text-secondary/60">
+                                            {dropdownSearchResults.length} {dropdownSearchResults.length === 1 ? 'match' : 'matches'}
+                                        </span>
+                                    </div>
+
+                                    {/* Results List */}
+                                    {dropdownSearchResults.length > 0 ? (
+                                        <div className="space-y-1">
+                                            {dropdownSearchResults.map((event) => {
+                                                const isOnline = String(event?.format || event?.participation_format).toLowerCase() === 'online';
+                                                const displayLoc = getDisplayLocation(event?.location, event);
+                                                return (
+                                                    <div
+                                                        key={`event-dropdown-${event.id}`}
+                                                        onClick={() => {
+                                                            navigate(`/events/${event.id}`);
+                                                            setIsSearchDropdownOpen(false);
+                                                        }}
+                                                        className="w-full px-3 py-2.5 rounded-xl hover:bg-white/[0.04] cursor-pointer transition-colors group flex items-start gap-3 text-left border border-transparent hover:border-white/5"
+                                                    >
+                                                        <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-white/5 border border-white/10 relative">
+                                                            <img
+                                                                src={event.image || event.cover_image_url || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=120&q=80'}
+                                                                alt={event.title}
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                                onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=120&q=80'; }}
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-primary-container/10 text-primary-container border border-primary-container/20 font-bold">
+                                                                    {event.category || 'Event'}
+                                                                </span>
+                                                                <span className={cn(
+                                                                    "text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border",
+                                                                    isOnline
+                                                                        ? "bg-red-500/10 text-red-400 border-red-500/20"
+                                                                        : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                                                )}>
+                                                                    {event.format || (isOnline ? 'Online' : 'In-Person')}
+                                                                </span>
+                                                            </div>
+                                                            <h4 className="text-xs font-bold text-white group-hover:text-primary-container transition-colors truncate">
+                                                                {event.title}
+                                                            </h4>
+                                                            <div className="flex items-center gap-2 mt-1 text-[11px] text-text-secondary truncate font-mono">
+                                                                <span className="flex items-center gap-1 text-text-secondary/80">
+                                                                    <CalendarIcon className="w-3 h-3 text-text-secondary/60 shrink-0" />
+                                                                    <span className="truncate">{event.date || event.displayDate || event.time}</span>
+                                                                </span>
+                                                                <span>•</span>
+                                                                <span className="flex items-center gap-1 truncate text-text-secondary/80">
+                                                                    <MapPin className="w-3 h-3 text-text-secondary/60 shrink-0" />
+                                                                    <span className="truncate">{displayLoc}</span>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="py-8 px-4 text-center font-mono text-xs text-text-secondary/60 select-none flex flex-col items-center gap-2">
+                                            <span className="material-symbols-outlined text-3xl text-text-secondary/40">event_busy</span>
+                                            <p className="uppercase tracking-widest text-[11px] font-bold text-text-secondary">
+                                                No events found in {effectiveUserState || 'your state'} matching "{searchQuery}"
+                                            </p>
+                                            <p className="text-[10px] text-text-secondary/40 normal-case">
+                                                Search is strictly limited to events located within {effectiveUserState || 'your state'}. Events outside your state are not shown.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Status footer anchor */}
+                                    <div className="p-2 text-center border-t border-white/5 font-mono text-[9px] text-text-secondary/30 select-none uppercase tracking-widest mt-1">
+                                        // state_scoped_events_index_active
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Location Context Filter Input Box */}
@@ -453,36 +640,14 @@ export function EventsFeed({ navigate }) {
                             NO_EVENTS_FOUND_MATCHING_CRITERIA
                         </div>
                     ) : (
-                        /* 🎨 RESPONSIVE GRID PLATFORM: Integrates Virtuoso List with custom grid items mapping */
+                        /* 🎨 RESPONSIVE GRID PLATFORM: Integrates VirtuosoGrid for 2D multi-column virtualization */
                         <div className="w-full relative">
-                            <Virtuoso
+                            <VirtuosoGrid
                                 useWindowScroll
                                 data={filteredEvents}
-                                computeItemKey={(index, event) => event?.id || index}
-                                initialItemCount={Math.min(filteredEvents.length, 6)}
-                                increaseViewportBy={400}
-                                overscan={200}
-
-                                // 🚀 THE GRID FIX: Reconfigure Virtuoso markup tags into an un-padded wrap row
-                                components={{
-                                    List: React.forwardRef(({ children, style, ...props }, ref) => (
-                                        <div
-                                            {...props}
-                                            ref={ref}
-                                            style={{ ...style }}
-                                            // 🎯 Tailor 1 column on mobile, 2 columns on tablets/MD, and 3 columns on large desktop viewports
-                                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full"
-                                        >
-                                            {children}
-                                        </div>
-                                    )),
-                                    Item: React.forwardRef(({ children, ...props }, ref) => (
-                                        <div {...props} ref={ref} className="h-full flex flex-col">
-                                            {children}
-                                        </div>
-                                    ))
-                                }}
-
+                                computeItemKey={(_index, event) => event?.id || event?.title}
+                                listClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full"
+                                itemClassName="h-full flex flex-col"
                                 itemContent={(index, event) => (
                                     <div className="h-full animate-in fade-in duration-150">
                                         <EventCard
@@ -573,7 +738,7 @@ export function EventsFeed({ navigate }) {
 
                     {/* Main Calendar Month Sub-Blocks Grid Array */}
                     <div className="grid grid-cols-7 border-l border-t border-white/5">
-                        {getDaysInMonth(currentYear, currentMonth).map((dayObj, index) => {
+                        {getDaysInMonth(currentYear, currentMonth).map((dayObj) => {
                             const dayEvents = getEventsForDay(dayObj);
                             const isToday =
                                 dayObj.day === new Date().getDate() &&
@@ -582,7 +747,7 @@ export function EventsFeed({ navigate }) {
 
                             return (
                                 <div
-                                    key={index}
+                                    key={`${dayObj.year}-${dayObj.month}-${dayObj.day}`}
                                     className={cn(
                                         "min-h-[140px] p-3 border-r border-b border-white/5 transition-all duration-300 relative flex flex-col justify-between",
                                         dayObj.isCurrentMonth ? "text-white" : "text-gray-600 opacity-20 font-bold",

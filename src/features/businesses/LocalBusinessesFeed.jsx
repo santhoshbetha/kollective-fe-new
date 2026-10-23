@@ -2,7 +2,16 @@
 import React, { useMemo } from 'react';
 import { useBusinessesQuery } from './useBusinessesFeature';
 import { BusinessCard } from './BusinessCard';
-import { Virtuoso } from 'react-virtuoso';
+import { VirtuosoGrid } from 'react-virtuoso';
+
+import { isItemInScope } from '../../utils/geoUtils';
+
+const BusinessGridFooter = () => (
+    <div className="py-8 text-center border-t border-white/5 font-mono text-[10px] text-text-secondary/30 select-none uppercase tracking-wider">
+        directory_index_stream_compiled_cleanly
+    </div>
+);
+const businessGridComponents = { Footer: BusinessGridFooter };
 
 // Custom Pulse Skeleton Loader Panel Component
 const BusinessSkeleton = () => (
@@ -19,7 +28,10 @@ const BusinessSkeleton = () => (
 export function LocalBusinessesFeed({
     searchQuery = '',
     activeCategory = 'All',
-    selectedDistance = ''
+    selectedDistance = '',
+    scopeMode = '100_miles',
+    effectiveUserState = '',
+    userCoords = null
 }) {
     // Pull clean database values straight from TanStack list cache
     const { businesses = [], businessesLoading } = useBusinessesQuery();
@@ -28,25 +40,27 @@ export function LocalBusinessesFeed({
     const filteredBusinesses = useMemo(() => {
         if (!businesses) return [];
         const queryLower = searchQuery.toLowerCase().trim();
+        const maxDist = selectedDistance ? parseFloat(selectedDistance) : 100;
 
         return businesses.filter(biz => {
+            // 📍 Geographic Scope Enforcement (100 Miles vs Statewide)
+            if (!isItemInScope(biz, scopeMode, effectiveUserState, maxDist, userCoords)) {
+                return false;
+            }
+
             const matchesCategory = activeCategory === 'All' || biz.category === activeCategory;
 
             const matchesSearch = !queryLower ||
                 (biz.name || '').toLowerCase().includes(queryLower) ||
-                (biz.description || '').toLowerCase().includes(queryLower);
+                (biz.description || '').toLowerCase().includes(queryLower) ||
+                (biz.address || '').toLowerCase().includes(queryLower) ||
+                (biz.city || '').toLowerCase().includes(queryLower) ||
+                (biz.category || '').toLowerCase().includes(queryLower) ||
+                (Array.isArray(biz.services) && biz.services.some(s => String(s).toLowerCase().includes(queryLower)));
 
-            let matchesDistance = true;
-            if (selectedDistance) {
-                const maxMiles = parseFloat(selectedDistance);
-                if (!isNaN(maxMiles) && typeof biz.distanceMiles === 'number') {
-                    matchesDistance = biz.distanceMiles <= maxMiles;
-                }
-            }
-
-            return matchesCategory && matchesSearch && matchesDistance;
+            return matchesCategory && matchesSearch;
         });
-    }, [businesses, searchQuery, activeCategory, selectedDistance]);
+    }, [businesses, searchQuery, activeCategory, selectedDistance, scopeMode, effectiveUserState, userCoords]);
 
     if (businessesLoading) {
         return (
@@ -59,11 +73,19 @@ export function LocalBusinessesFeed({
 
     if (filteredBusinesses.length === 0) {
         return (
-            <div className="glass-card rounded-[24px] p-12 text-center border border-white/5 bg-[#141414] font-mono text-md text-text-secondary/80 select-none">
-                <span className="material-symbols-outlined text-4xl text-text-secondary/80 mb-1 mr-1 block">
+            <div className="glass-card rounded-[24px] p-12 text-center border border-white/5 bg-[#141414] font-mono text-md text-text-secondary/80 select-none space-y-3">
+                <span className="material-symbols-outlined text-4xl text-text-secondary/60 mb-1 mr-1 block">
                     storefront
                 </span>
-                NO_LOCAL_BUSINESSES_REGISTERED_ON_THIS_NODE
+                <p className="font-bold text-text-primary text-base">
+                    No businesses found {scopeMode === '100_miles' ? 'within 100 miles' : `in ${effectiveUserState || 'your state'}`}
+                    {searchQuery ? ` matching "${searchQuery}"` : ''}
+                </p>
+                <p className="text-xs text-text-secondary/60 max-w-md mx-auto">
+                    {scopeMode === '100_miles'
+                        ? 'Try expanding your scope to "Entire State" or adjusting your search filters to discover more regional enterprises.'
+                        : 'No enterprises are currently registered matching this criteria in your state.'}
+                </p>
             </div>
         );
     }
@@ -71,35 +93,13 @@ export function LocalBusinessesFeed({
     return (
         <div className="w-full pb-20 relative">
             {/* PERFORMANCE MATRIX: Virtuoso viewport configuration tailored into standard columns */}
-            <Virtuoso
+            <VirtuosoGrid
                 useWindowScroll
                 data={filteredBusinesses}
-                computeItemKey={(index, biz) => biz?.id || index}
-                initialItemCount={Math.min(filteredBusinesses.length, 6)}
-                increaseViewportBy={400}
-                overscan={200}
-                components={{
-                    List: React.forwardRef(({ children, style, ...props }, ref) => (
-                        <div
-                            {...props}
-                            ref={ref}
-                            style={{ ...style }}
-                            className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full"
-                        >
-                            {children}
-                        </div>
-                    )),
-                    Item: React.forwardRef(({ children, ...props }, ref) => (
-                        <div {...props} ref={ref} className="h-full flex flex-col">
-                            {children}
-                        </div>
-                    )),
-                    Footer: () => (
-                        <div className="py-8 text-center border-t border-white/5 font-mono text-[10px] text-text-secondary/30 select-none uppercase tracking-wider">
-                            directory_index_stream_compiled_cleanly
-                        </div>
-                    )
-                }}
+                computeItemKey={(_index, biz) => biz?.id || biz?.name}
+                listClassName="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full"
+                itemClassName="h-full flex flex-col"
+                components={businessGridComponents}
                 itemContent={(index, biz) => (
                     <div className="h-full animate-in fade-in duration-150">
                         <BusinessCard biz={biz} />

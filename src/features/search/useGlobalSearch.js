@@ -29,11 +29,17 @@ export function useGlobalSearchQuery(searchTerm) {
     return useQuery({
         queryKey: ['system', 'search', debouncedSearch],
         queryFn: async () => {
-            if (!debouncedSearch.trim()) return { posts: [], businesses: [], proposals: [] };
+            if (!debouncedSearch.trim()) return { posts: [], businesses: [], proposals: [], accounts: [] };
 
-            // Calls a single cross-relational endpoint or aggregates local queries
-            const res = await apiFetch(`/search?q=${encodeURIComponent(debouncedSearch)}`);
-            return res?.data || res || { posts: [], businesses: [], proposals: [] };
+            // Calls the unified multi-entity global search endpoint
+            const res = await apiFetch(`/search/global?q=${encodeURIComponent(debouncedSearch)}`);
+            const data = res?.data || res || {};
+            return {
+                posts: Array.isArray(data.posts) ? data.posts : (data.posts?.results || []),
+                businesses: Array.isArray(data.businesses) ? data.businesses : [],
+                proposals: Array.isArray(data.proposals) ? data.proposals : [],
+                accounts: Array.isArray(data.accounts) ? data.accounts : []
+            };
         },
         enabled: debouncedSearch.trim().length > 1,
         staleTime: 15 * 1000,
@@ -77,8 +83,30 @@ export function useInvalidateBookmarkTrigger() {
             });
 
             // Simultaneously alert cross-timeline caches that the bookmark icon flag flipped off
-            queryClient.setQueriesData({ queryKey: ['proposals'] }, (old) => old);
-            queryClient.setQueriesData({ queryKey: ['timeline'] }, (old) => old);
+            const flipBookmarkOff = (oldCache) => {
+                if (!oldCache) return oldCache;
+                const updateItem = (item) =>
+                    item?.id === targetPostId ? { ...item, bookmarked: false, isBookmarked: false } : item;
+
+                if (Array.isArray(oldCache)) return oldCache.map(updateItem);
+                if (Array.isArray(oldCache.pages)) {
+                    return {
+                        ...oldCache,
+                        pages: oldCache.pages.map((page) => {
+                            if (Array.isArray(page)) return page.map(updateItem);
+                            return {
+                                ...page,
+                                data: Array.isArray(page?.data) ? page.data.map(updateItem) : page?.data,
+                                posts: Array.isArray(page?.posts) ? page.posts.map(updateItem) : page?.posts
+                            };
+                        })
+                    };
+                }
+                return oldCache;
+            };
+
+            queryClient.setQueriesData({ queryKey: ['proposals'] }, flipBookmarkOff);
+            queryClient.setQueriesData({ queryKey: ['timeline'] }, flipBookmarkOff);
         },
 
         /**

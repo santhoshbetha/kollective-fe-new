@@ -23,6 +23,7 @@ export function useLogout() {
             localStorage.removeItem('user_token');
             localStorage.removeItem('socket_token');
             localStorage.removeItem('auth_user');
+            localStorage.removeItem('active_session_private_key');
 
             // 4. Reset query caches completely
             queryClient.clear();

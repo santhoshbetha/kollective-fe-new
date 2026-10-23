@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useUpdateEmailMutation, useUpdatePasswordMutation, useDeleteAccountMutation } from './useSettingsFeature';
 import { useAuthStore } from '../../store/auth/useAuthStore';
-import { AlertCircle, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ShieldAlert, ShieldCheck, KeyRound, Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { generateUserKeyPair } from '../../utils/cryptoEngine';
+import { apiFetch } from '../../api/apiClient';
+import { ChatPinSetupDialog } from '../conversations/components/ChatPinSetupDialog';
+import { ChatKeyRecoveryDialog } from '../conversations/components/ChatKeyRecoveryDialog';
 
 // 📧 Sub-Form A: Managing user contact address linkages
 export function EmailSettingsForm() {
@@ -14,6 +19,10 @@ export function EmailSettingsForm() {
     const [email, setEmail] = useState(activeAccount?.email || currentUser?.email || '');
     const [password, setPassword] = useState('');
     const [statusMessage, setStatusMessage] = useState({ type: null, text: '' });
+
+    useEffect(() => {
+        setEmail(activeAccount?.email || currentUser?.email || '');
+    }, [activeAccount?.email, currentUser?.email]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -194,9 +203,212 @@ export function PasswordSettingsForm() {
                     Commit Key Refresh
                 </button>
             </form>
+
+            {/* 🔒 End-to-End Chat Encryption Keys & PIN Section */}
+            <ChatKeySettingsSection />
         </div>
     );
 }
+
+// 🔒 Sub-Form B2: End-to-End Chat Encryption Keys & PIN Setup Section
+export function ChatKeySettingsSection() {
+    const queryClient = useQueryClient();
+    const currentUser = useAuthStore((state) => state.user);
+    const [showPinSetupModal, setShowPinSetupModal] = useState(false);
+    const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generatedPublicKey, setGeneratedPublicKey] = useState(null);
+    const [statusNotice, setStatusNotice] = useState(null);
+
+    const userUuid = currentUser?.id || currentUser?.uuid;
+
+    // Check server for registered backup
+    const { data: backupResponse, isLoading } = useQuery({
+        queryKey: ['auth', 'crypto', 'backup-package'],
+        queryFn: async () => {
+            try {
+                return await apiFetch('/api/v1/auth/recover_key');
+            } catch (err) {
+                // Gracefully treat 404 as no backup registered yet without triggering error toasts
+                if (err?.status === 404 || err?.message?.includes("No secure encrypted identity backups")) {
+                    return { data: { has_key: false, has_backup: false, encrypted_private_key_backup: null } };
+                }
+                throw err;
+            }
+        },
+        meta: { silent: true },
+        retry: false,
+        staleTime: 30000
+    });
+
+    const hasLocalKey = !!localStorage.getItem("active_session_private_key");
+    const hasServerBackup = !!backupResponse?.data?.encrypted_private_key_backup;
+
+    const handleInitiateSetup = async () => {
+        try {
+            setIsGenerating(true);
+            setStatusNotice(null);
+            const { publicKeyPem, privateKeyB64 } = await generateUserKeyPair();
+            localStorage.setItem("active_session_private_key", privateKeyB64);
+            setGeneratedPublicKey(publicKeyPem);
+            setShowPinSetupModal(true);
+        } catch (err) {
+            setStatusNotice({ type: 'error', text: "Failed to generate cryptographic keypair locally." });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handlePinSetupComplete = (result) => {
+        setShowPinSetupModal(false);
+        queryClient.invalidateQueries({ queryKey: ['auth', 'crypto', 'backup-package'] });
+        if (result?.skipped) {
+            setStatusNotice({
+                type: 'error',
+                text: "Cloud backup skipped. Your encryption keys are stored locally on this device only."
+            });
+        } else {
+            setStatusNotice({
+                type: 'success',
+                text: "End-to-End Encrypted Chat Keys and Sync PIN successfully configured and backed up!"
+            });
+        }
+    };
+
+    const handlePinSetupSkip = () => {
+        setShowPinSetupModal(false);
+        queryClient.invalidateQueries({ queryKey: ['auth', 'crypto', 'backup-package'] });
+        setStatusNotice({
+            type: 'error',
+            text: "Chat PIN backup skipped. Your keys exist locally on this browser only and are not backed up to the cloud."
+        });
+    };
+
+    const handleRecoveryComplete = () => {
+        setShowRecoveryModal(false);
+        queryClient.invalidateQueries({ queryKey: ['auth', 'crypto', 'backup-package'] });
+        setStatusNotice({
+            type: 'success',
+            text: "Private keys successfully restored to this browser from secure cloud backup!"
+        });
+    };
+
+    return (
+        <div className="pt-8 border-t border-white/10 space-y-4 max-w-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                    <h3 className="text-lg font-black text-text-primary tracking-tight flex items-center gap-2">
+                        <span>End-to-End Encrypted Chat Keys</span>
+                        <span className="px-2 py-0.5 text-[14px] font-mono font-bold uppercase rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                            Optional • Feature Coming Soon
+                        </span>
+                    </h3>
+                    <p className="text-sm text-text-secondary mt-0.5 font-medium leading-relaxed">
+                        Direct messaging and group chats will be unlocked in an upcoming platform release.
+                        You can set up your Zero-Knowledge encryption keys and Chat Sync PIN now so you are ready when messaging goes live.
+                    </p>
+                </div>
+            </div>
+
+            {statusNotice && (
+                <div className={cn(
+                    "p-4 rounded-xl border flex items-start gap-3 text-sm font-medium animate-in slide-in-from-top-2 duration-150",
+                    statusNotice.type === 'success'
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                        : "bg-rose-500/10 border-rose-500/20 text-rose-400"
+                )}>
+                    {statusNotice.type === 'success' ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
+                    <span>{statusNotice.text}</span>
+                </div>
+            )}
+
+            {/* Status Card */}
+            <div className="p-5 rounded-2xl bg-[#141414] border border-white/10 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-mono font-bold uppercase tracking-wider text-neutral-400">Current Key Status</span>
+                    {isLoading ? (
+                        <span className="flex items-center gap-1.5 text-xs font-mono text-neutral-400">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking...
+                        </span>
+                    ) : hasLocalKey && hasServerBackup ? (
+                        <span className="px-2.5 py-1 text-xs font-mono font-bold uppercase rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                            <ShieldCheck className="w-3.5 h-3.5" /> Active &amp; Synced
+                        </span>
+                    ) : hasServerBackup && !hasLocalKey ? (
+                        <span className="px-2.5 py-1 text-xs font-mono font-bold uppercase rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5" /> Backup Found (Not on Device)
+                        </span>
+                    ) : (
+                        <span className="px-2.5 py-1 text-sm font-mono font-bold uppercase rounded-full bg-neutral-800 text-neutral-400 border border-white/5">
+                            Not Configured
+                        </span>
+                    )}
+                </div>
+
+                <div className="text-sm text-neutral-400 leading-relaxed font-sans">
+                    {hasLocalKey && hasServerBackup ? (
+                        <p>Your RSA encryption keypair is active in this browser and safely protected in the cloud with your PIN. When chat launches, your conversations will be end-to-end encrypted.</p>
+                    ) : hasServerBackup && !hasLocalKey ? (
+                        <p>An encrypted identity backup is stored in the cloud for this account. Restore your private key on this browser using your 4-to-6 digit PIN.</p>
+                    ) : (
+                        <p>No encryption keys are configured yet for this account. Setting up now will generate your device keys and prompt you to create a Chat Sync PIN.</p>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-3 pt-1 flex-wrap">
+                    {hasServerBackup && !hasLocalKey ? (
+                        <button
+                            type="button"
+                            onClick={() => setShowRecoveryModal(true)}
+                            className="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer"
+                        >
+                            <KeyRound className="w-4 h-4" />
+                            <span>Restore Keys with PIN</span>
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            disabled={isGenerating}
+                            onClick={handleInitiateSetup}
+                            className="px-4 py-2.5 bg-primary-container hover:brightness-110 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer"
+                        >
+                            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                            <span>
+                                {isGenerating
+                                    ? "Generating Keys..."
+                                    : hasLocalKey
+                                        ? "Re-encrypt / Change Chat PIN"
+                                        : "Set Up Chat Keys & Sync PIN"}
+                            </span>
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* PIN Setup Dialog Interceptor */}
+            {showPinSetupModal && userUuid && (
+                <ChatPinSetupDialog
+                    userUuid={userUuid}
+                    publicKey={generatedPublicKey}
+                    redirectOnComplete={null}
+                    onComplete={handlePinSetupComplete}
+                    onSkip={handlePinSetupSkip}
+                    onCancel={() => setShowPinSetupModal(false)}
+                />
+            )}
+
+            {/* Key Recovery Dialog Interceptor */}
+            {showRecoveryModal && userUuid && (
+                <ChatKeyRecoveryDialog
+                    userUuid={userUuid}
+                    onRestored={handleRecoveryComplete}
+                    onClose={() => setShowRecoveryModal(false)}
+                />
+            )}
+        </div>
+    );
+}
+
 // ⚠️ Sub-Form C: High-impact profile permanent destruction
 export function DangerZoneSettingsForm() {
     const mutation = useDeleteAccountMutation();

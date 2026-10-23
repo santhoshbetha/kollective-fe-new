@@ -1,5 +1,5 @@
-// src/features/timeline/EmojiSelector.jsx
 import React, { useState } from 'react';
+import { cn } from '../lib/utils';
 
 const EMOJI_MATRIX = {
     SMILEYS: ['😀', '😂', '😍', '🤔', '👀', '😎', '🤫', '💥'],
@@ -7,7 +7,7 @@ const EMOJI_MATRIX = {
     COLLECTIVE: ['👥', '📢', '⚖️', '🌍', '🛠️', '🔒', '🛡️', '✊']
 };
 
-export function EmojiSelector({ onSelect, onClose }) {
+export function EmojiSelector({ onSelect, onClose, className = "" }) {
     const [activeCategory, setActiveCategory] = useState('SMILEYS');
     const categories = Object.keys(EMOJI_MATRIX);
 
@@ -16,7 +16,10 @@ export function EmojiSelector({ onSelect, onClose }) {
             {/* Click backdrop shield to close the popover dropdown menu */}
             <div className="fixed inset-0 z-40" onClick={onClose} />
 
-            <div className="absolute bottom-16 w-[330px] left-4 bg-[#111111] border border-white/10 rounded-xl p-3 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200 w-64 flex flex-col gap-3">
+            <div className={cn(
+                "absolute bottom-14 left-0 bg-[#111111] border border-white/10 rounded-xl p-3 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-150 w-64 flex flex-col gap-3",
+                className
+            )}>
 
                 {/* 🧭 Top Category Navigation Bar Header (The Soapbox Pattern) */}
                 <div className="flex gap-1 border-b border-white/5 pb-2 overflow-x-auto no-scrollbar select-none">

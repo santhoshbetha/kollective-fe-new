@@ -31,7 +31,10 @@ export const SignupPage = () => {
 
     const [showPinSetup, setShowPinSetup] = useState(false);
     const [registeredUserUuid, setRegisteredUserUuid] = useState(null);
+    const [generatedPublicKey, setGeneratedPublicKey] = useState(null);
     const [cryptoStatus, setCryptoStatus] = useState("");
+    const [isCryptoSetupComplete, setIsCryptoSetupComplete] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Fully loaded data state
     const [formData, setFormData] = useState({
@@ -43,7 +46,8 @@ export const SignupPage = () => {
         dob: '',
         country: '',
         organizationName: '',
-        agreeToGuidelines: false
+        agreeToGuidelines: false,
+        enableCryptoSetup: false // Disabled by default during initial platform phase
     });
 
     const handleInputChange = (e) => {
@@ -69,26 +73,37 @@ export const SignupPage = () => {
 
         if (currentStep === 2) {
             try {
-                setCryptoStatus("Generating local cryptographic keypair...");
-                const { publicKeyPem, privateKeyB64 } = await generateUserKeyPair();
-                localStorage.setItem("active_session_private_key", privateKeyB64);
+                setIsSubmitting(true);
+                let publicKeyPem = null;
 
+                // 🔐 OPTIONAL CRYPTO KEY SETUP:
+                // Only generate keys if user explicitly enabled the optional toggle
+                if (formData.enableCryptoSetup) {
+                    setCryptoStatus("Generating local cryptographic keypair...");
+                    const keys = await generateUserKeyPair();
+                    publicKeyPem = keys.publicKeyPem;
+                    localStorage.setItem("active_session_private_key", keys.privateKeyB64);
+                    setGeneratedPublicKey(publicKeyPem);
+                }
+
+                setCryptoStatus("Registering profile...");
                 const res = await registerMutation.mutateAsync({
                     ...formData,
                     public_key: publicKeyPem
                 });
 
                 const registeredUser = res?.data?.user || res?.user;
-                if (registeredUser?.id) {
+                if (registeredUser?.id && formData.enableCryptoSetup) {
                     setRegisteredUserUuid(registeredUser.id);
                     setShowPinSetup(true);
                 }
 
                 setCurrentStep(3);
             } catch (err) {
-                console.error("Registration error:", err);
                 setError(err.message || "Registration failed. Please check your details and try again.");
-                setCryptoStatus("Local security configuration failed.");
+                setCryptoStatus("");
+            } finally {
+                setIsSubmitting(false);
             }
         }
     };
@@ -116,17 +131,24 @@ export const SignupPage = () => {
     return (
         <div className="min-h-screen flex flex-col justify-center items-center bg-background text-on-surface p-4 sm:p-6 isolate selection:bg-primary/30">
             {/* 🛡️ STATE STEP OVERLAY INTERCEPTOR:
-                If the registration endpoint resolves successfully, freeze the view 
-                and force-mount the Chat PIN Setup Dialog to run the key backup transaction [1.4]. */}
+                If user opted in and registration resolved, mount PIN Setup Dialog.
+                redirectOnComplete={null} ensures the modal drops right back to Step 3 (Verify Email). */}
             {showPinSetup && registeredUserUuid && (
                 <ChatPinSetupDialog
                     userUuid={registeredUserUuid}
+                    publicKey={generatedPublicKey}
+                    redirectOnComplete={null}
                     onComplete={() => {
-                        console.log("Zero-Knowledge key backup verified on disk. Releasing routing locks...");
                         setShowPinSetup(false);
+                        setIsCryptoSetupComplete(true);
+                    }}
+                    onSkip={() => {
+                        setShowPinSetup(false);
+                        setIsCryptoSetupComplete(false);
                     }}
                 />
             )}
+
             {/* Top Navigation Bar */}
             <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-12 pt-4 bg-transparent border-b border-white/5 backdrop-blur-sm">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
@@ -457,6 +479,59 @@ export const SignupPage = () => {
 
                                 </div>
                             </div>
+
+                            {/* 🔒 OPTIONAL CHAT ENCRYPTION KEY SETUP TOGGLE CARD (Default: Off) */}
+                            <div className="sm:col-span-2 pt-2">
+                                <div className={`p-4 rounded-xl border transition-all ${
+                                    formData.enableCryptoSetup
+                                        ? 'bg-[#c2185b]/10 border-[#c2185b]/40 shadow-md'
+                                        : 'bg-[var(--surface-container)]/20 border-outline-variant/40 hover:bg-[var(--surface-container)]/30'
+                                }`}>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-start gap-3">
+                                            <div className={`p-2 rounded-lg shrink-0 mt-0.5 ${
+                                                formData.enableCryptoSetup
+                                                    ? 'bg-[#c2185b] text-white'
+                                                    : 'bg-white/5 text-slate-400'
+                                            }`}>
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <label htmlFor="enableCryptoSetup" className="text-sm font-bold text-text-primary cursor-pointer select-none">
+                                                        Enable End-to-End Chat Encryption Keys
+                                                    </label>
+                                                    <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                                        Optional • Feature Coming Soon
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-slate-400 dark:text-zinc-400 mt-1 leading-relaxed">
+                                                    Direct messaging and encrypted group chats will be unlocked in an upcoming platform release.
+                                                    Enable this to pre-generate your cryptographic keys and configure a Chat Sync PIN during registration. You can also configure this anytime later in Settings.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <input
+                                            id="enableCryptoSetup"
+                                            type="checkbox"
+                                            checked={formData.enableCryptoSetup}
+                                            onChange={handleInputChange}
+                                            className="w-5 h-5 mt-1 rounded border-outline-variant text-[#c2185b] focus:ring-0 accent-[#c2185b] cursor-pointer shrink-0"
+                                        />
+                                    </div>
+
+                                    {formData.enableCryptoSetup && (
+                                        <div className="mt-3 pt-3 border-t border-[#c2185b]/20 flex items-center gap-2 text-[11px] text-[#c2185b] font-medium">
+                                            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span>Submitting will generate your RSA keys locally and prompt you to create a 4-to-6 digit Chat Sync PIN.</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Stepper Wizard Navigation Controls */}
@@ -464,15 +539,29 @@ export const SignupPage = () => {
                             <button
                                 type="button"
                                 onClick={handleBack}
-                                className="flex-1 py-3 border border-outline-variant/40 rounded-xl text-sm font-bold hover:bg-[var(--surface-container)]/30 transition-colors"
+                                disabled={isSubmitting || registerMutation.isPending}
+                                className="flex-1 py-3 border border-outline-variant/40 rounded-xl text-sm font-bold hover:bg-[var(--surface-container)]/30 transition-colors disabled:opacity-40"
                             >
                                 Back
                             </button>
                             <button
                                 type="submit"
-                                className="flex-1 py-3 bg-[#c2185b] hover:bg-[#a2123c] text-white font-bold rounded-xl text-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
+                                disabled={isSubmitting || registerMutation.isPending}
+                                className="flex-1 py-3 bg-[#c2185b] hover:bg-[#a2123c] disabled:opacity-50 text-white font-bold rounded-xl text-sm transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
                             >
-                                Continue Setup
+                                {(isSubmitting || registerMutation.isPending) && (
+                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                )}
+                                <span>
+                                    {isSubmitting || registerMutation.isPending
+                                        ? cryptoStatus || "Registering..."
+                                        : formData.enableCryptoSetup
+                                        ? "Generate Identity & Join"
+                                        : "Continue Setup"}
+                                </span>
                             </button>
                         </div>
                     </form>
@@ -490,6 +579,14 @@ export const SignupPage = () => {
                             <span className="text-[10px] tracking-wider uppercase font-extrabold text-[#c2185b]">Verification email sent</span>
                         </div>
 
+                        {/* 🔒 Encrypted Chat Keys Status Banner (if user completed PIN setup) */}
+                        {isCryptoSetupComplete && (
+                            <div className="w-full max-w-sm p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium flex items-center gap-2.5 animate-in fade-in duration-200">
+                                <span className="text-base">🔒</span>
+                                <span>Secure Chat Keys &amp; Sync PIN configured! When direct messaging opens in an upcoming release, your chats will be ready for end-to-end encryption.</span>
+                            </div>
+                        )}
+
                         {/* Central Mail Icon Box */}
                         <div className="w-24 h-24 rounded-2xl bg-[#1a1f30] border border-outline-variant/20 flex items-center justify-center shadow-lg shadow-black/40">
                             <svg className="w-10 h-10 text-[#c2185b]" fill="currentColor" viewBox="0 0 20 20">
@@ -503,10 +600,11 @@ export const SignupPage = () => {
                             <h1 className="text-3xl font-extrabold text-text-primary tracking-tight">Almost there!</h1>
                             <p className="text-sm text-text-secondary dark:text-zinc-50 max-w-sm leading-relaxed">
                                 A confirmation link has been sent to{' '}
-                                <span className="font-bold text-[#c2185b]">{formData.email || 'santhosh.betha@gmail.com'}</span>.
+                                <span className="font-bold text-[#c2185b]">{formData.email || 'your email address'}</span>.
                                 Please check your inbox and click the link to activate your account.
                             </p>
                         </div>
+
 
                         {/* Primary Action Button */}
                         <button
