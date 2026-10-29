@@ -1,13 +1,16 @@
-// src/features/relationships/RelationshipList.jsx
 import React from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { useRelationshipsQuery, useRelationshipMutations } from './useRelationshipsFeature';
+import { useAuthStore } from '../../store/auth/useAuthStore';
 
 import { UserAvatar } from '../../components/accounts/UserAvatar';
 
 export function RelationshipList({ accountId, type }) {
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useRelationshipsQuery({ id: accountId, type });
     const mutation = useRelationshipMutations(accountId);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+    const isOrgNonAdmin = activeAccount?.type === 'organization' && !['admin', 'owner'].includes(activeAccount?.role?.toLowerCase());
+    const orgNonAdminTooltip = "Only administrators can perform social actions on behalf of this organization";
 
     const items = data?.pages.flatMap((p) => p.accounts || p || []) || [];
 
@@ -53,15 +56,38 @@ export function RelationshipList({ accountId, type }) {
                             <div className="flex gap-2">
                                 {type === 'requests' ? (
                                     <>
-                                        <button type="button" disabled={isProcessing} onClick={() => mutation.mutate({ id: user.id, action: 'authorize' })} className="px-3 py-1.5 bg-primary-container text-white text-xs font-bold rounded-lg cursor-pointer border-none shadow-md">Accept</button>
-                                        <button type="button" disabled={isProcessing} onClick={() => mutation.mutate({ id: user.id, action: 'reject' })} className="px-3 py-1.5 bg-surface-container-high text-text-secondary text-xs font-bold rounded-lg cursor-pointer border-none">Deny</button>
+                                        <button
+                                            type="button"
+                                            disabled={isProcessing || isOrgNonAdmin}
+                                            title={isOrgNonAdmin ? orgNonAdminTooltip : undefined}
+                                            onClick={() => !isOrgNonAdmin && mutation.mutate({ id: user.id, action: 'authorize' })}
+                                            className={`px-3 py-1.5 bg-primary-container text-white text-xs font-bold rounded-lg border-none shadow-md ${isOrgNonAdmin ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                                        >
+                                            Accept
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={isProcessing || isOrgNonAdmin}
+                                            title={isOrgNonAdmin ? orgNonAdminTooltip : undefined}
+                                            onClick={() => !isOrgNonAdmin && mutation.mutate({ id: user.id, action: 'reject' })}
+                                            className={`px-3 py-1.5 bg-surface-container-high text-text-secondary text-xs font-bold rounded-lg border-none ${isOrgNonAdmin ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                                        >
+                                            Deny
+                                        </button>
                                     </>
                                 ) : (
                                     <button
                                         type="button"
-                                        disabled={isProcessing}
-                                        onClick={() => mutation.mutate({ id: user.id, action: user.following ? 'unfollow' : 'follow' })}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${user.following ? 'bg-surface-container-high border-white/5 text-text-secondary' : 'bg-primary-container text-white border-primary-container'}`}
+                                        disabled={isProcessing || isOrgNonAdmin}
+                                        title={isOrgNonAdmin ? orgNonAdminTooltip : undefined}
+                                        onClick={() => !isOrgNonAdmin && mutation.mutate({ id: user.id, action: user.following ? 'unfollow' : 'follow' })}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                                            isOrgNonAdmin
+                                                ? 'bg-surface-container-high border-white/5 text-text-secondary/40 opacity-40 cursor-not-allowed'
+                                                : user.following
+                                                ? 'bg-surface-container-high border-white/5 text-text-secondary cursor-pointer'
+                                                : 'bg-primary-container text-white border-primary-container cursor-pointer'
+                                        }`}
                                     >
                                         {user.following ? 'Following' : 'Follow back'}
                                     </button>

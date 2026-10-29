@@ -151,6 +151,12 @@ export function usePostActions(currentThreadId = null) {
             return updatePostsInCache(oldData, (p) => p.id === postId ? updater(p) : p);
         });
 
+        // 3️⃣ Sync Profile Timelines Concurrently
+        queryClient.setQueriesData({ queryKey: ['profile'] }, (oldData) => {
+            if (!oldData) return oldData;
+            return updatePostsInCache(oldData, (p) => p.id === postId ? updater(p) : p);
+        });
+
         // 3️⃣ 🔥 THE BIDIRECTIONAL FIX: Sweep and Sync ALL Post Thread View Contexts in Memory
         // Instead of conditionally testing `activeThreadKey`, this sweeps all matching thread lines in place
         /*  queryClient.setQueriesData({ queryKey: ['post'] }, (oldData) => {
@@ -254,6 +260,11 @@ export function usePostActions(currentThreadId = null) {
                 queryKey: ['post'],
                 refetchType: 'active'
             });
+
+            queryClient.invalidateQueries({
+                queryKey: ['profile'],
+                refetchType: 'active'
+            });
         },
     });
 
@@ -275,16 +286,20 @@ export function usePostActions(currentThreadId = null) {
             const prevThread = activeThreadKey ? queryClient.getQueryData(activeThreadKey) : null;
 
             const updaterFn = (post) => {
-                const isLiked = !post.liked;
-                const newLikes = isLiked
-                    ? (post.likes || post.likes_count || 0) + 1
-                    : Math.max(0, (post.likes || post.likes_count || 1) - 1);
+                const currentLiked = typeof post?.liked === 'boolean'
+                    ? post.liked
+                    : (typeof post?.has_liked === 'boolean' ? post.has_liked : isCurrentlyLiked);
+                const nextLiked = !currentLiked;
+                const currentLikes = post?.likes ?? post?.likes_count ?? post?.likesCount ?? (nextLiked ? 0 : 1);
+                const newLikes = nextLiked
+                    ? currentLikes + 1
+                    : Math.max(0, currentLikes - 1);
 
-                console.log("likeMutation updateFn:", post.id, post.likes, post.likes_count, newLikes);
+                console.log("likeMutation updateFn:", post?.id, currentLikes, newLikes, "nextLiked:", nextLiked);
                 return {
                     ...post,
-                    liked: isLiked,
-                    has_liked: isLiked,
+                    liked: nextLiked,
+                    has_liked: nextLiked,
                     likes: newLikes,
                     likes_count: newLikes,
                     likesCount: newLikes
@@ -294,27 +309,22 @@ export function usePostActions(currentThreadId = null) {
             // 1. Sync the original source post across all cached arrays and threads
             syncAllCacheQueries(targetId, updaterFn);
 
-            // 2. If it is a shared post, sync the outer wrapper wrapper card at the same millisecond
-            // if (reblogId) {
-            //   syncAllCacheQueries(postId, updaterFn);
-            //  }
-
-            /* syncAllCacheQueries(targetId, (post) => {
-                 const isLiked = !post.liked;
-                 const newLikes = isLiked
-                     ? (post.likes || post.likes_count || 0) + 1
-                     : Math.max(0, (post.likes || post.likes_count || 1) - 1);
-                 return {
-                     ...post,
-                     liked: isLiked,
-                     has_liked: isLiked,
-                     likes: newLikes,
-                     likes_count: newLikes,
-                     likesCount: newLikes
-                 };
-             });*/
-
             return { prevTimeline, prevThread };
+        },
+        onSuccess: (data, variables) => {
+            const targetId = variables?.reblogId || variables?.postId || (typeof variables === 'string' ? variables : null);
+            const hasLiked = data?.has_liked ?? data?.liked;
+            const count = data?.count ?? data?.likes_count ?? data?.likes;
+            if (targetId && typeof hasLiked === 'boolean') {
+                syncAllCacheQueries(targetId, (post) => ({
+                    ...post,
+                    liked: hasLiked,
+                    has_liked: hasLiked,
+                    likes: count !== undefined ? count : post.likes,
+                    likes_count: count !== undefined ? count : post.likes_count,
+                    likesCount: count !== undefined ? count : post.likesCount,
+                }));
+            }
         },
         onError: (err, id, context) => {
             if (context?.prevTimeline) queryClient.setQueryData(homeTimelineKey, context.prevTimeline);
@@ -346,6 +356,11 @@ export function usePostActions(currentThreadId = null) {
             // as stale, forcing non-blocking updates if they are actively mounted on-screen.
             queryClient.invalidateQueries({
                 queryKey: ['post'],
+                refetchType: 'active'
+            });
+
+            queryClient.invalidateQueries({
+                queryKey: ['profile'],
                 refetchType: 'active'
             });
 
@@ -454,12 +469,14 @@ export function usePostActions(currentThreadId = null) {
         },
         onSettled: (data, error, bookmarkObj, context) => {
             if (!error) {
-                // Network successful → Evict cache and refresh data in place
-                if (typeof ejectFromBookmarksCache === 'function') {
-                    ejectFromBookmarksCache(bookmarkObj.postId);
+                const wasRemoved = bookmarkObj?.isCurrentlyBookmarked || data?.action === 'removed' || data?.action === 'deleted';
+
+                // Network successful → Evict from cache only when unbookmarked
+                if (wasRemoved && typeof ejectFromBookmarksCache === 'function') {
+                    ejectFromBookmarksCache(bookmarkObj?.postId);
                 }
 
-                // ✅ FIX: Change 'none' to 'active' to force instant, non-blocking background revalidation
+                // ✅ Invalidate timelines and bookmarks using 'active' for instant background synchronization
                 queryClient.invalidateQueries({
                     queryKey: homeTimelineKey,
                     refetchType: 'active'
@@ -467,17 +484,17 @@ export function usePostActions(currentThreadId = null) {
 
                 queryClient.invalidateQueries({
                     queryKey: ['timeline', 'bookmarks'],
-                    refetchType: 'none'
+                    refetchType: 'active'
                 });
 
                 // Refresh related queries that depend on the bookmark state
                 queryClient.invalidateQueries({
-                    queryKey: ['posts', context.targetId],
+                    queryKey: ['posts', context?.targetId || bookmarkObj?.postId],
                     refetchType: 'none'
                 });
 
                 queryClient.invalidateQueries({
-                    queryKey: ['post', context.targetId, 'thread'],
+                    queryKey: ['post', context?.targetId || bookmarkObj?.postId, 'thread'],
                     refetchType: 'active'
                 });
 
@@ -487,6 +504,11 @@ export function usePostActions(currentThreadId = null) {
                 // as stale, forcing non-blocking updates if they are actively mounted on-screen.
                 queryClient.invalidateQueries({
                     queryKey: ['post'],
+                    refetchType: 'active'
+                });
+
+                queryClient.invalidateQueries({
+                    queryKey: ['profile'],
                     refetchType: 'active'
                 });
             }

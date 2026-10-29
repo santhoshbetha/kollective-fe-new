@@ -1,9 +1,10 @@
 // src/test/serverHandlers.js
 import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
 
 export const handlers = [
     // 📡 Intercept the authenticated follow relationship endpoint
-    http.post('/api/v1/accounts/:id/follow', ({ params }) => {
+    http.post('*/api/v1/accounts/:id/follow', ({ params }) => {
         const { id } = params;
 
         // Symmetrically mock the returned Elixir account schema response
@@ -16,3 +17,5 @@ export const handlers = [
         }, { status: 200 });
     })
 ];
+
+export const testServer = setupServer(...handlers);

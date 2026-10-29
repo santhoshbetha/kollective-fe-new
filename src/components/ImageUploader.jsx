@@ -21,6 +21,8 @@ export function ImageUploader({
     mode = 'banner', // 'banner' | 'avatar' | 'compact'
     label = 'Upload Image',
     description = '',
+    inputTestId,
+    onError,
 }) {
     const [previewImage, setPreviewImage] = useState(value || '');
     const [rawImage, setRawImage] = useState(null);
@@ -45,14 +47,19 @@ export function ImageUploader({
     const handleFileSelect = (file) => {
         if (!file) return;
         setError(null);
+        if (onError) onError(null);
 
         if (!acceptedFileTypes.includes(file.type)) {
-            setError(`File format not supported. Please select JPG, PNG, WEBP, or GIF.`);
+            const err = `File format not supported. Please select JPG, PNG, WEBP, or GIF.`;
+            setError(err);
+            if (onError) onError(err);
             return;
         }
 
         if (file.size > maxSize) {
-            setError(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Max limit is ${(maxSize / (1024 * 1024)).toFixed(0)}MB.`);
+            const err = `File is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Max limit is ${(maxSize / (1024 * 1024)).toFixed(0)}MB.`;
+            setError(err);
+            if (onError) onError(err);
             return;
         }
 
@@ -263,6 +270,7 @@ export function ImageUploader({
             <input
                 ref={inputRef}
                 type="file"
+                data-testid={inputTestId || "image-upload-input"}
                 className="hidden"
                 accept={acceptedFileTypes.join(',')}
                 onChange={(e) => handleFileSelect(e.target.files?.[0])}
@@ -309,7 +317,7 @@ export function ImageUploader({
                     </div>
                 )}
             </div>
-            {error && <p className="text-xs text-rose-400 font-semibold mt-1 font-sans">{error}</p>}
+            {error && <p data-testid="image-upload-error" className="text-xs text-rose-400 font-semibold mt-1 font-sans">{error}</p>}
 
             {/* HIGH-PERFORMANCE INTUITIVE CROP DIALOG MODAL FRAME */}
             {renderCropModal()}
@@ -380,6 +388,7 @@ export function ImageUploader({
                         </Button>
                         <Button
                             type="button"
+                            data-testid="apply-crop-btn"
                             onClick={handleApplyCrop}
                             className="px-6 py-2.5 bg-primary-container text-white rounded-xl shadow-lg cursor-pointer text-xs font-black font-mono border-none outline-none crimson-glow"
                         >

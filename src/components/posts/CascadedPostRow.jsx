@@ -186,7 +186,7 @@ export const CascadedPostRow = React.memo(function C({
         if (e) e.stopPropagation();
         setShowMenu(false);
         if (authorHandle) {
-            navigator.clipboard.writeText(authorHandle).catch(() => {});
+            navigator.clipboard.writeText(authorHandle).catch(() => { });
             toast.success(`Mention handle ${authorHandle} copied!`);
             navigate(`/timeline?mention=${encodeURIComponent(authorHandle)}`);
         }
@@ -660,7 +660,7 @@ export const CascadedPostRow = React.memo(function C({
                                 const imgMeta = isObject ? imgNode.imageMeta : post?.imageMeta;
 
                                 return (
-                                    <TimelineImagePlayer
+                                    <KollectiveImagePlayer
                                         key={`post-media-grid-${post.id}-${index}`}
                                         src={imgSrc}
                                         staticUrl={imgStatic}

@@ -43,7 +43,7 @@ export const OrganizePage = () => {
             if (!action) return false;
             if (activeGeo === 'Country') return true;
 
-            const scope = String(action.scope || action.geography || '').toLowerCase();
+            const scope = String(action.scope || action.target_scope || action.geography || '').toLowerCase();
             return scope === activeGeo.toLowerCase();
         });
     }, [organizeActions, activeGeo]);
@@ -71,6 +71,7 @@ export const OrganizePage = () => {
                             <button
                                 type="button"
                                 key={filter}
+                                data-testid={`geo-tab-${filter.toLowerCase()}`}
                                 onClick={() => setActiveGeo(filter)}
                                 className={cn(
                                     "px-6 py-2 rounded-full font-bold transition-all border-none cursor-pointer outline-none",
@@ -105,6 +106,7 @@ export const OrganizePage = () => {
                         /* 🎨 PERFORMANCE GRID LAYER: Virtuoso virtualization engine running responsive columns */
                         <VirtuosoGrid
                             useWindowScroll
+                            overscan={8000}
                             data={filteredActions}
                             computeItemKey={(_index, action) => action?.id || action?.title}
                             listClassName="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full"
@@ -135,6 +137,7 @@ export const OrganizePage = () => {
                     </p>
                     <button
                         type="button"
+                        data-testid="create-action-btn"
                         onClick={() => navigate('/organize/create')}
                         className="w-full py-3 bg-primary-container text-black font-mono font-bold rounded-xl hover:bg-primary-container hover:text-white transition-all active:scale-95 text-xs uppercase tracking-wider cursor-pointer border-none shadow-sm outline-none font-bold mt-2"
                     >
@@ -142,6 +145,8 @@ export const OrganizePage = () => {
                     </button>
                 </section>
             </aside>
+
+
 
             {/* Floating Notice Alert Overlay Toggles */}
             {toastMessage && (

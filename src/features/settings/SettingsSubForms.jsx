@@ -323,29 +323,29 @@ export function ChatKeySettingsSection() {
             )}
 
             {/* Status Card */}
-            <div className="p-5 rounded-2xl bg-[#141414] border border-white/10 space-y-4">
+            <div className="p-5 rounded-2xl bg-surface-container border border-black/10 dark:border-white/10 space-y-4">
                 <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-mono font-bold uppercase tracking-wider text-neutral-400">Current Key Status</span>
+                    <span className="text-sm font-mono font-bold uppercase tracking-wider text-text-secondary">Current Key Status</span>
                     {isLoading ? (
-                        <span className="flex items-center gap-1.5 text-xs font-mono text-neutral-400">
+                        <span className="flex items-center gap-1.5 text-xs font-mono text-text-secondary">
                             <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking...
                         </span>
                     ) : hasLocalKey && hasServerBackup ? (
-                        <span className="px-2.5 py-1 text-xs font-mono font-bold uppercase rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                        <span className="px-2.5 py-1 text-xs font-mono font-bold uppercase rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
                             <ShieldCheck className="w-3.5 h-3.5" /> Active &amp; Synced
                         </span>
                     ) : hasServerBackup && !hasLocalKey ? (
-                        <span className="px-2.5 py-1 text-xs font-mono font-bold uppercase rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1.5">
+                        <span className="px-2.5 py-1 text-xs font-mono font-bold uppercase rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1.5">
                             <AlertCircle className="w-3.5 h-3.5" /> Backup Found (Not on Device)
                         </span>
                     ) : (
-                        <span className="px-2.5 py-1 text-sm font-mono font-bold uppercase rounded-full bg-neutral-800 text-neutral-400 border border-white/5">
+                        <span className="px-2.5 py-1 text-sm font-mono font-bold uppercase rounded-full bg-surface-container-high text-text-secondary border border-black/5 dark:border-white/5">
                             Not Configured
                         </span>
                     )}
                 </div>
 
-                <div className="text-sm text-neutral-400 leading-relaxed font-sans">
+                <div className="text-sm text-text-secondary leading-relaxed font-sans">
                     {hasLocalKey && hasServerBackup ? (
                         <p>Your RSA encryption keypair is active in this browser and safely protected in the cloud with your PIN. When chat launches, your conversations will be end-to-end encrypted.</p>
                     ) : hasServerBackup && !hasLocalKey ? (

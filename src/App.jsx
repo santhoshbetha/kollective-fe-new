@@ -12,16 +12,19 @@ import { ActionDetailsPage } from './pages/actions/ActionDetailsPage';
 import { PostDetailsPage } from './pages/posts/PostDetailsPage';
 import { EventsPage } from './pages/events/EventsPage';
 import { CreateEventPage } from './pages/events/CreateEventPage';
+import { EditEventPage } from './pages/events/EditEventPage';
 import { EventDetailsPage } from './pages/events/EventDetailsPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { LocalBusinessesPage } from './pages/businesses/LocalBusinessesPage';
 import { BusinessDetailsPage } from './pages/businesses/BusinessDetailsPage';
+import { EditBusinessPage } from './pages/businesses/EditBusinessPage';
 import { PostBusinessPage } from './pages/businesses/PostBusinessPage';
 import { PostBusinessProposalPage } from './pages/businesses/PostBusinessProposalPage';
 import { ClassifiedsDirectoryPage } from './pages/ClassifiedsDirectoryPage';
 import { PollsPage } from './pages/posts/PollsPage';
 import { CreatePollPage } from './pages/posts/CreatePollPage';
 import { BusinessProposalDetailsPage } from './pages/businesses/BusinessProposalDetailsPage';
+import { EditBusinessProposalPage } from './pages/businesses/EditBusinessProposalPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import InvitationsList from './pages/settings/InvitationsList';
 import SettingsDashboard from './features/settings/SettingsDashboard';
@@ -36,7 +39,6 @@ import { ExplorePage } from './pages/ExplorePage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { SignupPage } from './pages/auth/SignupPage';
-import { SignupPageO } from './pages/auth/SignupPageO';
 import { UserProfilePage } from './pages/profile/UserProfilePage';
 import { AccountLikesPage } from './pages/AccountLikesPage';
 import { AccountGalleryPage } from './pages/AccountGalleryPage';
@@ -121,7 +123,6 @@ export default function App() {
               <Route element={<PublicOnlyRoute />}>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/create-account" element={<SignupPage />} />
-                <Route path="/signupo" element={<SignupPageO />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset_password" element={<ForgotPassword />} />
@@ -150,14 +151,18 @@ export default function App() {
                   <Route path="/events" element={<EventsPage />} />
                   <Route path="/calendar" element={<CalendarPage />} />
                   <Route path="/events/create" element={<CreateEventPage />} />
+                  <Route path="/events/:id/edit" element={<EditEventPage />} />
                   <Route path="/events/:id" element={<EventDetailsPage />} />
 
                   {/* Local Businesses Routes */}
                   <Route path="/businesses" element={<LocalBusinessesPage />} />
                   <Route path="/businesses/register" element={<PostBusinessPage />} />
                   <Route path="/businesses/propose" element={<PostBusinessProposalPage />} />
+                  <Route path="/businesses/:id/edit" element={<EditBusinessPage />} />
                   <Route path="/businesses/:id" element={<BusinessDetailsPage />} />
                   <Route path="/proposals/:id" element={<BusinessProposalDetailsPage />} />
+                  <Route path="/proposals/:id/edit" element={<EditBusinessProposalPage />} />
+                  <Route path="/businesses/proposals/:id/edit" element={<EditBusinessProposalPage />} />
                   <Route path="/classifieds" element={<ClassifiedsDirectoryPage />} />
 
                   {/* Polls Routes */}

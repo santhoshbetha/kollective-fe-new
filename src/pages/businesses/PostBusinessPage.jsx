@@ -48,6 +48,28 @@ export function PostBusinessPage() {
     const navigate = useNavigate();
     const createBusinessMutation = useCreateBusiness();
     const user = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+    const isOrg = activeAccount?.type === 'organization';
+
+    if (isOrg) {
+        return (
+            <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+                <div className="p-8 rounded-2xl bg-surface-container border border-outline-variant shadow-sm space-y-4">
+                    <span className="material-symbols-outlined text-4xl text-amber-500">lock</span>
+                    <h2 className="text-2xl font-bold text-text-primary">Personal Profile Required</h2>
+                    <p className="text-text-secondary text-sm">
+                        Organizations are not permitted to register businesses. Please switch to your personal profile to register a business.
+                    </p>
+                    <button
+                        onClick={() => navigate('/businesses')}
+                        className="px-6 py-2.5 rounded-xl bg-primary-container text-white font-bold text-sm cursor-pointer hover:brightness-110"
+                    >
+                        Return to Businesses
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     const [formData, setFormData] = useState({
         name: '',
@@ -109,7 +131,7 @@ export function PostBusinessPage() {
         }
     };
 
-    const handleSubmitX = async (e) => {
+    const handleSubmit = async (e) => {
         if (e) e.preventDefault();
         if (!formData.name.trim() || !formData.description.trim()) {
             triggerToast('Please fill out the business name and description.', 'error');
@@ -127,12 +149,23 @@ export function PostBusinessPage() {
             // Compute formatting values dynamically 
             const computedHours = `${formatTimeDisplay(startTime)} - ${formatTimeDisplay(endTime)}`;
 
+            const userCoords = (() => {
+                if (user?.latitude && user?.longitude) return { latitude: user.latitude, longitude: user.longitude };
+                if (typeof user?.location === 'string') {
+                    const m = user.location.match(/POINT\(\s*([-\d\.]+)\s+([-\d\.]+)\s*\)/i);
+                    if (m) return { longitude: parseFloat(m[1]), latitude: parseFloat(m[2]) };
+                }
+                return null;
+            })();
+
             const businessData = {
                 name: formData.name.trim(),
                 category: formData.category,
                 legalStructure: formData.legalStructure,
                 legal_structure: formData.legalStructure,
                 description: formData.description.trim(),
+                latitude: userCoords?.latitude,
+                longitude: userCoords?.longitude,
                 address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip}`,
                 street: formData.address,
                 city: formData.city,
@@ -186,85 +219,9 @@ export function PostBusinessPage() {
                 }
             });
         } catch (err) {
-            triggerToast('Failed to upload business image. Please try again.', 'error');
             setIsSubmitting(false);
+            triggerToast('Failed to upload business image. Please try again.', 'error');
         }
-    };
-
-    const handleSubmit = async (e) => {
-        if (e) e.preventDefault();
-        if (!formData.name.trim() || !formData.description.trim()) {
-            triggerToast('Please fill out the business name and description.', 'error');
-            return;
-        }
-
-        setIsSubmitting(true);
-
-        // Compute formatting values dynamically 
-        const computedHours = `${formatTimeDisplay(startTime)} - ${formatTimeDisplay(endTime)}`;
-
-        const businessData = {
-            name: formData.name.trim(),
-            category: formData.category,
-            legalStructure: formData.legalStructure,
-            legal_structure: formData.legalStructure,
-            description: formData.description.trim(),
-            address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip}`,
-            street: formData.address,
-            city: formData.city,
-            state: formData.state,
-            zip: formData.zip,
-            email: formData.email,
-            phone: formData.phone,
-            website: formData.website || 'kollective.social',
-            established: parseInt(formData.established, 10) || new Date().getFullYear(),
-            year_established: parseInt(formData.established, 10) || new Date().getFullYear(),
-            employees: formData.employees,
-            number_of_employees: parseInt(formData.employees, 10) || 5,
-            hours: computedHours,
-            business_hours: computedHours,
-
-            // 🚀 BE PIPELINE SHIFT: Pass the raw local media source string directly.
-            // The backend transaction will intercept this value and optimize it asynchronously.
-            image: formData.image,
-            profile_image_url: formData.image,
-
-            services: selectedTags,
-            tags: selectedTags,
-            owner: user?.username || 'anonymous',
-            ownerAvatar: user?.avatar_url || '',
-            rating: 5.0,
-            reviewsCount: 0,
-            verified: false,
-            open: true,
-            metadata: {
-                business_hours: computedHours,
-                hours: computedHours,
-                services: selectedTags,
-                tags: selectedTags,
-                employee_range: formData.employees,
-                established: parseInt(formData.established, 10) || new Date().getFullYear(),
-                rating: 5.0,
-                reviews_count: 0,
-                owner_handle: user?.username || 'anonymous',
-                owner_avatar: user?.avatar_url || '',
-                image_url: formData.image
-            }
-        };
-
-        createBusinessMutation.mutate(businessData, {
-            onSuccess: () => {
-                triggerToast('Enterprise successfully registered!', 'success');
-                setTimeout(() => {
-                    setIsSubmitting(false);
-                    navigate('/businesses');
-                }, 1200);
-            },
-            onError: (err) => {
-                setIsSubmitting(false);
-                triggerToast(err?.message || 'Failed to register business.', 'error');
-            }
-        });
     };
 
 
@@ -306,9 +263,10 @@ export function PostBusinessPage() {
                     </button>
                     <button
                         type="button"
+                        data-testid="submit-business-btn"
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className="flex-1 sm:flex-none px-8 py-3 bg-primary-container text-white rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all crimson-glow flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed border-none shadow-lg"
+                        className="flex-1 sm:flex-none px-8 py-3 bg-primary-container text-white rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all crimson-glow flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed border-none shadow-lg cursor-pointer"
                     >
                         {isSubmitting ? 'Publishing Matrix...' : 'Publish Enterprise'}
                     </button>
@@ -604,6 +562,7 @@ export function PostBusinessPage() {
 
                         <div className="aspect-video w-full relative rounded-xl overflow-hidden bg-black/40 border border-white/5">
                             <ImageUploader
+                                inputTestId="business-image-input"
                                 mode="banner"
                                 aspectRatio={16 / 9}
                                 value={formData.image}

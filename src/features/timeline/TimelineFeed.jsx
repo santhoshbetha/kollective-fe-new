@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Virtuoso } from 'react-virtuoso';
 import PullToRefresh from 'react-simple-pull-to-refresh';
@@ -9,6 +9,7 @@ import { PostCard } from '../../components/posts/PostCard';
 import { usePostsStore } from '../../store/usePostsStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { processFeedPosts } from '../../utils/feedUtils';
+import { getFeedScrollTarget, clearFeedScrollTarget } from '../../utils/feedScrollManager';
 
 export function TimelineFeed() {
     const queryClient = useQueryClient();
@@ -58,6 +59,114 @@ export function TimelineFeed() {
 
         return processed;
     }, [data?.pages, currentUser, activeAccount, activeFilters, activeTab]);
+
+    const virtuosoRef = useRef(null);
+    const scrollRestoredRef = useRef(false);
+
+    // Prevent default browser scroll clamping on route back
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+            const original = window.history.scrollRestoration;
+            window.history.scrollRestoration = 'manual';
+            return () => {
+                window.history.scrollRestoration = original;
+            };
+        }
+    }, []);
+
+    // 🎯 SCROLL RESTORATION: Check if returning from post details page
+    const scrollTarget = useMemo(() => {
+        return getFeedScrollTarget(window.location.pathname);
+    }, []);
+
+    // Determine target index within the filtered posts
+    const targetItemIndex = useMemo(() => {
+        if (!scrollTarget || !filteredPosts || filteredPosts.length === 0) return undefined;
+        const targetId = scrollTarget.postId;
+        const targetDisplayId = scrollTarget.displayPostId;
+
+        const idx = filteredPosts.findIndex((p) => {
+            const pId = p?.id ? String(p.id) : '';
+            const pReblogId = p?.reblog?.id ? String(p.reblog.id) : (p?.reblog_of_id ? String(p.reblog_of_id) : '');
+            return (
+                (targetId && (pId === targetId || pReblogId === targetId)) ||
+                (targetDisplayId && (pId === targetDisplayId || pReblogId === targetDisplayId))
+            );
+        });
+
+        return idx >= 0 ? idx : undefined;
+    }, [scrollTarget, filteredPosts]);
+
+    // Precise scroll alignment after initial render
+    useEffect(() => {
+        if (!scrollTarget || scrollRestoredRef.current) return;
+
+        if (targetItemIndex !== undefined) {
+            const targetId = scrollTarget.postId || scrollTarget.displayPostId;
+            // The position the card had on screen before navigating (fallback to 80 if unknown)
+            const targetTop = typeof scrollTarget.cardTop === 'number' ? scrollTarget.cardTop : 80;
+
+            const alignToPost = () => {
+                const el =
+                    (targetId && document.getElementById(`post-${targetId}`)) ||
+                    (scrollTarget.displayPostId && document.getElementById(`post-${scrollTarget.displayPostId}`)) ||
+                    document.querySelector(`[data-post-id="${targetId}"]`) ||
+                    document.querySelector(`[data-display-post-id="${targetId}"]`);
+
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    if (Math.abs(rect.top - targetTop) > 4) {
+                        const desiredScrollY = window.scrollY + rect.top - targetTop;
+                        window.scrollTo({ top: Math.max(0, desiredScrollY), behavior: 'auto' });
+                    }
+
+                    // Subtle highlight animation to confirm the restored position
+                    el.classList.add('transition-all', 'duration-700', 'bg-primary-container/10');
+                    setTimeout(() => {
+                        el.classList.remove('bg-primary-container/10');
+                    }, 1500);
+
+                    scrollRestoredRef.current = true;
+                    clearFeedScrollTarget();
+                    return true;
+                } else if (virtuosoRef.current) {
+                    virtuosoRef.current.scrollToIndex({
+                        index: targetItemIndex,
+                        align: 'start',
+                        offset: -targetTop,
+                        behavior: 'auto',
+                    });
+                }
+                return false;
+            };
+
+            const t1 = setTimeout(alignToPost, 60);
+            const t2 = setTimeout(alignToPost, 200);
+            const t3 = setTimeout(() => {
+                alignToPost();
+                scrollRestoredRef.current = true;
+                clearFeedScrollTarget();
+            }, 600);
+
+            return () => {
+                clearTimeout(t1);
+                clearTimeout(t2);
+                clearTimeout(t3);
+            };
+        } else if (scrollTarget.scrollY > 0) {
+            const restoreWindowScroll = () => {
+                window.scrollTo({ top: scrollTarget.scrollY, behavior: 'auto' });
+                scrollRestoredRef.current = true;
+                clearFeedScrollTarget();
+            };
+            const t1 = setTimeout(restoreWindowScroll, 60);
+            const t2 = setTimeout(restoreWindowScroll, 200);
+            return () => {
+                clearTimeout(t1);
+                clearTimeout(t2);
+            };
+        }
+    }, [targetItemIndex, scrollTarget]);
 
     // Reconcile background store normalization maps cleanly on data updates
     useEffect(() => {
@@ -121,7 +230,12 @@ export function TimelineFeed() {
 
     if (status === 'pending') {
         return (
-            <div className="flex flex-col gap-6 p-4">
+            <div className="timeline flex flex-col gap-6 p-4">
+                <div className="loading-spinner flex justify-center py-4">
+                    <span className="material-symbols-outlined text-4xl text-primary-container animate-spin">
+                        progress_activity
+                    </span>
+                </div>
                 <PostSkeleton />
                 <PostSkeleton />
             </div>
@@ -130,7 +244,7 @@ export function TimelineFeed() {
 
     if (status === 'error') {
         return (
-            <div className="text-center py-12 text-rose-500 font-bold border border-white/5 rounded-2xl bg-[#141414]">
+            <div className="timeline text-center py-12 text-rose-500 font-bold border border-white/5 rounded-2xl bg-[#141414]">
                 Failed to synchronize updates.
             </div>
         );
@@ -142,7 +256,7 @@ export function TimelineFeed() {
             backgroundColor="transparent"
             maxPullDownDistance={90}
         >
-            <div className="w-full flex flex-col p-4">
+            <div className="timeline w-full flex flex-col p-4">
 
                 {/* 🔔 Dynamic real-time staging banner alert */}
                 {unreadCount > 0 && (
@@ -155,7 +269,7 @@ export function TimelineFeed() {
                     </button>
                 )}
 
-                {activeTab === 'Following' && followingCount === 0 ? (
+                {activeTab === 'Following' && followingCount === 0 && filteredPosts?.length === 0 ? (
                     <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-[#141414] flex flex-col items-center gap-3">
                         <span className="material-symbols-outlined text-4xl text-amber-500 mb-1">person_add</span>
                         <h3 className="font-bold text-text-primary text-lg">No followed users yet</h3>
@@ -197,10 +311,29 @@ export function TimelineFeed() {
                         )}
 
                         <Virtuoso
+                            ref={virtuosoRef}
                             useWindowScroll
                             data={filteredPosts}
                             computeItemKey={(index, post) => post?.id || index}
-                            initialItemCount={filteredPosts.length > 0 ? Math.min(filteredPosts.length, 5) : 0}
+                            initialTopMostItemIndex={
+                                targetItemIndex !== undefined
+                                    ? {
+                                        index: targetItemIndex,
+                                        align: 'start',
+                                        offset: -(typeof scrollTarget?.cardTop === 'number' ? scrollTarget.cardTop : 80),
+                                    }
+                                    : undefined
+                            }
+                            initialScrollTop={
+                                targetItemIndex === undefined && scrollTarget?.scrollY
+                                    ? scrollTarget.scrollY
+                                    : undefined
+                            }
+                            initialItemCount={
+                                targetItemIndex !== undefined || (scrollTarget?.scrollY && scrollTarget.scrollY > 0)
+                                    ? undefined
+                                    : (filteredPosts.length > 0 ? Math.min(filteredPosts.length, 5) : 0)
+                            }
                             increaseViewportBy={400}
                             overscan={200}
                             endReached={() => {

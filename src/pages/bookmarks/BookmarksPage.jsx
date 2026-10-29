@@ -9,7 +9,7 @@ export const BookmarksPage = () => {
     const filters = ['All Categories', 'Manifestos', 'Strategy'];
 
     return (
-        <div className="max-w-3xl mx-auto flex flex-col gap-6 w-full text-left">
+        <div data-testid="bookmarks-page" className="max-w-3xl mx-auto flex flex-col gap-6 w-full text-left">
 
             {/* 🧭 Header & Category Toolbar Row Layout Panel */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2 border-b border-white/5 pb-6 select-none font-sans">

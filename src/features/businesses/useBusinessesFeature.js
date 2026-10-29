@@ -167,3 +167,93 @@ export function useCreateBusiness() {
         },
     });
 }
+
+/**
+ * 🛠️ Hook D: Handles business update submission mutations
+ */
+export function useUpdateBusiness(businessId) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (updatedData) => {
+            const payload = updatedData.business ? updatedData : { business: updatedData };
+
+            const res = await apiFetch(`/businesses/${businessId}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload)
+            });
+            return res?.data || res;
+        },
+
+        onSuccess: (data) => {
+            // Update the single business cache immediately
+            if (businessId) {
+                queryClient.setQueryData(['businesses', 'detail', String(businessId)], data);
+                queryClient.invalidateQueries({
+                    queryKey: ['businesses', 'detail', String(businessId)]
+                });
+            }
+
+            // Invalidate listings caches
+            queryClient.invalidateQueries({
+                queryKey: ['businesses', 'list']
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['businesses', 'infinite']
+            });
+        },
+    });
+}
+
+/**
+ * 🖼️ Hook E: Handles adding an image to a business gallery
+ */
+export function useAddBusinessImage(businessId) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (imageUrl) => {
+            const res = await apiFetch(`/businesses/${businessId}/images`, {
+                method: 'POST',
+                body: JSON.stringify({ image_url: imageUrl })
+            });
+            return res?.data || res;
+        },
+
+        onSuccess: (data) => {
+            if (businessId) {
+                queryClient.setQueryData(['businesses', 'detail', String(businessId)], data);
+                queryClient.invalidateQueries({
+                    queryKey: ['businesses', 'detail', String(businessId)]
+                });
+            }
+        },
+    });
+}
+
+/**
+ * 🗑️ Hook F: Handles deleting an image from a business gallery
+ */
+export function useDeleteBusinessImage(businessId) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (imageUrl) => {
+            const res = await apiFetch(`/businesses/${businessId}/images`, {
+                method: 'DELETE',
+                body: JSON.stringify({ image_url: imageUrl })
+            });
+            return res?.data || res;
+        },
+
+        onSuccess: (data) => {
+            if (businessId) {
+                queryClient.setQueryData(['businesses', 'detail', String(businessId)], data);
+                queryClient.invalidateQueries({
+                    queryKey: ['businesses', 'detail', String(businessId)]
+                });
+            }
+        },
+    });
+}
+

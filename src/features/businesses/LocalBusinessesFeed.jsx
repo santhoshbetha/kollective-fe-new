@@ -4,7 +4,7 @@ import { useBusinessesQuery } from './useBusinessesFeature';
 import { BusinessCard } from './BusinessCard';
 import { VirtuosoGrid } from 'react-virtuoso';
 
-import { isItemInScope } from '../../utils/geoUtils';
+import { isItemInScope, calculateDistanceMiles } from '../../utils/geoUtils';
 
 const BusinessGridFooter = () => (
     <div className="py-8 text-center border-t border-white/5 font-mono text-[10px] text-text-secondary/30 select-none uppercase tracking-wider">
@@ -42,13 +42,20 @@ export function LocalBusinessesFeed({
         const queryLower = searchQuery.toLowerCase().trim();
         const maxDist = selectedDistance ? parseFloat(selectedDistance) : 100;
 
-        return businesses.filter(biz => {
+        const normalizeCat = (cat) => (cat || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normActive = normalizeCat(activeCategory);
+
+        const list = businesses.filter(biz => {
             // 📍 Geographic Scope Enforcement (100 Miles vs Statewide)
             if (!isItemInScope(biz, scopeMode, effectiveUserState, maxDist, userCoords)) {
                 return false;
             }
 
-            const matchesCategory = activeCategory === 'All' || biz.category === activeCategory;
+            const normBiz = normalizeCat(biz.category);
+            const matchesCategory = activeCategory === 'All' ||
+                normBiz === normActive ||
+                normBiz.includes(normActive) ||
+                normActive.includes(normBiz);
 
             const matchesSearch = !queryLower ||
                 (biz.name || '').toLowerCase().includes(queryLower) ||
@@ -60,6 +67,16 @@ export function LocalBusinessesFeed({
 
             return matchesCategory && matchesSearch;
         });
+
+        if (userCoords?.latitude && userCoords?.longitude) {
+            return list.sort((a, b) => {
+                const distA = calculateDistanceMiles(userCoords.latitude, userCoords.longitude, a.latitude, a.longitude) ?? 999999;
+                const distB = calculateDistanceMiles(userCoords.latitude, userCoords.longitude, b.latitude, b.longitude) ?? 999999;
+                return distA - distB;
+            });
+        }
+
+        return list;
     }, [businesses, searchQuery, activeCategory, selectedDistance, scopeMode, effectiveUserState, userCoords]);
 
     if (businessesLoading) {
@@ -95,6 +112,7 @@ export function LocalBusinessesFeed({
             {/* PERFORMANCE MATRIX: Virtuoso viewport configuration tailored into standard columns */}
             <VirtuosoGrid
                 useWindowScroll
+                overscan={8000}
                 data={filteredBusinesses}
                 computeItemKey={(_index, biz) => biz?.id || biz?.name}
                 listClassName="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full"

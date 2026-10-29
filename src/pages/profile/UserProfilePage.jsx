@@ -11,7 +11,10 @@ import { PostCard } from '../../components/posts/PostCard';
 import VerificationBadge from '../../components/VerificationBadge';
 import UserAvatar from '../../components/accounts/UserAvatar';
 import { TrendingWidget } from '../../components/TrendingWidget';
-import { ArrowLeft, Loader2, CheckCircle2, AlertTriangle, ShieldCheck, MessageSquare, Scale } from 'lucide-react';
+import {
+  ArrowLeft, Loader2, CheckCircle2, AlertTriangle, ShieldCheck,
+  MessageSquare, Scale, Calendar, Building2, MapPin, Plus, Edit3
+} from 'lucide-react';
 import { ModerationAppealForm } from '../../features/moderation/components/ModerationAppealForm';
 import { useDirectMessageStore } from '../../store/useDirectMessageStore';
 import {
@@ -20,6 +23,8 @@ import {
   useToggleFollowMutation,
   useProfileConnectionsQuery
 } from '../../features/profile/useProfileFeature';
+import { useEventsQuery } from '../../features/events/useEventsFeature';
+import { useBusinessesQuery } from '../../features/businesses/useBusinessesFeature';
 
 export function UserProfilePage() {
   const { username } = useParams();
@@ -31,6 +36,8 @@ export function UserProfilePage() {
   const currentUser = useAuthStore((state) => state.user);
   const activeAccount = useAuthStore((state) => state.activeAccount);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isOrgNonAdmin = activeAccount?.type === 'organization' && !['admin', 'owner'].includes(activeAccount?.role?.toLowerCase());
+  const orgNonAdminTooltip = "Only administrators can perform social actions on behalf of this organization";
 
   const [activeTab, setActiveTab] = useState('Posts'); // Tracks base tabs ('Posts', 'Media', 'Team')
   const [connectionView, setConnectionView] = useState(null); // 🚀 NEW: Tracks 'followers' | 'following' view overlays;
@@ -38,10 +45,48 @@ export function UserProfilePage() {
   const [showCorrectionLog, setShowCorrectionLog] = useState(false);
   const [isProfileAppealOpen, setIsProfileAppealOpen] = useState(false);
 
-  const cleanUsername = (username || '').toLowerCase().replace('@', '');
+  const cleanUsername = (username || currentUser?.username || activeAccount?.username || '').toLowerCase().replace('@', '');
 
   // 📡 REST DATA HANDLERS: Fetch profiles straight from your backend storage endpoints
   const { data: remoteProfile, isLoading: isProfileLoading } = useProfileQuery(cleanUsername);
+
+  // 🛡️ Safe guard isOwnProfile boolean evaluations
+  const isOwnProfile = useMemo(() => {
+    if (!currentUser && !activeAccount) return false;
+    const currentHandle = (currentUser?.handle || activeAccount?.handle || '').toLowerCase().replace('@', '');
+    const currentName = (currentUser?.username || activeAccount?.username || '').toLowerCase();
+    return currentHandle === cleanUsername || currentName === cleanUsername;
+  }, [currentUser, activeAccount, cleanUsername]);
+
+  // 🗓️ User's Events & Businesses (only queried/computed for own profile)
+  const { events, eventsLoading } = useEventsQuery();
+  const { businesses, businessesLoading } = useBusinessesQuery();
+
+  const myEvents = useMemo(() => {
+    if (!isOwnProfile || !events) return [];
+    const currentUserId = currentUser?.id || activeAccount?.id;
+    const currentUsername = (currentUser?.username || activeAccount?.username || '').toLowerCase();
+    return events.filter(e => {
+      const creatorId = e.created_by || e.user_id || e.organizer?.id;
+      if (currentUserId && creatorId && String(creatorId) === String(currentUserId)) return true;
+      const orgName = (typeof e.organizer === 'string' ? e.organizer : (e.organizer?.username || e.organizerName || '')).toLowerCase();
+      if (currentUsername && orgName && orgName === currentUsername) return true;
+      return false;
+    });
+  }, [isOwnProfile, events, currentUser, activeAccount]);
+
+  const myBusinesses = useMemo(() => {
+    if (!isOwnProfile || !businesses) return [];
+    const currentUserId = currentUser?.id || activeAccount?.id;
+    const currentUsername = (currentUser?.username || activeAccount?.username || '').toLowerCase();
+    return businesses.filter(b => {
+      const ownerId = b.user_id || b.owner_id || b.owner?.id;
+      if (currentUserId && ownerId && String(ownerId) === String(currentUserId)) return true;
+      const ownerName = (b.owner_name || (typeof b.owner === 'string' ? b.owner : b.owner?.username) || '').toLowerCase();
+      if (currentUsername && ownerName && ownerName === currentUsername) return true;
+      return false;
+    });
+  }, [isOwnProfile, businesses, currentUser, activeAccount]);
 
   const currentTimelineMode = activeTab === 'Posts' ? 'root_only' : 'with_replies';
   const {
@@ -66,14 +111,6 @@ export function UserProfilePage() {
   }, [connectionsData?.pages]);
 
   const toggleFollowMutation = useToggleFollowMutation(cleanUsername);
-
-  // 🛡️ Safe guard isOwnProfile boolean evaluations
-  const isOwnProfile = useMemo(() => {
-    if (!currentUser && !activeAccount) return false;
-    const currentHandle = (currentUser?.handle || activeAccount?.handle || '').toLowerCase().replace('@', '');
-    const currentName = (currentUser?.username || activeAccount?.username || '').toLowerCase();
-    return currentHandle === cleanUsername || currentName === cleanUsername;
-  }, [currentUser, activeAccount, cleanUsername]);
 
   // Parse remote server data layouts safely and inject structural defaults dynamically
   const profile = useMemo(() => {
@@ -144,6 +181,23 @@ export function UserProfilePage() {
     };
   }, [remoteProfile, isOwnProfile, currentUser, activeAccount, cleanUsername]);
 
+  const profileTabs = useMemo(() => {
+    const baseTabs = (profile.type === 'organization' || profile.badge_type?.toLowerCase() === 'organization' || profile.badge_type?.toLowerCase() === 'warned')
+      ? ['Posts', 'Posts & replies', 'Media', 'Team']
+      : ['Posts', 'Posts & replies', 'Media'];
+
+    if (isOwnProfile) {
+      return [...baseTabs, 'My Events', 'My Businesses'];
+    }
+    return baseTabs;
+  }, [profile.type, profile.badge_type, isOwnProfile]);
+
+  useEffect(() => {
+    if (!isOwnProfile && (activeTab === 'My Events' || activeTab === 'My Businesses')) {
+      setActiveTab('Posts');
+    }
+  }, [isOwnProfile, activeTab]);
+
   // Sync remote follow mapping updates cleanly
   useEffect(() => {
     if (remoteProfile) {
@@ -180,6 +234,7 @@ export function UserProfilePage() {
   }, [profile?.metadata, cleanUsername, showPersonalHandle]);
 
   const handleToggleFollow = async () => {
+    if (isOrgNonAdmin) return;
     if (!isAuthenticated) {
       alert("Please log in to follow users.");
       return;
@@ -277,12 +332,16 @@ export function UserProfilePage() {
                   <button
                     type="button"
                     onClick={handleToggleFollow}
-                    disabled={toggleFollowMutation.isPending}
+                    disabled={toggleFollowMutation.isPending || isOrgNonAdmin}
+                    title={isOrgNonAdmin ? orgNonAdminTooltip : undefined}
                     className={cn(
-                      "px-6 py-2.5 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-95 cursor-pointer",
-                      isFollowing
+                      "px-6 py-2.5 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-95",
+                      isOrgNonAdmin
+                        ? "bg-surface-container-high border border-white/5 text-text-secondary/40 opacity-40 cursor-not-allowed"
+                        : "cursor-pointer",
+                      !isOrgNonAdmin && (isFollowing
                         ? "bg-surface-container-high border border-white/10 text-text-secondary hover:text-red-400 hover:border-red-500/30"
-                        : "bg-primary-container text-white crimson-glow hover:brightness-110 border-none"
+                        : "bg-primary-container text-white crimson-glow hover:brightness-110 border-none")
                     )}
                   >
                     {toggleFollowMutation.isPending ? 'Processing...' : isFollowing ? 'Following ✓' : 'Follow'}
@@ -584,17 +643,22 @@ export function UserProfilePage() {
         )}
 
         {/* Navigation Section Tabs layout bar */}
-        <div className="flex border-b border-[#262626] mt-4 w-full text-sm font-bold tracking-wide">
-          {(profile.type === 'organization' || profile.badge_type?.toLowerCase() === 'organization' || profile.badge_type?.toLowerCase() === 'warned' ? ['Posts', 'Posts & replies', 'Media', 'Team'] : ['Posts', 'Posts & replies', 'Media']).map((tab) => {
+        <div className="flex border-b border-[#262626] mt-4 w-full text-sm font-bold tracking-wide overflow-x-auto scrollbar-none">
+          {profileTabs.map((tab) => {
             const isTabTargetReplies = tab === 'Posts & replies';
             const isActive = activeTab === tab || (isTabTargetReplies && activeTab === 'Replies');
+            const testId = tab === 'My Events' ? 'tab-my-events' : tab === 'My Businesses' ? 'tab-my-businesses' : undefined;
             return (
               <button
                 key={tab}
                 type="button"
-                onClick={() => setActiveTab(isTabTargetReplies ? 'Replies' : tab)}
+                data-testid={testId}
+                onClick={() => {
+                  setConnectionView(null);
+                  setActiveTab(isTabTargetReplies ? 'Replies' : tab);
+                }}
                 className={cn(
-                  "flex-1 py-4 text-center text-sm font-bold border-none bg-transparent cursor-pointer transition-all relative",
+                  "flex-1 min-w-fit px-4 py-4 text-center text-sm font-bold border-none bg-transparent cursor-pointer transition-all relative whitespace-nowrap",
                   isActive ? "text-primary-container font-extrabold" : "text-text-secondary hover:text-text-primary"
                 )}
               >
@@ -679,6 +743,243 @@ export function UserProfilePage() {
               )}
             </div>
           )
+            /* 🗓️ User's Events Tab (ONLY visible to user on own profile) */
+            : activeTab === 'My Events' && isOwnProfile ? (
+              <div data-testid="my-events-section" className="flex flex-col gap-4">
+                <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary-container" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-text-primary">
+                      My Hosted Events ({myEvents.length})
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/events/create')}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-container text-white text-xs font-bold rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer border-none shadow-md shadow-primary-container/20"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Create Event</span>
+                  </button>
+                </div>
+
+                {eventsLoading ? (
+                  <div className="py-12 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="w-6 h-6 text-primary-container animate-spin" />
+                    <p className="text-xs font-mono text-text-secondary uppercase tracking-widest">
+                      Loading your events...
+                    </p>
+                  </div>
+                ) : myEvents.length === 0 ? (
+                  <div className="glass-card rounded-2xl p-10 text-center border border-white/5 bg-[#141414] flex flex-col items-center gap-3">
+                    <Calendar className="w-10 h-10 text-text-secondary/40" />
+                    <h4 className="text-base font-bold text-text-primary">No events hosted yet</h4>
+                    <p className="text-xs text-text-secondary max-w-sm">
+                      You haven't scheduled or organized any events on the network yet.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/events/create')}
+                      className="mt-2 px-5 py-2.5 bg-primary-container text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer border-none shadow-lg shadow-primary-container/20"
+                    >
+                      Create Your First Event
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {myEvents.map((evt) => {
+                      const bannerUrl = evt.image || evt.banner_url || evt.cover_image_url;
+                      const locStr = evt.location_name || evt.street || (typeof evt.location === 'string' ? evt.location : (evt.location?.name || 'Local District'));
+                      return (
+                        <div
+                          key={evt.id}
+                          data-testid={`my-event-card-${evt.id}`}
+                          className="glass-panel rounded-2xl p-4 border border-white/5 bg-[#141414] hover:bg-white/[0.02] transition-all flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
+                        >
+                          <div className="flex items-start sm:items-center gap-4 min-w-0 flex-1">
+                            {bannerUrl ? (
+                              <img
+                                src={bannerUrl}
+                                alt={evt.title}
+                                className="w-20 h-16 rounded-xl object-cover border border-white/10 shrink-0"
+                              />
+                            ) : (
+                              <div className="w-20 h-16 rounded-xl bg-surface-container-high/40 flex items-center justify-center shrink-0 border border-white/5">
+                                <Calendar className="w-6 h-6 text-primary-container" />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-bold text-text-primary text-base truncate">
+                                  {evt.title}
+                                </h4>
+                                {evt.category && (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-container/20 text-primary-container uppercase tracking-wider">
+                                    {evt.category}
+                                  </span>
+                                )}
+                                {evt.format && (
+                                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/5 text-text-secondary">
+                                    {evt.format}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-text-secondary flex-wrap font-mono">
+                                {evt.date && <span>{evt.date}</span>}
+                                {evt.time && <span>• {evt.time}</span>}
+                                {locStr && <span className="truncate">• {locStr}</span>}
+                              </div>
+                              <div className="text-[11px] text-text-secondary/80">
+                                {evt.attendeesCount || evt.participants_count || 0} attending • {evt.interestedCount || 0} interested
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                            <button
+                              type="button"
+                              data-testid={`edit-my-event-btn-${evt.id}`}
+                              onClick={() => navigate(`/events/${evt.id}/edit`)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-high border border-white/10 hover:bg-white/10 text-text-primary text-xs font-bold transition-all cursor-pointer active:scale-95"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-primary-container" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/events/${evt.id}`)}
+                              className="px-3 py-1.5 rounded-xl bg-primary-container text-white text-xs font-bold transition-all cursor-pointer active:scale-95 border-none hover:brightness-110"
+                            >
+                              View Details
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+            /* 🏢 User's Businesses Tab (ONLY visible to user on own profile) */
+            : activeTab === 'My Businesses' && isOwnProfile ? (
+              <div data-testid="my-businesses-section" className="flex flex-col gap-4">
+                <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-primary-container" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-text-primary">
+                      My Registered Businesses ({myBusinesses.length})
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/businesses/register')}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-container text-white text-xs font-bold rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer border-none shadow-md shadow-primary-container/20"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Register Business</span>
+                  </button>
+                </div>
+
+                {businessesLoading ? (
+                  <div className="py-12 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="w-6 h-6 text-primary-container animate-spin" />
+                    <p className="text-xs font-mono text-text-secondary uppercase tracking-widest">
+                      Loading your businesses...
+                    </p>
+                  </div>
+                ) : myBusinesses.length === 0 ? (
+                  <div className="glass-card rounded-2xl p-10 text-center border border-white/5 bg-[#141414] flex flex-col items-center gap-3">
+                    <Building2 className="w-10 h-10 text-text-secondary/40" />
+                    <h4 className="text-base font-bold text-text-primary">No businesses registered</h4>
+                    <p className="text-xs text-text-secondary max-w-sm">
+                      You haven't listed any community enterprises or cooperatives on the registry yet.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/businesses/register')}
+                      className="mt-2 px-5 py-2.5 bg-primary-container text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer border-none shadow-lg shadow-primary-container/20"
+                    >
+                      Register an Enterprise
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {myBusinesses.map((biz) => {
+                      const imgUrl = biz.profile_image_url || biz.image || (Array.isArray(biz.images) && biz.images[0]);
+                      const address = biz.address || (biz.city ? `${biz.city}, ${biz.state || ''}` : 'Local District');
+                      return (
+                        <div
+                          key={biz.id}
+                          data-testid={`my-business-card-${biz.id}`}
+                          className="glass-panel rounded-2xl p-4 border border-white/5 bg-[#141414] hover:bg-white/[0.02] transition-all flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
+                        >
+                          <div className="flex items-start sm:items-center gap-4 min-w-0 flex-1">
+                            {imgUrl ? (
+                              <img
+                                src={imgUrl}
+                                alt={biz.name}
+                                className="w-16 h-16 rounded-xl object-cover border border-white/10 shrink-0"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 rounded-xl bg-surface-container-high/40 flex items-center justify-center shrink-0 border border-white/5">
+                                <Building2 className="w-6 h-6 text-primary-container" />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-bold text-text-primary text-base truncate">
+                                  {biz.name}
+                                </h4>
+                                {biz.category && (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-container/20 text-primary-container uppercase tracking-wider">
+                                    {biz.category}
+                                  </span>
+                                )}
+                                {(biz.legal_structure || biz.legalStructure) && (
+                                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/5 text-text-secondary">
+                                    {biz.legal_structure || biz.legalStructure}
+                                  </span>
+                                )}
+                              </div>
+                              {address && (
+                                <div className="text-xs text-text-secondary flex items-center gap-1.5 truncate">
+                                  <MapPin className="w-3.5 h-3.5 text-primary-container/70 shrink-0" />
+                                  <span className="truncate">{address}</span>
+                                </div>
+                              )}
+                              {biz.description && (
+                                <p className="text-xs text-text-secondary/70 truncate max-w-lg">
+                                  {biz.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                            <button
+                              type="button"
+                              data-testid={`edit-my-business-btn-${biz.id}`}
+                              onClick={() => navigate(`/businesses/${biz.id}/edit`)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-high border border-white/10 hover:bg-white/10 text-text-primary text-xs font-bold transition-all cursor-pointer active:scale-95"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-primary-container" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/businesses/${biz.id}`)}
+                              className="px-3 py-1.5 rounded-xl bg-primary-container text-white text-xs font-bold transition-all cursor-pointer active:scale-95 border-none hover:brightness-110"
+                            >
+                              View Details
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )
             /* 👥 Organization Team Roster Directory Row Panel */
             : activeTab === 'Team' && (profile.type === 'organization' || profile.badge_type?.toLowerCase() === 'organization' || profile.badge_type?.toLowerCase() === 'warned') ? (
               /* 👥 Organization Team Roster Directory */

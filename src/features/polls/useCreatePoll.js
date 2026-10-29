@@ -17,11 +17,14 @@ export function useCreatePoll() {
 
         // 2. Clear out stale stream caches immediately upon a successful creation run
         onSuccess: () => {
-            // Invalidate the primary polls stream cache key.
-            // This forces the PollsFeed to drop its stale metrics and perform an 
-            // immediate background refetch, instantly placing the new poll at the top.
             queryClient.invalidateQueries({
-                queryKey: ['polls', 'stream'],
+                queryKey: ['polls'],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['timeline'],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['posts'],
             });
         },
     });

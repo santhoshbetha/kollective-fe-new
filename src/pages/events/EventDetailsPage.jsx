@@ -20,6 +20,10 @@ export const EventDetailsPage = () => {
 
   const currentUser = useAuthStore((state) => state.user);
   const activeAccount = useAuthStore((state) => state.activeAccount);
+  const isOrg = activeAccount?.type === 'organization';
+  const isOrgAdmin = isOrg && ['admin', 'owner'].includes(activeAccount?.role?.toLowerCase());
+  const isOrgNonAdmin = isOrg && !isOrgAdmin;
+  const orgNonAdminTooltip = "Only administrators can perform social actions on behalf of this organization";
 
   const isSelfComment = (c) => {
     if (!c) return false;
@@ -189,19 +193,54 @@ export const EventDetailsPage = () => {
   };
 
   const handleShare = () => {
-    const shareUrl = window.location.href;
-    navigator.clipboard.writeText(shareUrl)
-      .then(() => triggerToast('Event details link copied to clipboard!'))
-      .catch(() => triggerToast('Failed to copy link.'));
+    const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => triggerToast('Event details link copied to clipboard!'))
+        .catch(() => triggerToast('Failed to copy link.'));
+    } else {
+      triggerToast('Event link: ' + shareUrl);
+    }
   };
 
   const handleAddToCalendar = () => {
-    triggerToast('Event added to your local calendar!');
+    if (!event) return;
+    try {
+      const title = encodeURIComponent(event.title || 'Event');
+      const details = encodeURIComponent(event.description || '');
+      const location = encodeURIComponent(event.location_name || event.street || '');
+      const startDate = event.start_time ? new Date(event.start_time).toISOString().replace(/-|:|\.\d{3}/g, '') : '';
+      const endDate = event.end_time ? new Date(event.end_time).toISOString().replace(/-|:|\.\d{3}/g, '') : startDate;
+      const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}&dates=${startDate}/${endDate}`;
+      if (typeof window !== 'undefined' && window.open) {
+        window.open(gcalUrl, '_blank');
+      }
+      triggerToast('Opening calendar...');
+    } catch {
+      triggerToast('Added event to calendar');
+    }
   };
+
+  const currentUserId = currentUser?.id || activeAccount?.id;
+  const currentUsername = (currentUser?.username || activeAccount?.username || '').toLowerCase();
+  const isOrganizer = Boolean(
+    (currentUserId && (
+      String(event?.created_by) === String(currentUserId) ||
+      String(event?.user_id) === String(currentUserId) ||
+      String(event?.organizer?.id) === String(currentUserId)
+    )) ||
+    (currentUsername && (
+      (typeof event?.organizer === 'string' && event.organizer.toLowerCase() === currentUsername) ||
+      (event?.organizer?.username && event.organizer.username.toLowerCase() === currentUsername) ||
+      (event?.organizerName && event.organizerName.toLowerCase() === currentUsername)
+    )) ||
+    currentUser?.is_admin ||
+    currentUser?.is_moderator
+  );
 
   return (
     <div className="max-w-[1280px] mx-auto px-4 md:px-0 relative text-scale-large">
-      {/* Back Navigation */}
+      {/* Back Navigation & Organizer Actions */}
       <div className="sticky top-[60px] z-30 bg-surface backdrop-blur-md py-3 mb-6 border-b dark:border-white/5 
                       border-black/5 flex items-center justify-between">
         <button
@@ -213,6 +252,18 @@ export const EventDetailsPage = () => {
           </span>
           Back to Events
         </button>
+
+        {isOrganizer && (
+          <button
+            type="button"
+            data-testid="edit-event-btn"
+            onClick={() => navigate(`/events/${eventId}/edit`)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary-container text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all cursor-pointer border-none shadow-md shadow-primary-container/20"
+          >
+            <span className="material-symbols-outlined text-sm">edit</span>
+            <span>Edit Event</span>
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -248,7 +299,7 @@ export const EventDetailsPage = () => {
             <div className="p-6 md:p-8">
               <div className="flex justify-between items-start mb-6 gap-4">
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-4 leading-tight">
+                  <h2 className="text-2xl md:text-3xl font-extrabold text-text-primary mb-4 leading-tight">
                     {event?.title}
                   </h2>
                   <div className="flex items-center gap-2.5 text-text-secondary">
@@ -305,8 +356,10 @@ export const EventDetailsPage = () => {
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-4 pt-6 border-t border-outline-variant">
                 <button
-                  disabled={toggleEventAttendanceMutation.isPending}
+                  disabled={isOrgNonAdmin || toggleEventAttendanceMutation.isPending}
+                  title={isOrgNonAdmin ? orgNonAdminTooltip : ""}
                   onClick={() => {
+                    if (isOrgNonAdmin) return;
                     toggleEventAttendanceMutation.mutate(event?.id, {
                       onSuccess: (updated) => {
                         triggerToast(updated?.isAttending ? 'Marked as Attending!' : 'Removed from Attending');
@@ -316,20 +369,25 @@ export const EventDetailsPage = () => {
                       }
                     });
                   }}
-                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all cursor-pointer ${event?.isAttending
-                    ? 'bg-primary-container/20 text-primary-container border-primary-container/30'
-                    : 'bg-surface-container-high/20 hover:bg-surface-container-high/50 text-text-primary border-outline-variant'
-                    } ${toggleEventAttendanceMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all ${
+                    isOrgNonAdmin
+                      ? 'opacity-50 cursor-not-allowed bg-surface-container-high/10 text-text-secondary border-outline-variant'
+                      : event?.isAttending
+                      ? 'bg-primary-container/20 text-primary-container border-primary-container/30 cursor-pointer'
+                      : 'bg-surface-container-high/20 hover:bg-surface-container-high/50 text-text-primary border-outline-variant cursor-pointer'
+                  } ${toggleEventAttendanceMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: event?.isAttending ? "'FILL' 1" : "'FILL' 0" }}>
-                    check_circle
+                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: !isOrgNonAdmin && event?.isAttending ? "'FILL' 1" : "'FILL' 0" }}>
+                    {isOrgNonAdmin ? 'lock' : 'check_circle'}
                   </span>
-                  {toggleEventAttendanceMutation.isPending ? 'Updating...' : (event?.isAttending ? 'Attending' : 'Attend Event')}
+                  {isOrgNonAdmin ? 'Attend (Admin Only)' : toggleEventAttendanceMutation.isPending ? 'Updating...' : (event?.isAttending ? 'Attending' : isOrgAdmin ? 'Attend (as Org)' : 'Attend Event')}
                 </button>
 
                 <button
-                  disabled={toggleEventInterestMutation.isPending}
+                  disabled={isOrgNonAdmin || toggleEventInterestMutation.isPending}
+                  title={isOrgNonAdmin ? orgNonAdminTooltip : ""}
                   onClick={() => {
+                    if (isOrgNonAdmin) return;
                     toggleEventInterestMutation.mutate(event?.id, {
                       onSuccess: (updated) => {
                         triggerToast(updated?.isInterested ? 'Marked as Interested!' : 'Removed Interest');
@@ -339,15 +397,18 @@ export const EventDetailsPage = () => {
                       }
                     });
                   }}
-                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all cursor-pointer ${event?.isInterested
-                    ? 'bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/10'
-                    : 'bg-surface-container-high/20 hover:bg-surface-container-high/50 text-text-primary border-outline-variant'
-                    } ${toggleEventInterestMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all ${
+                    isOrgNonAdmin
+                      ? 'opacity-50 cursor-not-allowed bg-surface-container-high/10 text-text-secondary border-outline-variant'
+                      : event?.isInterested
+                      ? 'bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/10 cursor-pointer'
+                      : 'bg-surface-container-high/20 hover:bg-surface-container-high/50 text-text-primary border-outline-variant cursor-pointer'
+                  } ${toggleEventInterestMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: event?.isInterested ? "'FILL' 1" : "'FILL' 0" }}>
-                    favorite
+                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: !isOrgNonAdmin && event?.isInterested ? "'FILL' 1" : "'FILL' 0" }}>
+                    {isOrgNonAdmin ? 'lock' : 'favorite'}
                   </span>
-                  {toggleEventInterestMutation.isPending ? 'Updating...' : (event?.isInterested ? 'Interested' : 'Mark Interested')}
+                  {isOrgNonAdmin ? 'RSVP (Admin Only)' : toggleEventInterestMutation.isPending ? 'Updating...' : (event?.isInterested ? 'Interested' : isOrgAdmin ? 'RSVP (as Org)' : 'Mark Interested')}
                 </button>
 
                 <button
@@ -357,6 +418,19 @@ export const EventDetailsPage = () => {
                 >
                   <span className="material-symbols-outlined text-sm">share</span>
                 </button>
+
+                {isOrganizer && (
+                  <button
+                    type="button"
+                    data-testid="edit-event-action-btn"
+                    onClick={() => navigate(`/events/${eventId}/edit`)}
+                    className="p-3 bg-primary-container/10 hover:bg-primary-container/20 text-primary-container rounded-xl border border-primary-container/30 transition-all cursor-pointer flex items-center gap-1.5 font-bold text-xs"
+                    title="Edit Event"
+                  >
+                    <span className="material-symbols-outlined text-sm">edit</span>
+                    <span>Edit</span>
+                  </button>
+                )}
               </div>
 
             </div>
@@ -390,12 +464,12 @@ export const EventDetailsPage = () => {
           <div className="space-y-6">
             {activeTab === 'info' ? (
               <div className="glass-panel rounded-3xl p-6 md:p-8 border border-white/5 space-y-4">
-                <h4 className="font-bold text-white text-sm md:text-base">About this Gathering</h4>
+                <h4 className="font-bold text-text-primary text-sm md:text-base">About this Gathering</h4>
                 <p className="text-text-secondary text-lg leading-relaxed whitespace-pre-line">
                   {event?.description}
                 </p>
                 <div className="pt-4 border-t border-white/5 text-[14px] text-text-secondary">
-                  Format: <span className="text-white font-bold uppercase">{event?.format}</span> • Category: <span className="text-white font-bold uppercase">{event?.category}</span>
+                  Format: <span className="text-text-primary font-bold uppercase">{event?.format}</span> • Category: <span className="text-text-primary font-bold uppercase">{event?.category}</span>
                 </div>
               </div>
             ) : (
@@ -408,7 +482,7 @@ export const EventDetailsPage = () => {
                     onChange={(e) => setCommentText(e.target.value)}
                     placeholder="Write a comment, coordination note, or feedback..."
                     rows="3"
-                    className="w-full bg-surface-ink border border-white/5 focus:border-primary-container focus:ring-4 focus:ring-primary-container/10 transition-all outline-none rounded-xl p-3 text-md md:text-lg text-text-primary resize-none placeholder:text-text-secondary/30"
+                    className="w-full bg-surface-container-low border border-black/10 dark:border-white/10 focus:border-primary-container focus:ring-4 focus:ring-primary-container/10 transition-all outline-none rounded-xl p-3 text-md md:text-lg text-text-primary resize-none placeholder:text-text-secondary/50"
                   ></textarea>
 
                   {commentImage && (
@@ -575,7 +649,7 @@ export const EventDetailsPage = () => {
                                     onChange={(e) => setReplyText(e.target.value)}
                                     placeholder={`Reply to ${authorName}...`}
                                     rows="2"
-                                    className="w-full bg-surface-ink border border-white/10 focus:border-primary-container transition-all outline-none rounded-xl p-2.5 text-sm text-text-primary resize-none"
+                                    className="w-full bg-surface-container-low border border-black/10 dark:border-white/10 focus:border-primary-container transition-all outline-none rounded-xl p-2.5 text-sm text-text-primary resize-none placeholder:text-text-secondary/50"
                                   ></textarea>
 
                                   {replyImage && (
@@ -779,7 +853,7 @@ export const EventDetailsPage = () => {
                   <span className="material-symbols-outlined text-sm text-text-secondary/40">groups</span>
                   Attendees
                 </span>
-                <span className="font-bold text-white text-lg">{event?.attendeesCount}</span>
+                <span className="font-bold text-text-primary text-lg">{event?.attendeesCount}</span>
               </div>
 
               <div className="flex justify-between items-center text-lg">
@@ -787,7 +861,7 @@ export const EventDetailsPage = () => {
                   <span className="material-symbols-outlined text-sm text-text-secondary/40">favorite</span>
                   Interested
                 </span>
-                <span className="font-bold text-white text-lg">{event?.interestedCount}</span>
+                <span className="font-bold text-text-primary text-lg">{event?.interestedCount}</span>
               </div>
 
               <div className="flex justify-between items-center text-lg">
@@ -839,7 +913,7 @@ export const EventDetailsPage = () => {
 
       {/* Toast Overlay */}
       {toastMessage && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-surface-ink text-[#F4F4F4] border border-primary-container/30 px-6 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-surface-container-high text-text-primary border border-primary-container/30 px-6 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-200">
           <span className="material-symbols-outlined text-primary-container text-sm">info</span>
           <span className="text-sm font-semibold uppercase tracking-wider">{toastMessage}</span>
         </div>

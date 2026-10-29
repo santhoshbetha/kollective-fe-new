@@ -3,8 +3,9 @@ import { useAuthStore } from '../store/auth/useAuthStore';
 import { useTimelineBufferStore } from '../store/useTimelineBufferStore';
 import queryClient from './queryClient';
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:4000/api/v1').replace(/\/$/, '');
-const API_HOST = API_BASE.replace(/\/api\/v1\/?$/, '');
+const apiOrigin = import.meta.env.VITE_API_ORIGIN || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '') : '');
+const API_BASE = (import.meta.env.VITE_API_URL || `${apiOrigin || 'http://127.0.0.1:4000'}/api/v1`).replace(/\/$/, '');
+const API_HOST = apiOrigin || API_BASE.replace(/\/api\/v1\/?$/, '');
 
 /**
  * 🏆 MASTER APICLIENT FETCH CONFIGURATION MATRIX

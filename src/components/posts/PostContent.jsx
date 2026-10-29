@@ -42,7 +42,7 @@ export function PostContent({ post, isFocus }) {
                     }`}
             >
                 <p className={isFocus ? 'text-xl text-text-primary' : 'text-lg'}>
-                    {renderTextTokens(post?.text)}
+                    {renderTextTokens(post?.text || post?.content || post?.body)}
                 </p>
 
                 {/* Linear opacity fading shield layer for truncated mobile views */}
@@ -72,7 +72,7 @@ export function PostContent({ post, isFocus }) {
             {/* If this post record contains a sub-attached Poll, inject the interactive form layout directly */}
             {post?.poll && (
                 <div className="mt-2 bg-[#111111] rounded-2xl p-1 border border-white/5 shadow-inner">
-                    <PollCard poll={post?.poll} />
+                    <PollCard poll={{ ...post.poll, question: post?.text || post?.content, author: post?.author }} />
                 </div>
             )}
 

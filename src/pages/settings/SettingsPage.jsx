@@ -1,5 +1,5 @@
 // src/pages/SettingsPage.jsx
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
@@ -21,13 +21,20 @@ export const SettingsPage = () => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const currentUser = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+    const isOrg = activeAccount?.type === 'organization';
 
     // Connect active language variables straight to translation dictionaries
     const currentLanguage = useStore((state) => state.appLanguage);
     const t = useTranslation(currentLanguage);
 
-    const initialTab = searchParams.get('tab') || 'index';
+    const rawInitialTab = searchParams.get('tab') || 'index';
+    const isIllegalForOrg = isOrg && ['invitations', 'email', 'password', 'account'].includes(rawInitialTab);
+    const isIllegalForPersonal = !isOrg && ['org_workspace'].includes(rawInitialTab);
+    const initialTab = (isIllegalForOrg || isIllegalForPersonal) ? 'index' : rawInitialTab;
+
     const [activeSettingsTab, setActiveSettingsTab] = useState(initialTab);
     const [visitedTabs, setVisitedTabs] = useState(() => new Set([initialTab]));
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -49,12 +56,38 @@ export const SettingsPage = () => {
         }
     }, [isAuthenticated, navigate]);
 
+    // 🔄 FALLBACK REDIRECT LOOP: Prevent illegal tab access across context shifts
+    useEffect(() => {
+        const orgIllegalTabs = ['invitations', 'email', 'password', 'account'];
+        const personalIllegalTabs = ['org_workspace'];
+
+        if (isOrg && orgIllegalTabs.includes(activeSettingsTab)) {
+            setActiveSettingsTab('index');
+            setSearchParams({ tab: 'index' }, { replace: true });
+        } else if (!isOrg && personalIllegalTabs.includes(activeSettingsTab)) {
+            setActiveSettingsTab('index');
+            setSearchParams({ tab: 'index' }, { replace: true });
+        }
+    }, [isOrg, activeSettingsTab, setSearchParams]);
+
     useEffect(() => {
         const tabParam = searchParams.get('tab') || 'index';
-        if (tabParam !== activeSettingsTab) {
-            setActiveSettingsTab(tabParam);
+        const orgIllegalTabs = ['invitations', 'email', 'password', 'account'];
+        const personalIllegalTabs = ['org_workspace'];
+
+        let resolvedTab = tabParam;
+        if (isOrg && orgIllegalTabs.includes(tabParam)) {
+            resolvedTab = 'index';
+            setSearchParams({ tab: 'index' }, { replace: true });
+        } else if (!isOrg && personalIllegalTabs.includes(tabParam)) {
+            resolvedTab = 'index';
+            setSearchParams({ tab: 'index' }, { replace: true });
         }
-    }, [searchParams]);
+
+        if (resolvedTab !== activeSettingsTab) {
+            setActiveSettingsTab(resolvedTab);
+        }
+    }, [searchParams, isOrg, activeSettingsTab, setSearchParams]);
 
     useEffect(() => {
         setVisitedTabs((prev) => {
@@ -65,20 +98,40 @@ export const SettingsPage = () => {
         });
     }, [activeSettingsTab]);
 
-    const settingsMenu = [
-        { id: 'index', label: t('pref_heading'), icon: 'settings_accessibility', desc: t('pref_desc') },
-        { id: 'profile', label: 'Edit Profile', icon: 'account_circle', desc: 'Update profile picture, banner, and info' },
-        { id: 'invitations', label: 'Organization Invitations', icon: 'mail_lock', desc: 'Pending team invites and access grants' },
-        { id: 'org_workspace', label: 'Workspace & Team', icon: 'corporate_fare', desc: 'Manage org roster, invite contributors & audit logs' },
-        { id: 'email', label: 'Email Configuration', icon: 'mail', desc: 'Manage your contact address links' },
-        { id: 'password', label: 'Security & Keys', icon: 'lock', desc: 'Modify entry passwords and authorization keys' },
-        { id: 'account', label: 'Danger Zone', icon: 'gavel', desc: 'Permanent account destruction matrices' }
-    ];
+    // 📋 DYNAMIC COMPUTING BLOCK FOR SETTINGS MENU TABS
+    const settingsMenu = useMemo(() => {
+        if (isOrg) {
+            return [
+                { id: 'index', label: t('pref_heading'), icon: 'settings_accessibility', desc: t('pref_desc') },
+                { id: 'profile', label: 'Edit Organization Profile', icon: 'account_circle', desc: "Update organization's profile bio, banner, and info" },
+                { id: 'org_workspace', label: 'Workspace & Team', icon: 'corporate_fare', desc: 'Manage org roster, invite contributors & audit logs' }
+            ];
+        }
+
+        return [
+            { id: 'index', label: t('pref_heading'), icon: 'settings_accessibility', desc: t('pref_desc') },
+            { id: 'profile', label: 'Edit Profile', icon: 'account_circle', desc: 'Update profile picture, banner, and info' },
+            { id: 'invitations', label: 'Organization Invitations', icon: 'mail_lock', desc: 'Pending team invites and access grants' },
+            { id: 'email', label: 'Email Configuration', icon: 'mail', desc: 'Manage your contact address links' },
+            { id: 'password', label: 'Security & Keys', icon: 'lock', desc: 'Modify entry passwords and authorization keys' },
+            { id: 'account', label: 'Danger Zone', icon: 'gavel', desc: 'Permanent account destruction matrices' }
+        ];
+    }, [isOrg, t]);
 
     const handleTabChange = (tabId) => {
-        if (tabId !== activeSettingsTab) {
-            setActiveSettingsTab(tabId);
-            setSearchParams({ tab: tabId }, { replace: true });
+        const orgIllegalTabs = ['invitations', 'email', 'password', 'account'];
+        const personalIllegalTabs = ['org_workspace'];
+
+        let targetTab = tabId;
+        if (isOrg && orgIllegalTabs.includes(tabId)) {
+            targetTab = 'index';
+        } else if (!isOrg && personalIllegalTabs.includes(tabId)) {
+            targetTab = 'index';
+        }
+
+        if (targetTab !== activeSettingsTab) {
+            setActiveSettingsTab(targetTab);
+            setSearchParams({ tab: targetTab }, { replace: true });
         }
     };
 
@@ -187,17 +240,19 @@ export const SettingsPage = () => {
                     >
                         <div className="flex items-center gap-4 min-w-0">
                             <UserAvatar
-                                user={currentUser}
+                                user={isOrg ? activeAccount : currentUser}
                                 className="w-14 h-14 shrink-0 text-lg font-bold"
                                 roundedClassName="rounded-none"
                             />
                             <div className="min-w-0">
                                 <h3 className="font-extrabold text-xl text-text-primary group-hover:text-primary-container transition-colors flex items-center gap-2 tracking-tight">
-                                    <span>Edit Profile</span>
+                                    <span>{isOrg ? 'Edit Organization Profile' : 'Edit Profile'}</span>
                                     <span className="material-symbols-outlined text-sm opacity-50 group-hover:translate-x-1 transition-transform font-bold">arrow_forward</span>
                                 </h3>
                                 <p className="text-md text-text-secondary mt-0.5 font-medium truncate">
-                                    Update your profile picture, banner, and personal information
+                                    {isOrg
+                                        ? "Update organization's profile picture, banner, and public information"
+                                        : "Update your profile picture, banner, and personal information"}
                                 </p>
                             </div>
                         </div>
@@ -226,27 +281,27 @@ export const SettingsPage = () => {
                                 <EditProfilePage />
                             </div>
                         )}
-                        {visitedTabs.has('invitations') && (
+                        {!isOrg && visitedTabs.has('invitations') && (
                             <div className={activeSettingsTab === 'invitations' ? 'block' : 'hidden'}>
                                 <InvitationsList />
                             </div>
                         )}
-                        {visitedTabs.has('org_workspace') && (
+                        {isOrg && visitedTabs.has('org_workspace') && (
                             <div className={activeSettingsTab === 'org_workspace' ? 'block' : 'hidden'}>
                                 <SettingsDashboard />
                             </div>
                         )}
-                        {visitedTabs.has('email') && (
+                        {!isOrg && visitedTabs.has('email') && (
                             <div className={activeSettingsTab === 'email' ? 'block' : 'hidden'}>
                                 <EmailSettingsForm />
                             </div>
                         )}
-                        {visitedTabs.has('password') && (
+                        {!isOrg && visitedTabs.has('password') && (
                             <div className={activeSettingsTab === 'password' ? 'block' : 'hidden'}>
                                 <PasswordSettingsForm />
                             </div>
                         )}
-                        {visitedTabs.has('account') && (
+                        {!isOrg && visitedTabs.has('account') && (
                             <div className={activeSettingsTab === 'account' ? 'block' : 'hidden'}>
                                 <DangerZoneSettingsForm />
                             </div>

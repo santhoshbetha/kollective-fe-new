@@ -78,6 +78,7 @@ export const MainLayout = () => {
 
     const hasAddressOrCoords = Boolean((streetAddress && streetAddress.trim()) || user?.street_address || user?.latitude);
     const hasState = Boolean((userState && userState.trim()) || user?.state || user?.origin_state);
+    const isOrganization = activeAccount?.type === 'organization';
     const canAccessLocalizedFeatures = hasAddressOrCoords || hasState;
     const canAccessCivicAssembly = isAuthenticated && politicalOptIn && isVouched;
 
@@ -88,13 +89,13 @@ export const MainLayout = () => {
         ...(canAccessLocalizedFeatures ? [{ name: 'My Schedule', path: '/calendar', icon: 'event_available' }] : []),
         { name: 'Polls', path: '/polls', icon: 'poll' },
         { name: 'Explore', path: '/explore', icon: 'explore' },
-        ...(canAccessLocalizedFeatures ? [{ name: 'Local Businesses', path: '/businesses', icon: 'storefront' }] : []),
+        ...(canAccessLocalizedFeatures && !isOrganization ? [{ name: 'Local Businesses', path: '/businesses', icon: 'storefront' }] : []),
         ...(canAccessLocalizedFeatures ? [{ name: 'Classifieds', path: '/classifieds', icon: 'newspaper' }] : []),
         ...(isAuthenticated ? [{ name: 'Organize', path: '/organize', icon: 'campaign' }] : []),
         ...(canAccessCivicAssembly ? [{ name: 'Civic Assembly', path: '/campaigns/local', icon: 'groups' }] : []),
         ...(isAuthenticated ? [{ name: 'Messages', path: '/messages', icon: 'chat' }] : []),
         ...(isAuthenticated ? [{ name: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' }] : []),
-        //...(isAuthenticated ? [{ name: 'Notifications', path: '/notifications', icon: 'notifications' }] : []),
+        ...(isAuthenticated ? [{ name: 'Notifications', path: '/notifications', icon: 'notifications' }] : []),
         ...(isAuthenticated ? [{ name: 'Settings', path: '/settings', icon: 'settings' }] : []),
     ];
 
@@ -196,7 +197,7 @@ export const MainLayout = () => {
                                             {activeAccount?.name || user.name}
                                         </p>
                                     </div>
-                                    <p className="font-label-sm text-label-sm text-text-secondary truncate">
+                                    <p data-testid="own-handle" className="font-label-sm text-label-sm text-text-secondary truncate">
                                         {activeAccount?.handle || user.handle}
                                     </p>
                                 </div>
@@ -269,7 +270,7 @@ export const MainLayout = () => {
                                     />
                                     <div className="overflow-hidden">
                                         <p className="font-bold text-sm truncate text-text-primary">{activeAccount?.name || user.name}</p>
-                                        <p className="text-xs text-text-secondary truncate">{activeAccount?.handle || user.handle}</p>
+                                        <p data-testid="own-handle" className="text-xs text-text-secondary truncate">{activeAccount?.handle || user.handle}</p>
                                     </div>
                                 </div>
                             </div>

@@ -9,8 +9,7 @@ export const BusinessCard = ({ biz }) => {
     const navigate = useNavigate();
     const [imgError, setImgError] = useState(false);
 
-    // 🚀 PROCESSING CHECKPOINT: Safely verifies the async background worker has committed the asset
-    const hasValidImage = biz.profile_image_url && biz.is_image_processed && !imgError;
+    const hasValidImage = Boolean(biz.profile_image_url || biz.image) && !imgError;
 
     const renderStars = (rating) => {
         const stars = [];
@@ -39,6 +38,7 @@ export const BusinessCard = ({ biz }) => {
     return (
         <article
             key={`biz-card-node-${biz.id}`}
+            data-testid="business-card"
             onClick={(e) => handleCardClick(biz.id, e)}
             className="w-full bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 rounded-2xl p-4 overflow-hidden flex flex-col sm:flex-row gap-4 hover:bg-black/[0.005] dark:hover:bg-white/[0.005] transition-all shadow-md hover:shadow-xl group cursor-pointer text-left font-sans"
         >
@@ -48,7 +48,7 @@ export const BusinessCard = ({ biz }) => {
                     <img
                         alt={biz.name}
                         className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                        src={biz.profile_image_url}
+                        src={biz.profile_image_url || biz.image}
                         onError={() => setImgError(true)}
                         loading="lazy"
                     />
@@ -134,42 +134,48 @@ export const BusinessCard = ({ biz }) => {
                 </div>
 
                 {/* Footer Owner Profile Node & Sharing Actions Row */}
-                <div className="flex items-center justify-between gap-2 pt-3 mt-4 border-t border-black/5 dark:border-white/5">
-                    <div className="flex items-center gap-2 min-w-0 select-none">
-                        {biz.ownerAvatar ? (
-                            <img
-                                alt="Owner"
-                                className="w-6 h-6 rounded-full object-cover border border-black/10 dark:border-white/10 shrink-0"
-                                src={biz.ownerAvatar}
-                            />
-                        ) : (
-                            <div className="w-6 h-6 rounded-full bg-black/[0.04] dark:bg-white/[0.04] border border-black/10 dark:border-white/10 flex items-center justify-center text-xs font-black uppercase text-text-primary dark:text-white shrink-0 font-mono">
-                                {biz.owner ? biz.owner[0] : 'B'}
+                {(() => {
+                    const ownerHandle = typeof biz.owner === 'string' ? biz.owner : (biz.owner_name || biz.owner?.username || "merchant");
+                    const ownerAvatarUrl = biz.ownerAvatar || (typeof biz.owner === 'object' ? biz.owner?.avatar_url : null);
+                    return (
+                        <div className="flex items-center justify-between gap-2 pt-3 mt-4 border-t border-black/5 dark:border-white/5">
+                            <div className="flex items-center gap-2 min-w-0 select-none">
+                                {ownerAvatarUrl ? (
+                                    <img
+                                        alt="Owner"
+                                        className="w-6 h-6 rounded-full object-cover border border-black/10 dark:border-white/10 shrink-0"
+                                        src={ownerAvatarUrl}
+                                    />
+                                ) : (
+                                    <div className="w-6 h-6 rounded-full bg-black/[0.04] dark:bg-white/[0.04] border border-black/10 dark:border-white/10 flex items-center justify-center text-xs font-black uppercase text-text-primary dark:text-white shrink-0 font-mono">
+                                        {ownerHandle ? ownerHandle[0].toUpperCase() : 'B'}
+                                    </div>
+                                )}
+                                <span className="text-xs font-bold text-text-secondary truncate">@{ownerHandle}</span>
+                                <span className="text-[10px] text-text-secondary/40 font-mono font-bold shrink-0">({biz.reviewsCount || 0} reviews)</span>
                             </div>
-                        )}
-                        <span className="text-xs font-bold text-text-secondary truncate">@{biz.owner || "merchant"}</span>
-                        <span className="text-[10px] text-text-secondary/40 font-mono font-bold shrink-0">({biz.reviewsCount || 0} reviews)</span>
-                    </div>
 
-                    <div className="flex gap-2 shrink-0 font-mono text-[10px] uppercase font-black tracking-wider select-none">
-                        <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); alert(`Sharing business profile: ${biz.name}`); }}
-                            className="p-2 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/5 text-text-secondary hover:text-text-primary dark:hover:text-white transition-colors cursor-pointer outline-none flex items-center justify-center"
-                            title="Share Enterprise node"
-                        >
-                            <Share2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); alert(`Starting secure workspace discussion stream with: @${biz.owner}`); }}
-                            className="px-3 py-1.5 rounded-xl border border-primary-container/30 text-primary-container hover:bg-primary-container hover:text-white font-bold text-[10px] transition-all cursor-pointer flex items-center gap-1.5 outline-none font-sans uppercase tracking-normal"
-                        >
-                            <MessageSquare className="w-3.5 h-3.5 stroke-[2.5px]" />
-                            <span>Contact</span>
-                        </button>
-                    </div>
-                </div>
+                            <div className="flex gap-2 shrink-0 font-mono text-[10px] uppercase font-black tracking-wider select-none">
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); alert(`Sharing business profile: ${biz.name}`); }}
+                                    className="p-2 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/5 text-text-secondary hover:text-text-primary dark:hover:text-white transition-colors cursor-pointer outline-none flex items-center justify-center"
+                                    title="Share Enterprise node"
+                                >
+                                    <Share2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); alert(`Starting secure workspace discussion stream with: @${ownerHandle}`); }}
+                                    className="px-3 py-1.5 rounded-xl border border-primary-container/30 text-primary-container hover:bg-primary-container hover:text-white font-bold text-[10px] transition-all cursor-pointer flex items-center gap-1.5 outline-none font-sans uppercase tracking-normal"
+                                >
+                                    <MessageSquare className="w-3.5 h-3.5 stroke-[2.5px]" />
+                                    <span>Contact</span>
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
         </article>
     );

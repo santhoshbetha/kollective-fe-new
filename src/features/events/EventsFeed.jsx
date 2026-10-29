@@ -41,20 +41,50 @@ export function EventsFeed({ navigate }) {
     const userState = useStore((state) => state.userState);
     const streetAddress = useStore((state) => state.streetAddress);
     const currentUser = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
 
     const detectedUserState = (
-        userState?.trim() ||
         currentUser?.state?.trim() ||
         currentUser?.origin_state?.trim() ||
         currentUser?.political_location?.state?.trim() ||
+        userState?.trim() ||
         (currentUser?.location ? getEventState({ location: currentUser.location }) : null) ||
         ''
     );
 
+    const userLocationCoords = currentUser?.location && typeof currentUser.location === 'string'
+        ? (() => {
+            const match = currentUser.location.match(/POINT\(\s*([-\d\.]+)\s+([-\d\.]+)\s*\)/i);
+            return match ? { longitude: parseFloat(match[1]), latitude: parseFloat(match[2]) } : null;
+        })()
+        : null;
+
+    const [browserCoords, setBrowserCoords] = useState(null);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    if (pos?.coords) {
+                        setBrowserCoords({
+                            latitude: pos.coords.latitude,
+                            longitude: pos.coords.longitude
+                        });
+                    }
+                },
+                () => {},
+                { timeout: 5000 }
+            );
+        }
+    }, []);
+
+    const userLatitude = currentUser?.latitude ?? userLocationCoords?.latitude ?? browserCoords?.latitude;
+    const userLongitude = currentUser?.longitude ?? userLocationCoords?.longitude ?? browserCoords?.longitude;
+
     const hasAddressOrCoords = Boolean(
         (streetAddress && streetAddress.trim()) ||
         currentUser?.street_address ||
-        currentUser?.latitude
+        (userLatitude !== undefined && userLatitude !== null)
     );
     const hasState = Boolean(detectedUserState);
     const canAccessLocalizedFeatures = hasAddressOrCoords || hasState;
@@ -118,8 +148,8 @@ export function EventsFeed({ navigate }) {
             date: dateStr,
             distance: distVal,
             state: stateVal,
-            latitude: currentUser?.latitude,
-            longitude: currentUser?.longitude
+            latitude: userLatitude,
+            longitude: userLongitude
         }, {
             onSuccess: (data) => {
                 const list = Array.isArray(data) ? data : (data?.events || data?.data || []);
@@ -174,9 +204,28 @@ export function EventsFeed({ navigate }) {
         const activeEventsList = Array.isArray(filteredEventsData) ? filteredEventsData : events;
         if (!activeEventsList) return [];
         const cleanQuery = searchQuery.toLowerCase().trim();
+        const isOrg = activeAccount?.type === 'organization';
 
         return activeEventsList.filter((event) => {
             const locStr = getDisplayLocation(event?.location, event) || '';
+
+            // 🏛️ CONTEXT-SCOPED EVENTS ISOLATION
+            const titleLower = String(event?.title || '').toLowerCase();
+            const descLower = String(event?.description || '').toLowerCase();
+            const isPersonalEvent = (
+                titleLower.includes('personal') ||
+                descLower.includes('personal') ||
+                event?.scope === 'personal' ||
+                event?.is_personal === true ||
+                event?.category === 'Personal'
+            );
+
+            if (isOrg) {
+                // Personal-only events must be completely absent when organization context is active
+                if (isPersonalEvent) {
+                    return false;
+                }
+            }
 
             // 🎯 STRICT GEOGRAPHICAL BOUNDARY: Search should not show events outside user's state
             if (effectiveUserState && (cleanQuery || !hasAddressOrCoords)) {
@@ -203,7 +252,7 @@ export function EventsFeed({ navigate }) {
 
             return matchesSearch && matchesLocation && matchesFormat && matchesCategory;
         });
-    }, [events, filteredEventsData, searchQuery, locationQuery, formatFilter, categoryFilter, effectiveUserState, hasAddressOrCoords]);
+    }, [events, filteredEventsData, searchQuery, locationQuery, formatFilter, categoryFilter, effectiveUserState, hasAddressOrCoords, activeAccount]);
 
     const calendarDays = useMemo(() => {
         const date = new Date(currentYear, currentMonth, 1);
@@ -282,7 +331,7 @@ export function EventsFeed({ navigate }) {
 
     if (!canAccessLocalizedFeatures) {
         return (
-            <div className="max-w-[700px] mx-auto my-16 p-8 bg-[#141414] border border-[#262626] rounded-2xl text-center space-y-6">
+            <div className="max-w-[700px] mx-auto my-16 p-8 bg-surface-container border border-black/10 dark:border-white/10 rounded-2xl text-center space-y-6">
                 <div className="w-16 h-16 rounded-2xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center mx-auto text-primary-container">
                     <span className="material-symbols-outlined text-3xl">location_off</span>
                 </div>
@@ -297,7 +346,7 @@ export function EventsFeed({ navigate }) {
         );
     }
     return (
-        <div className="p-4 bg-[#090d12]">
+        <div className="p-4 bg-transparent">
             {/* 🥞 Toast Notice Banner Indicator Popup Overlay */}
             {toastMessage && (
                 <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-surface-container-high 
@@ -310,22 +359,22 @@ export function EventsFeed({ navigate }) {
             {/* Title Area Row */}
             <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-4 select-none">
                 <div>
-                    <h1 className="text-4xl font-extrabold flex items-center gap-3 text-[#F4F4F4] font-headline-lg">
+                    <h1 className="text-4xl font-extrabold flex items-center gap-3 text-text-primary font-headline-lg">
                         Discover Events <span className="text-2xl">🎉</span>
                     </h1>
-                    <p className="text-[#A19B95] mt-2 font-semibold text-lg">
+                    <p className="text-text-secondary mt-2 font-semibold text-lg">
                         Find your next adventure, connect with your community.
                     </p>
                 </div>
                 <div className="flex items-center gap-4 flex-wrap">
                     {/* View Switcher Controls */}
-                    <div className="bg-[#141414] p-1 rounded-xl flex border border-[#262626]">
+                    <div className="bg-surface-container-low p-1 rounded-xl flex border border-black/10 dark:border-white/10">
                         <button
                             type="button"
                             onClick={() => setViewMode('grid')}
                             className={cn(
                                 "px-4 py-1.5 text-xs font-bold rounded-lg flex items-center gap-2 border-none cursor-pointer",
-                                viewMode === 'grid' ? "bg-primary-container text-white" : "text-gray-500 hover:text-white bg-transparent"
+                                viewMode === 'grid' ? "bg-primary-container text-white" : "text-text-secondary hover:text-text-primary bg-transparent"
                             )}
                         >
                             <span className="material-symbols-outlined text-sm">grid_view</span>
@@ -336,7 +385,7 @@ export function EventsFeed({ navigate }) {
                             onClick={() => setViewMode('calendar')}
                             className={cn(
                                 "px-4 py-1.5 text-xs font-bold rounded-lg flex items-center gap-2 border-none cursor-pointer",
-                                viewMode === 'calendar' ? "bg-primary-container text-white" : "text-gray-500 hover:text-white bg-transparent"
+                                viewMode === 'calendar' ? "bg-primary-container text-white" : "text-text-secondary hover:text-text-primary bg-transparent"
                             )}
                         >
                             <span className="material-symbols-outlined text-sm">calendar_month</span>
@@ -347,7 +396,7 @@ export function EventsFeed({ navigate }) {
                     <button
                         type="button"
                         onClick={() => navigate('/calendar')}
-                        className="flex items-center justify-center gap-2 px-5 py-3 bg-surface-container-low border border-white/10 hover:bg-surface-container-high text-text-primary rounded-lg font-bold transition-all active:scale-95 text-xs uppercase tracking-widest cursor-pointer"
+                        className="flex items-center justify-center gap-2 px-5 py-3 bg-surface-container-low border border-black/10 dark:border-white/10 hover:bg-surface-container-high text-text-primary rounded-lg font-bold transition-all active:scale-95 text-xs uppercase tracking-widest cursor-pointer"
                     >
                         <span className="material-symbols-outlined text-sm text-primary-container">event_available</span>
                         My Schedule
@@ -355,6 +404,7 @@ export function EventsFeed({ navigate }) {
 
                     <button
                         type="button"
+                        data-testid="create-event-btn"
                         onClick={() => navigate('/events/create')}
                         className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-container hover:bg-red-700 text-white rounded-lg font-bold transition-all active:scale-95 text-xs uppercase tracking-widest cursor-pointer border-none"
                     >
@@ -365,14 +415,15 @@ export function EventsFeed({ navigate }) {
             </div>
 
             {/* Collapsible Search/Filter Card Accordion Container */}
-            <section className={cn("mb-12 bg-surface-container border border-white/5 rounded-2xl shadow-2xl font-sans bg-[#141414]", isSearchExpanded ? "overflow-visible" : "overflow-hidden")}>
+            <section className={cn("mb-12 bg-surface-container border border-black/10 dark:border-white/10 rounded-2xl shadow-sm font-sans", isSearchExpanded ? "overflow-visible" : "overflow-hidden")}>
                 <button
                     type="button"
+                    data-testid="find-events-accordion"
                     onClick={() => setIsSearchExpanded(!isSearchExpanded)}
-                    className="w-full flex items-center justify-between px-6 py-4 focus:outline-none bg-transparent border-none text-left cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    className="w-full flex items-center justify-between px-6 py-4 focus:outline-none bg-transparent border-none text-left cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
                 >
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-surface-container-low rounded-xl flex items-center justify-center border border-white/5 shrink-0">
+                        <div className="w-10 h-10 bg-surface-container-low rounded-xl flex items-center justify-center border border-black/10 dark:border-white/10 shrink-0">
                             <Filter className="w-5 h-5 text-primary-container" />
                         </div>
                         <span className="text-lg font-bold text-text-primary">Find Your Local Events</span>
@@ -380,7 +431,7 @@ export function EventsFeed({ navigate }) {
                     <ChevronDown className={cn("w-5 h-5 text-text-secondary transition-transform duration-300", isSearchExpanded && "rotate-180")} />
                 </button>
                 {/* Expandable Inner Filter Content Box Grid */}
-                <div className={cn("transition-all duration-300 ease-out px-6", isSearchExpanded ? "max-h-[2000px] opacity-100 pb-8 border-t border-white/5 pt-6 overflow-visible" : "max-h-0 opacity-0 py-0 border-t-0 overflow-hidden")}>
+                <div className={cn("transition-all duration-300 ease-out px-6", isSearchExpanded ? "max-h-[2000px] opacity-100 pb-8 border-t border-black/10 dark:border-white/10 pt-6 overflow-visible" : "max-h-0 opacity-0 py-0 border-t-0 overflow-hidden")}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Search Input Box with State-Scoped Dropdown */}
                         <div ref={searchContainerRef} className="space-y-2 flex flex-col relative z-20">
@@ -399,7 +450,8 @@ export function EventsFeed({ navigate }) {
                                     isSearchDropdownOpen ? "text-primary-container" : "text-text-secondary group-focus-within:text-primary-container"
                                 )} />
                                 <input
-                                    className="w-full bg-[#0d1117] border border-white/10 focus:border-primary-container text-sm rounded-xl pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/30 outline-none transition-all shadow-sm"
+                                    data-testid="event-search-input"
+                                    className="w-full bg-surface-container-low border border-black/10 dark:border-white/10 focus:border-primary-container text-sm rounded-xl pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/50 outline-none transition-all shadow-sm"
                                     placeholder={effectiveUserState ? `Search events in ${effectiveUserState}...` : "Find parties, meetups, conferences..."}
                                     type="text"
                                     value={searchQuery}
@@ -430,9 +482,9 @@ export function EventsFeed({ navigate }) {
 
                             {/* Floating Dropdown System Results Portal (like GlobalSearchBar, limited to user's state) */}
                             {isSearchDropdownOpen && searchQuery.trim().length > 0 && (
-                                <div className="absolute top-[calc(100%+6px)] inset-x-0 bg-[#141414] border border-white/10 shadow-2xl rounded-2xl max-h-[440px] overflow-y-auto custom-scrollbar p-2 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-2 z-50 text-text-primary">
+                                <div className="absolute top-[calc(100%+6px)] inset-x-0 bg-surface-container border border-black/10 dark:border-white/10 shadow-2xl rounded-2xl max-h-[440px] overflow-y-auto custom-scrollbar p-2 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-2 z-50 text-text-primary">
                                     {/* Scoped State Header Bar */}
-                                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/5 font-mono text-[11px] text-text-secondary select-none">
+                                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-black/10 dark:border-white/10 font-mono text-[11px] text-text-secondary select-none">
                                         <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-primary-container">
                                             <MapPin className="w-3.5 h-3.5" />
                                             <span>{effectiveUserState ? `Events in ${effectiveUserState}` : 'Local Event Search'}</span>
@@ -455,9 +507,9 @@ export function EventsFeed({ navigate }) {
                                                             navigate(`/events/${event.id}`);
                                                             setIsSearchDropdownOpen(false);
                                                         }}
-                                                        className="w-full px-3 py-2.5 rounded-xl hover:bg-white/[0.04] cursor-pointer transition-colors group flex items-start gap-3 text-left border border-transparent hover:border-white/5"
+                                                        className="w-full px-3 py-2.5 rounded-xl hover:bg-black/[0.04] dark:hover:bg-white/[0.04] cursor-pointer transition-colors group flex items-start gap-3 text-left border border-transparent hover:border-black/5 dark:hover:border-white/5"
                                                     >
-                                                        <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-white/5 border border-white/10 relative">
+                                                        <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-surface-container-high border border-black/10 dark:border-white/10 relative">
                                                             <img
                                                                 src={event.image || event.cover_image_url || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=120&q=80'}
                                                                 alt={event.title}
@@ -479,7 +531,7 @@ export function EventsFeed({ navigate }) {
                                                                     {event.format || (isOnline ? 'Online' : 'In-Person')}
                                                                 </span>
                                                             </div>
-                                                            <h4 className="text-xs font-bold text-white group-hover:text-primary-container transition-colors truncate">
+                                                            <h4 className="text-xs font-bold text-text-primary group-hover:text-primary-container transition-colors truncate">
                                                                 {event.title}
                                                             </h4>
                                                             <div className="flex items-center gap-2 mt-1 text-[11px] text-text-secondary truncate font-mono">
@@ -511,7 +563,7 @@ export function EventsFeed({ navigate }) {
                                     )}
 
                                     {/* Status footer anchor */}
-                                    <div className="p-2 text-center border-t border-white/5 font-mono text-[9px] text-text-secondary/30 select-none uppercase tracking-widest mt-1">
+                                    <div className="p-2 text-center border-t border-black/10 dark:border-white/5 font-mono text-[9px] text-text-secondary/30 select-none uppercase tracking-widest mt-1">
                                         // state_scoped_events_index_active
                                     </div>
                                 </div>
@@ -524,7 +576,7 @@ export function EventsFeed({ navigate }) {
                             <div className="relative group">
                                 <MapPin className="w-4 h-4 text-text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none group-focus-within:text-primary-container" />
                                 <input
-                                    className="w-full bg-[#0d1117] border border-white/10 focus:border-primary-container text-sm rounded-xl pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/30 outline-none transition-all"
+                                    className="w-full bg-surface-container-low border border-black/10 dark:border-white/10 focus:border-primary-container text-sm rounded-xl pl-10 pr-9 py-3 text-text-primary placeholder:text-text-secondary/50 outline-none transition-all shadow-sm"
                                     placeholder="Search for a location..."
                                     type="text"
                                     value={locationQuery}
@@ -554,7 +606,7 @@ export function EventsFeed({ navigate }) {
                                             "px-4 py-2 border rounded-full text-xs font-bold cursor-pointer transition-all shrink-0",
                                             isCatActive
                                                 ? "bg-primary-container border-primary-container text-white crimson-glow"
-                                                : "bg-[#0d1117] border-white/5 text-text-secondary hover:border-primary-container hover:text-text-primary"
+                                                : "bg-surface-container-low border border-black/10 dark:border-white/10 text-text-secondary hover:border-primary-container hover:text-text-primary"
                                         )}
                                     >
                                         {cat}
@@ -565,14 +617,15 @@ export function EventsFeed({ navigate }) {
                     </div>
 
                     {/* Date Picker Popovers & Distance Dropdown Filters Controls Area */}
-                    <div className="mt-8 flex flex-wrap items-center justify-between gap-6 pt-4 border-t border-white/5">
+                    <div className="mt-8 flex flex-wrap items-center justify-between gap-6 pt-4 border-t border-black/10 dark:border-white/5">
                         <div className="flex flex-wrap items-center gap-4 select-none">
                             <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                                 <PopoverTrigger asChild>
                                     <button
                                         type="button"
+                                        data-testid="date-picker-trigger"
                                         className={cn(
-                                            "bg-[#0d1117] border border-white/10 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-white/5 transition-colors cursor-pointer text-text-primary",
+                                            "bg-surface-container-low border border-black/10 dark:border-white/10 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-surface-container-high transition-colors cursor-pointer text-text-primary",
                                             selectedDate && "border-primary-container text-primary-container bg-primary-container/10"
                                         )}
                                     >
@@ -580,13 +633,13 @@ export function EventsFeed({ navigate }) {
                                         <span>{selectedDate ? format(selectedDate, 'MMM d, yyyy') : 'Pick dates'}</span>
                                         {selectedDate && (
                                             <X
-                                                className="w-3.5 h-3.5 ml-1 text-primary-container hover:text-white cursor-pointer"
+                                                className="w-3.5 h-3.5 ml-1 text-primary-container hover:text-text-primary cursor-pointer"
                                                 onClick={(e) => { e.stopPropagation(); setSelectedDate(null); handleApplyFilter(null, selectedDistance); }}
                                             />
                                         )}
                                     </button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 bg-[#18181b] border border-white/10 rounded-2xl shadow-2xl z-50" align="start">
+                                <PopoverContent className="w-auto p-0 bg-surface-container border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl z-50 text-text-primary" align="start">
                                     <DayCalendar
                                         mode="single"
                                         selected={selectedDate}
@@ -597,17 +650,18 @@ export function EventsFeed({ navigate }) {
                             </Popover>
 
                             {hasAddressOrCoords ? (
-                                <div className="flex items-center gap-2 bg-[#0d1117] border border-white/10 px-3 py-2 rounded-xl text-xs font-bold text-text-primary">
+                                <div className="flex items-center gap-2 bg-surface-container-low border border-black/10 dark:border-white/10 px-3 py-2 rounded-xl text-xs font-bold text-text-primary">
                                     <MapPin className="w-4 h-4 text-primary-container" />
                                     <span className="text-text-secondary font-mono">Distance:</span>
                                     <select
+                                        data-testid="distance-select"
                                         value={selectedDistance}
                                         onChange={(e) => { const val = e.target.value; setSelectedDistance(val); handleApplyFilter(selectedDate, val); }}
                                         className="bg-transparent text-text-primary font-bold focus:outline-none cursor-pointer font-mono outline-none border-none"
                                     >
-                                        <option value="" className="bg-[#18181b] text-text-primary">All Distances</option>
+                                        <option value="" className="bg-surface text-text-primary">All Distances</option>
                                         {DISTANCE_OPTIONS.map((opt) => (
-                                            <option key={opt.value} value={opt.value} className="bg-[#18181b] text-text-primary">{opt.label}</option>
+                                            <option key={opt.value} value={opt.value} className="bg-surface text-text-primary">{opt.label}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -619,7 +673,7 @@ export function EventsFeed({ navigate }) {
                             ) : null}
 
                             {(selectedDate || selectedDistance) && (
-                                <button type="button" onClick={handleClearFilters} className="text-xs text-text-secondary hover:text-white underline font-bold bg-transparent border-none cursor-pointer font-mono">Reset filters</button>
+                                <button type="button" data-testid="reset-filters-btn" onClick={handleClearFilters} className="text-xs text-text-secondary hover:text-text-primary underline font-bold bg-transparent border-none cursor-pointer font-mono">Reset filters</button>
                             )}
                         </div>
                         {/* Event Format Selection Capsule */}
@@ -627,7 +681,7 @@ export function EventsFeed({ navigate }) {
                             <label className="text-[12px] font-bold text-text-secondary uppercase tracking-widest">
                                 Event Type
                             </label>
-                            <div className="flex bg-[#0d1117] p-1 rounded-xl border border-white/5">
+                            <div className="flex bg-surface-container-low p-1 rounded-xl border border-black/10 dark:border-white/10">
                                 {['All Events', 'Online', 'In-Person'].map((opt) => {
                                     const isChecked = formatFilter === opt;
                                     return (
@@ -638,7 +692,7 @@ export function EventsFeed({ navigate }) {
                                             className={cn(
                                                 "flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer border-none outline-none",
                                                 isChecked
-                                                    ? "bg-white/5 text-text-primary shadow-sm"
+                                                    ? "bg-surface-container-high text-text-primary shadow-sm"
                                                     : "text-text-secondary hover:text-text-primary bg-transparent"
                                             )}
                                         >
@@ -658,12 +712,12 @@ export function EventsFeed({ navigate }) {
                     {eventsLoading ? (
                         /* ⏰ Custom Sync Status Spinner Loader */
                         <div className="py-12 flex flex-col items-center gap-4 select-none font-mono text-xs">
-                            <div className="w-6 h-6 rounded-full border-2 border-t-primary-container border-white/10 animate-spin"></div>
+                            <div className="w-6 h-6 rounded-full border-2 border-t-primary-container border-black/10 dark:border-white/10 animate-spin"></div>
                             <p className="text-text-secondary uppercase tracking-widest animate-pulse"> LOADING_ADVENTURES...</p>
                         </div>
                     ) : filteredEvents?.length === 0 ? (
                         /* 🌌 Empty State Results Panel Layout */
-                        <div className="bg-[#141414] border border-white/5 rounded-2xl p-12 text-center shadow-2xl font-mono text-xs text-text-secondary/40">
+                        <div className="bg-surface-container border border-black/10 dark:border-white/10 rounded-2xl p-12 text-center shadow-sm font-mono text-xs text-text-secondary/60">
                             NO_EVENTS_FOUND_MATCHING_CRITERIA
                         </div>
                     ) : (
@@ -671,6 +725,7 @@ export function EventsFeed({ navigate }) {
                         <div className="w-full relative">
                             <VirtuosoGrid
                                 useWindowScroll
+                                overscan={8000}
                                 data={filteredEvents}
                                 computeItemKey={(_index, event) => event?.id || event?.title}
                                 listClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full"
@@ -693,7 +748,7 @@ export function EventsFeed({ navigate }) {
                             <button
                                 type="button"
                                 onClick={() => showToast('All adventures are loaded!')}
-                                className="flex items-center gap-3 px-8 py-4 border border-[#262626] rounded-xl text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-white hover:border-primary-container transition-all cursor-pointer bg-transparent active:scale-95"
+                                className="flex items-center gap-3 px-8 py-4 border border-black/10 dark:border-[#262626] rounded-xl text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary hover:border-primary-container transition-all cursor-pointer bg-surface-container-low active:scale-95"
                             >
                                 Load More Adventures
                             </button>
@@ -703,16 +758,16 @@ export function EventsFeed({ navigate }) {
             )}
             {viewMode === 'calendar' && (
                 /* 📅 Localized Interactive Month Calendar Display Grid Matrix */
-                <section className="bg-[#141414] rounded-2xl border border-white/5 shadow-2xl overflow-hidden animate-in fade-in duration-300">
+                <section className="bg-surface-container rounded-2xl border border-black/10 dark:border-white/10 shadow-sm overflow-hidden animate-in fade-in duration-300">
 
                     {/* Calendar Navigation Panel Header */}
-                    <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between select-none">
+                    <div className="px-8 py-6 border-b border-black/10 dark:border-white/10 flex items-center justify-between select-none">
                         <div className="flex items-center gap-6">
-                            <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">{displayMonthName} {currentYear}</h2>
+                            <h2 className="text-xl md:text-2xl font-black text-text-primary tracking-tight">{displayMonthName} {currentYear}</h2>
                             <button
                                 type="button"
                                 onClick={handleToday}
-                                className="px-4 py-1.5 border border-white/10 bg-transparent rounded-full text-xs font-bold font-mono text-text-secondary hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                                className="px-4 py-1.5 border border-black/10 dark:border-white/10 bg-transparent rounded-full text-xs font-bold font-mono text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer"
                             >
                                 Today
                             </button>
@@ -721,14 +776,14 @@ export function EventsFeed({ navigate }) {
                             <button
                                 type="button"
                                 onClick={handlePrevMonth}
-                                className="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 hover:border-primary-container hover:bg-primary-container/5 transition-all text-text-secondary hover:text-white bg-transparent cursor-pointer"
+                                className="w-10 h-10 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:border-primary-container hover:bg-primary-container/5 transition-all text-text-secondary hover:text-text-primary bg-transparent cursor-pointer"
                             >
                                 <span className="material-symbols-outlined text-base">chevron_left</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={handleNextMonth}
-                                className="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 hover:border-primary-container hover:bg-primary-container/5 transition-all text-text-secondary hover:text-white bg-transparent cursor-pointer"
+                                className="w-10 h-10 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:border-primary-container hover:bg-primary-container/5 transition-all text-text-secondary hover:text-text-primary bg-transparent cursor-pointer"
                             >
                                 <span className="material-symbols-outlined text-base">chevron_right</span>
                             </button>
@@ -736,16 +791,16 @@ export function EventsFeed({ navigate }) {
                     </div>
 
                     {/* Days Name Row Headers Array */}
-                    <div className="grid grid-cols-7 bg-white/[0.005] border-b border-white/5 select-none font-mono">
+                    <div className="grid grid-cols-7 bg-black/[0.02] dark:bg-white/[0.005] border-b border-black/10 dark:border-white/5 select-none font-mono">
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-                            <div key={d} className="py-4 text-center text-[10px] text-[#A19B95] uppercase tracking-widest font-black">
+                            <div key={d} className="py-4 text-center text-[10px] text-text-secondary uppercase tracking-widest font-black">
                                 {d}
                             </div>
                         ))}
                     </div>
 
                     {/* Main Calendar Month Sub-Blocks Grid Array */}
-                    <div className="grid grid-cols-7 border-l border-t border-white/5">
+                    <div className="grid grid-cols-7 border-l border-t border-black/10 dark:border-white/5">
                         {calendarDays.map((dayObj) => {
                             const dayEvents = getEventsForDay(dayObj);
                             const isToday =
@@ -757,9 +812,9 @@ export function EventsFeed({ navigate }) {
                                 <div
                                     key={`${dayObj.year}-${dayObj.month}-${dayObj.day}`}
                                     className={cn(
-                                        "min-h-[140px] p-3 border-r border-b border-white/5 transition-all duration-300 relative flex flex-col justify-between",
-                                        dayObj.isCurrentMonth ? "text-white" : "text-gray-600 opacity-20 font-bold",
-                                        isToday ? "bg-primary-container/[0.03] ring-1 ring-primary-container/20" : "hover:bg-white/[0.01]"
+                                        "min-h-[140px] p-3 border-r border-b border-black/10 dark:border-white/5 transition-all duration-300 relative flex flex-col justify-between",
+                                        dayObj.isCurrentMonth ? "text-text-primary" : "text-text-secondary/40 font-bold",
+                                        isToday ? "bg-primary-container/[0.03] ring-1 ring-primary-container/20" : "hover:bg-black/[0.02] dark:hover:bg-white/[0.01]"
                                     )}
                                 >
                                     <span className={cn("text-xs font-mono font-bold select-none", isToday ? "text-primary-container" : "")}>
@@ -795,7 +850,7 @@ export function EventsFeed({ navigate }) {
                     </div>
 
                     {/* Calendar Footer Color Guide Legends */}
-                    <div className="bg-[#111] px-8 py-4 border-t border-white/5 flex items-center gap-8 select-none font-mono text-[10px] text-[#A19B95] font-bold uppercase tracking-wider">
+                    <div className="bg-surface-container-low px-8 py-4 border-t border-black/10 dark:border-white/5 flex items-center gap-8 select-none font-mono text-[10px] text-text-secondary font-bold uppercase tracking-wider">
                         <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]"></span>
                             <span>Online / Live Events</span>

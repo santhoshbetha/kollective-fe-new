@@ -1,21 +1,45 @@
-// src/pages/BusinessDetailsPage.jsx
+// src/pages/businesses/BusinessDetailsPage.jsx
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBusinessDetailsQuery } from '../../features/businesses/useBusinessesFeature';
+import { useAuthStore } from '../../store/auth/useAuthStore';
+import { useDirectMessageStore } from '../../store/useDirectMessageStore';
 import {
-    ArrowLeft, Loader2, AlertCircle, Star, CheckCircle2,
+    ArrowLeft, Loader2, AlertCircle, CheckCircle2,
     Heart, Share2, MapPin, Phone, Mail, Globe, Clock,
-    Calendar, Users, MessageSquare
+    Calendar, Users, Building2, Edit3, X, Copy, Check,
+    ExternalLink, Maximize2, MessageSquare, Image as ImageIcon
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 export const BusinessDetailsPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const currentUser = useAuthStore((state) => state.user);
+
     const { business, businessLoading, businessError } = useBusinessDetailsQuery(id);
 
     const [activeSubTab, setActiveSubTab] = useState('about');
     const [imgError, setImgError] = useState(false);
+    const [selectedPreviewImage, setSelectedPreviewImage] = useState(null);
+    const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+    const [copiedField, setCopiedField] = useState(null);
+    const [toastMessage, setToastMessage] = useState(null);
+
+    const triggerToast = (msg, type = 'info') => {
+        setToastMessage({ msg, type });
+        setTimeout(() => setToastMessage(null), 3000);
+    };
+
+    const copyToClipboard = async (text, fieldName) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedField(fieldName);
+            setTimeout(() => setCopiedField(null), 2000);
+        } catch (err) {
+            console.error('Clipboard copy failed:', err);
+        }
+    };
 
     if (businessLoading) {
         return (
@@ -46,29 +70,13 @@ export const BusinessDetailsPage = () => {
         );
     }
 
-    const renderStars = (rating = 5.0) => {
-        const stars = [];
-        const floor = Math.floor(rating);
-        for (let i = 0; i < 5; i++) {
-            stars.push(
-                <Star
-                    key={`detail-star-${i}`}
-                    className={cn(
-                        "w-4 h-4 shrink-0",
-                        i < floor ? "text-amber-400 fill-amber-400" : "text-text-secondary/20"
-                    )}
-                />
-            );
-        }
-        return stars;
-    };
-
     // Safe Fallback Extraction Gate mappings for incoming database object parameters
     const ownerHandle = business.owner_name || (typeof business.owner === 'string' ? business.owner : business.owner?.username) || 'community_member';
     const ownerAvatar = business.ownerAvatar || (typeof business.owner === 'object' ? business.owner?.avatar_url : null);
-    const servicesList = Array.isArray(business.services) ? business.services : [];
-    const reviewsCount = business.reviewsCount ?? business.reviews_count ?? 0;
-    const ratingValue = business.rating ?? 5.0;
+    const servicesList = Array.isArray(business.services) && business.services.length > 0
+        ? business.services
+        : (Array.isArray(business.tags) ? business.tags : []);
+
     const addressText = business.address || business.contact?.address || 'Local District Coordinates TBA';
     const phoneText = business.phone || business.contact?.phone || 'N/A';
     const emailText = business.email || business.contact?.email || 'N/A';
@@ -76,21 +84,76 @@ export const BusinessDetailsPage = () => {
     const hoursText = business.hours || business.business_hours || '9:00 AM - 5:00 PM';
     const establishedYear = business.established || business.year_established || 'N/A';
     const employeesCount = business.employees || business.number_of_employees || '1-5';
+    const legalStructureText = business.legal_structure || business.legalStructure || 'Cooperative';
 
-    // 🚀 PROCESSING CHECKPOINT: Shield the UI from displaying broken raw paths while processing image payloads
-    const isCoverValid = business.profile_image_url && business.is_image_processed && !imgError;
+    const galleryImages = Array.isArray(business.images) && business.images.length > 0
+        ? business.images
+        : (Array.isArray(business.gallery) ? business.gallery : []);
+
+    const isOwner = currentUser && (
+        String(currentUser.id) === String(business.user_id) ||
+        currentUser.username === ownerHandle
+    );
+
+    // Cover Image checkpoint
+    const isCoverValid = (business.profile_image_url || business.image) && !imgError;
+
+    // Send Message Handler
+    const handleSendMessage = () => {
+        if (!currentUser) {
+            triggerToast('Please log in to message this business operator.', 'error');
+            return;
+        }
+
+        if (isOwner) {
+            triggerToast('You are the registered operator of this enterprise.', 'info');
+            return;
+        }
+
+        useDirectMessageStore.getState().openDM({
+            id: business.user_id,
+            username: ownerHandle,
+            name: ownerHandle,
+            avatar: ownerAvatar
+        });
+    };
 
     return (
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-6 font-sans">
+            {/* Transient Toast Notification */}
+            {toastMessage && (
+                <div className={cn(
+                    "fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-2xl text-xs font-mono font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200 border",
+                    toastMessage.type === 'error'
+                        ? "bg-rose-950/95 text-rose-200 border-rose-500/30"
+                        : "bg-surface-container-high text-text-primary border-primary-container/30"
+                )}>
+                    {toastMessage.type === 'error' ? <AlertCircle className="w-4 h-4 text-rose-400" /> : <CheckCircle2 className="w-4 h-4 text-primary-container" />}
+                    <span>{toastMessage.msg}</span>
+                </div>
+            )}
 
-            {/* Back Link Router Toggle Row */}
-            <button
-                onClick={() => navigate('/businesses')}
-                className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary font-black text-xs font-mono uppercase tracking-wider transition-colors mb-6 bg-transparent border-none cursor-pointer outline-none select-none group"
-            >
-                <ArrowLeft className="w-4 h-4 stroke-[2.5px] transition-transform group-hover:-translate-x-1" />
-                <span>Back to Businesses</span>
-            </button>
+            {/* Back Link & Action Row */}
+            <div className="flex items-center justify-between gap-4 mb-6">
+                <button
+                    onClick={() => navigate('/businesses')}
+                    className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary font-black text-xs font-mono uppercase tracking-wider transition-colors bg-transparent border-none cursor-pointer outline-none select-none group"
+                >
+                    <ArrowLeft className="w-4 h-4 stroke-[2.5px] transition-transform group-hover:-translate-x-1" />
+                    <span>Back to Businesses</span>
+                </button>
+
+                {isOwner && (
+                    <button
+                        onClick={() => navigate(`/businesses/${id}/edit`)}
+                        data-testid="edit-business-top-btn"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-container text-white font-mono text-xs uppercase font-bold tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-md cursor-pointer border-none"
+                    >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Edit Business</span>
+                    </button>
+                )}
+            </div>
 
             {/* Hero Section Banner Layout Block */}
             <div className="relative w-full h-[260px] md:h-[400px] rounded-3xl overflow-hidden mb-8 border border-black/10 dark:border-white/10 group shadow-2xl bg-black/[0.02] dark:bg-surface-container select-none">
@@ -103,13 +166,15 @@ export const BusinessDetailsPage = () => {
                     />
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-black/[0.01] dark:bg-surface-container-low text-text-secondary">
-                        <Loader2 className="w-10 h-10 animate-spin text-primary-container opacity-40 mb-2" />
-                        <span className="font-mono text-[10px] font-black uppercase tracking-widest opacity-60">Syncing Media Assets...</span>
+                        <ImageIcon className="w-12 h-12 text-primary-container opacity-40 mb-2" />
+                        <span className="font-mono text-[10px] font-black uppercase tracking-widest opacity-60">
+                            {business.name}
+                        </span>
                     </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none"></div>
 
-                <div className="absolute top-6 left-6 font-mono text-xs uppercase font-black tracking-widest shadow-2xl">
+                <div className="absolute top-6 left-6 font-mono text-xs uppercase font-black tracking-widest shadow-2xl flex items-center gap-2">
                     {business.verified && (
                         <span className="bg-primary-container text-white px-4 py-2 rounded-full flex items-center gap-1.5 border border-white/10 shadow-lg">
                             <CheckCircle2 className="w-4 h-4 stroke-[2.5px]" />
@@ -118,16 +183,29 @@ export const BusinessDetailsPage = () => {
                     )}
                 </div>
 
-                <div className="absolute bottom-6 right-6 flex gap-3 shadow-2xl">
+                <div className="absolute bottom-6 right-6 flex items-center gap-3 shadow-2xl">
+                    {isOwner && (
+                        <button
+                            onClick={() => navigate(`/businesses/${id}/edit`)}
+                            data-testid="edit-business-hero-btn"
+                            className="bg-primary-container text-white font-mono text-xs uppercase font-black tracking-wider px-4 py-3 rounded-full flex items-center gap-2 shadow-xl hover:brightness-110 active:scale-95 transition-all border-none cursor-pointer"
+                        >
+                            <Edit3 className="w-4 h-4" />
+                            <span className="hidden sm:inline">Edit Details</span>
+                        </button>
+                    )}
                     <button
-                        onClick={() => alert('Added enterprise node to system bookmarks!')}
+                        onClick={() => triggerToast('Added enterprise to system bookmarks!', 'info')}
                         className="bg-black/60 backdrop-blur-md hover:bg-neutral-900 border border-white/10 p-3 rounded-full transition-colors shadow-xl text-white outline-none cursor-pointer"
                         title="Bookmark Enterprise Node"
                     >
                         <Heart className="w-5 h-5 fill-current" />
                     </button>
                     <button
-                        onClick={() => alert('Secure permalink copied to clipboard registry!')}
+                        onClick={() => {
+                            navigator.clipboard.writeText(window.location.href);
+                            triggerToast('Permalink copied to clipboard!', 'info');
+                        }}
                         className="bg-black/60 backdrop-blur-md hover:bg-neutral-900 border border-white/10 p-3 rounded-full transition-colors shadow-xl text-white outline-none cursor-pointer"
                         title="Share Node Directory"
                     >
@@ -135,20 +213,37 @@ export const BusinessDetailsPage = () => {
                     </button>
                 </div>
             </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Left Column Description Details */}
                 <div className="lg:col-span-8 space-y-6">
-                    <div className="bg-white dark:bg-[#141414] rounded-3xl p-6 sm:p-8 border border-black/10 dark:border-white/5 relative overflow-hidden text-left">
-                        <h1 className="text-3xl font-black text-text-primary dark:text-white mb-2 tracking-tight">
-                            {business.name}
-                        </h1>
+                    <div className="bg-white dark:bg-[#141414] rounded-3xl p-6 sm:p-8 border border-black/10 dark:border-white/5 relative overflow-hidden text-left shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                            <h1 className="text-3xl font-black text-text-primary dark:text-white tracking-tight">
+                                {business.name}
+                            </h1>
+                            {isOwner && (
+                                <button
+                                    onClick={() => navigate(`/businesses/${id}/edit`)}
+                                    data-testid="edit-business-btn"
+                                    className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-container/10 hover:bg-primary-container/20 text-primary-container font-mono text-xs font-bold transition-all border border-primary-container/20 cursor-pointer"
+                                >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    <span>Edit</span>
+                                </button>
+                            )}
+                        </div>
 
-                        <div className="flex flex-wrap items-center gap-4 mb-6">
-                            <div className="flex items-center gap-1">
-                                {renderStars(ratingValue)}
-                                <span className="font-bold text-text-primary dark:text-white text-base ml-1">{ratingValue}</span>
-                                <span className="text-text-secondary text-xs font-semibold font-mono">({reviewsCount} reviews)</span>
-                            </div>
+                        {/* Category & Owner Indicators (Cleaned of reviews) */}
+                        <div className="flex flex-wrap items-center gap-3 mb-6">
+                            <span className="px-3.5 py-1 rounded-full bg-primary-container/10 text-primary-container text-xs font-bold font-mono uppercase tracking-wider border border-primary-container/20">
+                                {business.category || 'Local Business'}
+                            </span>
+                            {business.sub_category && (
+                                <span className="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 text-text-secondary text-xs font-semibold font-mono capitalize">
+                                    {business.sub_category.replace(/_/g, ' ')}
+                                </span>
+                            )}
                             <div className="w-1.5 h-1.5 bg-black/10 dark:bg-white/10 rounded-full" />
                             <div className="flex items-center gap-2 cursor-pointer group select-none">
                                 {ownerAvatar ? (
@@ -173,9 +268,9 @@ export const BusinessDetailsPage = () => {
                         </div>
                     </div>
 
-                    {/* Sub Tabs Selection Controls Strip Row */}
+                    {/* Sub Tabs Selection Controls Strip Row (Reviews tab removed) */}
                     <div className="border-b border-black/10 dark:border-white/10 flex gap-8 select-none font-sans font-bold text-base uppercase tracking-wider">
-                        {['about', 'services', 'reviews'].map((tab) => (
+                        {['about', 'services'].map((tab) => (
                             <button
                                 key={`sub-tab-btn-${tab}`}
                                 onClick={() => setActiveSubTab(tab)}
@@ -184,22 +279,75 @@ export const BusinessDetailsPage = () => {
                                     activeSubTab === tab ? 'text-primary-container border-b-2 border-primary-container' : 'text-text-secondary hover:text-text-primary'
                                 )}
                             >
-                                {tab === 'reviews' ? `Reviews (${reviewsCount})` : tab}
+                                {tab}
                             </button>
                         ))}
                     </div>
+
                     <div className="space-y-8 pt-2 text-left">
                         {activeSubTab === 'about' && (
-                            <section className="space-y-4">
-                                <h3 className="text-lg font-black text-text-primary dark:text-white tracking-tight">About this business</h3>
-                                <p className="text-sm text-text-secondary font-medium leading-relaxed">{business.description || 'Verified local business inside the Kollective Directory.'}</p>
-                                <div className="pt-4 select-none">
-                                    <h3 className="text-lg font-black text-text-primary dark:text-white tracking-tight mb-4">Gallery</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="group relative rounded-2xl overflow-hidden aspect-square cursor-zoom-in bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 shadow-md">
-                                            <img alt="Workspace view" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" src="https://unsplash.com" />
-                                        </div>
+                            <section className="space-y-6">
+                                <div>
+                                    <h3 className="text-lg font-black text-text-primary dark:text-white tracking-tight mb-2">About this business</h3>
+                                    <p className="text-sm text-text-secondary font-medium leading-relaxed whitespace-pre-line">
+                                        {business.description || 'Verified local business inside the Kollective Directory.'}
+                                    </p>
+                                </div>
+
+                                {/* Gallery Section with uploaded business images */}
+                                <div className="pt-2">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-black text-text-primary dark:text-white tracking-tight">Gallery</h3>
+                                        {isOwner && (
+                                            <button
+                                                onClick={() => navigate(`/businesses/${id}/edit`)}
+                                                className="text-xs font-mono font-bold text-primary-container hover:underline cursor-pointer bg-transparent border-none p-0"
+                                            >
+                                                Manage Photos &rarr;
+                                            </button>
+                                        )}
                                     </div>
+
+                                    {galleryImages.length > 0 ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                            {galleryImages.map((imgUrl, idx) => (
+                                                <div
+                                                    key={`biz-gallery-${idx}`}
+                                                    onClick={() => setSelectedPreviewImage(imgUrl)}
+                                                    className="group relative rounded-2xl overflow-hidden aspect-square cursor-zoom-in bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 shadow-md transition-all hover:shadow-xl"
+                                                >
+                                                    <img
+                                                        alt={`${business.name} gallery ${idx + 1}`}
+                                                        className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+                                                        src={imgUrl}
+                                                        onError={(e) => {
+                                                            e.currentTarget.src = 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=600&q=80';
+                                                        }}
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <span className="p-2.5 rounded-full bg-black/60 text-white backdrop-blur-md">
+                                                            <Maximize2 className="w-4 h-4" />
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="p-8 border-2 border-dashed border-black/10 dark:border-white/10 rounded-2xl text-center space-y-2">
+                                            <ImageIcon className="w-8 h-8 text-text-secondary/40 mx-auto" />
+                                            <p className="text-xs text-text-secondary font-mono uppercase tracking-wider font-semibold">
+                                                No gallery photos published yet.
+                                            </p>
+                                            {isOwner && (
+                                                <button
+                                                    onClick={() => navigate(`/businesses/${id}/edit`)}
+                                                    className="text-xs font-mono font-bold text-primary-container hover:underline cursor-pointer bg-transparent border-none mt-2"
+                                                >
+                                                    Upload photos now
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </section>
                         )}
@@ -221,25 +369,6 @@ export const BusinessDetailsPage = () => {
                                 )}
                             </section>
                         )}
-
-                        {activeSubTab === 'reviews' && (
-                            <section className="space-y-6">
-                                <div className="flex justify-between items-center select-none font-mono text-[10px] uppercase font-bold tracking-wider">
-                                    <h3 className="text-lg font-black text-text-primary dark:text-white tracking-tight font-sans normal-case">Customer Feedback</h3>
-                                    <button onClick={() => alert('Review feature coming soon!')} className="px-4 py-2 border border-primary-container/30 text-primary-container rounded-xl hover:bg-primary-container/10 font-bold text-xs transition-colors cursor-pointer outline-none uppercase font-mono tracking-wider bg-transparent">Add Review</button>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="bg-white dark:bg-surface-ink border border-black/10 dark:border-white/10 p-5 rounded-2xl shadow-md">
-                                        <div className="flex items-center gap-2 mb-3 select-none">
-                                            <div className="flex gap-0.5">{renderStars(5)}</div>
-                                            <span className="text-sm font-black text-text-primary dark:text-white tracking-tight ml-1">Marcus Chen</span>
-                                            <span className="text-[11px] font-mono font-bold text-text-secondary/40 ml-auto">1 week ago</span>
-                                        </div>
-                                        <p className="text-sm text-text-secondary leading-relaxed font-medium">Excellent service! Highly recommended community vendor.</p>
-                                    </div>
-                                </div>
-                            </section>
-                        )}
                     </div>
                 </div>
 
@@ -256,25 +385,202 @@ export const BusinessDetailsPage = () => {
                             <span className="text-2xl font-black text-text-primary dark:text-white font-sans normal-case tracking-tight">{employeesCount}</span>
                             <span className="text-[10px] text-text-secondary/60 mt-1 font-bold">Employees range</span>
                         </div>
+                        {/* Replaced reviews card with Legal Structure */}
                         <div className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 p-5 rounded-3xl flex flex-col gap-1 shadow-md transition-colors">
-                            <div className="flex justify-between items-start mb-2"><MessageSquare className="w-5 h-5 text-primary-container shrink-0" /><span className="text-[10px] text-text-secondary font-black tracking-widest">Feedback</span></div>
-                            <span className="text-2xl font-black text-text-primary dark:text-white font-sans normal-case tracking-tight">{reviewsCount}</span>
-                            <span className="text-[10px] text-text-secondary/60 mt-1 font-bold">Total Reviews</span>
+                            <div className="flex justify-between items-start mb-2">
+                                <Building2 className="w-5 h-5 text-primary-container shrink-0" />
+                                <span className="text-[10px] text-text-secondary font-black tracking-widest">Structure</span>
+                            </div>
+                            <span className="text-xl font-black text-text-primary dark:text-white font-sans normal-case tracking-tight truncate" title={legalStructureText}>
+                                {legalStructureText}
+                            </span>
+                            <span className="text-[10px] text-text-secondary/60 mt-1 font-bold">Legal Structure</span>
                         </div>
                     </div>
 
+                    {/* Quick Actions Panel */}
                     <div className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/5 p-5 rounded-3xl space-y-4 shadow-xl text-left select-none uppercase font-mono font-bold text-xs tracking-wider">
                         <h4 className="text-sm font-black text-text-primary dark:text-white font-sans normal-case tracking-tight">Quick Actions</h4>
-                        <button onClick={() => alert(`Calling business line: ${phoneText}`)} className="w-full bg-primary-container text-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider shadow-md hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-2 border-none outline-none font-mono cursor-pointer crimson-glow"><Phone className="w-4 h-4 shrink-0" /><span>Contact Business</span></button>
-                        <button onClick={() => alert(`Opening secure chat stream with @${ownerHandle}`)} className="w-full bg-black/[0.02] dark:bg-[#222] border border-black/10 dark:border-white/10 text-text-primary dark:text-white py-3.5 rounded-2xl font-black text-xs hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95 border-none cursor-pointer outline-none font-mono">Send Message</button>
+                        <button
+                            data-testid="contact-business-btn"
+                            onClick={() => setIsContactModalOpen(true)}
+                            className="w-full bg-primary-container text-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider shadow-md hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-2 border-none outline-none font-mono cursor-pointer crimson-glow"
+                        >
+                            <Phone className="w-4 h-4 shrink-0" />
+                            <span>Contact Business</span>
+                        </button>
+                        <button
+                            data-testid="send-message-btn"
+                            onClick={handleSendMessage}
+                            className="w-full bg-black/[0.03] dark:bg-[#222] border border-black/10 dark:border-white/10 text-text-primary dark:text-white py-3.5 rounded-2xl font-black text-xs hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95 cursor-pointer outline-none font-mono flex items-center justify-center gap-2"
+                        >
+                            <MessageSquare className="w-4 h-4 text-primary-container" />
+                            <span>Send Message</span>
+                        </button>
                     </div>
 
                     <div className="rounded-3xl overflow-hidden h-48 border border-black/10 dark:border-white/5 relative group cursor-pointer shadow-lg select-none">
-                        <img alt="Map Location placeholder layout" className="w-full h-full object-cover grayscale opacity-80 group-hover:opacity-100 group-hover:scale-[1.015] transition-all duration-500" src="https://unsplash.com" />
+                        <img alt="Map Location" className="w-full h-full object-cover grayscale opacity-80 group-hover:opacity-100 group-hover:scale-[1.015] transition-all duration-500" src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=800&q=80" />
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none shadow-inner"><div className="bg-primary-container p-2.5 rounded-full shadow-lg animate-bounce"><MapPin className="w-5 h-5 text-white stroke-[2.5px]" /></div></div>
                     </div>
                 </div>
             </div>
+
+            {/* Interactive Contact Business Modal Dialog */}
+            {isContactModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div data-testid="contact-modal" className="bg-white dark:bg-[#141414] border border-black/10 dark:border-white/10 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl relative text-left font-sans">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 font-mono">
+                                <Phone className="w-5 h-5 text-primary-container" />
+                                <h3 className="text-base font-black uppercase tracking-wider text-text-primary dark:text-white">
+                                    Contact {business.name}
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setIsContactModalOpen(false)}
+                                className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer bg-transparent border-none"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {/* Phone */}
+                            <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 space-y-1">
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-text-secondary block">Phone</span>
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="font-mono text-sm font-bold text-text-primary dark:text-white">{phoneText}</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => copyToClipboard(phoneText, 'phone')}
+                                            className="px-2.5 py-1 text-xs rounded-lg border border-black/10 dark:border-white/10 text-text-secondary hover:text-text-primary transition-all font-mono cursor-pointer bg-transparent flex items-center gap-1"
+                                            title="Copy Phone"
+                                        >
+                                            {copiedField === 'phone' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                            <span>{copiedField === 'phone' ? 'Copied' : 'Copy'}</span>
+                                        </button>
+                                        {phoneText !== 'N/A' && (
+                                            <a
+                                                href={`tel:${phoneText}`}
+                                                className="px-3 py-1 bg-primary-container text-white text-xs font-mono font-bold rounded-lg hover:brightness-110 transition-all no-underline flex items-center gap-1"
+                                            >
+                                                <Phone className="w-3 h-3" />
+                                                <span>Call</span>
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Email */}
+                            <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 space-y-1">
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-text-secondary block">Email</span>
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="font-mono text-xs font-bold text-text-primary dark:text-white truncate max-w-[200px]" title={emailText}>{emailText}</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => copyToClipboard(emailText, 'email')}
+                                            className="px-2.5 py-1 text-xs rounded-lg border border-black/10 dark:border-white/10 text-text-secondary hover:text-text-primary transition-all font-mono cursor-pointer bg-transparent flex items-center gap-1"
+                                            title="Copy Email"
+                                        >
+                                            {copiedField === 'email' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                            <span>{copiedField === 'email' ? 'Copied' : 'Copy'}</span>
+                                        </button>
+                                        {emailText !== 'N/A' && (
+                                            <a
+                                                href={`mailto:${emailText}`}
+                                                className="px-3 py-1 bg-primary-container text-white text-xs font-mono font-bold rounded-lg hover:brightness-110 transition-all no-underline flex items-center gap-1"
+                                            >
+                                                <Mail className="w-3 h-3" />
+                                                <span>Email</span>
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Website */}
+                            <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 space-y-1">
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-text-secondary block">Website</span>
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="font-mono text-xs font-bold text-text-primary dark:text-white truncate max-w-[200px]" title={websiteText}>{websiteText}</span>
+                                    <a
+                                        href={websiteText.startsWith('http') ? websiteText : `https://${websiteText}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-3 py-1 bg-black/10 dark:bg-white/10 text-text-primary dark:text-white text-xs font-mono font-bold rounded-lg hover:bg-black/20 dark:hover:bg-white/20 transition-all no-underline flex items-center gap-1"
+                                    >
+                                        <ExternalLink className="w-3 h-3" />
+                                        <span>Visit</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            {/* Address */}
+                            <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 space-y-1">
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-text-secondary block">Location Coordinates</span>
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-medium text-text-primary dark:text-white truncate max-w-[200px]" title={addressText}>{addressText}</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => copyToClipboard(addressText, 'address')}
+                                            className="px-2.5 py-1 text-xs rounded-lg border border-black/10 dark:border-white/10 text-text-secondary hover:text-text-primary transition-all font-mono cursor-pointer bg-transparent flex items-center gap-1"
+                                            title="Copy Address"
+                                        >
+                                            {copiedField === 'address' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                            <span>{copiedField === 'address' ? 'Copied' : 'Copy'}</span>
+                                        </button>
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="px-3 py-1 bg-black/10 dark:bg-white/10 text-text-primary dark:text-white text-xs font-mono font-bold rounded-lg hover:bg-black/20 dark:hover:bg-white/20 transition-all no-underline flex items-center gap-1"
+                                        >
+                                            <MapPin className="w-3 h-3" />
+                                            <span>Map</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setIsContactModalOpen(false)}
+                            className="w-full py-3 bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/10 dark:hover:bg-white/10 text-text-primary dark:text-white font-mono text-xs uppercase font-bold rounded-xl transition-all cursor-pointer border-none"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Lightbox / Fullscreen Image Preview Modal */}
+            {selectedPreviewImage && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+                    onClick={() => setSelectedPreviewImage(null)}
+                >
+                    <div className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl border border-white/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            onClick={() => setSelectedPreviewImage(null)}
+                            className="absolute top-4 right-4 z-10 p-3 rounded-full bg-black/60 text-white hover:bg-black/90 transition-colors cursor-pointer border-none shadow-lg"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <img
+                            src={selectedPreviewImage}
+                            alt="Gallery Preview"
+                            className="w-full h-full max-h-[85vh] object-contain select-none"
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
+
+export default BusinessDetailsPage;

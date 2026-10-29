@@ -37,19 +37,23 @@ export function useVoteInPoll() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ pollId, optionIndex }) => {
-            try {
-                return await apiFetch(`/polls/${pollId}/votes`, {
-                    method: 'POST',
-                    body: JSON.stringify({ choices: [optionIndex] })
-                });
-            } catch (err) {
-                console.warn('Backend vote poll failed, falling back to mockApi', err);
-                return api.voteInPoll(pollId, optionIndex);
+        mutationFn: async (args) => {
+            let pollId = args?.pollId;
+            let optionIndex = args?.optionIndex;
+
+            if (typeof args === 'string' || typeof args === 'number') {
+                pollId = args;
             }
+
+            return await apiFetch(`/polls/${pollId}/votes`, {
+                method: 'POST',
+                body: JSON.stringify({ choices: [optionIndex] })
+            });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['polls', 'stream'] });
+            queryClient.invalidateQueries({ queryKey: ['polls'] });
+            queryClient.invalidateQueries({ queryKey: ['timeline'] });
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
         },
     });
 }

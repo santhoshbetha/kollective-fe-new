@@ -254,8 +254,7 @@ export const usePostsStore = create(
         updatePostEntity: (postId, updater) => {
             if (!postId) return;
             set((state) => {
-                const current = state.entities[postId];
-                if (!current) return state;
+                const current = state.entities[postId] || {};
                 const updated = typeof updater === 'function' ? updater(current) : { ...current, ...updater };
                 return {
                     entities: {

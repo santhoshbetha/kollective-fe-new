@@ -3,11 +3,17 @@ import React, { useMemo } from 'react';
 import { useOrganizeActionsQuery, useRsvpToAction } from './useOrganizeFeature';
 import { Virtuoso } from 'react-virtuoso';
 import { cn } from '../../utils/cn'; // Adjust utility path to match your project layout
+import { useAuthStore } from '../../store/auth/useAuthStore';
 
 export function OrganizeFeed() {
     // Pull active values directly from our optimized TanStack caching layer
     const { organizeActions = [], organizeActionsLoading, organizeActionsError } = useOrganizeActionsQuery();
     const rsvpMutation = useRsvpToAction();
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+    const isOrg = activeAccount?.type === 'organization';
+    const isOrgAdmin = isOrg && ['admin', 'owner'].includes(activeAccount?.role?.toLowerCase());
+    const isOrgNonAdmin = isOrg && !isOrgAdmin;
+    const orgNonAdminTooltip = "Only administrators can perform social actions on behalf of this organization";
 
     // 💀 Custom Composed Pulse Skeleton Action Loader Layout Component
     const ActionSkeleton = () => (
@@ -104,21 +110,28 @@ export function OrganizeFeed() {
                             <div className="shrink-0 flex items-center gap-3 font-mono text-xs select-none">
                                 <button
                                     type="button"
-                                    onClick={() => rsvpMutation.mutate({
-                                        actionId: action?.id,
-                                        status: isAttending ? 'declined' : 'attending'
-                                    })}
+                                    disabled={isOrgNonAdmin || rsvpMutation.isPending}
+                                    title={isOrgNonAdmin ? orgNonAdminTooltip : ""}
+                                    onClick={() => {
+                                        if (isOrgNonAdmin) return;
+                                        rsvpMutation.mutate({
+                                            actionId: action?.id,
+                                            status: isAttending ? 'declined' : 'attending'
+                                        });
+                                    }}
                                     className={cn(
-                                        "px-5 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 border cursor-pointer outline-none",
-                                        isAttending
-                                            ? "bg-emerald-600/10 border-emerald-500/30 text-emerald-400 font-extrabold shadow-sm"
-                                            : "bg-[#0d1117] border-white/10 text-text-secondary hover:text-white hover:border-white/20"
+                                        "px-5 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 border outline-none",
+                                        isOrgNonAdmin
+                                            ? "opacity-50 cursor-not-allowed bg-[#0d1117] border-white/10 text-text-secondary"
+                                            : isAttending
+                                            ? "bg-emerald-600/10 border-emerald-500/30 text-emerald-400 font-extrabold shadow-sm cursor-pointer"
+                                            : "bg-[#0d1117] border-white/10 text-text-secondary hover:text-white hover:border-white/20 cursor-pointer"
                                     )}
                                 >
                                     <span className="material-symbols-outlined text-base">
-                                        {isAttending ? 'task_alt' : 'hail'}
+                                        {isOrgNonAdmin ? 'lock' : isAttending ? 'task_alt' : 'hail'}
                                     </span>
-                                    <span>{isAttending ? 'Joined' : 'Join Action'}</span>
+                                    <span>{isOrgNonAdmin ? 'Admin Only' : isAttending ? 'Joined' : isOrgAdmin ? 'Join (as Org)' : 'Join Action'}</span>
                                 </button>
                             </div>
                         </article>

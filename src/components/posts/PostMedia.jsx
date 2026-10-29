@@ -38,8 +38,16 @@ export function PostMedia({ post, setCarouselIndex, setCarouselOpen }) {
     const rawAttachments = post?.images || post?.media_attachments || (post?.image ? [post.image] : []);
     const attachments = (Array.isArray(rawAttachments) ? rawAttachments : [rawAttachments])
         .filter(Boolean)
-        .map((img) => (typeof img === 'object' ? img?.url || img?.preview_url || img?.src || '' : img))
-        .filter((url) => Boolean(url) && !isVideoUrl(url));
+        .map((img) => {
+            if (typeof img === 'object') {
+                return {
+                    url: img?.url || img?.preview_url || img?.src || '',
+                    alt: img?.description || img?.alt || img?.imageMeta || ''
+                };
+            }
+            return { url: img, alt: '' };
+        })
+        .filter((item) => Boolean(item.url) && !isVideoUrl(item.url));
 
     const hasMedia = Boolean(videoUrl) || attachments.length > 0;
 
@@ -93,7 +101,7 @@ export function PostMedia({ post, setCarouselIndex, setCarouselOpen }) {
                                 'grid-cols-2 grid-rows-2' // 4 images max
                         }`}
                 >
-                    {attachments.slice(0, 4).map((mediaUrl, index) => {
+                    {attachments.slice(0, 4).map((mediaItem, index) => {
                         // Dynamic rowspan calculation rule for the 3-image layout configuration setup
                         const isThreeImageFirst = attachments.length === 3 && index === 0;
 
@@ -105,8 +113,8 @@ export function PostMedia({ post, setCarouselIndex, setCarouselOpen }) {
                                     }`}
                             >
                                 <img
-                                    alt={`Media asset link index ${index}`}
-                                    src={mediaUrl}
+                                    alt={mediaItem.alt || `Media asset link index ${index}`}
+                                    src={mediaItem.url}
                                     className={`w-full h-full object-cover transition-transform duration-500 ${isRevealed ? 'group-hover:scale-[1.02]' : 'blur-2xl'
                                         }`}
                                     loading="lazy"

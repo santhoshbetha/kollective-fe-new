@@ -1,5 +1,5 @@
 {
-  "name": "temp-project",
+  "name": "kollective",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,7 +7,16 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:run": "playwright test --run",
+    "test:e2e:trace": "playwright test --trace",
+    "test:e2e:ui:trace": "playwright test --ui --trace",
+    "postinstall": "playwright install"
   },
   "dependencies": {
     "@radix-ui/react-hover-card": "^1.1.19",
@@ -39,6 +48,9 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tailwindcss/postcss": "^4.3.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
@@ -47,8 +59,16 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "jsdom": "^30.1.3",
+    "msw": "^3.0.3",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.1",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "^5.0.5"
+  },
+  "overrides": {
+    "react-day-picker": {
+      "date-fns": "$date-fns"
+    }
   }
 }

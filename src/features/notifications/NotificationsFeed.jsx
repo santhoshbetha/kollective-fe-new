@@ -1,7 +1,7 @@
 // src/features/notifications/NotificationsFeed.jsx
 import React, { useMemo } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-import { useNotificationsQuery } from './useNotificationsFeature';
+import { useNotificationsQuery } from './useNotificationsQuery';
 import { NotificationRow } from './NotificationRow';
 import { Bell } from 'lucide-react';
 

@@ -89,22 +89,22 @@ const PRESET_COVERS = [
     {
         id: 'cover-1',
         name: 'Tech Auditorium',
-        url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD9ksWN3ffoNOR2pmCU_J77IFwl9hhLOut8yg3EmzQpTlaR5Hf8lFAohQKRwGxjmEQU1EKOa2K3LriDOS9oQyNxNVoc9fBlxrHJmS23dwNWndRQdmB6jLXkCmKGDmuLsDbriLsLAeKPungn6DgAECaGiUWeOIz8mWO3TUXt5UuNnBt5w-2cE_lc8WMx7-4pgWo4xVvMSn333iHXJItCRu5mD0sd1nXkN3S91vFY5dHZqL0pLaArDYKZSqzoXh6-1wbf6PDmZ5om9FY'
+        url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&q=80'
     },
     {
         id: 'cover-2',
         name: 'Climate Action',
-        url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBmM1MOsrx_Oxh9mLlPIv9wjEUWU4Nkq0oMUmGWV--VNEjchJsUZuthMCzgMcfXQ435-Sfs9WizGdYZzXkW0AKbb11mdu2GFrz_sPS_Xg7tRdE3BFS6AD8G1S1vo7lexQqVY_rSdz844c5nlF1LWqRLHasAPetQ3FnuGO0W6Xu2MihFdRY4E9lQZDfiBQZCsqcVebZUjV2Xk5WIM8QzVeG9txnaZaBXdNthJD9-0Fi65BZ7pxeiBj_cduG-ortRW5FZCr5CCqkpcEo'
+        url: 'https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=1200&q=80'
     },
     {
         id: 'cover-3',
         name: 'Workshop & Collaboration',
-        url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB2JfPGX2MT2E3ylEeai5oLuJkwxmkqMqJG3FhPL0ZQ1A2FW9BkD0ctB7TyI9T2ns_dsUbSAZ75DOMtA2DxClR5vgb2PdXrzMzakrUyyC-rvSZUPYz89QXtX-QGUWvjpsqozHYKi_bmuMVdL2fR59DJ3MGocXAw8zanwRecd24pYGIFWFWao1cwI7ZxClcJWqzigvQAxR3-zmQzsdMnav4rAsFr0idFMBvSCkGBGZVW9Hazghyg1deYQzv0nVkLXnWI1Cy-uyTNxdo'
+        url: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=1200&q=80'
     },
     {
         id: 'cover-4',
         name: 'Technology Lab',
-        url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLyIUm-ffCTttHnuM7rD5R7cEVQwQZwSvj1Z5OAaqLt0klmRC4Pd5B7RpDg5uhfR3V5AkJhs5x_JZtkJtbKBBQ7YMzTYCFvgZ9H4nTT0dSRsyTtMY0Aps1bHurYbf6_9hjpP2_kRTdJjnowvPXIGVVCx8M4nyWg8Zqxo4qrqmJ1D-JMsX7AQvJAy3OlWlRDfIzZKZsfD0VUBrktjTpkaWlwt-MWHcU15-2BsvJoumYTTHgqWHhbdqwCRM3b0oMEMbX6iwlkVnlM74'
+        url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1200&q=80'
     }
 ];
 export function CreateEventPage() {
@@ -123,6 +123,7 @@ export function CreateEventPage() {
     const [location, setLocation] = useState('');
     const [capacity, setCapacity] = useState('');
     const [coverImage, setCoverImage] = useState(PRESET_COVERS[0].url);
+    const [bannerError, setBannerError] = useState(null);
     const [showImagePicker, setShowImagePicker] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
@@ -135,10 +136,26 @@ export function CreateEventPage() {
     const handleCreate = async (e) => {
         e.preventDefault();
 
+        if (bannerError) return triggerToast(bannerError);
         if (!title.trim()) return triggerToast('Event title is required.');
         if (!description.trim()) return triggerToast('Event description is required.');
         if (!startDate || !startTime) return triggerToast('Start date and time are required.');
         if (!location.trim()) return triggerToast('Event location is required.');
+
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const finalEndDate = endDate || startDate;
+
+        if (startDate < todayStr || (endDate && endDate < todayStr)) {
+            return triggerToast('Event date cannot be in the past.');
+        }
+
+        if (finalEndDate < startDate) {
+            return triggerToast('End date cannot be before start date.');
+        }
+
+        if (finalEndDate === startDate && endTime && endTime <= startTime) {
+            return triggerToast('End time must be after start time.');
+        }
 
         setIsSubmitting(true);
 
@@ -273,9 +290,11 @@ export function CreateEventPage() {
                             mode="banner"
                             aspectRatio={16 / 9}
                             value={coverImage}
-                            onChange={(newImage) => setCoverImage(newImage)}
-                            onImageRemove={() => setCoverImage('')}
+                            onChange={(newImage) => { setCoverImage(newImage); setBannerError(null); }}
+                            onImageRemove={() => { setCoverImage(''); setBannerError(null); }}
+                            onError={(err) => setBannerError(err)}
                             label="Upload Cover"
+                            inputTestId="event-banner-input"
                         />
                     </div>
 
@@ -321,6 +340,7 @@ export function CreateEventPage() {
                             <div className="relative">
                                 <Type className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/50" />
                                 <input
+                                    data-testid="event-title-input"
                                     type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
@@ -371,6 +391,7 @@ export function CreateEventPage() {
                             <div className="relative">
                                 <FileText className="absolute left-3.5 top-3.5 w-4 h-4 text-text-secondary/50" />
                                 <textarea
+                                    data-testid="event-description-input"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     rows={5}
@@ -440,6 +461,7 @@ export function CreateEventPage() {
                                     <PopoverTrigger asChild>
                                         <button
                                             type="button"
+                                            data-testid="category-trigger"
                                             className="w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container transition-colors outline-none text-xs flex items-center justify-between cursor-pointer font-sans font-semibold text-left"
                                         >
                                             <span className="truncate flex items-center gap-2">
@@ -491,6 +513,7 @@ export function CreateEventPage() {
                                         <PopoverTrigger asChild>
                                             <button
                                                 type="button"
+                                                data-testid="start-date-trigger"
                                                 className={cn(
                                                     "w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container transition-colors outline-none text-xs flex items-center justify-between cursor-pointer font-sans font-semibold text-left",
                                                     !startDate && "text-text-secondary/30"
@@ -520,6 +543,7 @@ export function CreateEventPage() {
                                         <PopoverTrigger asChild>
                                             <button
                                                 type="button"
+                                                data-testid="start-time-trigger"
                                                 className={cn(
                                                     "w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container transition-colors outline-none text-xs flex items-center justify-between cursor-pointer font-sans font-semibold text-left",
                                                     !startTime && "text-text-secondary/30"
@@ -559,6 +583,7 @@ export function CreateEventPage() {
                                         <PopoverTrigger asChild>
                                             <button
                                                 type="button"
+                                                data-testid="end-date-trigger"
                                                 className={cn(
                                                     "w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container transition-colors outline-none text-xs flex items-center justify-between cursor-pointer font-sans font-semibold text-left",
                                                     !endDate && "text-text-secondary/30"
@@ -588,6 +613,7 @@ export function CreateEventPage() {
                                         <PopoverTrigger asChild>
                                             <button
                                                 type="button"
+                                                data-testid="end-time-trigger"
                                                 className={cn(
                                                     "w-full bg-black/[0.01] dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-primary-container transition-colors outline-none text-xs flex items-center justify-between cursor-pointer font-sans font-semibold text-left",
                                                     !endTime && "text-text-secondary/30"
@@ -650,6 +676,7 @@ export function CreateEventPage() {
                                     <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/50" />
                                 )}
                                 <input
+                                    data-testid="event-location-input"
                                     type="text"
                                     value={location}
                                     onChange={(e) => setLocation(e.target.value)}
@@ -688,6 +715,7 @@ export function CreateEventPage() {
                             <div className="relative">
                                 <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/50" />
                                 <input
+                                    data-testid="event-capacity-input"
                                     type="number"
                                     min="1"
                                     value={capacity}
@@ -738,6 +766,7 @@ export function CreateEventPage() {
                         </button>
                         <button
                             type="submit"
+                            data-testid="event-submit-btn"
                             disabled={isSubmitting || createEventMutation.isPending}
                             className={cn(
                                 "flex-1 sm:flex-none px-6 py-3 rounded-xl bg-primary-container hover:brightness-105 text-white font-black text-xs shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer border-none crimson-glow outline-none",

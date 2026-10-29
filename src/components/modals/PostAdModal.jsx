@@ -43,16 +43,17 @@ export const PostAdModal = ({ isOpen, onClose, onAdCreated }) => {
 
         setIsSubmitting(true);
         try {
-            const newAd = await apiFetch('/classifieds', {
+            const newAd = await apiFetch('/api/classifieds', {
                 method: 'POST',
                 body: JSON.stringify({ classified: formData }),
             });
 
-            onAdCreated(newAd);
+            onAdCreated(newAd?.classified || newAd?.data || newAd);
             onClose();
             setFormData({ title: '', category: 'For Sale', price: '', neighborhood: '', description: '', duration_days: '7' });
         } catch (err) {
-            setErrors({ server: 'Network communication bottleneck encountered.' });
+            const serverMsg = err?.data?.message || err?.data?.error || err?.message || 'Network communication bottleneck encountered.';
+            setErrors({ server: serverMsg });
         } finally {
             setIsSubmitting(false);
         }

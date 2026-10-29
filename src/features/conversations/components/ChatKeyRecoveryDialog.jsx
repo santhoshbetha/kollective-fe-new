@@ -97,20 +97,20 @@ export function ChatKeyRecoveryDialog({ userUuid, onRestored, onClose }) {
 
     if (isLoading) {
         return (
-            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
-                <div className="relative bg-[#141414] border border-white/10 rounded-[28px] max-w-sm w-full p-8 text-center shadow-2xl flex flex-col items-center justify-center gap-3">
+            <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
+                <div className="relative bg-surface dark:bg-[#141414] border border-black/10 dark:border-white/10 rounded-3xl max-w-md w-full p-8 text-center shadow-2xl flex flex-col items-center justify-center gap-4">
                     {onClose && (
                         <button
                             type="button"
                             onClick={onClose}
-                            className="absolute top-4 right-4 text-neutral-400 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer border-none bg-transparent"
+                            className="absolute top-4 right-4 text-text-secondary hover:text-text-primary p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer border-none bg-transparent"
                             title="Close"
                         >
                             <X className="w-5 h-5" />
                         </button>
                     )}
-                    <Loader2 className="w-6 h-6 animate-spin text-primary-container" />
-                    <span className="text-xs font-mono font-medium text-neutral-400 uppercase tracking-wider">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary-container" />
+                    <span className="text-sm font-mono font-bold text-text-secondary uppercase tracking-wider">
                         Checking Cryptographic Security Status...
                     </span>
                 </div>
@@ -121,39 +121,39 @@ export function ChatKeyRecoveryDialog({ userUuid, onRestored, onClose }) {
     // 🔒 USER NEVER SET UP ENCRYPTION KEYS: Prompt to visit Settings
     if (!hasBackup || isError) {
         return (
-            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
-                <div className="relative bg-[#141414] border border-white/10 rounded-[28px] max-w-sm w-full p-6 space-y-5 shadow-2xl text-left transform animate-in zoom-in-95 duration-200">
+            <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
+                <div className="relative bg-surface dark:bg-[#141414] border border-black/10 dark:border-white/10 rounded-2xl sm:rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl text-left transform animate-in zoom-in-95 duration-200">
                     {onClose && (
                         <button
                             type="button"
                             onClick={onClose}
-                            className="absolute top-4 right-4 text-neutral-400 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer border-none bg-transparent"
+                            className="absolute top-4 right-4 text-text-secondary hover:text-text-primary p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer border-none bg-transparent"
                             title="Close"
                         >
                             <X className="w-5 h-5" />
                         </button>
                     )}
 
-                    <div className="text-center pb-2 border-b border-white/5">
-                        <div className="flex h-12 w-12 bg-amber-500/10 border border-amber-500/20 rounded-2xl items-center justify-center mx-auto mb-3 text-amber-400">
-                            <Lock className="w-5 h-5 stroke-[2.5px]" />
+                    <div className="text-center pb-3 border-b border-black/5 dark:border-white/10">
+                        <div className="flex h-14 w-14 bg-amber-500/10 border border-amber-500/20 rounded-2xl items-center justify-center mx-auto mb-4 text-amber-500 dark:text-amber-400 shadow-sm">
+                            <Lock className="w-6 h-6 stroke-[2.5px]" />
                         </div>
-                        <h3 className="text-base font-black text-white tracking-tight">
+                        <h3 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
                             Encryption Setup Required
                         </h3>
-                        <p className="text-xs text-neutral-400 font-medium leading-relaxed max-w-[270px] mx-auto mt-1.5">
+                        <p className="text-sm sm:text-base text-text-secondary font-medium leading-relaxed max-w-[360px] mx-auto mt-2">
                             End-to-end encrypted messaging requires generating your cryptographic keypair and Chat Sync PIN. You haven't set up your keys yet.
                         </p>
                     </div>
 
-                    <div className="space-y-2.5 pt-1">
+                    <div className="space-y-3 pt-1">
                         <button
                             type="button"
                             onClick={() => {
                                 if (onClose) onClose();
                                 navigate('/settings?tab=password');
                             }}
-                            className="w-full py-3 bg-primary-container text-white font-mono text-xs font-black uppercase tracking-wider rounded-xl hover:brightness-105 border-none cursor-pointer flex items-center justify-center gap-2 outline-none transition-all active:scale-[0.98]"
+                            className="w-full py-3.5 bg-primary-container text-white font-mono text-sm font-bold uppercase tracking-wider rounded-xl hover:brightness-105 border-none cursor-pointer flex items-center justify-center gap-2 outline-none transition-all active:scale-[0.98] shadow-md shadow-primary-container/20"
                         >
                             <KeyRound className="w-4 h-4" />
                             <span>Set Up Keys in Settings</span>
@@ -163,7 +163,7 @@ export function ChatKeyRecoveryDialog({ userUuid, onRestored, onClose }) {
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="w-full py-2.5 bg-white/5 text-neutral-400 hover:text-white font-mono text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-white/10 border border-white/5 cursor-pointer flex items-center justify-center transition-all"
+                                className="w-full py-3 bg-surface-container-low text-text-secondary hover:text-text-primary font-mono text-sm font-bold uppercase tracking-wider rounded-xl hover:bg-surface-container-high border border-black/5 dark:border-white/10 cursor-pointer flex items-center justify-center transition-all"
                             >
                                 Back to Safety
                             </button>
@@ -176,31 +176,31 @@ export function ChatKeyRecoveryDialog({ userUuid, onRestored, onClose }) {
 
     // 🔑 USER ALREADY SET UP KEYS: Prompt to enter PIN to restore history
     return (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
-            <div className="relative bg-[#141414] border border-white/10 rounded-[28px] max-w-sm w-full p-6 space-y-4 shadow-2xl text-left transform animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
+            <div className="relative bg-surface dark:bg-[#141414] border border-black/10 dark:border-white/10 rounded-2xl sm:rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl text-left transform animate-in zoom-in-95 duration-200">
                 {onClose && !isPermanentlyLocked && (
                     <button
                         type="button"
                         onClick={onClose}
-                        className="absolute top-4 right-4 text-neutral-400 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer border-none bg-transparent"
+                        className="absolute top-4 right-4 text-text-secondary hover:text-text-primary p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer border-none bg-transparent"
                         title="Close"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 )}
 
-                <div className="text-center pb-2 border-b border-white/5">
-                    <div className="flex h-12 w-12 bg-primary-container/10 border border-primary-container/20 rounded-2xl items-center justify-center mx-auto mb-3 text-primary-container">
+                <div className="text-center pb-3 border-b border-black/5 dark:border-white/10">
+                    <div className="flex h-14 w-14 bg-primary-container/10 border border-primary-container/20 rounded-2xl items-center justify-center mx-auto mb-4 text-primary-container shadow-sm">
                         {isPermanentlyLocked ? (
-                            <ShieldX className="w-5 h-5 text-rose-500 stroke-[2.5px]" />
+                            <ShieldX className="w-6 h-6 text-rose-500 stroke-[2.5px]" />
                         ) : (
-                            <KeyRound className="w-5 h-5 stroke-[2.5px]" />
+                            <KeyRound className="w-6 h-6 stroke-[2.5px]" />
                         )}
                     </div>
-                    <h3 className="text-base font-black text-white tracking-tight">
+                    <h3 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
                         {isPermanentlyLocked ? "Terminal Secured" : "Restore Encrypted History"}
                     </h3>
-                    <p className="text-xs text-neutral-400 font-medium leading-relaxed max-w-[250px] mx-auto mt-1">
+                    <p className="text-sm sm:text-base text-text-secondary font-medium leading-relaxed max-w-[360px] mx-auto mt-2">
                         {isPermanentlyLocked
                             ? "This browser container has been locked down due to multiple mismatched security PIN entry handshakes. Evicting session parameters..."
                             : "Enter your Chat Sync PIN to locally decrypt your private key and unlock your messaging history."
@@ -209,31 +209,38 @@ export function ChatKeyRecoveryDialog({ userUuid, onRestored, onClose }) {
                 </div>
 
                 {!isPermanentlyLocked && (
-                    <form onSubmit={handleRecoverySubmit} className="space-y-4">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-mono font-black uppercase tracking-wider text-neutral-400 ml-1">Enter Sync PIN</label>
+                    <form onSubmit={handleRecoverySubmit} className="space-y-5">
+                        <div className="space-y-2">
+                            <label className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-text-secondary ml-1">
+                                Enter Sync PIN
+                            </label>
                             <input
-                                type="password" pattern="[0-9]*" inputMode="numeric" maxLength="6" placeholder="••••"
-                                disabled={isDecrypting} value={pin}
+                                type="password"
+                                pattern="[0-9]*"
+                                inputMode="numeric"
+                                maxLength="6"
+                                placeholder="••••"
+                                disabled={isDecrypting}
+                                value={pin}
                                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                                className="w-full text-center bg-[#181818] border border-white/10 py-3 text-lg tracking-widest text-white rounded-xl focus:border-primary-container focus:outline-none font-mono font-bold"
+                                className="w-full text-center bg-surface-container-low border border-black/10 dark:border-white/10 py-3.5 text-2xl tracking-[0.35em] text-text-primary placeholder:text-text-secondary/40 rounded-xl focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none font-mono font-bold transition-all shadow-inner"
                             />
                         </div>
 
                         {errorMsg && (
-                            <div className="p-3 bg-rose-500/5 border border-rose-500/10 text-rose-400 rounded-xl flex items-center gap-2 text-xs font-medium leading-tight">
-                                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                            <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl flex items-center gap-2.5 text-sm font-semibold leading-snug">
+                                <AlertCircle className="w-5 h-5 shrink-0 text-rose-500" />
                                 <span>{errorMsg}</span>
                             </div>
                         )}
 
-                        <div className="space-y-2">
+                        <div className="space-y-2.5 pt-1">
                             <button
                                 type="submit"
                                 disabled={isDecrypting || pin.length < 4}
-                                className="w-full py-3 bg-primary-container text-white font-mono text-xs font-black uppercase tracking-wider rounded-xl hover:brightness-105 border-none disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 outline-none transition-all active:scale-[0.98]"
+                                className="w-full py-3.5 bg-primary-container hover:bg-primary-container/90 text-white font-mono text-sm font-bold uppercase tracking-wider rounded-xl hover:brightness-105 border-none disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 outline-none transition-all active:scale-[0.98] shadow-md shadow-primary-container/20"
                             >
-                                {isDecrypting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                                {isDecrypting && <Loader2 className="w-4 h-4 animate-spin" />}
                                 <span>Verify PIN &amp; Unlock</span>
                             </button>
 
@@ -241,7 +248,7 @@ export function ChatKeyRecoveryDialog({ userUuid, onRestored, onClose }) {
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="w-full py-2 bg-transparent text-neutral-400 hover:text-white font-mono text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-white/5 border border-transparent cursor-pointer flex items-center justify-center transition-all"
+                                    className="w-full py-2.5 bg-transparent text-text-secondary hover:text-text-primary font-mono text-sm font-bold uppercase tracking-wider rounded-xl hover:bg-black/5 dark:hover:bg-white/5 border border-transparent cursor-pointer flex items-center justify-center transition-all"
                                 >
                                     Cancel
                                 </button>
@@ -251,8 +258,8 @@ export function ChatKeyRecoveryDialog({ userUuid, onRestored, onClose }) {
                 )}
 
                 {isPermanentlyLocked && errorMsg && (
-                    <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center gap-2.5 text-xs font-mono font-bold uppercase select-none animate-pulse">
-                        <Loader2 className="w-4 h-4 animate-spin text-rose-500 shrink-0" />
+                    <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl flex items-center gap-3 text-sm font-mono font-bold uppercase select-none animate-pulse">
+                        <Loader2 className="w-5 h-5 animate-spin text-rose-500 shrink-0" />
                         <span>Terminating local auth access tokens...</span>
                     </div>
                 )}

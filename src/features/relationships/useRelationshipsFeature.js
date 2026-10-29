@@ -81,13 +81,17 @@ export function useToggleFollowUser() {
             const previousAccount = useAccountsStore.getState().entities[targetUserId];
             if (previousAccount) {
                 const isFollowing = !previousAccount.following;
+                const currentCount = previousAccount.followersCount ?? previousAccount.followers_count ?? 0;
+                const nextFollowersCount = isFollowing
+                    ? currentCount + 1
+                    : Math.max(0, currentCount - 1);
+
                 useAccountsStore.getState().importFetchedAccounts([
                     {
                         ...previousAccount,
                         following: isFollowing,
-                        followersCount: isFollowing
-                            ? (previousAccount.followersCount || 0) + 1
-                            : Math.max(0, (previousAccount.followersCount || 1) - 1),
+                        followersCount: nextFollowersCount,
+                        followers_count: nextFollowersCount,
                     }
                 ]);
             }

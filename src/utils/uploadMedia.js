@@ -10,7 +10,17 @@ export function dataURLtoBlob(dataurl) {
     if (parts.length < 2) return null;
     const mimeMatch = parts[0].match(/:(.*?);/);
     const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-    const bstr = atob(parts[1]);
+    const isBase64 = parts[0].includes(';base64');
+    let bstr;
+    try {
+        if (isBase64) {
+            bstr = atob(parts[1]);
+        } else {
+            bstr = decodeURIComponent(parts[1]);
+        }
+    } catch {
+        return null;
+    }
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
     while (n--) {
@@ -63,8 +73,8 @@ export async function uploadProfileImageToR2(imageSource, type = 'avatar') {
         if (presignRes && presignRes.upload_url && presignRes.final_asset_url) {
             const { upload_url, final_asset_url } = presignRes;
 
-            // If backend returned presigned URL, upload binary data to R2 S3 bucket
-            if (upload_url.startsWith('http://') || upload_url.startsWith('https://')) {
+            // If backend returned presigned URL or proxy path, upload binary data
+            if (upload_url) {
                 const uploadRes = await fetch(upload_url, {
                     method: 'PUT',
                     headers: {
@@ -76,7 +86,7 @@ export async function uploadProfileImageToR2(imageSource, type = 'avatar') {
                 if (uploadRes.ok) {
                     return final_asset_url;
                 } else {
-                    console.warn('R2 PUT upload returned non-OK status', uploadRes.status);
+                    console.warn('PUT upload returned non-OK status', uploadRes.status);
                     return final_asset_url;
                 }
             } else {

@@ -1,7 +1,7 @@
 // src/pages/ProfilePage.jsx
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useProfileQuery } from '../../features/profile/useProfileFeature';
+import { useProfileQuery, useToggleFollowMutation } from '../../features/profile/useProfileFeature';
 import { ProfileFeed } from '../../features/profile/ProfileFeed';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { useDirectMessageStore } from '../../store/useDirectMessageStore';
@@ -14,9 +14,13 @@ export const ProfilePage = () => {
 
     // Connect session stores to toggle administrative edit credentials hooks inline
     const currentUser = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+    const isOrgNonAdmin = activeAccount?.type === 'organization' && !['admin', 'owner'].includes(activeAccount?.role?.toLowerCase());
+    const orgNonAdminTooltip = "Only administrators can perform social actions on behalf of this organization";
     const isOwnProfile = currentUser?.handle?.toLowerCase().replace('@', '') === username?.toLowerCase();
 
     const { data: profile, isPending, isError } = useProfileQuery(username);
+    const toggleFollow = useToggleFollowMutation(username);
 
     if (isPending) {
         return (
@@ -79,12 +83,18 @@ export const ProfilePage = () => {
                     ) : (
                         <button
                             type="button"
-                            className={`px-5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer border ${profile.following
-                                ? 'bg-surface-container-high border-white/5 text-text-secondary'
-                                : 'bg-primary-container text-white border-primary-container crimson-glow font-black'
-                                }`}
+                            onClick={() => !isOrgNonAdmin && toggleFollow.mutate({ targetId: profile.id || username })}
+                            disabled={toggleFollow.isPending || isOrgNonAdmin}
+                            title={isOrgNonAdmin ? orgNonAdminTooltip : undefined}
+                            className={`px-5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 border ${
+                                isOrgNonAdmin
+                                    ? 'bg-surface-container-high border-white/5 text-text-secondary/40 opacity-40 cursor-not-allowed'
+                                    : profile.following
+                                    ? 'bg-surface-container-high border-white/5 text-text-secondary cursor-pointer'
+                                    : 'bg-primary-container text-white border-primary-container crimson-glow font-black cursor-pointer'
+                            }`}
                         >
-                            {profile.following ? 'Following ✓' : 'Follow Node'}
+                            {toggleFollow.isPending ? 'Processing...' : profile.following ? 'Following ✓' : 'Follow'}
                         </button>
                     )}
                 </div>

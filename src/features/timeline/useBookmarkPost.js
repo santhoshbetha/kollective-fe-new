@@ -10,7 +10,7 @@ export function useBookmarkPost() {
     return useMutation({
         // 1. Asynchronous network call to the Elixir backend endpoint
         mutationFn: async (postId) => {
-            return apiFetch(`api/v1//posts/${postId}/bookmark`, { method: 'POST' });
+            return apiFetch(`/posts/${postId}/bookmark`, { method: 'POST' });
         },
 
         // 2. The Optimistic UI Mutation Layer

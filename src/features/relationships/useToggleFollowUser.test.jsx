@@ -1,10 +1,11 @@
 // src/features/relationships/useToggleFollowUser.test.jsx
 import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useToggleFollowUser } from './useRelationshipsFeature';
-import { useAccountsStore } from '../../store/useAccountsStore';
-import { testServer } from '../../test/serverHandlers';
-import { createWrapper } from '../../test/testUtils';
+import { http, HttpResponse } from 'msw';
+import { useToggleFollowUser } from '@/features/relationships/useRelationshipsFeature';
+import { useAccountsStore } from '@/store/useAccountsStore';
+import { testServer } from '@/test/serverHandlers';
+import { createWrapper } from '@/test/testUtils';
 
 // 📡 1. Spin up the network interception mock engine
 beforeAll(() => testServer.listen());
@@ -56,7 +57,7 @@ describe('Normalized Follow Mutation Graph Test Suite', () => {
 
         // Inject an intentional network breakdown override closure into our MSW runtime handler
         testServer.use(
-            http.post('/api/v1/accounts/:id/follow', () => {
+            http.post('*/api/v1/accounts/:id/follow', () => {
                 return new HttpResponse(null, { status: 500 });
             })
         );

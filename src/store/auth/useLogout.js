@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from './useAuthStore';
 import { useTimelineBufferStore } from '../useTimelineBufferStore';
+import { apiFetch } from '../../api/apiClient';
 
 export function useLogout() {
     const queryClient = useQueryClient();
@@ -20,7 +21,13 @@ export function useLogout() {
         setIsLoggingOut(true);
 
         if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-        logoutTimerRef.current = setTimeout(() => {
+        logoutTimerRef.current = setTimeout(async () => {
+            try {
+                await apiFetch('/api/users/logout', { method: 'DELETE' });
+            } catch (e) {
+                // Silently continue client-side cleanup even if server request fails
+            }
+
             // 1. Clear layout arrays and pending server streams
             clearBuffer();
 
@@ -39,7 +46,7 @@ export function useLogout() {
 
             setIsLoggingOut(false);
             if (onComplete) onComplete();
-        }, 500);
+        }, 100);
     }, [clearBuffer, clearSession, queryClient, setIsLoggingOut]);
 
     return logout;

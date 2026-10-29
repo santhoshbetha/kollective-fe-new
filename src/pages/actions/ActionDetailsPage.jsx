@@ -2,10 +2,16 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useOrganizeActionsQuery } from '../../features/organize/useOrganizeFeature';
 import { useRsvpToAction } from '../../features/organize/useOrganizeFeature';
+import { useAuthStore } from '../../store/auth/useAuthStore';
 
 export const ActionDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const activeAccount = useAuthStore((state) => state.activeAccount);
+  const isOrg = activeAccount?.type === 'organization';
+  const isOrgAdmin = isOrg && ['admin', 'owner'].includes(activeAccount?.role?.toLowerCase());
+  const isOrgNonAdmin = isOrg && !isOrgAdmin;
+  const orgNonAdminTooltip = "Only administrators can perform social actions on behalf of this organization";
   const rsvpToActionMutation = useRsvpToAction();
   const { organizeActions, organizeActionsLoading } = useOrganizeActionsQuery();
   const [toastMessage, setToastMessage] = useState('');
@@ -17,7 +23,7 @@ export const ActionDetailsPage = () => {
     }, 2500);
   };
 
-  const action = organizeActions.find((a) => a.id === id);
+  const action = organizeActions.find((a) => String(a.id) === String(id));
 
   if (organizeActionsLoading) {
     return (
@@ -50,8 +56,9 @@ export const ActionDetailsPage = () => {
     );
   }
 
-  const isAttending = action?.rsvp === 'Attending';
-  const isInterested = action?.rsvp === 'Interested';
+  const currentRsvp = String(action?.user_rsvp_status || action?.userStatus || action?.rsvp || '').toLowerCase();
+  const isAttending = currentRsvp === 'attending' || currentRsvp === 'going';
+  const isInterested = currentRsvp === 'interested';
 
   const defaultDescriptions = {
     'action-1': 'A massive public demonstration organized to demand secure, affordable, and dignified housing for all citizens in the Downtown District. We will assemble peacefully and walk towards City Hall.',
@@ -67,6 +74,7 @@ export const ActionDetailsPage = () => {
       {/* Back Navigation */}
       <div className="mb-6 flex items-center justify-between">
         <button
+          data-testid="back-to-organize-btn"
           onClick={() => navigate('/organize')}
           className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors font-bold text-sm md:text-lg group cursor-pointer border-none bg-transparent"
         >
@@ -83,7 +91,7 @@ export const ActionDetailsPage = () => {
 
         {/* Category Badge & Action Type */}
         <div className="flex justify-between items-center">
-          <span className={`px-4 py-2 border text-[14px] font-bold uppercase tracking-widest rounded-full ${action?.type === 'Protest'
+          <span data-testid="action-type-badge" className={`px-4 py-2 border text-[14px] font-bold uppercase tracking-widest rounded-full ${action?.type === 'Protest'
             ? 'bg-surface-crimson-low border-primary/20 text-primary-container'
             : action?.type === 'Town Hall'
               ? 'bg-secondary/10 border-secondary/20 text-text-secondary'
@@ -99,11 +107,11 @@ export const ActionDetailsPage = () => {
 
         {/* Title */}
         <div>
-          <h1 className="font-display-lg text-2xl md:text-3xl font-extrabold text-text-primary leading-tight">
+          <h1 data-testid="action-title" className="font-display-lg text-2xl md:text-3xl font-extrabold text-text-primary leading-tight">
             {action?.title}
           </h1>
           <p className="text-text-secondary text-sm mt-2 font-medium">
-            Initiated by <span className="text-primary-container font-bold">{action?.organizer}</span>
+            Initiated by <span data-testid="action-organizer" className="text-primary-container font-bold">{action?.organizer}</span>
           </p>
         </div>
 
@@ -113,14 +121,14 @@ export const ActionDetailsPage = () => {
             <span className="material-symbols-outlined text-primary-container mt-0.5">calendar_today</span>
             <div>
               <p className="text-sm uppercase font-bold text-text-secondary tracking-wider">Date & Time</p>
-              <p className="text-lg font-semibold text-text-primary mt-0.5">{action?.time}</p>
+              <p data-testid="action-time" className="text-lg font-semibold text-text-primary mt-0.5">{action?.time}</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="material-symbols-outlined text-primary-container mt-0.5">location_on</span>
             <div>
               <p className="text-sm uppercase font-bold text-text-secondary tracking-wider">Location / Venue</p>
-              <p className="text-lg font-semibold text-text-primary mt-0.5">{action?.location}</p>
+              <p data-testid="action-location" className="text-lg font-semibold text-text-primary mt-0.5">{action?.location}</p>
             </div>
           </div>
         </div>
@@ -128,7 +136,7 @@ export const ActionDetailsPage = () => {
         {/* Description Section */}
         <div className="space-y-4">
           <h3 className="font-headline-md text-base font-bold text-text-primary">Action Objective</h3>
-          <p className="text-text-secondary text-lg leading-relaxed whitespace-pre-line">
+          <p data-testid="action-description" className="text-text-secondary text-lg leading-relaxed whitespace-pre-line">
             {description}
           </p>
         </div>
@@ -154,31 +162,47 @@ export const ActionDetailsPage = () => {
         {/* Interactive RSVP Action Controls */}
         <div className="pt-6 flex flex-col sm:flex-row gap-4 border-t border-white/5">
           <button
+            type="button"
+            data-testid="attend-btn"
+            disabled={isOrgNonAdmin}
+            title={isOrgNonAdmin ? orgNonAdminTooltip : ""}
             onClick={() => {
+              if (isOrgNonAdmin) return;
               const newStatus = isAttending ? 'None' : 'Attending';
-              rsvpToActionMutation.mutate({ id: action?.id, status: newStatus });
+              rsvpToActionMutation.mutate({ actionId: action?.id, status: newStatus });
               triggerToast(newStatus === 'Attending' ? 'Marked as Attending!' : 'RSVP Cancelled');
             }}
-            className={`flex-1 py-3.5 rounded-none font-bold text-sm uppercase tracking-wider cursor-pointer border-none transition-all ${isAttending
-              ? 'bg-primary-container text-white crimson-glow brightness-110'
-              : 'bg-surface-container-high border border-outline-variant text-text-primary hover:bg-surface-container-highest'
-              }`}
+            className={`flex-1 py-3.5 rounded-none font-bold text-sm uppercase tracking-wider border-none transition-all ${
+              isOrgNonAdmin
+                ? 'opacity-50 cursor-not-allowed bg-surface-container-high border border-outline-variant text-text-secondary'
+                : isAttending
+                ? 'bg-primary-container text-white crimson-glow brightness-110 cursor-pointer'
+                : 'bg-surface-container-high border border-outline-variant text-text-primary hover:bg-surface-container-highest cursor-pointer'
+            }`}
           >
-            {isAttending ? 'Attending ✓' : 'Attend Action'}
+            {isOrgNonAdmin ? 'Attend (Admin Only)' : isAttending ? 'Attending ✓' : isOrgAdmin ? 'Attend (as Org)' : 'Attend Action'}
           </button>
 
           <button
+            type="button"
+            data-testid="interested-btn"
+            disabled={isOrgNonAdmin}
+            title={isOrgNonAdmin ? orgNonAdminTooltip : ""}
             onClick={() => {
+              if (isOrgNonAdmin) return;
               const newStatus = isInterested ? 'None' : 'Interested';
-              rsvpToAction(action?.id, newStatus);
+              rsvpToActionMutation.mutate({ actionId: action?.id, status: newStatus });
               triggerToast(newStatus === 'Interested' ? 'Marked as Interested!' : 'RSVP Cancelled');
             }}
-            className={`flex-1 py-3.5 rounded-none font-bold text-sm uppercase tracking-wider cursor-pointer transition-all ${isInterested
-              ? 'bg-secondary text-on-secondary font-bold brightness-110 border-none'
-              : 'border border-outline-variant hover:bg-surface-container-high/60 text-text-primary bg-transparent'
-              }`}
+            className={`flex-1 py-3.5 rounded-none font-bold text-sm uppercase tracking-wider transition-all ${
+              isOrgNonAdmin
+                ? 'opacity-50 cursor-not-allowed border border-outline-variant text-text-secondary bg-transparent'
+                : isInterested
+                ? 'bg-secondary text-on-secondary font-bold brightness-110 border-none cursor-pointer'
+                : 'border border-outline-variant hover:bg-surface-container-high/60 text-text-primary bg-transparent cursor-pointer'
+            }`}
           >
-            {isInterested ? 'Interested ✓' : 'Mark as Interested'}
+            {isOrgNonAdmin ? 'Interested (Admin Only)' : isInterested ? 'Interested ✓' : isOrgAdmin ? 'Interested (as Org)' : 'Mark as Interested'}
           </button>
         </div>
       </div>

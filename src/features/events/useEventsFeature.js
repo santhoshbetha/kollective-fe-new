@@ -8,21 +8,27 @@ import {
 import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 import { normalizeEvent } from '../../utils/eventUtils';
+import { useAuthStore } from '../../store/auth/useAuthStore';
 
 /**
  * 📡 Hook A: Pulls a flat, comprehensive listing of upcoming community events
  */
 export function useEventsQuery() {
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+    const contextType = activeAccount?.type === 'organization' ? 'organization' : 'personal';
+    const contextId = activeAccount?.id || 'personal';
+
     const { data, isPending } = useQuery({
-        queryKey: ['events', 'list'],
-        queryFn: async () => {
+        queryKey: ['events', 'list', contextType, contextId],
+        queryFn: async ({ signal }) => {
             try {
-                const res = await apiFetch('/events');
-                console.log("useEventsQuery res:", res)
+                const res = await apiFetch(`/events?context=${encodeURIComponent(contextType)}`, { signal });
+                console.log("useEventsQuery res:", res);
                 if (res && (res.data || Array.isArray(res))) {
                     return res;
                 }
             } catch (err) {
+                if (signal?.aborted || err?.name === 'AbortError') throw err;
                 console.warn('apiFetch failed for events query, falling back to mockApi', err);
             }
             return api.getEvents();
@@ -370,6 +376,67 @@ export function useCreateEvent() {
 
             // 🎯 Drops your brand new paginated infinite scroller caches completely
             queryClient.invalidateQueries({ queryKey: ['events', 'infinite'] });
+        },
+    });
+}
+
+/**
+ * 📡 Hook: Fetches details for a single target event
+ */
+export function useEventDetailsQuery(eventId) {
+    const { data, isPending, error } = useQuery({
+        queryKey: ['event', eventId],
+        queryFn: async () => {
+            if (!eventId) return null;
+            try {
+                const res = await apiFetch(`/events/${eventId}`);
+                if (res && (res.status === 'success' || res.data || res.event)) {
+                    return res.data || res.event || res;
+                }
+            } catch (err) {
+                console.warn(`apiFetch failed for event ${eventId}, checking fallback:`, err);
+            }
+            if (typeof api.getEventById === 'function') {
+                return api.getEventById(eventId);
+            }
+            const mockEvents = await api.getEvents();
+            const list = mockEvents?.events || mockEvents?.data || (Array.isArray(mockEvents) ? mockEvents : []);
+            return list.find(e => String(e.id) === String(eventId)) || null;
+        },
+        enabled: Boolean(eventId),
+    });
+
+    const normalized = data ? normalizeEvent(data) : null;
+    return {
+        event: normalized,
+        eventLoading: isPending,
+        eventError: error,
+    };
+}
+
+/**
+ * ✏️ Mutation: Updates an existing community event
+ */
+export function useUpdateEvent(eventId) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (eventData) => {
+            const targetId = eventId || eventData.id;
+            const payload = eventData.event ? eventData : { event: eventData };
+
+            const res = await apiFetch(`/events/${targetId}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload),
+            });
+            return res?.data || res;
+        },
+        onSuccess: (data, variables) => {
+            const targetId = eventId || variables?.id;
+            if (targetId) {
+                queryClient.invalidateQueries({ queryKey: ['event', targetId] });
+            }
+            queryClient.invalidateQueries({ queryKey: ['events'] });
         },
     });
 }

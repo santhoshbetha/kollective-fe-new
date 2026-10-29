@@ -112,6 +112,18 @@ export const useAuthStore = create(
                     if (permissions) state.permissions = permissions;
                 }),
 
+            setActiveAccount: (activeAccount) =>
+                set((state) => {
+                    state.activeAccount = activeAccount;
+                }),
+
+            rotateSession: (token, activeAccount, user) =>
+                set((state) => {
+                    if (token) state.token = token;
+                    if (activeAccount) state.activeAccount = activeAccount;
+                    if (user) state.user = user;
+                }),
+
             updateActiveProfile: (profileData) =>
                 set((state) => {
                     if (state.activeAccount) {
@@ -175,6 +187,22 @@ export const useAuthStore = create(
 
             // Action C: 🚪 THE UNIFIED SECURE LOGOUT LIFECYCLE FLUSH
             executeLogout: () => {
+                const token = get().token;
+                if (token && typeof window !== 'undefined') {
+                    try {
+                        const apiOrigin = import.meta.env?.VITE_API_ORIGIN || (import.meta.env?.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api\/v1\/?$/, '') : '');
+                        const API_HOST = apiOrigin || (import.meta.env?.VITE_API_URL || 'http://127.0.0.1:4000').replace(/\/api\/v1\/?$/, '');
+                        fetch(`${API_HOST}/api/users/logout`, {
+                            method: 'DELETE',
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }).catch(() => {});
+                    } catch (e) {
+                        // Ignore network errors on logout
+                    }
+                }
+
                 // 1. Wipe in-memory states safely via Immer mutability draft targets
                 set((state) => {
                     state.token = null;
@@ -228,7 +256,8 @@ export const useAuthStore = create(
                 setTimeout(() => {
                     const currentState = state || useAuthStore.getState() || {};
                     const updates = { isHydrated: true };
-                    const isDev = import.meta.env.DEV;
+                    const isAuthRoute = typeof window !== 'undefined' && ['/login', '/signup', '/register'].some(p => window.location.pathname.startsWith(p));
+                    const isDev = import.meta.env.DEV && import.meta.env.VITE_DISABLE_MOCK_AUTH !== 'true' && !isAuthRoute;
 
                     if (isDev) {
                         // If app started fresh in dev/mock environment, seed default user metrics

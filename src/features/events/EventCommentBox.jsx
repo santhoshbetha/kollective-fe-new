@@ -36,7 +36,7 @@ export function EventCommentBox({ eventId }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full bg-surface-container-low p-4 rounded-2xl border border-white/5 relative">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full bg-surface-container-low p-4 rounded-2xl border border-black/10 dark:border-white/5 relative">
             {commentMutation.isError && (
                 <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 text-sm rounded-xl font-medium">
                     Failed to post update: {commentMutation.error?.message}
@@ -48,7 +48,7 @@ export function EventCommentBox({ eventId }) {
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     placeholder="Coordinate coordination parameters, logistics, updates..."
-                    className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-body-md focus:outline-none focus:border-primary-container transition-colors resize-none h-20 placeholder-text-text-secondary/30 text-text-primary leading-relaxed"
+                    className="w-full bg-surface-container-lowest border border-black/10 dark:border-white/10 rounded-xl p-3 text-body-md focus:outline-none focus:border-primary-container transition-colors resize-none h-20 placeholder-text-text-secondary/50 text-text-primary leading-relaxed"
                     disabled={commentMutation.isPending}
                     maxLength={400}
                 />

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Virtuoso } from 'react-virtuoso';
@@ -9,6 +9,7 @@ import { PostCard } from '../../components/posts/PostCard';
 import { usePostsStore } from '../../store/usePostsStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { processFeedPosts } from '../../utils/feedUtils';
+import { getFeedScrollTarget, clearFeedScrollTarget } from '../../utils/feedScrollManager';
 
 export function CommunitiesFeed() {
     const navigate = useNavigate();
@@ -72,6 +73,113 @@ export function CommunitiesFeed() {
             isProfilePage: false // Explicitly pass context constraints to prevent layout derivation bugs
         });
     }, [allPosts, currentUser, activeAccount]);
+
+    const virtuosoRef = useRef(null);
+    const scrollRestoredRef = useRef(false);
+
+    // Prevent default browser scroll clamping on route back
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+            const original = window.history.scrollRestoration;
+            window.history.scrollRestoration = 'manual';
+            return () => {
+                window.history.scrollRestoration = original;
+            };
+        }
+    }, []);
+
+    // 🎯 SCROLL RESTORATION: Check if returning from post details page
+    const scrollTarget = useMemo(() => {
+        return getFeedScrollTarget(window.location.pathname);
+    }, []);
+
+    // Determine target index within the filtered posts
+    const targetItemIndex = useMemo(() => {
+        if (!scrollTarget || !filteredPosts || filteredPosts.length === 0) return undefined;
+        const targetId = scrollTarget.postId;
+        const targetDisplayId = scrollTarget.displayPostId;
+
+        const idx = filteredPosts.findIndex((p) => {
+            const pId = p?.id ? String(p.id) : '';
+            const pReblogId = p?.reblog?.id ? String(p.reblog.id) : (p?.reblog_of_id ? String(p.reblog_of_id) : '');
+            return (
+                (targetId && (pId === targetId || pReblogId === targetId)) ||
+                (targetDisplayId && (pId === targetDisplayId || pReblogId === targetDisplayId))
+            );
+        });
+
+        return idx >= 0 ? idx : undefined;
+    }, [scrollTarget, filteredPosts]);
+
+    // Precise scroll alignment after initial render
+    useEffect(() => {
+        if (!scrollTarget || scrollRestoredRef.current) return;
+
+        if (targetItemIndex !== undefined) {
+            const targetId = scrollTarget.postId || scrollTarget.displayPostId;
+            // The position the card had on screen before navigating (fallback to 80 if unknown)
+            const targetTop = typeof scrollTarget.cardTop === 'number' ? scrollTarget.cardTop : 80;
+
+            const alignToPost = () => {
+                const el =
+                    (targetId && document.getElementById(`post-${targetId}`)) ||
+                    (scrollTarget.displayPostId && document.getElementById(`post-${scrollTarget.displayPostId}`)) ||
+                    document.querySelector(`[data-post-id="${targetId}"]`) ||
+                    document.querySelector(`[data-display-post-id="${targetId}"]`);
+
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    if (Math.abs(rect.top - targetTop) > 4) {
+                        const desiredScrollY = window.scrollY + rect.top - targetTop;
+                        window.scrollTo({ top: Math.max(0, desiredScrollY), behavior: 'auto' });
+                    }
+
+                    el.classList.add('transition-all', 'duration-700', 'bg-primary-container/10');
+                    setTimeout(() => {
+                        el.classList.remove('bg-primary-container/10');
+                    }, 1500);
+
+                    scrollRestoredRef.current = true;
+                    clearFeedScrollTarget();
+                    return true;
+                } else if (virtuosoRef.current) {
+                    virtuosoRef.current.scrollToIndex({
+                        index: targetItemIndex,
+                        align: 'start',
+                        offset: -targetTop,
+                        behavior: 'auto',
+                    });
+                }
+                return false;
+            };
+
+            const t1 = setTimeout(alignToPost, 60);
+            const t2 = setTimeout(alignToPost, 200);
+            const t3 = setTimeout(() => {
+                alignToPost();
+                scrollRestoredRef.current = true;
+                clearFeedScrollTarget();
+            }, 600);
+
+            return () => {
+                clearTimeout(t1);
+                clearTimeout(t2);
+                clearTimeout(t3);
+            };
+        } else if (scrollTarget.scrollY > 0) {
+            const restoreWindowScroll = () => {
+                window.scrollTo({ top: scrollTarget.scrollY, behavior: 'auto' });
+                scrollRestoredRef.current = true;
+                clearFeedScrollTarget();
+            };
+            const t1 = setTimeout(restoreWindowScroll, 60);
+            const t2 = setTimeout(restoreWindowScroll, 200);
+            return () => {
+                clearTimeout(t1);
+                clearTimeout(t2);
+            };
+        }
+    }, [targetItemIndex, scrollTarget]);
 
     const handleRefreshGesture = async () => {
         // 🧼 Clear out any hidden background buffer counts during a hard pull action
@@ -208,6 +316,7 @@ export function CommunitiesFeed() {
                         )}
 
                         <Virtuoso
+                            ref={virtuosoRef}
                             useWindowScroll
                             data={filteredPosts}
                             /* 
@@ -215,8 +324,25 @@ export function CommunitiesFeed() {
                                This prevents violent layout repaints and enables hardware acceleration on scroll.
                             */
                             computeItemKey={(index, post) => post?.id || index}
-                            // Smooth loading optimization
-                            initialItemCount={filteredPosts.length > 0 ? Math.min(filteredPosts.length, 5) : 0}
+                            initialTopMostItemIndex={
+                                targetItemIndex !== undefined
+                                    ? {
+                                        index: targetItemIndex,
+                                        align: 'start',
+                                        offset: -(typeof scrollTarget?.cardTop === 'number' ? scrollTarget.cardTop : 80),
+                                    }
+                                    : undefined
+                            }
+                            initialScrollTop={
+                                targetItemIndex === undefined && scrollTarget?.scrollY
+                                    ? scrollTarget.scrollY
+                                    : undefined
+                            }
+                            initialItemCount={
+                                targetItemIndex !== undefined || (scrollTarget?.scrollY && scrollTarget.scrollY > 0)
+                                    ? undefined
+                                    : (filteredPosts.length > 0 ? Math.min(filteredPosts.length, 5) : 0)
+                            }
 
                             /* 
                                🚀 Fluidity Secret: Render hidden content 400px *ahead* of the viewport bottom. 

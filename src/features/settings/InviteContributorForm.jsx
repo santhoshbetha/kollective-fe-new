@@ -94,7 +94,8 @@ export default function InviteContributorForm({ activeOrgId, onInviteSuccess }) 
                         <select
                             value={role}
                             onChange={(e) => setRole(e.target.value)}
-                            className="w-full bg-white dark:bg-[#111111] border border-white/10 dark:border-white/5 rounded-xl px-4 py-3 text-base font-bold text-text-primary focus:outline-none focus:border-primary-container cursor-pointer transition-colors"
+                            data-testid="role-assignment-dropdown"
+                            className="role-assignment-dropdown w-full bg-white dark:bg-[#111111] border border-white/10 dark:border-white/5 rounded-xl px-4 py-3 text-base font-bold text-text-primary focus:outline-none focus:border-primary-container cursor-pointer transition-colors"
                         >
                             <option value="contributor" className="bg-white dark:bg-[#111111]">Contributor (Write)</option>
                             <option value="admin" className="bg-white dark:bg-[#111111]">Admin (Manage Roster)</option>
@@ -106,7 +107,8 @@ export default function InviteContributorForm({ activeOrgId, onInviteSuccess }) 
                     <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full sm:w-auto bg-primary-container text-white font-black text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-40 select-none outline-none active:scale-95 h-[48px] flex items-center justify-center gap-2 shrink-0 border-none whitespace-nowrap crimson-glow"
+                        data-testid="invite-member-btn"
+                        className="invite-member-btn w-full sm:w-auto bg-primary-container text-white font-black text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-40 select-none outline-none active:scale-95 h-[48px] flex items-center justify-center gap-2 shrink-0 border-none whitespace-nowrap crimson-glow"
                     >
                         {submitting ? (
                             <>

@@ -88,6 +88,9 @@ export default function AccountSwitcher({
     }
 
     const memberships = currentUser?.memberships?.filter(m => m.status === 'active') || [];
+
+    console.log("memberships:;", memberships);
+    console.log("currentAccount:;", currentAccount);
     const isPersonalActive = !currentAccount || currentAccount.type === 'personal';
 
     return (
@@ -97,7 +100,7 @@ export default function AccountSwitcher({
                 type="button"
                 disabled={isSwitching}
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-full border transition-all duration-200 cursor-pointer select-none text-left ${isOpen
+                className={`navbar-switch-account-tab flex items-center gap-2.5 px-3 py-1.5 rounded-full border transition-all duration-200 cursor-pointer select-none text-left ${isOpen
                     ? 'bg-surface-container-high border-primary-container shadow-md ring-2 ring-primary-container/20'
                     : 'bg-surface-container-lowest/60 hover:bg-surface-container border-white/10 hover:border-white/20'
                     } ${isSwitching ? 'opacity-70 cursor-wait' : ''}`}
@@ -122,7 +125,7 @@ export default function AccountSwitcher({
                 {!compact && (
                     <div className="flex flex-col min-w-0 pr-1">
                         <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-text-primary truncate max-w-[120px] sm:max-w-[150px]">
+                            <span className="navbar-profile-name text-xs font-bold text-text-primary truncate max-w-[120px] sm:max-w-[150px]">
                                 {currentAccount?.name || currentUser?.name}
                             </span>
                             <span
@@ -177,7 +180,7 @@ export default function AccountSwitcher({
                             type="button"
                             disabled={isSwitching}
                             onClick={() => handleSwitch('personal')}
-                            className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all cursor-pointer ${isPersonalActive
+                            className={`account-option account-option-personal w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all cursor-pointer ${isPersonalActive
                                 ? 'bg-primary-container/15 border border-primary-container/30 text-text-primary'
                                 : 'hover:bg-surface-container-high/60 border border-transparent text-text-secondary hover:text-text-primary'
                                 }`}
@@ -235,7 +238,7 @@ export default function AccountSwitcher({
                                         type="button"
                                         disabled={isSwitching}
                                         onClick={() => handleSwitch(org.id)}
-                                        className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all cursor-pointer ${isOrgActive
+                                        className={`account-option account-option-org w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all cursor-pointer ${isOrgActive
                                             ? 'bg-amber-400/15 border border-amber-400/30 text-text-primary'
                                             : 'hover:bg-surface-container-high/60 border border-transparent text-text-secondary hover:text-text-primary'
                                             }`}

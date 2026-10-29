@@ -72,7 +72,7 @@ export function BookmarksFeed({ activeFilter = 'All Categories' }) {
 
     if (filteredBookmarks.length === 0) {
         return (
-            <div className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-surface-container-low shadow-2xl animate-in fade-in duration-200 select-none text-left font-sans">
+            <div data-testid="no-bookmarks-found" className="glass-card rounded-[16px] p-12 text-center border border-white/5 bg-surface-container-low shadow-2xl animate-in fade-in duration-200 select-none text-left font-sans">
                 <Bookmark className="w-8 h-8 text-text-secondary/40 mb-4 block" />
                 <h3 className="font-bold text-text-primary mb-1 text-lg">No saved posts found</h3>
                 <p className="text-text-secondary text-xs leading-relaxed max-w-md font-medium font-sans">
@@ -85,13 +85,13 @@ export function BookmarksFeed({ activeFilter = 'All Categories' }) {
     }
     return (
         /* 🏆 Outer Structural Frame Shield Container */
-        <div className="w-full relative border border-[#262626] bg-[#141414] overflow-hidden shadow-2xl rounded-xl">
+        <div data-testid="bookmarks-feed" className="w-full relative border border-[#262626] bg-[#141414] overflow-hidden shadow-2xl rounded-xl">
             <Virtuoso
                 useWindowScroll
                 data={filteredBookmarks}
                 computeItemKey={(index, post) => post?.id || index}
                 increaseViewportBy={300}
-                overscan={200}
+                overscan={8000}
 
                 endReached={() => {
                     if (hasNextPage && !isFetchingNextPage) fetchNextPage();

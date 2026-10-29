@@ -1,10 +1,11 @@
 // src/pages/ClassifiedsDirectoryPage.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { VirtuosoGrid } from 'react-virtuoso';
 import { PostAdModal } from '../components/modals/PostAdModal';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/auth/useAuthStore';
+import { apiFetch } from '../api/apiClient';
 import {
     ArrowLeft,
     Search,
@@ -156,33 +157,63 @@ export const ClassifiedsDirectoryPage = () => {
     const userState = useStore((state) => state.userState);
     const streetAddress = useStore((state) => state.streetAddress);
     const currentUser = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
 
     const hasAddressOrCoords = Boolean((streetAddress && streetAddress.trim()) || currentUser?.street_address || currentUser?.latitude);
     const hasState = Boolean((userState && userState.trim()) || currentUser?.state || currentUser?.origin_state);
-    const canAccessClassifieds = hasAddressOrCoords || hasState;
+    const canAccessClassifieds = hasAddressOrCoords || hasState || activeAccount?.type === 'organization' || Boolean(currentUser);
 
-    // Baseline mock data collection items array
-    const classifiedAds = useMemo(() => [
-        { id: 1, title: 'Co-op Fresh Eggs', category: 'For Sale', price: '$4/doz', desc: 'Fresh organic eggs from our cage-free backyard coop. Collected daily.', user: '@organic_farm', location: 'East End', expires: '2 days left' },
-        { id: 2, title: 'Math & Science Tutor', category: 'Services', price: '$25/hr', desc: 'High school & early college tutoring. 5 years experience. First session free.', user: '@edu_support', location: 'Heights', expires: '8 hours left' },
-        { id: 3, title: 'Ceramic Mugs & Bowls', category: 'Handmade', price: '$15+', desc: 'Locally spun stoneware mugs and nesting bowls. Dishwasher and microwave safe.', user: '@mud_and_fire', location: 'Downtown', expires: '4 days left' },
-        { id: 4, title: 'Vintage Oak Desk', category: 'For Sale', price: '$120', desc: 'Solid wood build from the late 70s. Minor surface scratches but sturdy structural shape.', user: '@retro_finds', location: 'West Hills', expires: '1 day left' },
-        { id: 5, title: 'Emergency Dog Walking', category: 'Services', price: '$18/hr', desc: 'Available for immediate evening booking. Fully insured local pet lover.', user: '@paws_local', location: 'Midtown', expires: '12 hours left' },
-        { id: 6, title: 'Community Garden Cleanup', category: 'Community', price: 'Free', desc: 'Join us Saturday morning to clear paths and build new raised beds. Coffee provided!', user: '@green_hub', location: 'North Side', expires: '5 days left' },
-        { id: 7, title: 'Sourdough Starter Culture', category: 'Handmade', price: '$5', desc: 'Established 3-year-old active wild yeast culture. Includes care sheet and beginner baking recipe.', user: '@bread_builder', location: 'Heights', expires: '3 days left' },
-        { id: 8, title: 'Bicycle Repair Service', category: 'Services', price: '$30+', desc: 'Tune-ups, tube replacement, gear indexing, and brake adjustments. Fast turnaround time.', user: '@spoke_doctor', location: 'East End', expires: '6 days left' },
-        { id: 9, title: 'Sunny Bedroom Sublet', category: 'Housing', price: '$650/mo', desc: 'Private room in a 3-bedroom collective flat. Shared kitchen and laundry. Utilities included.', user: '@living_well', location: 'Midtown', expires: '6 days left' },
-        { id: 10, title: 'Yard Mowing Helper', category: 'Gigs', price: '$20/hr', desc: 'Need someone with a mower to clear a small backyard lawn this Friday. Mower provided if needed.', user: '@neighbor_j', location: 'North Side', expires: '18 hours left' },
-        { id: 11, title: 'Wool Knit Beanie', category: 'Handmade', price: '$22', desc: 'Handcrafted with 100% merino wool yarn. Super warm, unisex design, various colors.', user: '@cozy_threads', location: 'West Hills', expires: '4 days left' },
-        { id: 12, title: 'Used Lawnmower', category: 'For Sale', price: '$45', desc: 'Gas-powered rotary push mower. Starts on the second pull. Blades recently sharpened.', user: '@garage_clear', location: 'Downtown', expires: '2 days left' },
-        { id: 13, title: 'Local Seed Swap Meet', category: 'Community', price: 'Free', desc: 'Bring your heirloom seeds to trade with local growers this Sunday. Garden tips shared.', user: '@seed_savers', location: 'East End', expires: '4 days left' },
-        { id: 14, title: 'Moving Boxes (Bundle of 15)', category: 'For Sale', price: 'Free', desc: 'Clean, double-walled cardboard shipping boxes. Assorted sizes. Porch pickup.', user: '@moving_onout', location: 'Heights', expires: '1 day left' },
-        { id: 15, title: 'Piano Lessons for Beginners', category: 'Services', price: '$35/hr', desc: 'Adult and child lessons. Focus on classical foundations and reading notation. In-home studio.', user: '@keys_and_chords', location: 'Downtown', expires: '5 days left' },
-        { id: 16, title: 'Leather Tote Bag', category: 'Handmade', price: '$85', desc: 'Full grain vegetable tanned leather. Hand-stitched with waxed thread. Lifetime durability.', user: '@hide_and_stitch', location: 'West Hills', expires: '6 days left' },
-        { id: 17, title: 'Garage Loft Studio', category: 'Housing', price: '$950/mo', desc: 'Detached carriage house apartment. Vaulted ceilings, full bath, compact kitchen setup.', user: '@cozy_spaces', location: 'Heights', expires: '5 days left' },
-        { id: 18, title: 'Help Paint Living Room', category: 'Gigs', price: '$150/flat', desc: 'Need help taping and rolling two coats of latex paint in my living room on Saturday morning.', user: '@home_makeover', location: 'Midtown', expires: '1 day left' },
-        { id: 19, title: 'Organic Tomato Plants', category: 'For Sale', price: '$3/plant', desc: 'Vigorous early girl and cherokee purple starts. Grown from organic seed stock.', user: '@green_thumb', location: 'North Side', expires: '3 days left' }
-    ], []);
+    const isOrg = activeAccount?.type === 'organization';
+    const isOrgNonAdmin = isOrg && !['admin', 'owner', 'lead_organizer'].includes(activeAccount?.role?.toLowerCase());
+
+    const [classifiedAds, setClassifiedAds] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(null);
+
+    const abortControllerRef = useRef(null);
+
+    useEffect(() => {
+        // 1. Immediately abort any prior in-flight request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        // 2. Identity-driven cache eviction: completely purge active listings array in memory
+        setClassifiedAds([]);
+        setIsLoading(true);
+        setFetchError(null);
+
+        const context = activeAccount?.type === 'organization' ? 'organization' : 'personal';
+        const orgId = activeAccount?.type === 'organization' ? activeAccount?.id : null;
+
+        let queryUrl = `/api/classifieds?context=${context}`;
+        if (orgId) {
+            queryUrl += `&organization_id=${encodeURIComponent(orgId)}`;
+        }
+
+        apiFetch(queryUrl, { signal: controller.signal })
+            .then((res) => {
+                if (controller.signal.aborted) return;
+                const items = res?.classifieds || res?.data || (Array.isArray(res) ? res : []);
+                setClassifiedAds(items);
+                setIsLoading(false);
+            })
+            .catch((err) => {
+                if (err.name === 'AbortError' || controller.signal.aborted) {
+                    return;
+                }
+                console.error("Failed to load classified ads:", err);
+                setFetchError(err.message || 'Failed to load ads.');
+                setIsLoading(false);
+            });
+
+        return () => {
+            controller.abort();
+        };
+    }, [activeAccount?.id, activeAccount?.type]);
 
     // 🚀 THE MEMORY BOUNDARY CORRECTION FIX: Memoize filtration paths to block out blank pagination pages bugs
     const sortedAds = useMemo(() => {
@@ -191,7 +222,7 @@ export const ClassifiedsDirectoryPage = () => {
             const matchesCategory = selectedCategory === 'All' || ad.category === selectedCategory;
             const matchesSearch = !queryLower ||
                 (ad.title || '').toLowerCase().includes(queryLower) ||
-                (ad.desc || '').toLowerCase().includes(queryLower);
+                (ad.desc || ad.description || '').toLowerCase().includes(queryLower);
             return matchesCategory && matchesSearch;
         });
 
@@ -276,8 +307,13 @@ export const ClassifiedsDirectoryPage = () => {
 
                     <button
                         type="button"
-                        onClick={() => setIsPostAdOpen(true)}
-                        className="group flex items-center gap-2 bg-amber-800/10 dark:bg-amber-600/20 border border-amber-800/30 dark:border-amber-500/40 text-amber-900 dark:text-amber-400 hover:bg-amber-800/20 dark:hover:bg-amber-600/30 transition-all uppercase tracking-widest px-4 py-2 rounded-xl cursor-pointer font-bold outline-none shadow-xs"
+                        disabled={isOrgNonAdmin}
+                        title={isOrgNonAdmin ? "Only administrators can post advertisements on behalf of this organization." : undefined}
+                        onClick={() => !isOrgNonAdmin && setIsPostAdOpen(true)}
+                        className={cn(
+                            "group flex items-center gap-2 bg-amber-800/10 dark:bg-amber-600/20 border border-amber-800/30 dark:border-amber-500/40 text-amber-900 dark:text-amber-400 hover:bg-amber-800/20 dark:hover:bg-amber-600/30 transition-all uppercase tracking-widest px-4 py-2 rounded-xl font-bold outline-none shadow-xs",
+                            isOrgNonAdmin ? "opacity-50 cursor-not-allowed pointer-events-auto" : "cursor-pointer"
+                        )}
                     >
                         <Plus className="w-4 h-4" />
                         <span>+ Post Ad</span>
@@ -350,7 +386,15 @@ export const ClassifiedsDirectoryPage = () => {
             </div>
 
             {/* Main Classifieds Template Grid */}
-            {sortedAds.length === 0 ? (
+            {isLoading ? (
+                <div className="text-center py-24 font-mono border-2 border-dashed border-[#c8baa6] dark:border-[#383028] bg-[#e9dfd0] dark:bg-[#1c1916] rounded-2xl flex flex-col items-center justify-center p-8 select-none">
+                    <div className="loading-spinner w-10 h-10 border-4 border-amber-800/20 dark:border-amber-500/20 border-t-amber-800 dark:border-t-amber-500 rounded-full animate-spin mb-4" />
+                    <h3 className="font-bold text-base text-[#2c221a] dark:text-[#e5dfd3] mb-1">Retrieving Town Bulletin Dispatches...</h3>
+                    <p className="text-xs text-[#6e5d4f] dark:text-[#a8a090] max-w-sm leading-relaxed font-sans font-medium">
+                        Synchronizing local classified announcements for the active account context.
+                    </p>
+                </div>
+            ) : sortedAds.length === 0 ? (
                 <div className="text-center py-20 font-mono border-2 border-dashed border-[#c8baa6] dark:border-[#383028] bg-[#e9dfd0] dark:bg-[#1c1916] rounded-2xl flex flex-col items-center justify-center p-8 select-none">
                     <span className="material-symbols-outlined text-5xl text-[#8e7d6f] dark:text-[#585040] mb-3 animate-bounce">inbox</span>
                     <h3 className="font-bold text-base text-[#2c221a] dark:text-[#e5dfd3] mb-1">No Active Listings Found</h3>
@@ -476,6 +520,9 @@ export const ClassifiedsDirectoryPage = () => {
                 onClose={() => setIsPostAdOpen(false)}
                 onAdCreated={(newAd) => {
                     console.log('Ad created successfully in directory:', newAd);
+                    if (newAd) {
+                        setClassifiedAds(prev => [newAd, ...prev]);
+                    }
                 }}
             />
 

@@ -228,3 +228,29 @@ export function useVoteOnProposal() {
         },
     });
 }
+
+/**
+ * 🛠️ Hook E: Handles business proposal update mutations
+ */
+export function useUpdateProposal(proposalId) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (updatedData) => {
+            const payload = updatedData.proposal ? updatedData : { proposal: updatedData };
+
+            const res = await apiFetch(`/business_proposals/${proposalId}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload)
+            });
+            return res?.data || res;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['proposals'] });
+            if (proposalId) {
+                queryClient.invalidateQueries({ queryKey: ['proposals', 'detail', proposalId] });
+            }
+        },
+    });
+}
+

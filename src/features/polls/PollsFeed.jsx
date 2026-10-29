@@ -64,7 +64,9 @@ export function PollsFeed({
                 scope === 'all' ||
                 scope === 'world' ||
                 !poll?.scope ||
-                poll?.scope === scope;
+                poll?.scope === scope ||
+                poll?.scope === 'world' ||
+                poll?.scope === 'all';
 
             return matchesSearch && matchesFilter && matchesCategory && matchesScope;
         });

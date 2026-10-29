@@ -40,7 +40,8 @@ export function ProposalsFeed({
     const filteredProposals = useMemo(() => {
         if (!proposals) return [];
         const queryLower = searchQuery.toLowerCase().trim();
-        const categoryTarget = activeCategory.split(' ')[0].toLowerCase();
+        const normalizeCat = (cat) => (cat || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normActive = normalizeCat(activeCategory);
 
         return proposals.filter(prop => {
             // 📍 Geographic Scope Enforcement (100 Miles vs Statewide)
@@ -48,8 +49,11 @@ export function ProposalsFeed({
                 return false;
             }
 
+            const normProp = normalizeCat(prop.category);
             const matchesCategory = activeCategory === 'All' ||
-                (prop.category || '').toLowerCase().includes(categoryTarget);
+                normProp === normActive ||
+                normProp.includes(normActive) ||
+                normActive.includes(normProp);
 
             const matchesSearch = !queryLower ||
                 (prop.title || '').toLowerCase().includes(queryLower) ||
@@ -136,6 +140,7 @@ export function ProposalsFeed({
             <div className="w-full relative">
                 <VirtuosoGrid
                     useWindowScroll
+                    overscan={8000}
                     data={filteredProposals}
                     computeItemKey={(_index, prop) => prop?.id || prop?.title}
                     listClassName="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full"

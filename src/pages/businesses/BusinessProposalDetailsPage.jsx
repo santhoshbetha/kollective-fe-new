@@ -116,13 +116,27 @@ export const BusinessProposalDetailsPage = () => {
   const categoryText = proposal.category || 'General';
   const statusText = proposal.status || 'Active';
   const ownerHandle = proposal.owner_name || (typeof proposal.owner === 'string' ? proposal.owner : proposal.owner?.username) || 'proposer';
+  const ownerAvatar = proposal.ownerAvatar || proposal.owner_avatar || (typeof proposal.owner === 'object' ? proposal.owner?.avatar_url : null);
   const lookingForTags = (Array.isArray(proposal.tags) && proposal.tags.length > 0)
     ? proposal.tags
-    : ['Co-founder', 'Tech Lead', 'Operations'];
+    : ((Array.isArray(proposal.looking_for) && proposal.looking_for.length > 0)
+      ? proposal.looking_for
+      : ['Co-founder', 'Tech Lead', 'Operations']);
+
+  const isOwner = Boolean(
+    user && proposal && (
+      (proposal.user_id && String(proposal.user_id) === String(user.id)) ||
+      (proposal.owner_info?.id && String(proposal.owner_info.id) === String(user.id)) ||
+      (proposal.owner_name && (proposal.owner_name === user.username || proposal.owner_name === user.handle?.replace('@', ''))) ||
+      (typeof proposal.owner === 'string' && (proposal.owner === user.username || proposal.owner === user.handle?.replace('@', ''))) ||
+      user.is_admin ||
+      user.is_moderator
+    )
+  );
 
   return (
     <div className="max-w-[1280px] mx-auto pb-20">
-      {/* Back Link */}
+      {/* Back Link & Edit Header */}
       <div className="sticky top-[80px] z-30 bg-background/90 backdrop-blur-md py-3 mb-6 border-b dark:border-white/5 border-black/5 flex items-center justify-between">
         <button
           onClick={() => navigate('/businesses')}
@@ -131,6 +145,17 @@ export const BusinessProposalDetailsPage = () => {
           <span className="material-symbols-outlined text-sm">arrow_back</span>
           Back to Businesses
         </button>
+
+        {isOwner && (
+          <button
+            onClick={() => navigate(`/proposals/${id}/edit`)}
+            data-testid="edit-proposal-btn"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-primary-container/10 hover:bg-primary-container/20 text-primary-container font-mono text-xs font-bold transition-all border border-primary-container/30 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-sm">edit</span>
+            <span>Edit Proposal</span>
+          </button>
+        )}
       </div>
 
       {/* Hero Banner Section */}
@@ -158,8 +183,12 @@ export const BusinessProposalDetailsPage = () => {
               <span className="bg-primary-container/20 text-primary-container text-sm uppercase font-bold tracking-widest px-2.5 py-1 rounded border border-primary-container/20">
                 {categoryText}
               </span>
-              <div className="flex items-center gap-1 text-text-secondary text-sm">
-                <span className="material-symbols-outlined text-[16px] text-green-400">verified</span>
+              <div className="flex items-center gap-2 text-text-secondary text-sm">
+                {ownerAvatar ? (
+                  <img src={ownerAvatar} alt={ownerHandle} className="w-5 h-5 rounded-full object-cover border border-primary/20 shrink-0" />
+                ) : (
+                  <span className="material-symbols-outlined text-[16px] text-green-400">verified</span>
+                )}
                 <span>Active Coordinator @{ownerHandle}</span>
               </div>
             </div>
@@ -173,6 +202,16 @@ export const BusinessProposalDetailsPage = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row lg:flex-col gap-3 min-w-[200px]">
+            {isOwner && (
+              <button
+                onClick={() => navigate(`/proposals/${id}/edit`)}
+                data-testid="edit-proposal-action-btn"
+                className="border border-primary-container/30 bg-primary-container/10 hover:bg-primary-container/20 text-primary-container px-6 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer font-mono"
+              >
+                <span className="material-symbols-outlined text-sm">edit</span>
+                Edit Proposal
+              </button>
+            )}
             <button
               onClick={handleToggleInterest}
               className={`px-6 py-3.5 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 border-none shadow-lg ${hasInterest
@@ -187,7 +226,7 @@ export const BusinessProposalDetailsPage = () => {
             </button>
             <button
               onClick={() => alert(`Starting channel with Proposer @${ownerHandle} for: ${proposalTitle}`)}
-              className="border border-white/10 hover:border-primary-container/30 text-text-secondary hover:text-white px-6 py-3.5 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 bg-transparent"
+              className="border border-white/10 hover:border-primary-container/30 text-text-secondary hover:text-white px-6 py-3.5 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 bg-transparent cursor-pointer"
             >
               <span className="material-symbols-outlined text-sm">mail</span>
               Contact Proposer

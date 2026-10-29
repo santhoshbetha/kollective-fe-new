@@ -1,8 +1,9 @@
-// src/pages/PostBusinessProposalPage.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateProposal } from '../../features/businesses/useProposalsFeature';
 import { useAuthStore } from '../../store/auth/useAuthStore';
+import { ImageUploader } from '../../components/ImageUploader';
+import { uploadProfileImageToR2 } from '../../utils/uploadMedia';
 import { ChevronDown, X, Sparkles, Info, Target, Landmark, HelpCircle, MapPin, Globe } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,28 @@ export function PostBusinessProposalPage() {
     const navigate = useNavigate();
     const createProposalMutation = useCreateProposal();
     const user = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+    const isOrg = activeAccount?.type === 'organization';
+
+    if (isOrg) {
+        return (
+            <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+                <div className="p-8 rounded-2xl bg-surface-container border border-outline-variant shadow-sm space-y-4">
+                    <span className="material-symbols-outlined text-4xl text-amber-500">lock</span>
+                    <h2 className="text-2xl font-bold text-text-primary">Personal Profile Required</h2>
+                    <p className="text-text-secondary text-sm">
+                        Organizations are not permitted to submit business proposals. Please switch to your personal profile to submit a proposal.
+                    </p>
+                    <button
+                        onClick={() => navigate('/businesses')}
+                        className="px-6 py-2.5 rounded-xl bg-primary-container text-white font-bold text-sm cursor-pointer hover:brightness-110"
+                    >
+                        Return to Businesses
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     const [formData, setFormData] = useState({
         title: '',
@@ -27,6 +50,7 @@ export function PostBusinessProposalPage() {
         fundingGoal: '',
         minInvest: '',
         maxInvest: '',
+        image: '',
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,7 +66,7 @@ export function PostBusinessProposalPage() {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         if (e) e.preventDefault();
         if (!formData.title.trim() || !formData.description.trim() || !formData.fundingGoal) {
             triggerToast('Please fill out the proposal title, description, and funding goal.', 'error');
@@ -51,67 +75,94 @@ export function PostBusinessProposalPage() {
 
         setIsSubmitting(true);
 
-        const goal = parseInt(formData.fundingGoal, 10) || 50000;
-        const minInv = parseInt(formData.minInvest, 10) || 100;
-        const maxInv = parseInt(formData.maxInvest, 10) || 10000;
+        try {
+            let finalImageUrl = formData.image;
+            if (formData.image && (formData.image.startsWith('data:') || formData.image instanceof File)) {
+                finalImageUrl = await uploadProfileImageToR2(formData.image, 'proposal');
+            }
 
-        // 🚀 STABILITY FIX: Wrapped user fields inside an optional chain to block runtime ReferenceErrors if signed out
-        const currentOwnerHandle = user?.username || 'anonymous_organizer';
+            const goal = parseInt(formData.fundingGoal, 10) || 50000;
+            const minInv = parseInt(formData.minInvest, 10) || 100;
+            const maxInv = parseInt(formData.maxInvest, 10) || 10000;
 
-        const proposalData = {
-            name: formData.title.trim(),
-            title: formData.title.trim(),
-            description: formData.description.trim(),
-            category: formData.category,
-            location: formData.location || 'Local District',
-            address: formData.location || 'Local District',
-            fundingGoal: goal,
-            money_required: goal,
-            minInvest: minInv,
-            minimum_amount: minInv,
-            maxInvest: maxInv,
-            maximum_amount: maxInv,
-            funding_required: true,
-            fundingCollected: 0,
-            percent: 0,
-            daysLeft: 45,
-            participants: '0 Members',
-            status: 'New',
-            metadata: {
-                funding_data: {
-                    funding_required: true,
-                    money_required: goal,
-                    fundingGoal: goal,
-                    minimum_amount: minInv,
-                    minInvest: minInv,
-                    maximum_amount: maxInv,
-                    maxInvest: maxInv,
-                    fundingCollected: 0,
-                    percent: 0,
-                    daysLeft: 45,
-                    participants: '0 Members',
-                    status: 'New'
-                },
+            // 🚀 STABILITY FIX: Wrapped user fields inside an optional chain to block runtime ReferenceErrors if signed out
+            const currentOwnerHandle = user?.username || 'anonymous_organizer';
+
+            const userCoords = (() => {
+                if (user?.latitude && user?.longitude) return { latitude: user.latitude, longitude: user.longitude };
+                if (typeof user?.location === 'string') {
+                    const m = user.location.match(/POINT\(\s*([-\d\.]+)\s+([-\d\.]+)\s*\)/i);
+                    if (m) return { longitude: parseFloat(m[1]), latitude: parseFloat(m[2]) };
+                }
+                return null;
+            })();
+
+            const proposalData = {
+                name: formData.title.trim(),
+                title: formData.title.trim(),
+                description: formData.description.trim(),
+                category: formData.category,
                 location: formData.location || 'Local District',
-                looking_for: ['Co-founder', 'Tech Lead', 'Operations'],
-                owner_handle: currentOwnerHandle
-            }
-        };
+                address: formData.location || 'Local District',
+                latitude: userCoords?.latitude,
+                longitude: userCoords?.longitude,
+                profile_image_url: finalImageUrl || null,
+                image: finalImageUrl || null,
+                fundingGoal: goal,
+                money_required: goal,
+                minInvest: minInv,
+                minimum_amount: minInv,
+                maxInvest: maxInv,
+                maximum_amount: maxInv,
+                funding_required: true,
+                fundingCollected: 0,
+                percent: 0,
+                daysLeft: 45,
+                participants: '0 Members',
+                status: 'New',
+                metadata: {
+                    funding_data: {
+                        funding_required: true,
+                        money_required: goal,
+                        fundingGoal: goal,
+                        minimum_amount: minInv,
+                        minInvest: minInv,
+                        maximum_amount: maxInv,
+                        maxInvest: maxInv,
+                        fundingCollected: 0,
+                        percent: 0,
+                        daysLeft: 45,
+                        participants: '0 Members',
+                        status: 'New'
+                    },
+                    location: formData.location || 'Local District',
+                    looking_for: ['Co-founder', 'Tech Lead', 'Operations'],
+                    owner_handle: currentOwnerHandle,
+                    owner_avatar: user?.avatar_url || user?.avatar || '',
+                    image: finalImageUrl || null,
+                    profile_image_url: finalImageUrl || null
+                }
+            };
 
-        createProposalMutation.mutate(proposalData, {
-            onSuccess: () => {
-                triggerToast('Community business proposal successfully published!', 'success');
-                setTimeout(() => {
+            createProposalMutation.mutate(proposalData, {
+                onSuccess: () => {
+                    triggerToast('Community business proposal successfully published!', 'success');
+                    setTimeout(() => {
+                        setIsSubmitting(false);
+                        navigate('/businesses');
+                    }, 1200);
+                },
+                onError: (err) => {
                     setIsSubmitting(false);
-                    navigate('/businesses');
-                }, 1200);
-            },
-            onError: (err) => {
-                setIsSubmitting(false);
-                triggerToast(err?.message || 'Failed to post business proposal.', 'error');
-            }
-        });
+                    triggerToast(err?.message || 'Failed to publish business proposal.', 'error');
+                }
+            });
+        } catch (error) {
+            setIsSubmitting(false);
+            triggerToast(error?.message || 'An error occurred during submission.', 'error');
+        }
     };
+
     return (
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-8 relative space-y-8 bg-[#090d12]X">
             {/* 🥞 Embedded Floating Toast Notification */}
@@ -150,9 +201,10 @@ export function PostBusinessProposalPage() {
                     </button>
                     <button
                         type="button"
+                        data-testid="submit-proposal-btn"
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className="flex-1 sm:flex-none px-8 py-3 bg-primary-container text-white rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all crimson-glow flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed border-none shadow-lg"
+                        className="flex-1 sm:flex-none px-8 py-3 bg-primary-container text-white rounded-xl font-bold hover:brightness-110 active:scale-95 transition-all crimson-glow flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed border-none shadow-lg cursor-pointer"
                     >
                         {isSubmitting ? 'Publishing Matrix...' : 'Post Proposal'}
                     </button>
@@ -285,6 +337,45 @@ export function PostBusinessProposalPage() {
                 </div>
                 {/* 📊 Right Column: Context/Collaboration Information Sidebar */}
                 <aside className="lg:col-span-4 space-y-6">
+
+                    {/* Proposal Image Upload & Preview Card */}
+                    <section className="bg-white dark:bg-[#141414] p-6 rounded-2xl border border-black/10 dark:border-white/5 space-y-4 text-left">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-headline-md text-sm font-bold uppercase tracking-wider text-text-primary dark:text-white font-mono select-none">
+                                Proposal Image
+                            </h3>
+                            <span className="text-[11px] font-mono font-bold text-primary-container uppercase px-2 py-0.5 rounded bg-primary-container/10 border border-primary-container/20">
+                                Banner
+                            </span>
+                        </div>
+
+                        <div className="aspect-video w-full relative rounded-xl overflow-hidden bg-black/40 border border-black/10 dark:border-white/5">
+                            <ImageUploader
+                                inputTestId="proposal-image-input"
+                                mode="banner"
+                                aspectRatio={16 / 9}
+                                value={formData.image}
+                                onChange={(newImage) => setFormData((prev) => ({ ...prev, image: newImage }))}
+                                onImageRemove={() => setFormData((prev) => ({ ...prev, image: '' }))}
+                                label="Upload Proposal Image"
+                                description="Recommended 16:9 banner. Drag & drop or select an image file."
+                            />
+                        </div>
+
+                        <div className="space-y-1.5 pt-2">
+                            <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">
+                                Or enter Image URL directly
+                            </label>
+                            <input
+                                name="image"
+                                value={formData.image && formData.image.startsWith('data:') ? '[Cropped Upload Image]' : (formData.image || '')}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, image: e.target.value }))}
+                                placeholder="https://example.com/proposal-photo.jpg"
+                                type="text"
+                                className="w-full bg-white dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-2.5 text-text-primary dark:text-white text-xs focus:border-primary-container focus:outline-none transition-all font-mono"
+                            />
+                        </div>
+                    </section>
 
                     {/* Visual Strategy Layout Card */}
                     <div className="bg-[#141414] rounded-2xl overflow-hidden border border-white/5 group text-left select-none animate-in fade-in duration-200">

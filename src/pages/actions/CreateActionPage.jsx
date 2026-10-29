@@ -2,12 +2,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateAction } from '../../features/organize/useOrganizeFeature';
+import { useAuthStore } from '../../store/auth/useAuthStore';
 import { DatePicker } from '../../components/ui/date-picker';
 import { cn } from "@/lib/utils"; // Adjust to your project utility directory location
 
 export function CreateActionPage() {
     const navigate = useNavigate();
     const createActionMutation = useCreateAction();
+    const currentUser = useAuthStore((state) => state.user);
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
@@ -58,6 +60,9 @@ export function CreateActionPage() {
             if (!formData.venue.trim()) {
                 newErrors.venue = 'Venue name is required';
             }
+            if (!formData.address.trim()) {
+                newErrors.address = 'Full address is required';
+            }
         } else {
             if (!formData.meetingLink.trim()) {
                 newErrors.meetingLink = 'Meeting link is required';
@@ -78,6 +83,8 @@ export function CreateActionPage() {
 
         // 🚀 STABILITY FIX: Safe fallback data computation matrix to shield against cross-browser ISO crashes
         let formattedTime = 'TBD';
+        let isoStartTime = null;
+        let isoEndTime = null;
         if (formData.date && formData.time) {
             try {
                 const dateObj = new Date(`${formData.date}T${formData.time}`);
@@ -90,6 +97,9 @@ export function CreateActionPage() {
                         hour12: true,
                     });
                     formattedTime = `${dateStr.toUpperCase()} • ${timeStr}`;
+                    isoStartTime = dateObj.toISOString();
+                    const endDateObj = new Date(dateObj.getTime() + 2 * 60 * 60 * 1000);
+                    isoEndTime = endDateObj.toISOString();
                 }
             } catch (e) {
                 console.error("Failed to compile date time snapshot string parameters:", e);
@@ -102,16 +112,45 @@ export function CreateActionPage() {
                 ? `${formData.venue}, ${formData.address || ''}`.trim().replace(/,\$/, '')
                 : 'Virtual Meeting Space';
 
+        const category = formData.type.toLowerCase().replace(/\s+/g, '_');
+        const participationFormat = formData.format === 'In-Person' ? 'in_person' : 'online_virtual';
+
         createActionMutation.mutate({
             type: formData.type,
+            category: category,
             title: formData.title.trim(),
+            name: formData.title.trim(),
             description: formData.description.trim(),
-            time: formattedTime,
+            format: formData.format,
+            participation_format: participationFormat,
+            venue: formData.venue.trim(),
+            location_name: formData.venue.trim(),
+            address: formData.address.trim(),
+            street: formData.address.trim() || formData.venue.trim(),
             location: actionLocation,
             meetingLink: formData.meetingLink.trim(),
+            location_url: formData.meetingLink.trim(),
+            date: formData.date,
+            time: formattedTime,
+            start_time: isoStartTime,
+            end_time: isoEndTime,
+            scope: 'local',
+            target_scope: 'local',
+            latitude: currentUser?.latitude || 30.2672,
+            longitude: currentUser?.longitude || -97.7431,
+            origin_state: currentUser?.state || currentUser?.origin_state || 'TX',
+            city_name: currentUser?.city_name || 'Austin',
+            origin_country: currentUser?.country || 'US'
         }, {
             onSuccess: () => {
                 navigate('/organize');
+            },
+            onError: (err) => {
+                console.error("Failed to launch action:", err);
+                setErrors((prev) => ({
+                    ...prev,
+                    server: err.message || "Failed to initiate action onto backend."
+                }));
             }
         });
     };
@@ -172,12 +211,12 @@ export function CreateActionPage() {
                                     </h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 select-none">
                                         {[
-                                            { type: 'Protest', icon: 'campaign', desc: 'Direct mobilization in public spaces to demand systemic change.' },
-                                            { type: 'Town Hall', icon: 'groups', desc: 'Open forum for community discussion and direct representative engagement.' },
-                                            { type: 'Rally', icon: 'diversity_3', desc: 'A mass gathering to build momentum and show solidarity for a cause.' },
-                                            { type: 'Meeting', icon: 'handshake', desc: 'Strategic coordination or policy discussion among coalition members.' }
+                                            { type: 'Protest', testId: 'action-type-protest', icon: 'campaign', desc: 'Direct mobilization in public spaces to demand systemic change.' },
+                                            { type: 'Town Hall', testId: 'action-type-town-hall', icon: 'groups', desc: 'Open forum for community discussion and direct representative engagement.' },
+                                            { type: 'Rally', testId: 'action-type-rally', icon: 'diversity_3', desc: 'A mass gathering to build momentum and show solidarity for a cause.' },
+                                            { type: 'Meeting', testId: 'action-type-meeting', icon: 'handshake', desc: 'Strategic coordination or policy discussion among coalition members.' }
                                         ].map((item) => (
-                                            <label key={item.type} className="relative group cursor-pointer block">
+                                            <label key={item.type} data-testid={item.testId} className="relative group cursor-pointer block">
                                                 <input
                                                     checked={formData.type === item.type}
                                                     onChange={() => handleInputChange('type', item.type)}
@@ -200,6 +239,7 @@ export function CreateActionPage() {
                                     <div>
                                         <label className="block font-bold text-xs text-text-secondary uppercase tracking-wider mb-2 font-mono select-none">Action Title</label>
                                         <input
+                                            data-testid="action-title-input"
                                             className={cn(
                                                 "w-full bg-white dark:bg-[#0d1117] border rounded-xl px-4 py-3.5 text-text-primary dark:text-white focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all font-sans text-sm md:text-base font-medium",
                                                 errors.title ? 'border-red-500' : 'border-black/10 dark:border-white/10'
@@ -209,12 +249,13 @@ export function CreateActionPage() {
                                             value={formData.title}
                                             onChange={(e) => handleInputChange('title', e.target.value)}
                                         />
-                                        {errors.title && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.title}</p>}
+                                        {errors.title && <p data-testid="title-error" className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.title}</p>}
                                     </div>
 
                                     <div>
                                         <label className="block font-bold text-xs text-text-secondary uppercase tracking-wider mb-2 font-mono select-none">Core Objective</label>
                                         <textarea
+                                            data-testid="action-description-input"
                                             className={cn(
                                                 "w-full bg-white dark:bg-[#0d1117] border rounded-xl px-4 py-3.5 text-text-primary dark:text-white focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all font-sans text-sm md:text-base font-normal min-h-[120px] h-32 resize-none",
                                                 errors.description ? 'border-red-500' : 'border-black/10 dark:border-white/10'
@@ -224,7 +265,7 @@ export function CreateActionPage() {
                                             value={formData.description}
                                             onChange={(e) => handleInputChange('description', e.target.value)}
                                         />
-                                        {errors.description && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.description}</p>}
+                                        {errors.description && <p data-testid="description-error" className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.description}</p>}
                                     </div>
                                 </div>
                             </div>
@@ -242,6 +283,7 @@ export function CreateActionPage() {
                                         <div className="flex p-1 bg-black/[0.02] dark:bg-[#0d1117] rounded-xl border border-black/10 dark:border-white/10 w-fit">
                                             <button
                                                 type="button"
+                                                data-testid="format-in-person-btn"
                                                 onClick={() => handleInputChange('format', 'In-Person')}
                                                 className={cn("px-6 py-2 rounded-lg font-bold text-xs transition-all border-none cursor-pointer outline-none", formData.format === 'In-Person' ? "bg-primary-container text-white crimson-glow" : "text-text-secondary hover:text-text-primary dark:hover:text-white")}
                                             >
@@ -249,6 +291,7 @@ export function CreateActionPage() {
                                             </button>
                                             <button
                                                 type="button"
+                                                data-testid="format-online-btn"
                                                 onClick={() => handleInputChange('format', 'Online')}
                                                 className={cn("px-6 py-2 rounded-lg font-bold text-xs transition-all border-none cursor-pointer outline-none", formData.format === 'Online' ? "bg-primary-container text-white crimson-glow" : "text-text-secondary hover:text-text-primary dark:hover:text-white")}
                                             >
@@ -263,23 +306,26 @@ export function CreateActionPage() {
                                             <div>
                                                 <label className="block font-bold text-xs text-text-secondary uppercase tracking-wider mb-2 font-mono">Venue Name</label>
                                                 <input
+                                                    data-testid="venue-input"
                                                     className={cn("w-full bg-white dark:bg-[#0d1117] border rounded-xl px-4 py-3.5 text-text-primary dark:text-white focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all font-sans text-sm md:text-base font-medium", errors.venue ? 'border-red-500' : 'border-black/10 dark:border-white/10')}
                                                     placeholder="e.g. City Hall Plaza"
                                                     type="text"
                                                     value={formData.venue}
                                                     onChange={(e) => handleInputChange('venue', e.target.value)}
                                                 />
-                                                {errors.venue && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.venue}</p>}
+                                                {errors.venue && <p data-testid="venue-error" className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.venue}</p>}
                                             </div>
                                             <div>
                                                 <label className="block font-bold text-xs text-text-secondary uppercase tracking-wider mb-2 font-mono">Full Address</label>
                                                 <input
-                                                    className="w-full bg-white dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3.5 text-text-primary dark:text-white focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all font-sans text-sm md:text-base font-medium"
+                                                    data-testid="address-input"
+                                                    className={cn("w-full bg-white dark:bg-[#0d1117] border rounded-xl px-4 py-3.5 text-text-primary dark:text-white focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all font-sans text-sm md:text-base font-medium", errors.address ? 'border-red-500' : 'border-black/10 dark:border-white/10')}
                                                     placeholder="Street, City, State, ZIP"
                                                     type="text"
                                                     value={formData.address}
                                                     onChange={(e) => handleInputChange('address', e.target.value)}
                                                 />
+                                                {errors.address && <p data-testid="address-error" className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.address}</p>}
                                             </div>
                                         </div>
                                     ) : (
@@ -287,13 +333,14 @@ export function CreateActionPage() {
                                             <div>
                                                 <label className="block font-bold text-xs text-text-secondary uppercase tracking-wider mb-2 font-mono">Meeting Link (Secure)</label>
                                                 <input
+                                                    data-testid="meeting-link-input"
                                                     className={cn("w-full bg-white dark:bg-[#0d1117] border rounded-xl px-4 py-3.5 text-text-primary dark:text-white focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all font-sans text-sm md:text-base font-medium", errors.meetingLink ? 'border-red-500' : 'border-black/10 dark:border-white/10')}
                                                     placeholder="https://zoom.us..."
                                                     type="url"
                                                     value={formData.meetingLink}
                                                     onChange={(e) => handleInputChange('meetingLink', e.target.value)}
                                                 />
-                                                {errors.meetingLink && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.meetingLink}</p>}
+                                                {errors.meetingLink && <p data-testid="meeting-link-error" className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.meetingLink}</p>}
                                             </div>
                                             <div className="p-4 rounded-xl bg-primary-container/[0.02] border border-primary-container/20 flex gap-3 text-xs select-none">
                                                 <span className="material-symbols-outlined text-primary-container text-base">shield_person</span>
@@ -307,32 +354,44 @@ export function CreateActionPage() {
                                         <div>
                                             <label className="block font-bold text-xs text-text-secondary uppercase tracking-wider mb-2 font-mono">Date</label>
                                             <DatePicker
+                                                data-testid="action-date-picker"
                                                 value={formData.date}
                                                 onChange={(val) => handleInputChange('date', val)}
                                                 className={errors.date ? 'border-red-500' : 'border-black/10 dark:border-white/10'}
                                                 placeholder="Select date"
                                             />
-                                            {errors.date && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.date}</p>}
+                                            {errors.date && <p data-testid="date-error" className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.date}</p>}
                                         </div>
                                         <div>
                                             <label className="block font-bold text-xs text-text-secondary uppercase tracking-wider mb-2 font-mono">Start Time</label>
                                             <input
+                                                data-testid="action-time-input"
                                                 className={cn("w-full bg-white dark:bg-[#0d1117] border rounded-xl px-4 py-3.5 text-text-primary dark:text-white focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all font-sans text-sm md:text-base font-mono font-medium", errors.time ? 'border-red-500' : 'border-black/10 dark:border-white/10')}
                                                 type="time"
                                                 value={formData.time}
                                                 onChange={(e) => handleInputChange('time', e.target.value)}
                                             />
-                                            {errors.time && <p className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.time}</p>}
+                                            {errors.time && <p data-testid="time-error" className="text-red-400 text-xs font-mono font-bold mt-1.5 uppercase tracking-wide select-none"> {errors.time}</p>}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         )}
+
+                        {errors.server && (
+                            <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                                <p data-testid="server-error" className="text-red-400 font-mono text-xs select-none uppercase tracking-wide">
+                                    {errors.server}
+                                </p>
+                            </div>
+                        )}
+
                         {/* Navigation buttons */}
                         <div className="mt-12 flex justify-between items-center border-t border-white/10 pt-8 select-none font-mono text-xs">
                             {step === 2 ? (
                                 <button
                                     type="button"
+                                    data-testid="prev-step-btn"
                                     onClick={handlePrevStep}
                                     className="flex items-center gap-2 text-text-secondary hover:text-white font-bold bg-transparent border-none cursor-pointer transition-all outline-none font-sans"
                                 >
@@ -346,6 +405,7 @@ export function CreateActionPage() {
                             {step === 1 ? (
                                 <button
                                     type="button"
+                                    data-testid="next-step-btn"
                                     onClick={handleNextStep}
                                     className="flex items-center gap-2 bg-primary-container text-white px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-primary-container/20 hover:scale-102 active:scale-95 transition-all cursor-pointer border-none font-sans"
                                 >
@@ -355,6 +415,7 @@ export function CreateActionPage() {
                             ) : (
                                 <button
                                     type="button"
+                                    data-testid="launch-action-btn"
                                     onClick={handleLaunch}
                                     className="flex items-center gap-2 bg-secondary text-black px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-secondary/20 hover:scale-102 active:scale-95 transition-all cursor-pointer border-none font-sans"
                                 >

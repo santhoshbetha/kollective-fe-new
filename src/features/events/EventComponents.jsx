@@ -33,7 +33,7 @@ export function AttendeeStack({ attendees = [], totalCount = 0 }) {
                 {standardAttendees.map((user, idx) => (
                     <div
                         key={user.id || idx}
-                        className="w-7 h-7 rounded-full border-2 border-[#141414] overflow-hidden bg-[#1A1616] shrink-0 shadow-sm"
+                        className="w-7 h-7 rounded-full border-2 border-surface overflow-hidden bg-surface-container-high shrink-0 shadow-sm"
                         title={user.name}
                     >
                         {user.avatar ? (

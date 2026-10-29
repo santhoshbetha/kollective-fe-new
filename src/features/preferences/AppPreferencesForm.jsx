@@ -520,7 +520,9 @@ export function AppPreferencesForm() {
                             <div className="flex items-center justify-between border-b border-white/5 pb-2 select-none">
                                 <div className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-emerald-400 text-[18px] font-bold">verified</span>
-                                    <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-400 font-mono">Resolved Backend Boundaries</span>
+                                    <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-400 font-mono">
+                                        Resolved Backend Boundaries
+                                    </span>
                                 </div>
                                 <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">BE Synchronized</span>
                             </div>

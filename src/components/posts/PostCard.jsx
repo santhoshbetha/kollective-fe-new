@@ -20,6 +20,7 @@ import { LoginPromptModal } from '../modals/LoginPromptModal';
 import { getReplyCount, getReblogCount, getLikeCount } from '../../utils/postHelpers';
 import { KollectiveImagePlayer } from '../../components/KollectiveImagePlayer';
 import { cn } from "@/lib/utils";
+import { saveFeedScrollTarget } from '../../utils/feedScrollManager';
 
 import { ModerationAppealForm } from '../../features/moderation/components/ModerationAppealForm';
 
@@ -45,6 +46,13 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate,
         if (e) e.stopPropagation();
         setShowMenu(false);
         if (post?.id) {
+            const cardEl = e?.currentTarget?.closest('article') || document.getElementById(`post-${post.id}`);
+            saveFeedScrollTarget({
+                postId: post.id,
+                displayPostId: post.id,
+                cardElement: cardEl,
+                scrollY: typeof window !== 'undefined' ? window.scrollY : 0,
+            });
             navigate(`/post/${post.id}`);
         }
     };
@@ -57,6 +65,13 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate,
             window.open(targetUrl, '_blank', 'noopener,noreferrer');
             toast.info('Opening original post link...');
         } else if (post?.id) {
+            const cardEl = e?.currentTarget?.closest('article') || document.getElementById(`post-${post.id}`);
+            saveFeedScrollTarget({
+                postId: post.id,
+                displayPostId: post.id,
+                cardElement: cardEl,
+                scrollY: typeof window !== 'undefined' ? window.scrollY : 0,
+            });
             navigate(`/post/${post.id}`);
             toast.info('Opening post details...');
         } else {
@@ -299,68 +314,47 @@ export const PostCard = React.memo(function PostCard({
     isLast = false,
     standalone = false
 }) {
+    const reblogTargetId = propPost?.reblog?.id ||
+        (typeof propPost?.reblog === 'string' ? propPost.reblog : null) ||
+        propPost?.reblog_of_id ||
+        propPost?.reblogOf;
+
     const storePost = usePostsStore((state) => propPost?.id ? state.entities[propPost.id] : null);
-    const post = storePost || propPost;
-    const storeEntities = usePostsStore((state) => state.entities);
+    const storeReblogTarget = usePostsStore((state) => reblogTargetId ? state.entities[reblogTargetId] : null);
+
+    const post = storePost ? { ...propPost, ...storePost } : propPost;
 
     const currentUser = useAuthStore((state) => state.user);
     const activeAccount = useAuthStore((state) => state.activeAccount);
+    const isOrgNonAdmin = activeAccount?.type === 'organization' && !['admin', 'owner'].includes(activeAccount?.role?.toLowerCase());
+    const orgNonAdminTooltip = "Only administrators can perform social actions on behalf of this organization";
 
     const toggleBookmarkMutation = useToggleBookmark();
     const [isAppealOpen, setIsAppealOpen] = useState(false);
     const [hasAppealed, setHasAppealed] = useState(false);
 
-    const getDisplayPostDebug = (rawPost) => {
-        console.log("here! getDisplayPost rawPost 1: ", rawPost);
-        console.log("here! getDisplayPost typeof rawPost.reblog : ", typeof rawPost.reblog);
-        if (!rawPost) return rawPost;
-        console.log("here! getDisplayPost 2 ");
-        if (rawPost.reblog && typeof rawPost.reblog === 'object') return rawPost.reblog;
-        console.log("here! getDisplayPost 3");
-        if (rawPost.reblog && typeof rawPost.reblog === 'string' && storeEntities[rawPost.reblog]) return storeEntities[rawPost.reblog];
-        console.log("here! getDisplayPost 4");
-        if (rawPost.reblog_of_id && storeEntities[rawPost.reblog_of_id]) return storeEntities[rawPost.reblog_of_id];
-        console.log("here! getDisplayPost 5");
-        if (rawPost.reblogOf && storeEntities[rawPost.reblogOf]) return storeEntities[rawPost.reblogOf];
-        console.log("here! getDisplayPost 6");
-        return rawPost;
-    };
+    const displayPost = storeReblogTarget || (post?.reblog && typeof post.reblog === 'object' ? post.reblog : post);
+    const rawAuthor = displayPost?.author || post?.author;
+    const postOrg = displayPost?.organization || post?.organization;
+    const hasOrgAttribution = Boolean(
+        displayPost?.organization_id ||
+        post?.organization_id ||
+        postOrg ||
+        rawAuthor?.type === 'organization'
+    );
+    const orgDisplayName = postOrg?.name || postOrg?.display_name || (rawAuthor?.type === 'organization' ? rawAuthor?.name : null) || 'Metro Tenant Union';
 
-    const getDisplayPostX = (rawPost) => {
-        if (!rawPost) return rawPost;
-        if (rawPost.reblog && typeof rawPost.reblog === 'object') return rawPost.reblog;
-        if (rawPost.reblog && typeof rawPost.reblog === 'string' && storeEntities[rawPost.reblog]) return storeEntities[rawPost.reblog];
-        if (rawPost.reblog_of_id && storeEntities[rawPost.reblog_of_id]) return storeEntities[rawPost.reblog_of_id];
-        if (rawPost.reblogOf && storeEntities[rawPost.reblogOf]) return storeEntities[rawPost.reblogOf];
-        return rawPost;
-    };
-
-    const getDisplayPost = (rawPost) => {
-        if (!rawPost) return rawPost;
-
-        // 🚀 THE MASTER SYNC FIX: 
-        // If the post is a reblog, pull the original content's ID and extract it 
-        // straight out of our normalized Zustand entity dictionary (Single Source of Truth).
-        if (rawPost.reblog && rawPost.reblog.id && storeEntities[rawPost.reblog.id]) {
-            return storeEntities[rawPost.reblog.id];
-        }
-
-        // Fallback A: If the store hasn't normalized this nested target id yet, fall back to the inline object safely
-        if (rawPost.reblog && typeof rawPost.reblog === 'object') {
-            return rawPost.reblog;
-        }
-
-        // Fallback B: Legacy string key fallback safety checks
-        if (rawPost.reblog && typeof rawPost.reblog === 'string' && storeEntities[rawPost.reblog]) {
-            return storeEntities[rawPost.reblog];
-        }
-
-        return rawPost;
-    };
-
-
-    const displayPost = getDisplayPost(post);
-    const author = displayPost?.author || post?.author;
+    const author = hasOrgAttribution ? {
+        id: displayPost?.organization_id || post?.organization_id || postOrg?.id || rawAuthor?.id,
+        name: orgDisplayName,
+        username: postOrg?.username || (rawAuthor?.type === 'organization' ? rawAuthor?.username : 'metro_tenants'),
+        handle: postOrg?.username ? `@${postOrg.username}` : (rawAuthor?.type === 'organization' ? rawAuthor?.handle : '@metro_tenants'),
+        avatar: postOrg?.avatar_url || (rawAuthor?.type === 'organization' ? rawAuthor?.avatar : '/default-org.jpg'),
+        avatar_url: postOrg?.avatar_url || (rawAuthor?.type === 'organization' ? rawAuthor?.avatar_url : '/default-org.jpg'),
+        type: 'organization',
+        role: 'Organization',
+        verified: true
+    } : rawAuthor;
 
     const reblogsCount = getReblogCount(displayPost);
     const likesCount = getLikeCount(displayPost);
@@ -397,23 +391,9 @@ export const PostCard = React.memo(function PostCard({
     const isAlreadyReblogged = !!(post?.reblogged || post?.has_reblogged || displayPost?.reblogged || displayPost?.has_reblogged);
 
     const targetData = isRebloggedPost
-        ? (post?.reblog || {})  // Real source content for bookmarking logic
+        ? (displayPost || post?.reblog || {})  // Real source content for bookmarking logic
         : post;
 
-    console.log("here! PostCard storeEntities : ", storeEntities);
-    console.log("here! PostCard propPost : ", propPost?.id, propPost?.content, propPost?.likes_count);
-    console.log("here! PostCard storePost : ", storePost?.id, storePost?.content, storePost?.likes_count);
-    console.log("here! PostCard post : ", post?.id, post?.content, post?.likes_count, post);
-    console.log("here! PostCard displayPost : ", displayPost?.id, displayPost?.content, displayPost?.likes_count, displayPost?.liked, displayPost?.bookmarked);
-    console.log("here! PostCard targetData : ", targetData?.id, targetData?.content, targetData?.likes_count);
-
-    // Derive active saved state parameters cleanly from incoming data matrices
-    // 🚀 THE DEEP DEBUG FIX: Force the individual card to explicitly subscribe 
-    // to its own dynamic entity slice in the Zustand store memory.
-    // const livePost = usePostsStore(
-    //     React.useCallback((state) => state.entities[targetPostId] || post, [targetPostId, post])
-    // );
-    //const isBookmarked = Boolean(livePost?.bookmarked || livePost?.isBookmarked || livePost?.rsvp === 'Interested');
     const isLiked = Boolean(
         targetData?.liked ||
         targetData?.has_liked ||
@@ -426,19 +406,6 @@ export const PostCard = React.memo(function PostCard({
         post?.bookmarked ||
         post?.isBookmarked
     );
-    console.log('PostCard isBookmarked', isBookmarked);
-    console.log('PostCard post?.content', post?.content);
-    console.log('PostCard post?.bookmarked', post?.bookmarked);
-    console.log('PostCard targetData?.bookmarked', targetData?.bookmarked);
-    console.log('PostCard targetData?.isBookmarked', targetData?.isBookmarked);
-    console.log('PostCard displayPost?.bookmarked', displayPost?.bookmarked);
-    console.log('PostCard displayPost?.isBookmarked', displayPost?.isBookmarked);
-    console.log('PostCard isLiked', isLiked);
-    console.log('PostCard isBookmarked', isBookmarked);
-    console.log('PostCard post?.reblogged', post?.reblogged);
-    console.log('PostCard targetData?.reblogged', targetData?.reblogged);
-    console.log('PostCard displayPost?.reblogged', displayPost?.reblogged);
-    //console.log('PostCard livePost', livePost);
 
     const { toggleLike, toggleReblog, toggleBookmark, isActionPending } = usePostActions();
     const rsvpMutation = useRsvpToAction();
@@ -462,6 +429,7 @@ export const PostCard = React.memo(function PostCard({
 
     const handleLikeClick = (e) => {
         if (e) e.stopPropagation();
+        if (isOrgNonAdmin) return;
         if (!isAuthenticated) {
             triggerLoginPrompt("Please log in to like posts.");
             return;
@@ -478,7 +446,8 @@ export const PostCard = React.memo(function PostCard({
 
     const handleReblogClick = (e) => {
         if (e) e.stopPropagation();
-        if (isSelf || isAlreadyReblogged) return;
+        if (isOrgNonAdmin) return;
+        if (isSelf) return;
         if (!isAuthenticated) {
             triggerLoginPrompt("Please log in to reblog posts.");
             return;
@@ -490,7 +459,6 @@ export const PostCard = React.memo(function PostCard({
 
     const handleBookmarkClick = (e) => {
         if (e) e.stopPropagation();
-        if (isSelf) return; ``
         if (!isAuthenticated) {
             triggerLoginPrompt("Please log in to bookmark posts.");
             return;
@@ -512,7 +480,16 @@ export const PostCard = React.memo(function PostCard({
             triggerLoginPrompt("Please log in to comment on posts.");
             return;
         }
-        if (targetPostId) navigate(`/post/${targetPostId}`);
+        if (targetPostId) {
+            const cardEl = e?.currentTarget?.closest('article') || document.getElementById(`post-${post?.id}`);
+            saveFeedScrollTarget({
+                postId: post?.id,
+                displayPostId: targetPostId,
+                cardElement: cardEl,
+                scrollY: typeof window !== 'undefined' ? window.scrollY : 0,
+            });
+            navigate(`/post/${targetPostId}`);
+        }
     };
 
     const handleJoinCircleClick = (e) => {
@@ -526,6 +503,7 @@ export const PostCard = React.memo(function PostCard({
 
     const handleJoinActionClick = (e) => {
         if (e) e.stopPropagation();
+        if (isOrgNonAdmin) return;
         if (!isAuthenticated) {
             triggerLoginPrompt("Please log in to join actions.");
             return;
@@ -637,7 +615,7 @@ export const PostCard = React.memo(function PostCard({
         e.stopPropagation();
         handleToggleMenu();
     };
-    const authorHandle = displayPost?.author?.handle || post?.author?.handle || `@${(displayPost?.author?.name || post?.author?.name || 'user').toLowerCase().replace(/\s+/g, '')}@kollective.social`;
+    const authorHandle = author?.handle || displayPost?.author?.handle || post?.author?.handle || `@${(author?.name || 'user').toLowerCase().replace(/\s+/g, '')}@kollective.social`;
     const domain = displayPost?.domain || post?.domain || 'universeodon.com';
 
     const handleCardClick = useCallback((e) => {
@@ -661,16 +639,19 @@ export const PostCard = React.memo(function PostCard({
             activeMenuSetShowMenu = null;
             return;
         }
-        console.log("handleCardClick displayPost?.id : ", displayPost?.id);
-        console.log("handleCardClick post?.id : ", post?.id);
+        const cardEl = e.currentTarget || document.getElementById(`post-${post?.id}`);
+        saveFeedScrollTarget({
+            postId: post?.id,
+            displayPostId: displayPost?.id,
+            cardElement: cardEl,
+            scrollY: typeof window !== 'undefined' ? window.scrollY : 0,
+        });
         if (displayPost?.id) {
             navigate(`/post/${displayPost?.id}`);
         } else {
             navigate(`/post/${post?.id}`);
         }
-    }, [navigate, displayPost?.id, post?.id]);
-
-    console.log("PostCard Post 22 : ", post?.id, post?.content, post?.likes_count);
+    }, [navigate, displayPost?.id, post?.id, showMenu]);
 
     const isSoftDeleted = Boolean(
         post?.is_deleted ||
@@ -713,11 +694,16 @@ export const PostCard = React.memo(function PostCard({
 
         return (
             <>
-                <article className={cn(
-                    "p-6 flex flex-col gap-4 border-b border-[#262626] bg-[#141414] transition-all relative select-none",
-                    isLast ? "border-transparent" : "border-black/20 dark:border-white/10",
-                    standalone ? "glass-card rounded-[20px] border border-amber-500/20 shadow-xl" : "border-l-4 border-l-amber-500/60"
-                )}>
+                <article
+                    id={post?.id ? `post-${post.id}` : undefined}
+                    data-post-id={post?.id}
+                    data-display-post-id={displayPost?.id}
+                    className={cn(
+                        "p-6 flex flex-col gap-4 border-b border-[#262626] bg-[#141414] transition-all relative select-none",
+                        isLast ? "border-transparent" : "border-black/20 dark:border-white/10",
+                        standalone ? "glass-card rounded-[20px] border border-amber-500/20 shadow-xl" : "border-l-4 border-l-amber-500/60"
+                    )}
+                >
                     {/* Header info */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -837,6 +823,9 @@ export const PostCard = React.memo(function PostCard({
         return (
             <>
                 <article
+                    id={post?.id ? `post-${post.id}` : undefined}
+                    data-post-id={post?.id}
+                    data-display-post-id={displayPost?.id}
                     onClick={handleCardClick}
                     // Replace Line 12 in Part 2 layout frame code block with this:
                     className={cn(
@@ -995,12 +984,16 @@ export const PostCard = React.memo(function PostCard({
                                 {/* Reblog/Boost action button */}
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleReblogClick(); }}
-                                    disabled={isActionPending || isAlreadyReblogged}
+                                    disabled={isActionPending || isAlreadyReblogged || isOrgNonAdmin}
                                     className={cn(
-                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent cursor-pointer",
-                                        isAlreadyReblogged ? "text-emerald-500 font-extrabold cursor-default opacity-80" : "hover:text-text-primary hover:scale-105 active:scale-95"
+                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent",
+                                        isOrgNonAdmin
+                                            ? "opacity-30 cursor-not-allowed"
+                                            : isAlreadyReblogged
+                                            ? "text-emerald-500 font-extrabold cursor-default opacity-80"
+                                            : "cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95"
                                     )}
-                                    title="Boost"
+                                    title={isOrgNonAdmin ? orgNonAdminTooltip : "Boost"}
                                 >
                                     <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}>
                                         repeat
@@ -1016,12 +1009,15 @@ export const PostCard = React.memo(function PostCard({
                                         e.stopPropagation();
                                         handleLikeClick();
                                     }}
-                                    disabled={isActionPending}
+                                    disabled={isActionPending || isOrgNonAdmin}
                                     className={cn(
-                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95",
+                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent",
+                                        isOrgNonAdmin
+                                            ? "opacity-30 cursor-not-allowed"
+                                            : "cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95",
                                         post?.liked ? "text-primary-container font-extrabold" : ""
                                     )}
-                                    title={post?.liked ? "Unlike" : "Like"}
+                                    title={isOrgNonAdmin ? orgNonAdminTooltip : post?.liked ? "Unlike" : "Like"}
                                 >
                                     <span
                                         className="material-symbols-outlined text-[18px]"
@@ -1037,11 +1033,15 @@ export const PostCard = React.memo(function PostCard({
                             {/* Interactive Campaign/Action Button Core Interface */}
                             <Button
                                 onClick={(e) => { e.stopPropagation(); handleJoinActionClick(); }}
+                                disabled={isActionPending || isOrgNonAdmin}
+                                title={isOrgNonAdmin ? orgNonAdminTooltip : undefined}
                                 className={cn(
-                                    "px-5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all cursor-pointer shadow-md active:scale-95 border",
-                                    isActionJoined
-                                        ? "bg-white/5 text-primary-container border-white/10"
-                                        : "bg-primary-container text-white border-transparent hover:brightness-110 crimson-glow"
+                                    "px-5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 border",
+                                    isOrgNonAdmin
+                                        ? "opacity-30 cursor-not-allowed pointer-events-none bg-white/5 text-text-secondary border-white/5"
+                                        : isActionJoined
+                                        ? "bg-white/5 text-primary-container border-white/10 cursor-pointer"
+                                        : "bg-primary-container text-white border-transparent hover:brightness-110 crimson-glow cursor-pointer"
                                 )}
                             >
                                 {isActionJoined ? '✓ Joined Action' : 'Join the Action'}
@@ -1070,7 +1070,11 @@ export const PostCard = React.memo(function PostCard({
     // STANDARD / CAROUSEL POSTS
     return (
         <>
-            <div
+            <article
+                id={post?.id ? `post-${post.id}` : undefined}
+                data-post-id={post?.id}
+                data-display-post-id={displayPost?.id}
+                data-testid="post-card"
                 onClick={handleCardClick}
                 className={cn(
                     "p-5 border-b border-[#262626] transition-all group relative bg-[#141414] cursor-pointer",
@@ -1104,7 +1108,7 @@ export const PostCard = React.memo(function PostCard({
                             <UserHoverCard author={author}>
                                 <div className="flex flex-col min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="font-bold text-text-primary text-sm md:text-base hover:underline truncate">
+                                        <span className="post-author-tag font-bold text-text-primary text-sm md:text-base hover:underline truncate">
                                             {author?.name}
                                         </span>
                                         {author?.role && (
@@ -1125,11 +1129,11 @@ export const PostCard = React.memo(function PostCard({
                             </UserHoverCard>
 
                             {/* Organization Secondary Sub-Attribution Banner */}
-                            {author?.type === 'organization' && (
+                            {hasOrgAttribution && rawAuthor && rawAuthor.name !== author.name && (
                                 <div className="mt-2 flex items-center gap-1.5 text-xs text-text-secondary bg-white/[0.02] border border-white/5 px-2.5 py-1 rounded-lg w-fit">
                                     <span>posted by</span>
                                     <span className="font-bold text-primary-container hover:underline cursor-pointer flex items-center gap-1">
-                                        {author.name}
+                                        {rawAuthor.name}
                                     </span>
                                 </div>
                             )}
@@ -1214,13 +1218,18 @@ export const PostCard = React.memo(function PostCard({
                             {/* Share / Reblog Sync Action button */}
                             <button
                                 onClick={(e) => { e.stopPropagation(); handleReblogClick(); }}
-                                disabled={isSelf || isActionPending || isAlreadyReblogged}
+                                disabled={isSelf || isActionPending || isOrgNonAdmin}
                                 className={cn(
-                                    "flex items-center gap-1.5 font-bold text-xs transition-colors border-none bg-transparent cursor-pointer",
-                                    isSelf ? "opacity-30 cursor-not-allowed" :
-                                        isAlreadyReblogged ? "text-emerald-500 font-extrabold cursor-default" : "hover:text-emerald-500"
+                                    "reblog-btn flex items-center gap-1.5 font-bold text-xs transition-colors border-none bg-transparent",
+                                    isOrgNonAdmin
+                                        ? "opacity-30 cursor-not-allowed"
+                                        : isSelf
+                                        ? "opacity-30 cursor-not-allowed"
+                                        : isAlreadyReblogged
+                                        ? "text-emerald-500 font-extrabold cursor-pointer"
+                                        : "hover:text-emerald-500 cursor-pointer"
                                 )}
-                                title={isSelf ? "Own post" : isAlreadyReblogged ? "Reblogged" : "Reblog"}
+                                title={isOrgNonAdmin ? orgNonAdminTooltip : isSelf ? "Own post" : isAlreadyReblogged ? "Undo reblog" : "Reblog"}
                             >
                                 <span
                                     className="material-symbols-outlined text-[18px]"
@@ -1237,12 +1246,15 @@ export const PostCard = React.memo(function PostCard({
                                     e.stopPropagation();
                                     handleLikeClick();
                                 }}
-                                disabled={isActionPending}
+                                disabled={isActionPending || isOrgNonAdmin}
                                 className={cn(
-                                    "flex items-center gap-1.5 font-bold text-xs transition-colors bg-transparent border-none cursor-pointer",
+                                    "like-btn flex items-center gap-1.5 font-bold text-xs transition-colors bg-transparent border-none",
+                                    isOrgNonAdmin
+                                        ? "opacity-30 cursor-not-allowed"
+                                        : "cursor-pointer",
                                     (displayPost?.liked) ? "text-primary-container font-extrabold" : "hover:text-white"
                                 )}
-                                title="Like"
+                                title={isOrgNonAdmin ? orgNonAdminTooltip : "Like"}
                             >
                                 <span className="material-symbols-outlined text-[18px]"
                                     style={{ fontVariationSettings: (displayPost?.liked) ? "'FILL' 1" : "'FILL' 0" }}>
@@ -1266,17 +1278,22 @@ export const PostCard = React.memo(function PostCard({
                         ) : (
                             <button
                                 onClick={handleBookmarkClick}
-                                disabled={isActionPending || isSelf}
+                                disabled={isActionPending}
+                                data-testid="bookmark-btn"
+                                aria-label={isBookmarked ? "Remove bookmark" : "Bookmark post"}
+                                aria-pressed={isBookmarked}
                                 className={cn(
                                     "flex items-center justify-center p-1.5 rounded-full transition-colors border-none bg-transparent ml-auto cursor-pointer",
-                                    isSelf ? "opacity-30 cursor-not-allowed" :
-                                        (displayPost?.bookmarked) ? "text-amber-500 hover:bg-white/5" : "hover:text-text-primary hover:bg-white/5"
+                                    isBookmarked
+                                        ? "text-amber-500 hover:bg-white/5 active-bookmarked"
+                                        : "text-text-secondary hover:text-text-primary hover:bg-white/5"
                                 )}
-                                title="Bookmark"
+                                title={isBookmarked ? "Bookmarked" : "Bookmark"}
                             >
                                 <span
+                                    data-testid="bookmark-icon"
                                     className="material-symbols-outlined text-[18px]"
-                                    style={{ fontVariationSettings: (displayPost?.bookmarked) ? "'FILL' 1" : "'FILL' 0" }}
+                                    style={{ fontVariationSettings: isBookmarked ? "'FILL' 1" : "'FILL' 0" }}
                                 >
                                     bookmark
                                 </span>
@@ -1298,7 +1315,7 @@ export const PostCard = React.memo(function PostCard({
                     onClose={() => setIsLoginPromptOpen(false)}
                     message={loginPromptMessage}
                 />
-            </div>
+            </article>
         </>
     );
 }, (prevProps, nextProps) => {
@@ -1306,14 +1323,13 @@ export const PostCard = React.memo(function PostCard({
     return (
         prevProps.post?.id === nextProps.post?.id &&
         prevProps.post?.liked === nextProps.post?.liked &&
-        prevProps.post?.bookmarked === nextProps.post?.bookmarked &&
+        (prevProps.post?.bookmarked ?? prevProps.post?.isBookmarked) === (nextProps.post?.bookmarked ?? nextProps.post?.isBookmarked) &&
+        (prevProps.post?.reblogged ?? prevProps.post?.has_reblogged) === (nextProps.post?.reblogged ?? nextProps.post?.has_reblogged) &&
         getReblogCount(prevProps.post) === getReblogCount(nextProps.post) &&
         getLikeCount(prevProps.post) === getLikeCount(nextProps.post) &&
         getReplyCount(prevProps.post) === getReplyCount(nextProps.post) &&
-        prevProps.isCircleJoined === nextProps.isCircleJoined &&
-        prevProps.isActionPending === nextProps.isActionPending &&
-        prevProps.showMenu === nextProps.showMenu &&
-        prevProps.isLast === nextProps.isLast
+        prevProps.isLast === nextProps.isLast &&
+        prevProps.standalone === nextProps.standalone
     );
 });
 

@@ -52,13 +52,6 @@ export function processFeedPosts(posts, options = {}) {
         const targetPost = (post.reblog && typeof post.reblog === 'object') ? post.reblog : post;
         const targetAuthor = targetPost.author || targetPost.account || targetPost.postedBy;
 
-        // 2. Rule 1: Self-Content Exclusion Rule (Home & Community Feeds)
-        // Hide self-authored posts and reblogs of own posts from Home/Community feeds
-        if (!isProfilePage) {
-            if (isCurrentUserAuthor(itemAuthor) || isCurrentUserAuthor(targetAuthor)) {
-                continue;
-            }
-        }
 
         // 3. Rule 2: Reblog Deduplication Rule
         // Find canonical post ID for deduplication

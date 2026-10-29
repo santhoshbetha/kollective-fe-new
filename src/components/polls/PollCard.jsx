@@ -9,10 +9,14 @@ export const PollCard = ({ poll }) => {
     const [votingStates, setVotingStates] = useState({}); // Tracking loading status of votes per pollId
     const voteInPollMutation = useVoteInPoll();
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+    const isOrgNonAdmin = activeAccount?.type === 'organization' && !['admin', 'owner'].includes(activeAccount?.role?.toLowerCase());
+    const orgNonAdminTooltip = "Only administrators can perform social actions on behalf of this organization";
 
     const cryptoVoteMutation = useCryptographicVote();
 
     const handleSelectOption = (pollId, optionIndex) => {
+        if (isOrgNonAdmin) return;
         setSelectedOptions((prev) => ({
             ...prev,
             [pollId]: optionIndex,
@@ -20,6 +24,7 @@ export const PollCard = ({ poll }) => {
     };
 
     const handleVoteSubmit = (pollId) => {
+        if (isOrgNonAdmin) return;
         if (!isAuthenticated) {
             navigate('/login');
             return;
@@ -32,14 +37,15 @@ export const PollCard = ({ poll }) => {
 
         setVotingStates((prev) => ({ ...prev, [pollId]: true }));
 
-        voteInPollMutation.mutate(pollId, optionIndex, {
+        const targetId = actualPoll?.id || poll?.id || pollId;
+        voteInPollMutation.mutate({ pollId: targetId, optionIndex }, {
             onSuccess: () => {
                 setVotingStates((prev) => ({ ...prev, [pollId]: false }));
             },
             onError: (err) => {
                 setVotingStates((prev) => ({ ...prev, [pollId]: false }));
                 console.error('Error submitting vote:', err);
-                alert('Failed to submit your vote. Please try again.');
+                alert(err?.message || 'Failed to submit your vote. Please try again.');
             }
         });
     };
@@ -53,6 +59,7 @@ export const PollCard = ({ poll }) => {
         return percent;
     };
 
+    const currentUser = useAuthStore((state) => state.user);
     const actualPoll = poll?.poll || poll;
     const authorName = typeof poll?.author === 'object' ? (poll?.author?.username || poll?.author?.name || 'user') : (poll?.author || 'user');
     const authorAvatar = typeof poll?.author === 'object' ? (poll?.author?.avatar_url || poll?.author?.avatar) : (poll?.authorAvatar || null);
@@ -67,12 +74,22 @@ export const PollCard = ({ poll }) => {
     const pollCategory = poll?.category || 'Poll';
     const pollOptions = poll?.options || actualPoll?.options || [];
 
+    const isOwnPoll = Boolean(currentUser && (
+        currentUser.username === authorName ||
+        currentUser.id === poll?.user_id ||
+        currentUser.id === actualPoll?.user_id ||
+        currentUser.id === poll?.author_id ||
+        (typeof poll?.author === 'object' && poll?.author?.id === currentUser.id)
+    ));
+
     return (
         <article
             key={poll?.id}
-            className={`glass-card rounded-2xl p-6 shadow-xl border-l-4 transition-all ${isPollActive && !hasVoted
-                ? 'border-l-primary-container border-t border-r border-b border-white/5'
-                : 'border-white/5 border'
+            className={`glass-card rounded-2xl p-6 shadow-xl border-l-4 transition-all ${hasVoted
+                ? 'border-l-emerald-500/80 border-t border-r border-b border-white/5'
+                : isPollActive
+                    ? 'border-l-primary-container border-t border-r border-b border-white/5'
+                    : 'border-white/5 border'
                 }`}
         >
             {/* Author Metadata */}
@@ -92,6 +109,11 @@ export const PollCard = ({ poll }) => {
                     <div>
                         <div className="flex items-center gap-2">
                             <span className="font-bold text-md text-text-primary">@{authorName}</span>
+                            {isOwnPoll && (
+                                <span className="bg-primary-container/20 text-primary-container px-2 py-0.5 rounded text-[11px] font-bold border border-primary-container/30 uppercase tracking-wider">
+                                    My Poll
+                                </span>
+                            )}
                             <span className="w-1 h-1 bg-text-text-secondary rounded-full"></span>
                             <span className="text-[14px] text-text-secondary">{poll?.time || 'Just now'}</span>
                         </div>
@@ -101,6 +123,14 @@ export const PollCard = ({ poll }) => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {hasVoted && (
+                        <span className="bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full text-[12px] font-extrabold border border-emerald-500/20 uppercase tracking-wider flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                task_alt
+                            </span>
+                            Voted
+                        </span>
+                    )}
                     {pollScope && (
                         <span className="bg-primary-container/10 text-primary-container px-2.5 py-1 rounded-full text-[12px] font-extrabold border border-primary-container/20 uppercase tracking-wider flex items-center gap-1">
                             <span>
@@ -174,10 +204,15 @@ export const PollCard = ({ poll }) => {
                         return (
                             <button
                                 key={idx}
+                                disabled={isOrgNonAdmin}
+                                title={isOrgNonAdmin ? orgNonAdminTooltip : undefined}
                                 onClick={() => handleSelectOption(poll?.id, idx)}
-                                className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between group cursor-pointer ${isSelected
-                                    ? 'border-primary-container bg-primary-container/10'
-                                    : 'border-white/5 bg-surface-container/35 hover:border-primary-container/30 hover:bg-surface-container/50'
+                                className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between group ${
+                                    isOrgNonAdmin
+                                        ? 'border-white/5 bg-surface-container/20 opacity-40 cursor-not-allowed'
+                                        : isSelected
+                                        ? 'border-primary-container bg-primary-container/10 cursor-pointer'
+                                        : 'border-white/5 bg-surface-container/35 hover:border-primary-container/30 hover:bg-surface-container/50 cursor-pointer'
                                     }`}
                             >
                                 <span className={`text-sm font-bold transition-colors ${isSelected ? 'text-text-primary' : 'text-text-secondary group-hover:text-text-primary'
@@ -208,8 +243,13 @@ export const PollCard = ({ poll }) => {
                 {isPollActive && !hasVoted && (
                     <button
                         onClick={() => handleVoteSubmit(poll?.id)}
-                        disabled={votingStates[poll?.id] || selectedOptions[poll?.id] === undefined}
-                        className="bg-primary-container text-white px-6 py-2 rounded-lg font-bold text-sm hover:brightness-110 active:scale-95 transition-all shadow-md disabled:opacity-40"
+                        disabled={votingStates[poll?.id] || selectedOptions[poll?.id] === undefined || isOrgNonAdmin}
+                        title={isOrgNonAdmin ? orgNonAdminTooltip : undefined}
+                        className={`bg-primary-container text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-md ${
+                            isOrgNonAdmin
+                                ? 'opacity-40 cursor-not-allowed'
+                                : 'hover:brightness-110 active:scale-95 disabled:opacity-40 cursor-pointer'
+                        }`}
                     >
                         {votingStates[poll?.id] ? 'Voting...' : 'Cast Vote'}
                     </button>

@@ -9,14 +9,18 @@ import * as api from '../../api/mockApi';
 export function useHomeTimeline() {
     const activeTab = useStore((state) => state.homeFeedTab);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
     const importFetchedPosts = usePostsStore((state) => state.importFetchedPosts);
     const { countryCode, countryName } = useCountry();
     const countryKey = countryCode || countryName || 'US';
 
+    const accountContext = activeAccount?.type === 'organization' ? 'organization' : 'personal';
+    const accountId = activeAccount?.id || 'personal';
+
     return useInfiniteQuery({
         // 🚀 THE TIMELINE CACHE MAP KEY: Matches your global syncAllCacheQueries partial matchers
-        queryKey: ['timeline', 'home', activeTab, isAuthenticated, countryKey],
-        queryFn: async ({ pageParam }) => {
+        queryKey: ['timeline', 'home', activeTab, accountContext, accountId, isAuthenticated, countryKey],
+        queryFn: async ({ pageParam, signal }) => {
             let filterQuery = '';
             let sortQuery = 'sort=newest';
 
@@ -33,20 +37,36 @@ export function useHomeTimeline() {
             const countryParam = (!isAuthenticated && detectedCountry)
                 ? `&country=${encodeURIComponent(detectedCountry)}&country_code=${encodeURIComponent(countryCode || 'US')}`
                 : '';
-            const path = `/posts?${sortQuery}${filterQuery}${countryParam}${cursorParam}`;
+            const contextParam = `context=${encodeURIComponent(accountContext)}`;
+            const path = `/timeline?${contextParam}&${sortQuery}${filterQuery}${countryParam}${cursorParam}`;
 
             let rawData;
             try {
-                rawData = await apiFetch(path);
+                rawData = await apiFetch(path, { signal });
             } catch (err) {
+                if (signal?.aborted || err?.name === 'AbortError') {
+                    throw err;
+                }
                 console.warn('apiFetch failed for home timeline, falling back to mockApi', err);
                 rawData = await api.getPosts({ tab: activeTab, max_id: pageParam, country: detectedCountry });
             }
 
             // Standardize shapes into a reliable internal contract:
-            const posts = Array.isArray(rawData)
+            const rawPosts = Array.isArray(rawData)
                 ? rawData
                 : (rawData?.data || rawData?.posts || rawData?.posts?.data || []);
+
+            const posts = rawPosts.map((p) => {
+                if (!p) return p;
+                const authorObj = typeof p.author === 'string'
+                    ? { name: p.author, username: p.author.toLowerCase().replace(/\s+/g, '_'), type: accountContext }
+                    : p.author;
+                return {
+                    ...p,
+                    text: p.text || p.content || p.body,
+                    author: authorObj,
+                };
+            });
 
             const nextCursor = rawData?.next_cursor ?? rawData?.nextCursor ?? rawData?.nextPageId ?? null;
 
@@ -68,7 +88,7 @@ export function useHomeTimeline() {
 
         staleTime: 5 * 60 * 1000,
         gcTime: 30 * 60 * 1000,
-        refetchOnMount: false,
+        refetchOnMount: true,
         refetchOnWindowFocus: false,
     });
 }

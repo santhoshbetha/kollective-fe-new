@@ -4,6 +4,7 @@ import { EmojiSelector } from '../EmojiSelector';
 import { PollComposer } from '../../features/polls/PollComposer';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { extractAndMergeHashtags } from '../../utils/tagParser';
+import { apiFetch } from '../../api/apiClient';
 import { Globe, MapPin, Flag, Users, Image as ImageIcon, Smile, BarChart3, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter } from '../ui/Dialog';
 import { Loader2 } from 'lucide-react';
@@ -25,14 +26,24 @@ export function CreatePostForm({
 
     const [audience, setAudience] = useState('World');
     const [postIdentity, setPostIdentity] = useState(initialIdentity);
+
+    useEffect(() => {
+        if (activeAccount?.type === 'organization') {
+            setPostIdentity('organization');
+        } else {
+            setPostIdentity('personal');
+        }
+    }, [activeAccount]);
     const [showIdentityDropdown, setShowIdentityDropdown] = useState(false);
     const [contentType, setContentType] = useState('post');
     const [postTab, setPostTab] = useState('text');
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
 
-    const [images, setImages] = useState([]);
-    const [imageAlts, setImageAlts] = useState([]);
+    const [uploadedAttachments, setUploadedAttachments] = useState([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const [editingAltIndex, setEditingAltIndex] = useState(null);
+    const [altDraft, setAltDraft] = useState('');
     const [linkUrl, setLinkUrl] = useState('');
 
     const [cwText, setCwText] = useState('');
@@ -47,7 +58,7 @@ export function CreatePostForm({
 
     const characterLimit = 500;
     const charsLeft = characterLimit - content.length;
-    const hasContent = content.trim() || images.length > 0 || linkUrl.trim();
+    const hasContent = content.trim() || uploadedAttachments.length > 0 || linkUrl.trim();
 
     const isSubmitDisabled = contentType === 'voice'
         ? (!title.trim() && !hasContent) || charsLeft < 0 || !protocolSigned
@@ -71,14 +82,86 @@ export function CreatePostForm({
         setShowPollComposer(false);
     };
 
-    const handleFileChange = (e) => {
-        if (e.target.files) {
-            const files = Array.from(e.target.files);
-            const urls = files.map(file => URL.createObjectURL(file));
-            setImages(prev => [...prev, ...urls].slice(0, 4));
-            setImageAlts(prev => [...prev, ...urls.map(() => '')].slice(0, 4));
-            setPostTab('image');
+    const handleFileChange = async (e) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const files = Array.from(e.target.files).slice(0, 4 - uploadedAttachments.length);
+        console.log("[CreatePostForm] handleFileChange files count:", files.length);
+        if (files.length === 0) return;
+
+        setIsUploading(true);
+        setPostTab('image');
+
+        // Create local preview items immediately for snappy UX
+        const initialPreviews = files.map((file) => ({
+            id: null,
+            preview: URL.createObjectURL(file),
+            url: null,
+            alt: '',
+            isUploading: true,
+            file
+        }));
+
+        setUploadedAttachments((prev) => [...prev, ...initialPreviews]);
+
+        for (const file of files) {
+            try {
+                const contentType = file.type || 'image/png';
+                const filename = file.name || 'image.png';
+                console.log("[CreatePostForm] Requesting presign for:", filename, contentType);
+                const presignRes = await apiFetch(`/media/presign?filename=${encodeURIComponent(filename)}&content_type=${encodeURIComponent(contentType)}`);
+                console.log("[CreatePostForm] Presign response:", presignRes);
+                const uploadUrl = presignRes?.upload_url || presignRes?.data?.upload_url;
+                const finalAssetUrl = presignRes?.final_asset_url || presignRes?.data?.final_asset_url;
+
+                if (uploadUrl) {
+                    console.log("[CreatePostForm] Uploading to PUT:", uploadUrl);
+                    const putRes = await fetch(uploadUrl, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': contentType,
+                        },
+                        body: file,
+                    });
+                    console.log("[CreatePostForm] PUT response status:", putRes.status);
+                }
+
+                console.log("[CreatePostForm] Registering media at POST /media");
+                const mediaRes = await apiFetch('/media', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        media: {
+                            url: finalAssetUrl,
+                            media_type: contentType
+                        }
+                    })
+                });
+                console.log("[CreatePostForm] POST /media response:", mediaRes);
+
+                const mediaId = mediaRes?.data?.id || mediaRes?.id;
+
+                setUploadedAttachments((prev) =>
+                    prev.map((att) =>
+                        att.file === file
+                            ? {
+                                ...att,
+                                id: mediaId,
+                                url: finalAssetUrl,
+                                isUploading: false
+                            }
+                            : att
+                    )
+                );
+            } catch (err) {
+                console.error("[CreatePostForm] Failed to upload media:", file.name, err);
+                setUploadedAttachments((prev) =>
+                    prev.filter((att) => att.file !== file)
+                );
+            }
         }
+
+        console.log("[CreatePostForm] All files processed. Setting isUploading false.");
+        setIsUploading(false);
+        e.target.value = '';
     };
 
     const handleSubmit = (e) => {
@@ -95,12 +178,15 @@ export function CreatePostForm({
 
         if (!finalTitle && !hasContent && !isPollActive) return;
 
-        const authorDetails = postIdentity === 'organization' ? {
-            name: currentOrg?.name || 'Organization Node',
-            handle: currentOrg?.handle || (currentOrg?.username ? `@${currentOrg.username}` : '@org'),
-            role: currentOrg?.role || activeAccount?.role || 'Organization',
+        const isOrgMode = activeAccount?.type === 'organization' || postIdentity === 'organization';
+        const activeOrg = activeAccount?.type === 'organization' ? activeAccount : currentOrg;
+
+        const authorDetails = isOrgMode ? {
+            name: activeOrg?.name || activeOrg?.display_name || 'Organization Node',
+            handle: activeOrg?.handle || (activeOrg?.username ? `@${activeOrg.username}` : '@org'),
+            role: activeOrg?.role || activeAccount?.role || 'Organization',
             verified: true,
-            avatar: currentOrg?.avatar || '/default-org.jpg',
+            avatar: activeOrg?.avatar || activeOrg?.avatar_url || '/default-org.jpg',
             type: 'organization'
         } : undefined;
 
@@ -124,12 +210,13 @@ export function CreatePostForm({
             category: contentType === 'voice' ? 'voice' : 'post',
             target_scope: targetScope,
             visibility: visibility,
-            organization_id: postIdentity === 'organization' ? currentOrg?.id : undefined,
+            organization_id: isOrgMode ? (activeOrg?.id || currentOrg?.id) : undefined,
             tags: completeTagsPayloadArray,
             community: 'General Feed',
             audience: audience,
-            images: postTab === 'image' && images.length > 0 ? images : undefined,
-            imageAlts: postTab === 'image' && images.length > 0 ? imageAlts : undefined,
+            images: uploadedAttachments.map(a => a.url).filter(Boolean),
+            imageAlts: uploadedAttachments.map(a => a.alt || ''),
+            media_ids: uploadedAttachments.map(a => a.id).filter(Boolean),
             link: postTab === 'link' ? linkUrl.trim() : undefined,
             contentWarning: showCwInput && cwText.trim() ? cwText.trim() : undefined,
             poll: isPollActive ? {
@@ -145,8 +232,7 @@ export function CreatePostForm({
                 // 1. Clear all post field elements on successful execution 
                 setTitle('');
                 setContent('');
-                setImages([]);
-                setImageAlts([]);
+                setUploadedAttachments([]);
                 setLinkUrl('');
                 setCwText('');
                 setShowCwInput(false);
@@ -156,13 +242,11 @@ export function CreatePostForm({
                 queryClient.invalidateQueries({ queryKey: ['timeline', 'home', activeTab] });
                 queryClient.invalidateQueries({ queryKey: ['timeline'] });
                 queryClient.invalidateQueries({ queryKey: ['profile'] });
+                queryClient.invalidateQueries({ queryKey: ['polls'] });
 
-                // 2. Render success popup modal
-                setFeedbackModal({
-                    type: 'success',
-                    title: 'Broadcast Successful',
-                    message: 'Your post has been published to the feed successfully!'
-                });
+                // Close the composer modal immediately
+                if (typeof setCreatePostOpen === 'function') setCreatePostOpen(false);
+                if (typeof onOpenChange === 'function') onOpenChange(false);
             },
             onError: (err) => {
                 console.error("Failed to create post:", err);
@@ -202,28 +286,45 @@ export function CreatePostForm({
         };
     }, [showIdentityDropdown, showAudienceDropdown, showEmojiDropdown]);
     const renderImageGrid = () => {
-        if (images.length === 0) return null;
+        if (uploadedAttachments.length === 0) return null;
         return (
             <div className={cn(
                 "grid gap-2 aspect-[16/10] w-full max-h-64 rounded-xl overflow-hidden relative select-none",
-                images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                uploadedAttachments.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
             )}>
-                {images.map((src, index) => (
-                    <div key={`img-grid-${index}`} className="w-full h-full relative group overflow-hidden bg-neutral-950 rounded-xl border border-black/5 dark:border-white/5">
-                        <img src={src} alt="" className="w-full h-full object-cover" />
+                {uploadedAttachments.map((att, index) => (
+                    <div
+                        key={`img-grid-${index}`}
+                        data-testid="media-preview"
+                        className="w-full h-full relative group overflow-hidden bg-neutral-950 rounded-xl border border-black/5 dark:border-white/5"
+                    >
+                        <img
+                            src={att.preview || att.url}
+                            alt={att.alt || `Preview ${index + 1}`}
+                            className="w-full h-full object-cover"
+                        />
                         <button
                             type="button"
-                            onClick={() => setImages(prev => prev.filter((_, i) => i !== index))}
+                            onClick={() => setUploadedAttachments(prev => prev.filter((_, i) => i !== index))}
                             className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/70 hover:bg-black/90 text-white cursor-pointer border-none flex items-center justify-center font-sans font-bold text-xs shadow-md z-10 outline-none"
+                            aria-label={`Remove image ${index + 1}`}
                         >
                             ✕
                         </button>
-                        <div className={cn(
-                            "absolute bottom-2 left-2 px-2 py-0.5 text-[10px] font-black rounded-md flex items-center gap-1 uppercase tracking-wider text-white z-10",
-                            imageAlts[index] ? 'bg-emerald-600/90' : 'bg-amber-600/90'
-                        )}>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setEditingAltIndex(index);
+                                setAltDraft(att.alt || '');
+                            }}
+                            className={cn(
+                                "absolute bottom-2 left-2 px-2 py-0.5 text-[10px] font-black rounded-md flex items-center gap-1 uppercase tracking-wider text-white z-10 cursor-pointer border-none outline-none",
+                                att.alt ? 'bg-emerald-600/90' : 'bg-amber-600/90'
+                            )}
+                            aria-label={`Describe image ${index + 1}`}
+                        >
                             ALT
-                        </div>
+                        </button>
                     </div>
                 ))}
             </div>
@@ -319,7 +420,7 @@ export function CreatePostForm({
                             rows={showPollComposer ? 3 : 5}
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            className="w-full bg-white dark:bg-[#111111] border border-black/10 dark:border-white/5 rounded-xl p-4 text-base font-medium text-text-primary dark:text-white focus:outline-none focus:border-primary-container resize-none leading-relaxed transition-colors placeholder:text-text-secondary/30"
+                            className="post-composer-input w-full bg-white dark:bg-[#111111] border border-black/10 dark:border-white/5 rounded-xl p-4 text-base font-medium text-text-primary dark:text-white focus:outline-none focus:border-primary-container resize-none leading-relaxed transition-colors placeholder:text-text-secondary/30"
                         />
                         {showEmojiDropdown && (
                             <EmojiSelector
@@ -330,7 +431,7 @@ export function CreatePostForm({
                         )}
                     </div>
 
-                    {postTab === 'image' && images.length > 0 && <div className="pt-1">{renderImageGrid()}</div>}
+                    {uploadedAttachments.length > 0 && <div className="pt-1">{renderImageGrid()}</div>}
 
                     {/* 📊 DYNAMIC INLINE POLL INJECTION PLATFORM */}
                     {showPollComposer && (
@@ -354,6 +455,7 @@ export function CreatePostForm({
                             onClick={() => { setPostTab('image'); setTimeout(() => document.getElementById('modal-img-upload')?.click(), 50); }}
                             className="p-2.5 bg-transparent text-text-secondary hover:text-text-primary border-none cursor-pointer outline-none transition-colors"
                             title="Attach Media"
+                            aria-label="Attach Media"
                         >
                             <ImageIcon className="w-4 h-4" />
                         </button>
@@ -365,6 +467,12 @@ export function CreatePostForm({
                             className="hidden"
                             onChange={handleFileChange}
                         />
+                        {isUploading && (
+                            <span className="flex items-center gap-1.5 text-xs text-primary-container font-mono font-bold px-2">
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                Uploading...
+                            </span>
+                        )}
                         <button
                             type="button"
                             onClick={() => setShowEmojiDropdown(!showEmojiDropdown)}
@@ -404,8 +512,8 @@ export function CreatePostForm({
                         <span className={cn("text-xs font-mono font-bold select-none", charsLeft < 0 ? 'text-rose-500' : 'text-text-secondary/30')}>{charsLeft}</span>
                         <button
                             type="submit"
-                            disabled={isSubmitDisabled || mutation.isPending}
-                            className="px-5 py-2.5 bg-primary-container text-white font-black text-xs rounded-xl hover:brightness-105 active:scale-95 transition-all border-none uppercase tracking-wider disabled:opacity-40 outline-none select-none crimson-glow"
+                            disabled={isSubmitDisabled || mutation.isPending || isUploading}
+                            className="publish-btn px-5 py-2.5 bg-primary-container text-white font-black text-xs rounded-xl hover:brightness-105 active:scale-95 transition-all border-none uppercase tracking-wider disabled:opacity-40 outline-none select-none crimson-glow cursor-pointer"
                         >
                             {mutation.isPending ?
                                 <div className="flex items-center gap-2">
@@ -419,6 +527,60 @@ export function CreatePostForm({
                     </div>
                 </div>
             </form>
+
+            {/* 🖼️ ALT TEXT MODAL */}
+            {editingAltIndex !== null && (
+                <Dialog open={editingAltIndex !== null} onOpenChange={(open) => !open && setEditingAltIndex(null)}>
+                    <DialogContent className="max-w-[420px] bg-white dark:bg-[#141414] text-text-primary dark:text-white border border-black/10 dark:border-white/10 rounded-2xl p-6 shadow-2xl text-left font-sans animate-in fade-in duration-150">
+                        <DialogHeader className="border-b border-black/5 dark:border-white/10 pb-4 p-0 bg-transparent flex flex-row items-center justify-between select-none">
+                            <DialogTitle className="text-lg font-black text-text-primary dark:text-white flex items-center gap-2 tracking-tight uppercase text-sm">
+                                Describe Image (Alt Text)
+                            </DialogTitle>
+                            <DialogClose onClick={() => setEditingAltIndex(null)} />
+                        </DialogHeader>
+                        <div className="py-4 space-y-3">
+                            <p className="text-xs text-text-secondary">
+                                Provide alternative text describing the image for accessibility.
+                            </p>
+                            <input
+                                type="text"
+                                placeholder="Describe image (alt text)..."
+                                value={altDraft}
+                                onChange={(e) => setAltDraft(e.target.value)}
+                                className="w-full bg-black/5 dark:bg-[#1e1e1e] border border-black/10 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-text-primary dark:text-white outline-none focus:border-primary-container"
+                                autoFocus
+                            />
+                        </div>
+                        <DialogFooter className="flex justify-end gap-2 pt-3 border-t-0 p-0 font-mono font-bold text-xs tracking-wider select-none">
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    const targetAttachment = uploadedAttachments[editingAltIndex];
+                                    const newAlt = altDraft.trim();
+                                    setUploadedAttachments((prev) =>
+                                        prev.map((a, i) => i === editingAltIndex ? { ...a, alt: newAlt } : a)
+                                    );
+                                    setEditingAltIndex(null);
+
+                                    if (targetAttachment?.id) {
+                                        try {
+                                            await apiFetch(`/media/${targetAttachment.id}`, {
+                                                method: 'PUT',
+                                                body: JSON.stringify({ description: newAlt })
+                                            });
+                                        } catch (e) {
+                                            console.error("Failed to update attachment description:", e);
+                                        }
+                                    }
+                                }}
+                                className="px-5 py-2.5 bg-primary-container text-white font-black rounded-xl hover:brightness-105 active:scale-95 transition-all border-none uppercase tracking-wider outline-none cursor-pointer"
+                            >
+                                Save
+                            </button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
 
             {/* 🚀 UPGRADED DYNAMIC TOAST FEEDBACK INTERCEPTOR */}
             {feedbackModal && (

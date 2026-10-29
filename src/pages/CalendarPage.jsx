@@ -20,7 +20,7 @@ export function CalendarPage() {
 
     if (!canAccessCalendar) {
         return (
-            <div className="max-w-[700px] mx-auto my-16 p-8 bg-[#141414] border border-[#262626] rounded-2xl shadow-2xl text-center space-y-6 animate-in fade-in duration-200">
+            <div className="max-w-[700px] mx-auto my-16 p-8 bg-surface-container border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl text-center space-y-6 animate-in fade-in duration-200">
                 <div className="w-16 h-16 rounded-2xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center mx-auto text-primary-container">
                     <span className="material-symbols-outlined text-3xl">location_off</span>
                 </div>

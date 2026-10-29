@@ -93,6 +93,16 @@ export default function TeamManagement({ activeOrgId, userRole }) {
                 <p className="text-lg text-text-secondary mt-0.5 font-medium">Manage writing, publication, and moderation permissions within this organization.</p>
             </div>
 
+            {!canManageTeam && (
+                <div
+                    data-testid="org-workspace-locked-banner"
+                    className="org-workspace-locked-banner p-4 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-semibold rounded-xl flex items-center gap-3 w-full select-none"
+                >
+                    <ShieldAlert className="w-5 h-5 shrink-0 text-amber-400" />
+                    <span>You must be an organization administrator to manage team profiles or settings details.</span>
+                </div>
+            )}
+
             {canManageTeam && (
                 <InviteContributorForm onInviteSuccess={handleInviteSuccess} />
             )}
@@ -104,7 +114,7 @@ export default function TeamManagement({ activeOrgId, userRole }) {
                     </h3>
                 </div>
 
-                <div className="bg-surface-container-low border border-black/10 dark:border-white/10 rounded-2xl overflow-hidden shadow-xl">
+                <div className="team-roster-table bg-surface-container-low border border-black/10 dark:border-white/10 rounded-2xl overflow-hidden shadow-xl" data-testid="team-roster-table">
                     <ul className="divide-y dark:divide-white/5 divide-black/5">
                         {activeMembers.length === 0 ? (
                             <li className="p-12 text-center text-sm font-medium text-text-secondary/50 italic flex flex-col items-center justify-center gap-2 select-none">

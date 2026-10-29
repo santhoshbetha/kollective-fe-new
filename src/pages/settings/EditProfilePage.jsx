@@ -1,8 +1,8 @@
-// src/pages/EditProfilePage.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { useUpdateUser } from '../../features/profile/useProfileFeature';
+import { apiFetch } from '../../api/apiClient';
 import { ImageUploader } from '../../components/ImageUploader';
 import { ArrowLeft, MapPin, Globe, Loader2, Save, X } from 'lucide-react';
 import { cn } from "@/lib/utils";
@@ -10,17 +10,21 @@ import { cn } from "@/lib/utils";
 export const EditProfilePage = () => {
     const navigate = useNavigate();
     const user = useAuthStore((state) => state.user);
+    const activeAccount = useAuthStore((state) => state.activeAccount);
+    const isOrg = activeAccount?.type === 'organization';
+    const profileEntity = isOrg ? activeAccount : user;
+
     const updateUserMutation = useUpdateUser();
 
-    // Form states prefilled with unified fallback user attributes context details
-    const [name, setName] = useState(user?.name || user?.display_name || '');
-    const [handle, setHandle] = useState(user?.handle || user?.username || '');
+    // Form states prefilled with unified fallback user or organization context details
+    const [name, setName] = useState(profileEntity?.name || profileEntity?.display_name || '');
+    const [handle, setHandle] = useState(profileEntity?.username || (profileEntity?.handle ? profileEntity.handle.replace('@', '') : ''));
     const [email, setEmail] = useState(user?.email || '');
-    const [bio, setBio] = useState(user?.bio || '');
-    const [location, setLocation] = useState(user?.location || '');
-    const [website, setWebsite] = useState(user?.website || '');
-    const [avatar, setAvatar] = useState(user?.avatar_url || user?.avatar || '');
-    const [banner, setBanner] = useState(user?.cover_image_url || user?.banner || user?.headerImage || '');
+    const [bio, setBio] = useState(profileEntity?.bio || '');
+    const [location, setLocation] = useState(profileEntity?.location || profileEntity?.city_name || '');
+    const [website, setWebsite] = useState(profileEntity?.website || profileEntity?.official_website || '');
+    const [avatar, setAvatar] = useState(profileEntity?.avatar_url || profileEntity?.avatar || '');
+    const [banner, setBanner] = useState(profileEntity?.cover_image_url || profileEntity?.banner || profileEntity?.headerImage || '');
     const [isSavingLocal, setIsSavingLocal] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -28,23 +32,43 @@ export const EditProfilePage = () => {
         setIsSavingLocal(true);
 
         try {
-            // 🚀 BE PIPELINE SHIFT: Pass raw local media sources directly.
-            // The backend transaction will intercept these parameters and optimize them asynchronously.
-            await updateUserMutation.mutateAsync({
-                name,
-                display_name: name,
-                handle,
-                email,
-                bio,
-                location,
-                website,
-                avatar_url: avatar,
-                cover_image_url: banner,
-            });
+            if (isOrg) {
+                // Update organization profile via org-settings endpoint
+                const payload = {
+                    name,
+                    display_name: name,
+                    bio,
+                    location,
+                    website,
+                    official_website: website,
+                    avatar_url: avatar,
+                    avatar,
+                    cover_image_url: banner,
+                    banner
+                };
+                await apiFetch('/org-settings/profile', {
+                    method: 'PUT',
+                    body: JSON.stringify(payload)
+                });
+                useAuthStore.getState().updateActiveProfile(payload);
+            } else {
+                // 🚀 BE PIPELINE SHIFT: Pass raw local media sources directly for personal user.
+                await updateUserMutation.mutateAsync({
+                    name,
+                    display_name: name,
+                    handle,
+                    email,
+                    bio,
+                    location,
+                    website,
+                    avatar_url: avatar,
+                    cover_image_url: banner,
+                });
+            }
 
             navigate('/settings');
         } catch (err) {
-            console.error('Error updating user profile context parameters:', err);
+            console.error('Error updating profile context parameters:', err);
         } finally {
             setIsSavingLocal(false);
         }
@@ -61,8 +85,14 @@ export const EditProfilePage = () => {
 
             {/* Header Block Section */}
             <div className="border-b border-white/5 pb-4 select-none">
-                <h2 className="text-2xl font-black text-text-primary dark:text-white tracking-tight">Edit Profile</h2>
-                <p className="text-sm text-text-secondary mt-0.5 font-medium">Update your profile information and appearance parameters</p>
+                <h2 className="text-2xl font-black text-text-primary dark:text-white tracking-tight">
+                    {isOrg ? 'Edit Organization Profile' : 'Edit Profile'}
+                </h2>
+                <p className="text-sm text-text-secondary mt-0.5 font-medium">
+                    {isOrg
+                        ? 'Update organization profile information and appearance parameters'
+                        : 'Update your profile information and appearance parameters'}
+                </p>
             </div>
 
             {/* Profile Graphics Canvas Settings Card Layout */}
@@ -125,20 +155,22 @@ export const EditProfilePage = () => {
                         </div>
                     </div>
 
-                    {/* Email Configuration Field */}
-                    <div className="space-y-2">
-                        <label className="text-xs font-black text-text-secondary uppercase tracking-widest select-none block ml-1">
-                            Email Coordinates
-                        </label>
-                        <input
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-black/[0.01] dark:bg-[#111111] border border-black/10 dark:border-white/5 rounded-xl px-4 py-3 text-base font-bold text-text-primary dark:text-white focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all focus:outline-none font-mono"
-                            type="email"
-                            placeholder="writer@domain.com"
-                            required
-                        />
-                    </div>
+                    {/* Email Configuration Field (Personal user profiles only) */}
+                    {!isOrg && (
+                        <div className="space-y-2">
+                            <label className="text-xs font-black text-text-secondary uppercase tracking-widest select-none block ml-1">
+                                Email Coordinates
+                            </label>
+                            <input
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full bg-black/[0.01] dark:bg-[#111111] border border-black/10 dark:border-white/5 rounded-xl px-4 py-3 text-base font-bold text-text-primary dark:text-white focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all focus:outline-none font-mono"
+                                type="email"
+                                placeholder="writer@domain.com"
+                                required
+                            />
+                        </div>
+                    )}
 
                     {/* Bio & Mission Statement Textarea */}
                     <div className="space-y-2">

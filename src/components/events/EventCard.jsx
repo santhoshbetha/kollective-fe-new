@@ -97,7 +97,7 @@ export const EventCard = ({ event, onInterestToggle, isPending }) => {
     return (
         <article
             onClick={() => navigate(`/events/${event?.id}`)}
-            className="group bg-surface-container-low/90 hover:bg-surface-container-low rounded-xl overflow-hidden border border-white/10 hover:border-primary-container/30 transition-all shadow-md hover:shadow-xl cursor-pointer flex flex-col justify-between h-full"
+            className="event-card group bg-surface-container-low hover:bg-surface-container rounded-xl overflow-hidden border border-black/10 dark:border-white/10 hover:border-primary-container/30 transition-all shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between h-full"
         >
             <div>
                 {/* Compact Image Header */}
@@ -157,7 +157,7 @@ export const EventCard = ({ event, onInterestToggle, isPending }) => {
             </div>
 
             {/* Compact Action Footer */}
-            <div className="px-4 pb-4 pt-2 flex items-center justify-between border-t border-white/5 mt-auto">
+            <div className="px-4 pb-4 pt-2 flex items-center justify-between border-t border-black/10 dark:border-white/5 mt-auto">
                 <span className="text-xs font-bold text-green-400 font-mono">
                     {event?.price || 'Free'}
                 </span>

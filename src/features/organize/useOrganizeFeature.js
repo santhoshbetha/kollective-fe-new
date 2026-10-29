@@ -116,6 +116,7 @@ export function useRsvpToAction() {
                     ...actionItem,
                     user_rsvp_status: status,
                     userStatus: status,
+                    rsvp: status,
                     participants_count: Math.max(0, (actionItem.participants_count || actionItem.attendeesCount || 0) + participantDelta),
                     attendeesCount: Math.max(0, (actionItem.attendeesCount || 0) + participantDelta)
                 };

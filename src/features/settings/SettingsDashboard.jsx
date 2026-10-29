@@ -25,7 +25,7 @@ export default function SettingsDashboard({ activeOrg: propActiveOrg }) {
     const membership = storeUser?.memberships?.find(
         m => m.organization?.id === activeOrg?.id
     );
-    const userRole = activeOrg?.role || membership?.role || 'contributor';
+    const userRole = storeActiveAccount?.role || activeOrg?.role || membership?.role || 'contributor';
 
     useEffect(() => {
         if (!selectedOrgId && activeOrg?.id) {
@@ -33,8 +33,9 @@ export default function SettingsDashboard({ activeOrg: propActiveOrg }) {
         }
     }, [activeOrg, selectedOrgId]);
 
-    const isAdminOrOwner = userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'owner' || userRole?.toLowerCase() === 'lead organizer';
-    const isOwner = userRole?.toLowerCase() === 'owner' || userRole?.toLowerCase() === 'lead organizer';
+    const roleNorm = (userRole || '').toLowerCase();
+    const isAdminOrOwner = ['admin', 'owner', 'lead organizer'].includes(roleNorm);
+    const isOwner = ['owner', 'lead organizer'].includes(roleNorm);
 
     // Filter active active connection networks rows
     const memberships = storeUser?.memberships?.filter(m => m.status === 'active') || [];
@@ -68,6 +69,17 @@ export default function SettingsDashboard({ activeOrg: propActiveOrg }) {
 
     return (
         <div className="w-full my-4 animate-in fade-in duration-200 flex flex-col gap-6 text-left font-sans">
+
+            {/* Non-Admin Locked Notice Banner */}
+            {!isAdminOrOwner && (
+                <div
+                    data-testid="org-non-admin-banner"
+                    className="org-workspace-locked-banner p-4 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-semibold rounded-xl flex items-center gap-3 w-full select-none"
+                >
+                    <ShieldAlert className="w-5 h-5 shrink-0 text-amber-400" />
+                    <span>You must be an organization administrator to manage team profiles or settings details.</span>
+                </div>
+            )}
 
             {/* 🏢 Organization Switcher Bar: Transformed into an upscaled, brand-aware header card */}
             {memberships.length > 1 && (
