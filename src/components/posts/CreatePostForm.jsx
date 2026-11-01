@@ -1,5 +1,7 @@
 // src/components/CreatePostForm.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 import { EmojiSelector } from '../EmojiSelector';
 import { PollComposer } from '../../features/polls/PollComposer';
 import { useAuthStore } from '../../store/auth/useAuthStore';
@@ -54,12 +56,18 @@ export function CreatePostForm({
     const protocolSigned = true;
     const [feedbackModal, setFeedbackModal] = useState(null);
 
+    // 🌐 Real-Time Link Preview Card State Matrices
+    const [previewCard, setPreviewCard] = useState(null);
+    const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+    const [userDismissed, setUserDismissed] = useState(false);
+    const lastFetchedUrlRef = useRef(null);
+
     const [pollOptions, setPollOptions] = useState(['', '']);
     const [pollExpires, setPollExpires] = useState('86400');
 
     const characterLimit = 500;
     const charsLeft = characterLimit - content.length;
-    const hasContent = content.trim() || uploadedAttachments.length > 0 || linkUrl.trim();
+    const hasContent = content.trim() || uploadedAttachments.length > 0 || linkUrl.trim() || Boolean(previewCard);
 
     const isSubmitDisabled = contentType === 'voice'
         ? (!title.trim() && !hasContent) || charsLeft < 0 || !protocolSigned
@@ -81,6 +89,56 @@ export function CreatePostForm({
         setPollOptions(['', '']);
         setPollExpires('86400');
         setShowPollComposer(false);
+    };
+
+    // 🌐 Real-Time Debounced OpenGraph Link Detection
+    useEffect(() => {
+        const matches = content.match(URL_REGEX);
+        const detectedUrl = matches ? matches[0] : null;
+
+        if (!detectedUrl) {
+            setIsLoadingPreview(false);
+            setPreviewCard(null);
+            setUserDismissed(false);
+            lastFetchedUrlRef.current = null;
+            return;
+        }
+
+        if (userDismissed) return;
+        if (detectedUrl === lastFetchedUrlRef.current && previewCard) return;
+
+        // Mount loading skeleton instantly before debounce finishes
+        setIsLoadingPreview(true);
+
+        const timer = setTimeout(async () => {
+            try {
+                const res = await apiFetch('/api/v1/preview_cards/fetch', {
+                    method: 'POST',
+                    body: JSON.stringify({ url: detectedUrl }),
+                });
+                const card = res?.preview_card || res;
+                if (card && (card.title || card.domain || card.url)) {
+                    setPreviewCard(card);
+                    lastFetchedUrlRef.current = detectedUrl;
+                }
+            } catch (err) {
+                console.warn('Failed to fetch preview card:', err);
+            } finally {
+                setIsLoadingPreview(false);
+            }
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [content, userDismissed, previewCard]);
+
+    const handleDismissPreview = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        setPreviewCard(null);
+        setUserDismissed(true);
+        setIsLoadingPreview(false);
     };
 
     const handleFileChange = async (e) => {
@@ -230,8 +288,17 @@ export function CreatePostForm({
                 focal_x: a.focal_x ?? 0.0,
                 focal_y: a.focal_y ?? 0.0
             })),
-            link: postTab === 'link' ? linkUrl.trim() : undefined,
+            link: previewCard?.url || (postTab === 'link' ? linkUrl.trim() : undefined),
+            link_url: previewCard?.url || (postTab === 'link' ? linkUrl.trim() : undefined),
+            link_preview: previewCard || undefined,
+            preview_card: previewCard || undefined,
+            preview_card_id: previewCard?.id || undefined,
+            link_title: previewCard?.title || undefined,
+            link_description: previewCard?.description || undefined,
+            link_preview_image: previewCard?.image_url || undefined,
             contentWarning: showCwInput && cwText.trim() ? cwText.trim() : undefined,
+            content_warning: showCwInput && cwText.trim() ? cwText.trim() : null,
+            spoiler_text: showCwInput && cwText.trim() ? cwText.trim() : null,
             poll: isPollActive ? {
                 options: pollOptions.map(opt => opt.trim()),
                 expires_in: parseInt(pollExpires, 10)
@@ -249,6 +316,10 @@ export function CreatePostForm({
                 setLinkUrl('');
                 setCwText('');
                 setShowCwInput(false);
+                setPreviewCard(null);
+                setUserDismissed(false);
+                setIsLoadingPreview(false);
+                lastFetchedUrlRef.current = null;
                 handleClearPoll();
 
                 // Flush the query engine pipeline cache to render the entry on screen immediately
@@ -427,6 +498,72 @@ export function CreatePostForm({
                             />
                         )}
                     </div>
+
+                    {/* ⏳ Real-Time OpenGraph Link Preview Loading Skeleton */}
+                    {isLoadingPreview && !previewCard && (
+                        <div className="loading-skeleton animate-pulse flex items-center gap-3 p-3 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/5 select-none">
+                            <div className="w-14 h-14 rounded-lg bg-black/10 dark:bg-white/10 shrink-0" />
+                            <div className="flex-1 space-y-2 py-1">
+                                <div className="h-3.5 bg-black/10 dark:bg-white/10 rounded w-3/4" />
+                                <div className="h-2.5 bg-black/10 dark:bg-white/10 rounded w-1/2" />
+                                <span className="text-[11px] font-mono text-text-secondary/70">Retrieving link preview...</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 🔗 Real-Time OpenGraph Link Preview Card */}
+                    {previewCard && !isLoadingPreview && (
+                        <div className="relative group mt-1">
+                            <a
+                                href={previewCard.url || '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="link-preview-card block overflow-hidden rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-[#161b22]/70 hover:dark:bg-[#161b22] hover:border-black/20 dark:hover:border-white/20 transition-all text-inherit no-underline select-text"
+                            >
+                                <div className="flex flex-col sm:flex-row items-stretch">
+                                    {previewCard.image_url ? (
+                                        <div className="sm:w-36 h-28 sm:h-auto bg-black/10 dark:bg-white/5 shrink-0 overflow-hidden relative">
+                                            <img
+                                                src={previewCard.image_url}
+                                                alt={previewCard.title || 'Preview thumbnail'}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="sm:w-28 h-20 sm:h-auto bg-black/5 dark:bg-white/5 shrink-0 flex items-center justify-center">
+                                            <Globe className="w-6 h-6 text-text-secondary opacity-40" />
+                                        </div>
+                                    )}
+                                    <div className="p-3 sm:p-4 flex-1 flex flex-col justify-center min-w-0">
+                                        <span className="text-[10px] font-mono text-text-secondary uppercase tracking-wider mb-1 flex items-center gap-1">
+                                            <Globe className="w-3 h-3" />
+                                            {previewCard.domain || 'External Link'}
+                                        </span>
+                                        <h4 className="preview-title text-sm sm:text-base font-bold text-text-primary dark:text-white line-clamp-1 leading-snug group-hover:text-primary transition-colors">
+                                            {previewCard.title || previewCard.domain}
+                                        </h4>
+                                        {previewCard.description && (
+                                            <p className="preview-desc text-xs text-text-secondary line-clamp-2 leading-relaxed mt-1">
+                                                {previewCard.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </a>
+                            {/* Dismiss Close Icon Wrapper Button */}
+                            <button
+                                type="button"
+                                onClick={handleDismissPreview}
+                                title="Remove preview"
+                                aria-label="Remove preview"
+                                className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-md text-xs font-bold leading-none border border-white/20"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
 
                     {uploadedAttachments.length > 0 && <div className="pt-1">{renderImageGrid()}</div>}
 

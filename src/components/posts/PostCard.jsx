@@ -425,6 +425,7 @@ export const PostCard = React.memo(function PostCard({
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     const displayPost = storeReblogTarget || (post?.reblog && typeof post.reblog === 'object' ? post.reblog : post);
+    const postWarning = displayPost?.content_warning || displayPost?.spoiler_text || displayPost?.contentWarning || post?.content_warning || post?.spoiler_text || post?.contentWarning;
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(() => displayPost?.text || displayPost?.content || post?.text || post?.content || '');
     const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -1461,11 +1462,40 @@ export const PostCard = React.memo(function PostCard({
 
                             {isEditing ? (
                                 renderEditForm()
-                            ) : post?.contentWarning ? (
-                                <ContentWarningWrapper warning={post?.contentWarning}>
+                            ) : postWarning ? (
+                                <ContentWarningWrapper warning={postWarning}>
                                     <p className="font-body-lg text-base md:text-lg text-text-primary/90 leading-relaxed font-normal">
                                         {post?.text}
                                     </p>
+                                    {!isEditing && linkPreview && (
+                                        <div className="mt-2">
+                                            <LinkPreviewCard preview={linkPreview} />
+                                        </div>
+                                    )}
+                                    {videoSource ? (
+                                        <KollectiveVideoPlayer
+                                            src={videoSource}
+                                            poster={post?.videoPoster || post?.image?.url}
+                                            isGif={post?.isGif}
+                                            title={post?.title}
+                                        />
+                                    ) : allImages.length > 0 ? (
+                                        <div className="mt-3">
+                                            <PostMedia
+                                                post={displayPost}
+                                                setCarouselIndex={setCarouselIndex}
+                                                setCarouselOpen={setCarouselOpen}
+                                            />
+                                        </div>
+                                    ) : post?.image?.url ? (
+                                        <div className="mt-3">
+                                            <img
+                                                alt={post?.imageMeta || "Editorial Voice Visual"}
+                                                className="w-full h-full object-cover group-hover:scale-[1.015] transition-transform duration-700 rounded-xl"
+                                                src={post?.image?.url}
+                                            />
+                                        </div>
+                                    ) : null}
                                 </ContentWarningWrapper>
                             ) : (
                                 <p className="font-body-lg text-base md:text-lg text-text-primary/90 leading-relaxed font-normal">
@@ -1475,12 +1505,12 @@ export const PostCard = React.memo(function PostCard({
                         </div>
 
                         {/* Rich Link Preview Card */}
-                        {!isEditing && linkPreview && (
+                        {!isEditing && !postWarning && linkPreview && (
                             <LinkPreviewCard preview={linkPreview} />
                         )}
 
                         {/* Integrated Rich Media Injection Switchboard Block */}
-                        {videoSource ? (
+                        {!isEditing && !postWarning && (videoSource ? (
                             <KollectiveVideoPlayer
                                 src={videoSource}
                                 poster={post?.videoPoster || post?.image?.url}
@@ -1535,7 +1565,7 @@ export const PostCard = React.memo(function PostCard({
                                     }}
                                 />
                             </>
-                        ) : null}
+                        ) : null)}
 
                         {/* Action Bar Engagement Matrix Row Footer */}
                         <div className="flex items-center justify-between pt-4 border-t border-white/5 text-text-secondary">
@@ -1748,9 +1778,23 @@ export const PostCard = React.memo(function PostCard({
                     <div className="text-sm md:text-base text-text-primary leading-relaxed break-words mt-1">
                         {isEditing ? (
                             renderEditForm()
-                        ) : displayPost?.contentWarning ? (
-                            <ContentWarningWrapper warning={displayPost.contentWarning}>
+                        ) : postWarning ? (
+                            <ContentWarningWrapper warning={postWarning}>
                                 <PostContent post={displayPost} isFocus={false} />
+                                {!isEditing && linkPreview && (
+                                    <div className="mt-2">
+                                        <LinkPreviewCard preview={linkPreview} />
+                                    </div>
+                                )}
+                                {(allImages.length > 0 || videoSource) && (
+                                    <div className="mt-3">
+                                        <PostMedia
+                                            post={displayPost}
+                                            setCarouselIndex={setCarouselIndex}
+                                            setCarouselOpen={setCarouselOpen}
+                                        />
+                                    </div>
+                                )}
                             </ContentWarningWrapper>
                         ) : (
                             <PostContent post={displayPost} isFocus={false} />
@@ -1758,12 +1802,12 @@ export const PostCard = React.memo(function PostCard({
                     </div>
 
                     {/* Rich Link Preview Card */}
-                    {!isEditing && linkPreview && (
+                    {!isEditing && !postWarning && linkPreview && (
                         <LinkPreviewCard preview={linkPreview} />
                     )}
 
                     {/* 🏆 SINGLE IMAGE INJECTION MODULE POINT */}
-                    {(allImages.length > 0 || videoSource) && (
+                    {!isEditing && !postWarning && (allImages.length > 0 || videoSource) && (
                         <div className="mt-3">
                             <PostMedia
                                 post={displayPost}
@@ -1952,7 +1996,7 @@ export const PostCard = React.memo(function PostCard({
 });
 
 export const ContentWarningWrapper = ({ warning, children }) => {
-    const [show, setShow] = useState(false);
+    const [isContentUnveiled, setIsContentUnveiled] = useState(false);
 
     return (
         <div
@@ -1968,21 +2012,21 @@ export const ContentWarningWrapper = ({ warning, children }) => {
                     <span className="material-symbols-outlined text-[16px] text-primary select-none">
                         warning
                     </span>
-                    <span className="truncate max-w-[180px] sm:max-w-[300px]" title={warning}>
-                        CW: {warning}
+                    <span className="truncate max-w-[240px] sm:max-w-[400px]" title={warning}>
+                        {warning}
                     </span>
                 </span>
 
                 <button
                     type="button" // Guard explicitly against structural forms down-stream
-                    onClick={() => setShow(!show)}
+                    onClick={() => setIsContentUnveiled(!isContentUnveiled)}
                     className="px-3.5 py-1.5 bg-surface-container text-text-primary rounded-lg text-xs md:text-sm font-bold hover:bg-primary-container hover:text-white transition-all cursor-pointer whitespace-nowrap"
                 >
-                    {show ? 'Hide Details' : 'Show Details'}
+                    {isContentUnveiled ? 'Hide Content' : 'Show Content'}
                 </button>
             </div>
 
-            {show && (
+            {isContentUnveiled && (
                 <div className="pt-3 border-t border-white/5 animate-in fade-in slide-in-from-top-2 duration-200">
                     {children}
                 </div>

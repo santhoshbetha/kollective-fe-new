@@ -38,6 +38,7 @@ import { resolveUserPersona } from '../../utils/accountMapper';
 import { getReplyCount, getReblogCount } from '../../utils/postHelpers';
 import { ThreadLine } from './ThreadLine';
 import { VerificationBadge } from '../VerificationBadge';
+import { ContentWarningWrapper } from './PostCard';
 import { PostMediaGrid } from './PostMediaGrid';
 import { MediaPreviewGrid } from '../media/MediaPreviewGrid';
 import cn from 'clsx';
@@ -493,6 +494,7 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
     };
 
     const authorHandle = postAuthor?.handle || `@${(postAuthor?.username || postAuthor?.name || 'anonymous').toLowerCase().replace(/\s+/g, '')}`;
+    const postWarning = post?.content_warning || post?.spoiler_text || post?.contentWarning;
     const rawAllImages = (post?.media_attachments && post.media_attachments.length > 0)
         ? post.media_attachments
         : (post?.images && post.images.length > 0

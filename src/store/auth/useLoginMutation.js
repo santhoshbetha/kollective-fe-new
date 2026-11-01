@@ -34,6 +34,25 @@ export function useLoginMutation() {
                 localStorage.setItem('user_token', token);
                 localStorage.setItem('socket_token', token);
                 localStorage.setItem('auth_user', JSON.stringify(user));
+                localStorage.setItem('kollective-auth-secure-matrix', JSON.stringify({
+                    state: {
+                        token,
+                        user,
+                        isAuthenticated: true,
+                        activeAccount: {
+                            id: user.id ? String(user.id) : 'personal',
+                            type: 'personal',
+                            name: user.name || user.username || 'Personal Account',
+                            username: user.username || (user.handle ? user.handle.replace('@', '') : 'user'),
+                            handle: user.handle || (user.username ? `@${user.username}` : '@user'),
+                            avatar: user.avatar || '/default-avatar.jpg',
+                            role: user.role || 'citizen',
+                            badge_type: user.badge_type || 'citizen'
+                        },
+                        permissions: []
+                    },
+                    version: 0
+                }));
                 setSession(token, user);
                 queryClient.clear();
             }

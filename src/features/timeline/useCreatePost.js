@@ -11,7 +11,10 @@ export function useCreatePost() {
     return useMutation({
         // 1. Submit the new post schema to your Elixir REST API
         mutationFn: async (postData) => {
-            const payload = postData.post ? postData : { post: postData };
+            const payload = {
+                ...postData,
+                post: postData.post ? postData.post : postData
+            };
             const res = await apiFetch('/posts', {
                 method: 'POST',
                 body: JSON.stringify(payload),

@@ -69,16 +69,35 @@ export const DEFAULT_MOCK_USER = {
     ]
 };
 
+const getInitialAuthState = () => {
+    if (typeof localStorage === 'undefined') {
+        return { token: null, user: null, isAuthenticated: false, activeAccount: null };
+    }
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('user_token');
+    const userStr = localStorage.getItem('auth_user');
+    let user = null;
+    if (userStr) {
+        try { user = JSON.parse(userStr); } catch (_) {}
+    }
+    return {
+        token,
+        user,
+        isAuthenticated: !!(token && user),
+        activeAccount: buildPersonalAccount(user)
+    };
+};
+const initialAuth = getInitialAuthState();
+
 export const useAuthStore = create(
     persist(
         immer((set, get) => ({
             // =========================================================================
             // 💾 1. PERSISTENT MATRIX ENTITIES (Serialized safely to browser disk)
             // =========================================================================
-            token: null,
-            user: null,
-            isAuthenticated: false,
-            activeAccount: null,
+            token: initialAuth.token,
+            user: initialAuth.user,
+            isAuthenticated: initialAuth.isAuthenticated,
+            activeAccount: initialAuth.activeAccount,
             permissions: [],
 
             // =========================================================================
@@ -288,11 +307,31 @@ export const useAuthStore = create(
                     } else {
                         // 🌐 PRODUCTION LIFECYCLE SANITIZATION SECURITY CHECKS
                         if (!currentState.isAuthenticated || !currentState.token) {
-                            updates.token = null;
-                            updates.user = null;
-                            updates.isAuthenticated = false;
-                            updates.activeAccount = null;
-                            updates.permissions = [];
+                            const storedToken = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+                            const storedUserStr = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_user') : null;
+                            if (storedToken && storedUserStr) {
+                                try {
+                                    const parsedUser = JSON.parse(storedUserStr);
+                                    updates.token = storedToken;
+                                    updates.user = parsedUser;
+                                    updates.isAuthenticated = true;
+                                    updates.activeAccount = currentState.activeAccount || buildPersonalAccount(parsedUser);
+                                } catch (_) {
+                                    updates.token = null;
+                                    updates.user = null;
+                                    updates.isAuthenticated = false;
+                                    updates.activeAccount = null;
+                                    updates.permissions = [];
+                                }
+                            } else {
+                                updates.token = null;
+                                updates.user = null;
+                                updates.isAuthenticated = false;
+                                updates.activeAccount = null;
+                                updates.permissions = [];
+                            }
+                        } else if (!currentState.activeAccount && currentState.user) {
+                            updates.activeAccount = buildPersonalAccount(currentState.user);
                         }
                     }
 

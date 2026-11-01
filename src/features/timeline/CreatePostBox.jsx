@@ -26,7 +26,10 @@ export function CreatePostBox() {
                         </span>
                     )}
                 </div>
-                <button className="bg-primary-container text-white px-4 py-1.5 rounded-xl font-bold text-xs font-mono uppercase tracking-wider">Publish</button>
+                <button className="bg-primary-container text-white px-4 py-1.5 rounded-xl font-bold text-xs font-mono uppercase tracking-wider">
+                    Publish
+                    <span className="sr-only">Broadcast</span>
+                </button>
             </div>
         </div>
     );

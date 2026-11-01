@@ -168,6 +168,7 @@ export const MainLayout = () => {
                         >
                             <span className="material-symbols-outlined text-[20px]">add_circle</span>
                             Voice In
+                            <span className="sr-only">Broadcast</span>
                         </Button>
 
                         {user && (
@@ -361,6 +362,7 @@ export const MainLayout = () => {
                     className="w-14 h-14 bg-primary-container rounded-2xl flex items-center justify-center -mt-8 shadow-2xl shadow-primary-container/40 border-4 border-surface active:scale-90 transition-transform"
                 >
                     <span className="material-symbols-outlined text-white text-[28px]">add</span>
+                    <span className="sr-only">Broadcast</span>
                 </button>
 
                 <Link
