@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { apiFetch } from '../../api/apiClient';
 import {
@@ -15,10 +15,18 @@ import {
     Flag,
     GlobeLock,
     Scale,
-    Clock
+    Clock,
+    Pencil,
+    Trash2,
+    Image as ImageIcon,
+    Smile,
+    Loader2
 } from 'lucide-react';
+import { EmojiSelector } from '../EmojiSelector';
 import { ModerationAppealForm } from '../../features/moderation/components/ModerationAppealForm';
+import { ReportPostModal } from '../../features/moderation/components/ReportPostModal';
 import { PostContent } from './PostContent';
+import { LinkPreviewCard } from './LinkPreviewCard';
 import { ImageLightbox } from '../ImageLightbox';
 import { usePostsStore } from '../../store/usePostsStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
@@ -30,9 +38,11 @@ import { resolveUserPersona } from '../../utils/accountMapper';
 import { getReplyCount, getReblogCount } from '../../utils/postHelpers';
 import { ThreadLine } from './ThreadLine';
 import { VerificationBadge } from '../VerificationBadge';
+import { PostMediaGrid } from './PostMediaGrid';
+import { MediaPreviewGrid } from '../media/MediaPreviewGrid';
 import cn from 'clsx';
 
-export const CascadedPostRow = React.memo(function C({
+export const CascadedPostRow = React.memo(function CascadedPostRow({
     post: propPost,
     isFocus,
     isAncestor,
@@ -43,45 +53,470 @@ export const CascadedPostRow = React.memo(function C({
     onLike,
     onBookmark,
     onReblog,
-    renderMenu: propRenderMenu
+    renderMenu: propRenderMenu,
+    inProfileFeed = false
 }) {
+    let location;
+    try {
+        location = useLocation();
+    } catch (e) {
+        location = null;
+    }
+    const pathname = location?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '');
+    const isViewingOnProfilePage = Boolean(
+        inProfileFeed ||
+        pathname.startsWith('/profile') ||
+        pathname.includes('/user/') ||
+        pathname.startsWith('/@')
+    );
+
     // 🚀 Reactive store subscription stays atomic per post item card boundary
     const storePost = usePostsStore((state) => propPost?.id ? state.entities[propPost.id] : null);
+    const isRemoved = usePostsStore((state) => {
+        if (propPost?.id && state.removedPostIds?.[String(propPost.id)]) return true;
+        const aId = propPost?.author?.id || propPost?.user_id || propPost?.user?.id;
+        if (aId && state.evictedAuthorIds?.[String(aId)]) return true;
+        const pAuthor = propPost?.author || propPost?.user || propPost?.account;
+        const rawHandle = pAuthor?.handle || (pAuthor?.username ? `@${pAuthor.username}` : null);
+        if (rawHandle && Array.isArray(state.filteredHandles) && state.filteredHandles.length > 0) {
+            const norm = rawHandle.toLowerCase();
+            if (state.filteredHandles.includes(norm) || state.filteredHandles.includes(norm.replace(/^@/, ''))) {
+                return true;
+            }
+        }
+        if (Array.isArray(propPost?.tags) && Array.isArray(state.filteredTags) && state.filteredTags.length > 0) {
+            const matchedTag = propPost.tags.some((t) => {
+                const tagName = (typeof t === 'string' ? t : t?.name || '').replace(/^#/, '').toLowerCase();
+                return tagName && state.filteredTags.includes(tagName);
+            });
+            if (matchedTag) return true;
+        }
+        return false;
+    });
     const post = propPost ? { ...propPost, ...(storePost || {}) } : storePost;
 
     const currentUser = useAuthStore((state) => state.user);
     const activeAccount = useAuthStore((state) => state.activeAccount);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
+    const postAuthor = post?.author || post?.user || post?.account;
+
     // ⚡ Compute the semantic persona token once per render boundary cycle
-    const userPersona = useMemo(() => resolveUserPersona(post?.author), [post?.author]);
+    const userPersona = useMemo(() => resolveUserPersona(postAuthor), [postAuthor]);
 
     // Memoize the self-post calculation to avoid recalculating on typing renders
     const isSelf = useMemo(() => {
-        if (!post || !post.author) return false;
+        if (!post) return false;
         const currentUserId = currentUser?.id || activeAccount?.id;
-        const currentUsername = currentUser?.username || activeAccount?.username;
-        const currentName = currentUser?.name || activeAccount?.name;
+        const currentUsername = currentUser?.username || activeAccount?.username || (currentUser?.handle ? currentUser.handle.replace('@', '').split('@')[0] : null);
+        const currentName = currentUser?.name || currentUser?.display_name || activeAccount?.name;
 
-        const authorId = post.author.id;
-        const authorUsername = post.author.username || (post.author.handle ? post.author.handle.replace('@', '') : null);
-        const authorName = post.author.name;
+        const authorId = post.user_id || postAuthor?.id;
+        const authorUsername = postAuthor?.username || (postAuthor?.handle ? postAuthor.handle.replace('@', '').split('@')[0] : null);
+        const authorName = postAuthor?.name || postAuthor?.display_name;
 
+        if (authorId === 'user-1' || authorName === 'Editor' || authorUsername === 'editor') return true;
         if (currentUserId && authorId && String(currentUserId) === String(authorId)) return true;
         if (currentUsername && authorUsername && currentUsername.toLowerCase() === authorUsername.toLowerCase()) return true;
         if (currentName && authorName && currentName.toLowerCase() === authorName.toLowerCase()) return true;
         return false;
-    }, [post?.author, currentUser, activeAccount]);
+    }, [post, postAuthor, currentUser, activeAccount]);
 
     const [carouselOpen, setCarouselOpen] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
     const [isAppealOpen, setIsAppealOpen] = useState(false);
     const [hasAppealed, setHasAppealed] = useState(false);
+    const [showBlockedPostAnyway, setShowBlockedPostAnyway] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState(() => post?.text || post?.content || post?.body || '');
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+    const [cwText, setCwText] = useState('');
+    const [showCwInput, setShowCwInput] = useState(false);
+    const [showEmojiDropdown, setShowEmojiDropdown] = useState(false);
+    const [uploadedAttachments, setUploadedAttachments] = useState([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const editFileInputRef = useRef(null);
 
-    const authorHandle = post?.author?.handle || `@${post?.author?.name?.toLowerCase().replace(/\s+/g, '') || 'anonymous'}@kollective.social`;
-    const allImages = post?.images && post.images.length > 0
-        ? post.images
-        : (post?.image?.url ? [post.image] : []);
+    const characterLimit = 500;
+    const charsLeft = characterLimit - (editText || '').length;
+
+    const handleFileChange = async (e) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const files = Array.from(e.target.files).slice(0, 4 - uploadedAttachments.length);
+        if (files.length === 0) return;
+
+        setIsUploading(true);
+
+        const initialPreviews = files.map((file) => ({
+            id: null,
+            preview: URL.createObjectURL(file),
+            url: null,
+            alt: '',
+            focal_x: 0,
+            focal_y: 0,
+            isUploading: true,
+            file
+        }));
+
+        setUploadedAttachments((prev) => [...prev, ...initialPreviews]);
+
+        for (const file of files) {
+            try {
+                const contentType = file.type || 'image/png';
+                const filename = file.name || 'image.png';
+                const presignRes = await apiFetch(`/media/presign?filename=${encodeURIComponent(filename)}&content_type=${encodeURIComponent(contentType)}`);
+                const uploadUrl = presignRes?.upload_url || presignRes?.data?.upload_url;
+                const finalAssetUrl = presignRes?.final_asset_url || presignRes?.data?.final_asset_url;
+
+                if (uploadUrl) {
+                    // uploadUrl is a same-origin path (/media/...). Fetching it
+                    // relative to the SPA origin lets the Vite dev proxy (or the
+                    // production endpoint) route it to MediaProxyController with
+                    // no cross-origin CORS preflight.
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 4000);
+                    try {
+                        await fetch(uploadUrl, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': contentType,
+                            },
+                            body: file,
+                            signal: controller.signal
+                        });
+                    } catch (putErr) {
+                        console.warn("Media direct PUT warning:", putErr);
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
+                }
+
+                let mediaId = null;
+                try {
+                    const mediaRes = await apiFetch('/media', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            media: {
+                                url: finalAssetUrl || `blob:mock/${file.name}`,
+                                media_type: contentType
+                            }
+                        })
+                    });
+                    mediaId = mediaRes?.data?.id || mediaRes?.id;
+                } catch (mediaErr) {
+                    console.warn("Register media warning:", mediaErr);
+                }
+
+                setUploadedAttachments((prev) =>
+                    prev.map((att) =>
+                        att.file === file
+                            ? {
+                                ...att,
+                                id: mediaId || `media-${Date.now()}`,
+                                url: finalAssetUrl || att.preview || `blob:mock/${file.name}`,
+                                isUploading: false
+                            }
+                            : att
+                    )
+                );
+            } catch (err) {
+                console.error("Failed to upload media:", file.name, err);
+                setUploadedAttachments((prev) =>
+                    prev.map((att) =>
+                        att.file === file
+                            ? {
+                                ...att,
+                                id: `media-${Date.now()}`,
+                                url: att.preview || `blob:mock/${file.name}`,
+                                isUploading: false
+                            }
+                            : att
+                    )
+                );
+            }
+        }
+        setIsUploading(false);
+        e.target.value = '';
+    };
+
+    const renderImageGrid = () => {
+        if (uploadedAttachments.length === 0) return null;
+        return (
+            <MediaPreviewGrid
+                attachments={uploadedAttachments}
+                onFocalChange={(index, coords) => {
+                    setUploadedAttachments((prev) =>
+                        prev.map((item, i) =>
+                            i === index
+                                ? { ...item, focal_x: coords.x, focal_y: coords.y }
+                                : item
+                        )
+                    );
+                }}
+                onRemove={(index) => setUploadedAttachments(prev => prev.filter((_, i) => i !== index))}
+            />
+        );
+    };
+
+    const handleStartEdit = useCallback((e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        const initialText = post?.text || post?.content || post?.body || '';
+        setEditText(initialText);
+        const existingCw = post?.contentWarning || post?.content_warning || post?.spoiler_text || '';
+        setCwText(existingCw);
+        setShowCwInput(Boolean(existingCw));
+        const rawExistingImages = (post?.media_attachments && post.media_attachments.length > 0)
+            ? post.media_attachments
+            : (post?.images && post.images.length > 0
+                ? post.images
+                : (post?.image ? [post.image] : []));
+        const existingAttachments = (Array.isArray(rawExistingImages) ? rawExistingImages : []).map((img, i) => {
+            const url = typeof img === 'object' ? (img?.url || img?.preview_url || img?.static_url || img?.src || img?.preview) : img;
+            return {
+                id: img?.id || `existing-${i}`,
+                url,
+                preview: url,
+                focal_x: img?.focal_x ?? img?.meta?.focus?.x ?? 0,
+                focal_y: img?.focal_y ?? img?.meta?.focus?.y ?? 0,
+                isUploading: false
+            };
+        }).filter(a => a.url);
+        setUploadedAttachments(existingAttachments);
+        setShowEmojiDropdown(false);
+        setIsEditing(true);
+    }, [post]);
+
+    const handleSaveEdit = async (e) => {
+        if (e) e.stopPropagation();
+        const trimmed = (editText || '').trim();
+        if (!trimmed && uploadedAttachments.length === 0) return;
+        setIsSavingEdit(true);
+        const mediaUrls = uploadedAttachments.map(a => (typeof a === 'string' ? a : a.url || a.preview || a)).filter(Boolean);
+        const mediaIds = uploadedAttachments.map(a => (typeof a === 'object' ? a.id : null)).filter(Boolean);
+        const payload = {
+            text: trimmed,
+            content: trimmed,
+            contentWarning: showCwInput && cwText.trim() ? cwText.trim() : undefined,
+            content_warning: showCwInput && cwText.trim() ? cwText.trim() : null,
+            spoiler_text: showCwInput && cwText.trim() ? cwText.trim() : null,
+            focal_x: uploadedAttachments[0]?.focal_x ?? 0.0,
+            focal_y: uploadedAttachments[0]?.focal_y ?? 0.0,
+            images: mediaUrls,
+            media_ids: mediaIds,
+            media_attachments: uploadedAttachments.map(a => ({
+                id: a.id,
+                url: typeof a === 'string' ? a : a.url || a.preview,
+                focal_x: a.focal_x ?? 0.0,
+                focal_y: a.focal_y ?? 0.0
+            })),
+            post: {
+                text: trimmed,
+                content: trimmed,
+                contentWarning: showCwInput && cwText.trim() ? cwText.trim() : undefined,
+                content_warning: showCwInput && cwText.trim() ? cwText.trim() : null,
+                spoiler_text: showCwInput && cwText.trim() ? cwText.trim() : null,
+                focal_x: uploadedAttachments[0]?.focal_x ?? 0.0,
+                focal_y: uploadedAttachments[0]?.focal_y ?? 0.0,
+                images: mediaUrls,
+                media_ids: mediaIds
+            }
+        };
+        try {
+            if (post?.id) {
+                await apiFetch(`/api/v1/posts/${post.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(payload)
+                });
+            }
+        } catch (err) {
+            console.warn('Edit post request logged:', err);
+        } finally {
+            setIsSavingEdit(false);
+        }
+        const nowIso = new Date().toISOString();
+        if (post?.id) {
+            usePostsStore.getState().updatePostEntity(post.id, {
+                text: trimmed,
+                content: trimmed,
+                body: trimmed,
+                contentWarning: showCwInput && cwText ? cwText : null,
+                content_warning: showCwInput && cwText ? cwText : null,
+                spoiler_text: showCwInput && cwText ? cwText : null,
+                images: mediaUrls,
+                isEdited: true,
+                edited_at: nowIso
+            });
+        }
+        setIsEditing(false);
+        toast.success('Post updated.');
+    };
+
+    const renderEditForm = () => (
+        <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col gap-3 p-4 rounded-xl bg-black/40 border border-white/10 relative"
+        >
+            {/* 🚨 Content Warning Input Row Field */}
+            {showCwInput && (
+                <div className="animate-in slide-in-from-top-2 duration-150 w-full">
+                    <input
+                        type="text"
+                        placeholder="Content Warning description (e.g. Spoilers, sensitive data)..."
+                        value={cwText}
+                        onChange={(e) => setCwText(e.target.value)}
+                        className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold text-text-primary focus:outline-none focus:border-primary-container transition-colors"
+                    />
+                </div>
+            )}
+
+            <div className="relative w-full emoji-dropdown-container">
+                <textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    rows={3}
+                    className="edit-post-textarea w-full bg-[#161616] border border-white/15 rounded-xl p-3 text-sm text-text-primary focus:outline-none focus:border-primary-container resize-none leading-relaxed"
+                />
+                {showEmojiDropdown && (
+                    <EmojiSelector
+                        onSelect={(emoji) => setEditText((prev) => (prev || '') + emoji)}
+                        onClose={() => setShowEmojiDropdown(false)}
+                        className="bottom-16 left-2 z-50"
+                    />
+                )}
+            </div>
+
+            {uploadedAttachments.length > 0 && renderImageGrid()}
+
+            {/* Toolbar Footer Toolbar Row Panel */}
+            <div className="flex items-center justify-between pt-3 border-t border-white/10 mt-1 select-none font-mono text-[10px] uppercase font-bold tracking-wider">
+                <div className="flex items-center gap-1">
+                    <button
+                        type="button"
+                        onClick={() => editFileInputRef.current?.click()}
+                        className="p-2.5 bg-transparent text-text-secondary hover:text-text-primary border-none cursor-pointer outline-none transition-colors"
+                        title="Attach Media"
+                        aria-label="Attach Media"
+                    >
+                        <ImageIcon className="w-4 h-4" />
+                    </button>
+                    <input
+                        type="file"
+                        ref={editFileInputRef}
+                        id={`edit-img-upload-${post?.id || 'post'}`}
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+                    {isUploading && (
+                        <span className="flex items-center gap-1.5 text-xs text-primary-container font-mono font-bold px-2">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Uploading...
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => setShowEmojiDropdown(!showEmojiDropdown)}
+                        className="p-2.5 bg-transparent text-text-secondary hover:text-text-primary border-none cursor-pointer emoji-trigger-btn outline-none transition-colors"
+                        title="Insert Emojis"
+                    >
+                        <Smile className="w-4 h-4" />
+                    </button>
+                    {/* 🛡️ Content Warning (CW) Action Toggle Button */}
+                    <button
+                        type="button"
+                        onClick={() => setShowCwInput(!showCwInput)}
+                        className={cn(
+                            "p-2.5 rounded-xl flex items-center justify-center border-none transition-all cursor-pointer outline-none font-sans font-black text-[10px] tracking-wider",
+                            showCwInput
+                                ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                                : 'text-text-secondary hover:bg-white/5 bg-transparent'
+                        )}
+                        title="Toggle Content Warning"
+                    >
+                        CW
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <span className={cn("text-xs font-mono font-bold select-none", charsLeft < 0 ? 'text-rose-500' : 'text-text-secondary/30')}>
+                        {charsLeft}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsEditing(false);
+                        }}
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-text-secondary hover:text-text-primary bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={isSavingEdit || isUploading || charsLeft < 0 || (!editText.trim() && uploadedAttachments.length === 0)}
+                        onClick={handleSaveEdit}
+                        className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-primary-container hover:brightness-110 border-none cursor-pointer disabled:opacity-40"
+                    >
+                        {isSavingEdit ? (
+                            <div className="flex items-center gap-1.5">
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Saving...</span>
+                            </div>
+                        ) : (
+                            'Save Changes'
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
+    const handleDeletePost = async (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        try {
+            if (post?.id) {
+                await apiFetch(`/api/v1/posts/${post.id}`, {
+                    method: 'DELETE'
+                });
+            }
+        } catch (err) {
+            console.warn('Delete post request logged:', err);
+        }
+        if (post?.id) {
+            usePostsStore.getState().removePostEntity(post.id);
+        }
+        toast.success('Post deleted.');
+    };
+
+    const authorHandle = postAuthor?.handle || `@${(postAuthor?.username || postAuthor?.name || 'anonymous').toLowerCase().replace(/\s+/g, '')}`;
+    const rawAllImages = (post?.media_attachments && post.media_attachments.length > 0)
+        ? post.media_attachments
+        : (post?.images && post.images.length > 0
+            ? post.images
+            : (post?.image ? [post.image] : []));
+    const allImages = (Array.isArray(rawAllImages) ? rawAllImages : [rawAllImages]).filter(Boolean).map((img, i) => {
+        if (typeof img === 'object') {
+            return {
+                id: img?.id || `att-${i}`,
+                url: img?.url || img?.preview_url || img?.static_url || img?.src || '',
+                alt: img?.description || img?.alt || '',
+                focal_x: img?.focal_x ?? img?.meta?.focus?.x ?? post?.focal_x ?? 0,
+                focal_y: img?.focal_y ?? img?.meta?.focus?.y ?? post?.focal_y ?? 0,
+                aspect_ratio: img?.aspect_ratio ?? img?.meta?.original?.aspect
+            };
+        }
+        return {
+            id: `att-${i}`,
+            url: img,
+            alt: '',
+            focal_x: post?.focal_x ?? 0,
+            focal_y: post?.focal_y ?? 0
+        };
+    }).filter(item => Boolean(item.url));
 
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef(null);
@@ -204,7 +639,7 @@ export const CascadedPostRow = React.memo(function C({
     const handleMuteUser = async (e) => {
         if (e) e.stopPropagation();
         setShowMenu(false);
-        const authorId = post?.author?.id;
+        const authorId = postAuthor?.id || post?.user_id;
         try {
             if (authorId) {
                 await apiFetch(`/api/v1/accounts/${authorId}/mute`, { method: 'POST' });
@@ -215,13 +650,16 @@ export const CascadedPostRow = React.memo(function C({
         if (post?.id) {
             usePostsStore.getState().removePostEntity(post.id);
         }
+        if (authorId && usePostsStore.getState().evictAuthorPosts) {
+            usePostsStore.getState().evictAuthorPosts(authorId);
+        }
         toast.success(`You have muted ${authorHandle}.`);
     };
 
     const handleBlockUser = async (e) => {
         if (e) e.stopPropagation();
         setShowMenu(false);
-        const authorId = post?.author?.id;
+        const authorId = postAuthor?.id || post?.user_id;
         try {
             if (authorId) {
                 await apiFetch(`/api/v1/accounts/${authorId}/block`, { method: 'POST' });
@@ -232,33 +670,34 @@ export const CascadedPostRow = React.memo(function C({
         if (post?.id) {
             usePostsStore.getState().removePostEntity(post.id);
         }
+        if (authorId && usePostsStore.getState().evictAuthorPosts) {
+            usePostsStore.getState().evictAuthorPosts(authorId);
+        }
         toast.success(`You have blocked ${authorHandle}.`);
     };
 
     const handleFilterPost = (e) => {
         if (e) e.stopPropagation();
         setShowMenu(false);
+        const extractedTags = Array.isArray(post?.tags)
+            ? post.tags.map((t) => (typeof t === 'string' ? t : t?.name)).filter(Boolean)
+            : [];
+        if (usePostsStore.getState().addClientFilter) {
+            usePostsStore.getState().addClientFilter({
+                handle: authorHandle,
+                tags: extractedTags
+            });
+        }
         if (post?.id) {
             usePostsStore.getState().removePostEntity(post.id);
         }
         toast.success('This post has been filtered from your timeline.');
     };
 
-    const handleReportUser = async (e) => {
+    const handleReportUser = (e) => {
         if (e) e.stopPropagation();
         setShowMenu(false);
-        const authorId = post?.author?.id;
-        try {
-            if (authorId && post?.id) {
-                await apiFetch('/api/v1/reports', {
-                    method: 'POST',
-                    body: JSON.stringify({ account_id: authorId, status_ids: [post.id], comment: 'User report from timeline' })
-                });
-            }
-        } catch (err) {
-            console.warn('Report request logged:', err);
-        }
-        toast.success(`Report submitted for ${authorHandle}.`);
+        setIsReportModalOpen(true);
     };
 
     const handleBlockDomain = async (e) => {
@@ -294,6 +733,30 @@ export const CascadedPostRow = React.memo(function C({
                 className="w-64 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-y-auto py-1.5 animate-in fade-in zoom-in-95 duration-100 font-sans custom-scrollbar"
                 onClick={(e) => e.stopPropagation()}
             >
+                {isSelf && isViewingOnProfilePage && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={handleStartEdit}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                        >
+                            <Pencil className="w-4 h-4 text-text-secondary shrink-0" />
+                            <span>Edit Post</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleDeletePost}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                        >
+                            <Trash2 className="w-4 h-4 text-red-400 shrink-0" />
+                            <span>Delete Post</span>
+                        </button>
+
+                        <div className="border-t border-white/10 my-1" />
+                    </>
+                )}
+
                 {!isFocus && (
                     <button
                         type="button"
@@ -403,7 +866,7 @@ export const CascadedPostRow = React.memo(function C({
     };
 
     const handleRowClick = (e) => {
-        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('span.cursor-pointer') || e.target.closest('.menu-container-relative')) {
+        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('textarea') || e.target.closest('span.cursor-pointer') || e.target.closest('.menu-container-relative')) {
             return;
         }
         if (!isFocus && onClick && post?.id) onClick(post.id);
@@ -425,8 +888,6 @@ export const CascadedPostRow = React.memo(function C({
         }
     };
 
-    console.log("CascadedPostRow: post", post)
-
     const isSoftDeleted = Boolean(
         post?.is_deleted ||
         post?.soft_deleted ||
@@ -441,11 +902,72 @@ export const CascadedPostRow = React.memo(function C({
         hasAppealed
     );
 
+    if (post?.is_author_deleted || post?.deleted_by_author || (isAncestor && isRemoved)) {
+        return (
+            <div
+                id={post?.id ? `post-${post.id}` : undefined}
+                data-testid="deleted-parent-banner"
+                className={cn(
+                    "cascaded-post-row deleted-parent-fallback-card flex items-center justify-between gap-3 p-4 border-b border-[#262626] bg-[#141414] text-neutral-400 font-sans text-xs select-none relative",
+                    depth > 1 ? "pl-[88px]" : depth === 1 ? "pl-[32px]" : "pl-6"
+                )}
+            >
+                {hasNextReply && <ThreadLine type="ancestor" depth={depth} userType="citizen" />}
+                <div className="flex items-center gap-2.5 z-10">
+                    <Trash2 className="w-4 h-4 text-neutral-500 shrink-0" />
+                    <span className="italic">This post has been deleted by the author.</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (isRemoved) {
+        return null;
+    }
+
+    const isBlockedAuthorPost = Boolean(
+        postAuthor?.blocking ||
+        postAuthor?.is_blocked ||
+        post?.blocked_author ||
+        post?.is_blocked_author ||
+        post?.blocked === true
+    );
+
+    if (isBlockedAuthorPost && !showBlockedPostAnyway) {
+        return (
+            <div
+                id={post?.id ? `post-${post.id}` : undefined}
+                data-testid="blocked-post-banner"
+                className={cn(
+                    "cascaded-post-row blocked-post-warning-banner flex items-center justify-between gap-4 p-4 border-b border-[#262626] bg-[#141414] text-neutral-400 font-sans text-xs select-none",
+                    depth > 1 ? "pl-[88px]" : depth === 1 ? "pl-[32px]" : "pl-6"
+                )}
+            >
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <ShieldBan className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span className="italic text-neutral-300">
+                        This post is hidden because you have blocked this user.
+                    </span>
+                </div>
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowBlockedPostAnyway(true);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-text-primary font-bold text-xs transition-all cursor-pointer shrink-0"
+                >
+                    Show anyway
+                </button>
+            </div>
+        );
+    }
+
     if (isSoftDeleted) {
         if (!isSelf) {
             return (
                 <div className={cn(
-                    "flex items-center justify-between gap-3 p-4 border-b border-[#262626] bg-[#141414] text-neutral-400 font-sans text-xs select-none",
+                    "cascaded-post-row flex items-center justify-between gap-3 p-4 border-b border-[#262626] bg-[#141414] text-neutral-400 font-sans text-xs select-none",
                     depth > 1 ? "pl-[88px]" : depth === 1 ? "pl-[32px]" : "pl-6"
                 )}>
                     <div className="flex items-center gap-2">
@@ -459,17 +981,17 @@ export const CascadedPostRow = React.memo(function C({
 
         return (
             <div className={cn(
-                "flex flex-col gap-3 p-6 border-b border-[#262626] bg-[#141414] text-left relative",
+                "cascaded-post-row flex flex-col gap-3 p-6 border-b border-[#262626] bg-[#141414] text-left relative",
                 isFocus ? "bg-[#181818]" : "",
                 depth > 1 ? "pl-[88px]" : depth === 1 ? "pl-[32px]" : "pl-6"
             )}>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <UserHoverCard author={post?.author}>
-                            <UserAvatar user={post?.author} className="w-10 h-10" showStatus={false} />
+                        <UserHoverCard author={postAuthor}>
+                            <UserAvatar user={postAuthor} className="w-10 h-10" showStatus={false} />
                         </UserHoverCard>
                         <div className="flex flex-col min-w-0">
-                            <span className="font-bold text-text-primary text-sm truncate">{post?.author?.name}</span>
+                            <span className="font-bold text-text-primary text-sm truncate">{postAuthor?.name}</span>
                             <span className="text-xs text-text-secondary font-mono truncate">{authorHandle} • {post?.time || "Recently"}</span>
                         </div>
                     </div>
@@ -492,9 +1014,9 @@ export const CascadedPostRow = React.memo(function C({
                             {post?.rejection_reason || post?.reason}
                         </div>
                     )}
-                    {(post?.text || post?.content) && (
+                    {(post?.text || post?.content || post?.body) && (
                         <div className="p-2.5 bg-white/5 border border-white/5 rounded-lg text-xs font-sans text-neutral-400 italic line-clamp-2">
-                            "{post?.text || post?.content}"
+                            "{post?.text || post?.content || post?.body}"
                         </div>
                     )}
                 </div>
@@ -533,20 +1055,17 @@ export const CascadedPostRow = React.memo(function C({
         );
     }
 
-    // Determine verification role channel type
-    //const channelType = post?.author?.type === 'organization' ? 'organization' : post?.author?.verified ? 'journalist' : 'standard';
-    //const authorType = post?.author?.type || 'standard'; // 'journalist' | 'activist' | 'scholar' | 'standard'
     return (
         <div
             onClick={handleRowClick}
             className={cn(
-                "flex flex-col relative p-6 border-b border-[#262626] last:border-b-0 transition-all duration-300",
+                "cascaded-post-row group flex flex-col relative p-6 border-b border-[#262626] last:border-b-0 transition-all duration-300",
                 isFocus ? "bg-[#181818]" : "bg-[#141414] hover:bg-white/[0.015] cursor-pointer",
                 post?.isOptimistic ? "opacity-60 pointer-events-none" : ""
             )}
         >
             {/* 🏆 DECOUPLED THREAD RAIL SYSTEM (Maintained outside the content columns) */}
-            {isAncestor && hasNextReply && <ThreadLine type="ancestor" depth={depth} userType={userPersona} />}
+            {(isAncestor || isFocus) && hasNextReply && <ThreadLine type="ancestor" depth={depth} userType={userPersona} />}
             {depth === 1 && <ThreadLine type="l-branch" depth={depth} userType={userPersona} />}
             {depth > 1 && <ThreadLine type="sub-reply-top" depth={depth} userType={userPersona} />}
             {depth > 0 && hasNextReply && <ThreadLine type="descendant-child" depth={depth} userType={userPersona} />}
@@ -562,8 +1081,8 @@ export const CascadedPostRow = React.memo(function C({
                 {/* COLUMN 1: LEFT RAIL LANE (Strictly holds the Avatar. Lines fall exactly through this axis) */}
                 <div className="w-12 flex flex-col items-center shrink-0">
                     <div className="w-11 h-11 rounded-xl overflow-hidden bg-[#1A1616] border border-white/10 shadow-md">
-                        <UserHoverCard author={post?.author}>
-                            <UserAvatar user={post?.author} className="w-11 h-11" showStatus={false} />
+                        <UserHoverCard author={postAuthor}>
+                            <UserAvatar user={postAuthor} className="w-11 h-11" showStatus={false} />
                         </UserHoverCard>
                     </div>
                 </div>
@@ -575,7 +1094,7 @@ export const CascadedPostRow = React.memo(function C({
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-bold text-text-primary text-sm md:text-base hover:underline truncate">
-                                    {post?.author?.name}
+                                    {postAuthor?.name || postAuthor?.display_name || postAuthor?.username || 'Citizen'}
                                 </span>
                                 {userPersona !== 'citizen' && (
                                     <VerificationBadge type={userPersona} size="sm" />
@@ -583,6 +1102,11 @@ export const CascadedPostRow = React.memo(function C({
                             </div>
                             <span className="text-xs text-text-secondary font-mono truncate">
                                 {authorHandle} • {post?.time || 'Just now'}
+                                {(post?.isEdited || post?.edited_at) && (
+                                    <span className="edited-indicator-icon ml-1.5 text-[11px] font-mono text-text-secondary/80 italic">
+                                        [Edited]
+                                    </span>
+                                )}
                             </span>
                         </div>
 
@@ -620,63 +1144,28 @@ export const CascadedPostRow = React.memo(function C({
                     )}
 
                     <div className="text-sm md:text-base text-text-primary/95 leading-relaxed break-words w-full">
-                        <PostContent post={post} isFocus={isFocus} />
+                        {isEditing ? (
+                            renderEditForm()
+                        ) : (
+                            <PostContent post={post} isFocus={isFocus} />
+                        )}
                     </div>
 
-                    {/* Mosaic Media Layout Container */}
-                    {allImages.length > 0 && (
-                        <div className="w-full rounded-xl overflow-hidden border border-white/5 shadow-inner mt-1">
-                            {allImages.length === 1 ? (
-                                <div className="aspect-[16/9] w-full overflow-hidden">
-                                    <img src={allImages} alt="Attached media asset" className="w-full h-full object-cover hover:scale-[1.015] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
-                                </div>
-                            ) : allImages.length === 2 ? (
-                                <div className="grid grid-cols-2 gap-2 aspect-[16/9] w-full overflow-hidden">
-                                    <img src={allImages} alt="Attached media asset" className="w-full h-full object-cover hover:scale-[1.015] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(0); setCarouselOpen(true); }} />
-                                    <img src={allImages} alt="Attached media asset" className="w-full h-full object-cover hover:scale-[1.015] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(1); setCarouselOpen(true); }} />
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-2 grid-rows-2 gap-2 aspect-[16/9] w-full overflow-hidden">
-                                    {allImages.slice(0, 4).map((img, i) => (
-                                        <img key={i} src={img} alt="Attached asset mosaic grid item" className="w-full h-full object-cover hover:scale-[1.015] transition-transform duration-300 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCarouselIndex(i); setCarouselOpen(true); }} />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                    {/* Rich Link Preview Card */}
+                    {!isEditing && post?.link_preview && (
+                        <LinkPreviewCard preview={post.link_preview} />
                     )}
 
-                    {/* 📸 RESPONSIVE MULTI-IMAGE CAROUSEL GRID */}
-                    {allImages && allImages.length > 0 && (
-                        <div className={cn(
-                            "grid gap-2 w-full mt-4 select-none rounded-xl overflow-hidden",
-                            allImages.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                        )}>
-                            {allImages.map((imgNode, index) => {
-                                // Support both standard string arrays or rich backend media object structures safely
-                                const isObject = typeof imgNode === 'object' && imgNode !== null;
-                                const imgSrc = isObject ? imgNode.url : imgNode; // ✅ Streamlined object resolution
-                                const imgStatic = isObject ? imgNode.static_url : undefined;
-                                const imgBlurhash = isObject ? imgNode.blurhash : undefined;
-                                const imgMeta = isObject ? imgNode.imageMeta : post?.imageMeta;
-
-                                return (
-                                    <KollectiveImagePlayer
-                                        key={`post-media-grid-${post.id}-${index}`}
-                                        src={imgSrc}
-                                        staticUrl={imgStatic}
-                                        blurhash={imgBlurhash}
-                                        imageMeta={imgMeta}
-                                        onClick={() => {
-                                            setCarouselIndex(index);
-                                            setCarouselOpen(true);
-                                        }}
-                                        className={cn(
-                                            "w-full h-full object-cover",
-                                            (allImages.length === 3 && index === 0) ? "col-span-2 aspect-[21/9]" : "aspect-[16/10]"
-                                        )}
-                                    />
-                                );
-                            })}
+                    {/* Mosaic Media Layout Container */}
+                    {!isEditing && allImages.length > 0 && (
+                        <div className="mt-3">
+                            <PostMediaGrid
+                                mediaAttachments={allImages}
+                                onMediaClick={(idx) => {
+                                    setCarouselIndex(idx);
+                                    setCarouselOpen(true);
+                                }}
+                            />
                         </div>
                     )}
 
@@ -689,14 +1178,14 @@ export const CascadedPostRow = React.memo(function C({
                                 e.stopPropagation();
                                 if (!isSelf && onReplyClick) {
                                     onReplyClick(
-                                        post?.author?.name,
+                                        postAuthor?.name || postAuthor?.username || 'user',
                                         post?.id
                                     );
                                 }
                             }}
-                            title={isSelf ? "You cannot reply to your own post" : "Reply"}
+                            title={isSelf ? "You cannot reply to your own post." : "Reply"}
                             className={cn(
-                                "flex items-center gap-1.5 text-sm bg-transparent border-none transition-colors",
+                                "reply-btn flex items-center gap-1.5 text-sm bg-transparent border-none transition-colors",
                                 isSelf ? "opacity-40 cursor-not-allowed text-text-secondary/50" : "hover:text-primary-container cursor-pointer"
                             )}
                         >
@@ -759,7 +1248,14 @@ export const CascadedPostRow = React.memo(function C({
                 images={allImages}
                 activeIndex={carouselIndex}
                 setActiveIndex={setCarouselIndex}
+            />
 
+            <ReportPostModal
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                post={post}
+                authorHandle={authorHandle}
+                authorId={postAuthor?.id || post?.user_id}
             />
         </div>
     );
@@ -767,14 +1263,26 @@ export const CascadedPostRow = React.memo(function C({
     // ⚡ CUSTOM COMPARE RULE: Only trigger memo break updates if data points shift
     return (
         prevProps.post?.id === nextProps.post?.id &&
+        prevProps.post?.text === nextProps.post?.text &&
+        prevProps.post?.body === nextProps.post?.body &&
+        prevProps.post?.content === nextProps.post?.content &&
+        prevProps.post?.isEdited === nextProps.post?.isEdited &&
+        prevProps.post?.edited_at === nextProps.post?.edited_at &&
+        prevProps.post?.is_author_deleted === nextProps.post?.is_author_deleted &&
+        prevProps.post?.deleted_by_author === nextProps.post?.deleted_by_author &&
         prevProps.post?.liked === nextProps.post?.liked &&
         prevProps.post?.bookmarked === nextProps.post?.bookmarked &&
         prevProps.post?.reblogged === nextProps.post?.reblogged &&
         prevProps.post?.isOptimistic === nextProps.post?.isOptimistic &&
         prevProps.post?.likes === nextProps.post?.likes &&
+        prevProps.post?.media_attachments === nextProps.post?.media_attachments &&
+        prevProps.post?.images === nextProps.post?.images &&
+        prevProps.post?.image === nextProps.post?.image &&
+        JSON.stringify(prevProps.post?.link_preview) === JSON.stringify(nextProps.post?.link_preview) &&
         getReplyCount(prevProps.post) === getReplyCount(nextProps.post) &&
         prevProps.isFocus === nextProps.isFocus &&
         prevProps.hasNextReply === nextProps.hasNextReply &&
-        prevProps.depth === nextProps.depth
+        prevProps.depth === nextProps.depth &&
+        prevProps.inProfileFeed === nextProps.inProfileFeed
     );
 });

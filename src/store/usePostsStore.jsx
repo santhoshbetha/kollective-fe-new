@@ -6,6 +6,10 @@ import { immer } from 'zustand/middleware/immer';
 export const usePostsStore = create(
     immer((set, get) => ({
         entities: {},
+        removedPostIds: {},
+        evictedAuthorIds: {},
+        filteredHandles: [],
+        filteredTags: [],
         feeds: {
             'all_activity': [],
             'voices': [],
@@ -271,15 +275,95 @@ export const usePostsStore = create(
         removePostEntity: (postId) => {
             if (!postId) return;
             set((state) => {
+                const targetIdStr = String(postId);
                 const nextEntities = { ...state.entities };
+                const nextRemovedPostIds = { ...(state.removedPostIds || {}), [targetIdStr]: true };
+
+                Object.keys(nextEntities).forEach((key) => {
+                    const entity = nextEntities[key];
+                    const reblogOfId = entity?.reblog_of_id || entity?.reblog?.id || entity?.reblogOf;
+                    const replyToId = entity?.in_reply_to_id || entity?.parent_id || entity?.root_post_id;
+                    if (
+                        (reblogOfId && String(reblogOfId) === targetIdStr) ||
+                        (replyToId && String(replyToId) === targetIdStr)
+                    ) {
+                        nextRemovedPostIds[String(key)] = true;
+                        delete nextEntities[key];
+                    }
+                });
+
                 delete nextEntities[postId];
-                return { entities: nextEntities };
+                return {
+                    entities: nextEntities,
+                    removedPostIds: nextRemovedPostIds
+                };
             });
+        },
+
+        evictAuthorPosts: (authorId) => {
+            if (!authorId) return;
+            set((state) => {
+                const nextEntities = { ...state.entities };
+                const nextRemovedPostIds = { ...(state.removedPostIds || {}) };
+                const nextEvictedAuthorIds = { ...(state.evictedAuthorIds || {}), [String(authorId)]: true };
+
+                Object.keys(nextEntities).forEach((key) => {
+                    const entity = nextEntities[key];
+                    const entityAuthorId = entity?.author?.id || entity?.user_id || entity?.user?.id;
+                    if (entityAuthorId && String(entityAuthorId) === String(authorId)) {
+                        nextRemovedPostIds[String(key)] = true;
+                        delete nextEntities[key];
+                    }
+                });
+
+                return {
+                    entities: nextEntities,
+                    removedPostIds: nextRemovedPostIds,
+                    evictedAuthorIds: nextEvictedAuthorIds
+                };
+            });
+        },
+
+        addClientFilter: ({ handle, tags = [] } = {}) => {
+            try {
+                const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('kollective_filtered_stream_rules') : null;
+                const parsed = raw ? JSON.parse(raw) : { handles: [], tags: [] };
+                const cleanHandle = handle ? String(handle).toLowerCase().trim() : null;
+                const nextHandles = Array.from(new Set([
+                    ...(Array.isArray(parsed.handles) ? parsed.handles : []),
+                    ...(cleanHandle ? [cleanHandle, cleanHandle.replace(/^@/, '')] : [])
+                ]));
+                const normalizedTags = (Array.isArray(tags) ? tags : []).map((t) =>
+                    (typeof t === 'object' ? (t?.name || t?.tag || '') : String(t)).toLowerCase().replace(/^#/, '').trim()
+                ).filter(Boolean);
+                const nextTags = Array.from(new Set([
+                    ...(Array.isArray(parsed.tags) ? parsed.tags : []),
+                    ...normalizedTags
+                ]));
+
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('kollective_filtered_stream_rules', JSON.stringify({
+                        handles: nextHandles,
+                        tags: nextTags
+                    }));
+                }
+
+                set({
+                    filteredHandles: nextHandles,
+                    filteredTags: nextTags
+                });
+            } catch (err) {
+                console.warn('Failed to persist client filter rules:', err);
+            }
         },
 
         purgeStoreDataMatrix: () => {
             set({
                 entities: {},
+        removedPostIds: {},
+        evictedAuthorIds: {},
+        filteredHandles: [],
+        filteredTags: [],
                 feeds: { 'all_activity': [], 'voices': [], 'popular': [], 'following': [] }
             });
         }

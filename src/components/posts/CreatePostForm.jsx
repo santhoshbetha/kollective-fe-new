@@ -9,6 +9,7 @@ import { Globe, MapPin, Flag, Users, Image as ImageIcon, Smile, BarChart3, Check
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter } from '../ui/Dialog';
 import { Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { MediaPreviewGrid } from '../media/MediaPreviewGrid';
 
 export function CreatePostForm({
     user,
@@ -97,6 +98,8 @@ export function CreatePostForm({
             preview: URL.createObjectURL(file),
             url: null,
             alt: '',
+            focal_x: 0,
+            focal_y: 0,
             isUploading: true,
             file
         }));
@@ -214,9 +217,19 @@ export function CreatePostForm({
             tags: completeTagsPayloadArray,
             community: 'General Feed',
             audience: audience,
-            images: uploadedAttachments.map(a => a.url).filter(Boolean),
+            focal_x: uploadedAttachments[0]?.focal_x ?? 0.0,
+            focal_y: uploadedAttachments[0]?.focal_y ?? 0.0,
+            images: uploadedAttachments.map(a => a.url || a.preview).filter(Boolean),
             imageAlts: uploadedAttachments.map(a => a.alt || ''),
             media_ids: uploadedAttachments.map(a => a.id).filter(Boolean),
+            media_attachments: uploadedAttachments.map(a => ({
+                id: a.id,
+                url: a.url || a.preview,
+                alt: a.alt || '',
+                description: (a.alt || '').trim(),
+                focal_x: a.focal_x ?? 0.0,
+                focal_y: a.focal_y ?? 0.0
+            })),
             link: postTab === 'link' ? linkUrl.trim() : undefined,
             contentWarning: showCwInput && cwText.trim() ? cwText.trim() : undefined,
             poll: isPollActive ? {
@@ -288,46 +301,30 @@ export function CreatePostForm({
     const renderImageGrid = () => {
         if (uploadedAttachments.length === 0) return null;
         return (
-            <div className={cn(
-                "grid gap-2 aspect-[16/10] w-full max-h-64 rounded-xl overflow-hidden relative select-none",
-                uploadedAttachments.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
-            )}>
-                {uploadedAttachments.map((att, index) => (
-                    <div
-                        key={`img-grid-${index}`}
-                        data-testid="media-preview"
-                        className="w-full h-full relative group overflow-hidden bg-neutral-950 rounded-xl border border-black/5 dark:border-white/5"
-                    >
-                        <img
-                            src={att.preview || att.url}
-                            alt={att.alt || `Preview ${index + 1}`}
-                            className="w-full h-full object-cover"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setUploadedAttachments(prev => prev.filter((_, i) => i !== index))}
-                            className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/70 hover:bg-black/90 text-white cursor-pointer border-none flex items-center justify-center font-sans font-bold text-xs shadow-md z-10 outline-none"
-                            aria-label={`Remove image ${index + 1}`}
-                        >
-                            ✕
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setEditingAltIndex(index);
-                                setAltDraft(att.alt || '');
-                            }}
-                            className={cn(
-                                "absolute bottom-2 left-2 px-2 py-0.5 text-[10px] font-black rounded-md flex items-center gap-1 uppercase tracking-wider text-white z-10 cursor-pointer border-none outline-none",
-                                att.alt ? 'bg-emerald-600/90' : 'bg-amber-600/90'
-                            )}
-                            aria-label={`Describe image ${index + 1}`}
-                        >
-                            ALT
-                        </button>
-                    </div>
-                ))}
-            </div>
+            <MediaPreviewGrid
+                attachments={uploadedAttachments}
+                onFocalChange={(index, coords) => {
+                    const att = uploadedAttachments[index];
+                    setUploadedAttachments((prev) =>
+                        prev.map((item, i) =>
+                            i === index
+                                ? { ...item, focal_x: coords.x, focal_y: coords.y }
+                                : item
+                        )
+                    );
+                    if (att?.id) {
+                        apiFetch(`/media/${att.id}`, {
+                            method: 'PUT',
+                            body: JSON.stringify({ focal_x: coords.x, focal_y: coords.y })
+                        }).catch((err) => console.error("Failed to sync focal coordinates:", err));
+                    }
+                }}
+                onRemove={(index) => setUploadedAttachments(prev => prev.filter((_, i) => i !== index))}
+                onAltClick={(index) => {
+                    setEditingAltIndex(index);
+                    setAltDraft(uploadedAttachments[index]?.alt || '');
+                }}
+            />
         );
     };
     return (

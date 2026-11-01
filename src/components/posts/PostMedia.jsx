@@ -1,6 +1,9 @@
 // src/features/timeline/PostMedia.jsx
 import React, { useState } from 'react';
 import { KollectiveVideoPlayer } from '../KollectiveVideoPlayer';
+import { PostMediaGrid, getObjectPosition } from './PostMediaGrid';
+
+export { PostMediaGrid, getObjectPosition };
 
 const isVideoUrl = (urlStr) => {
     if (!urlStr || typeof urlStr !== 'string') return false;
@@ -35,17 +38,33 @@ export function PostMedia({ post, setCarouselIndex, setCarouselOpen }) {
         videoUrl = post.image;
     }
 
-    const rawAttachments = post?.images || post?.media_attachments || (post?.image ? [post.image] : []);
+    const rawAttachments = (post?.media_attachments && post.media_attachments.length > 0)
+        ? post.media_attachments
+        : (post?.images && post.images.length > 0)
+            ? post.images
+            : post?.image
+                ? [post.image]
+                : [];
     const attachments = (Array.isArray(rawAttachments) ? rawAttachments : [rawAttachments])
         .filter(Boolean)
-        .map((img) => {
+        .map((img, i) => {
             if (typeof img === 'object') {
                 return {
-                    url: img?.url || img?.preview_url || img?.src || '',
-                    alt: img?.description || img?.alt || img?.imageMeta || ''
+                    id: img?.id || `att-${i}`,
+                    url: img?.url || img?.preview_url || img?.static_url || img?.src || '',
+                    alt: img?.description || img?.alt || img?.imageMeta || '',
+                    focal_x: img?.focal_x ?? img?.meta?.focus?.x ?? post?.focal_x ?? 0,
+                    focal_y: img?.focal_y ?? img?.meta?.focus?.y ?? post?.focal_y ?? 0,
+                    aspect_ratio: img?.aspect_ratio ?? img?.meta?.original?.aspect
                 };
             }
-            return { url: img, alt: '' };
+            return {
+                id: `att-${i}`,
+                url: img,
+                alt: '',
+                focal_x: post?.focal_x ?? 0,
+                focal_y: post?.focal_y ?? 0
+            };
         })
         .filter((item) => Boolean(item.url) && !isVideoUrl(item.url));
 
@@ -56,16 +75,6 @@ export function PostMedia({ post, setCarouselIndex, setCarouselOpen }) {
     const [isRevealed, setIsRevealed] = useState(!isSensitive);
 
     if (!hasMedia) return null;
-
-    const handleMediaClick = (e, index) => {
-        e.stopPropagation();
-        if (!isRevealed) {
-            setIsRevealed(true);
-            return;
-        }
-        setCarouselIndex(index);
-        setCarouselOpen(true);
-    };
 
     return (
         <div className="status-media-wrapper w-full mt-3 relative rounded-2xl overflow-hidden border border-white/5 shadow-sm group" onClick={(e) => e.stopPropagation()}>
@@ -93,60 +102,17 @@ export function PostMedia({ post, setCarouselIndex, setCarouselOpen }) {
                     title={post?.title}
                 />
             ) : (
-                /* 🖼️ DYNAMIC MULTI-IMAGE MOSAIC GRID MATRICES */
-                <div
-                    className={`grid gap-1.5 aspect-[16/10] w-full bg-surface-container-lowest ${attachments.length === 1 ? 'grid-cols-1' :
-                        attachments.length === 2 ? 'grid-cols-2' :
-                            attachments.length === 3 ? 'grid-cols-2 grid-rows-2' :
-                                'grid-cols-2 grid-rows-2' // 4 images max
-                        }`}
-                >
-                    {attachments.slice(0, 4).map((mediaItem, index) => {
-                        // Dynamic rowspan calculation rule for the 3-image layout configuration setup
-                        const isThreeImageFirst = attachments.length === 3 && index === 0;
-
-                        return (
-                            <div
-                                key={index}
-                                onClick={(e) => handleMediaClick(e, index)}
-                                className={`relative overflow-hidden cursor-pointer ${isThreeImageFirst ? 'row-span-2' : ''
-                                    }`}
-                            >
-                                <img
-                                    alt={mediaItem.alt || `Media asset link index ${index}`}
-                                    src={mediaItem.url}
-                                    className={`w-full h-full object-cover transition-transform duration-500 ${isRevealed ? 'group-hover:scale-[1.02]' : 'blur-2xl'
-                                        }`}
-                                    loading="lazy"
-                                />
-
-                                {/* 📊 Keep your beautiful overlay metadata indicators if it's the first image */}
-                                {index === 0 && post?.imageMeta && isRevealed && (
-                                    <>
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
-                                        <div className="absolute bottom-4 left-4 flex items-center gap-3 z-10 animate-in fade-in duration-300">
-                                            <div className="flex -space-x-2 select-none">
-                                                <div className="w-6 h-6 rounded-full border border-surface-ink bg-primary-container/20 backdrop-blur-md" />
-                                                <div className="w-6 h-6 rounded-full border border-surface-ink bg-white/5 backdrop-blur-md" />
-                                            </div>
-                                            <span className="text-[11px] font-mono font-black text-white/90 drop-shadow-sm tracking-wide bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/5">
-                                                {post.imageMeta}
-                                            </span>
-                                        </div>
-                                    </>
-                                )}
-
-                                {/* ➕ Indicator overlay mask counter if there are more than 4 images */}
-                                {index === 3 && attachments.length > 4 && (
-                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-                                        <span className="text-xl font-black text-white font-mono">+{attachments.length - 4}</span>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
+                /* 🖼️ DYNAMIC MULTI-IMAGE MOSAIC GRID MATRICES (PostMediaGrid) */
+                <PostMediaGrid
+                    mediaAttachments={attachments}
+                    onMediaClick={(idx) => {
+                        if (setCarouselIndex) setCarouselIndex(idx);
+                        if (setCarouselOpen) setCarouselOpen(true);
+                    }}
+                />
             )}
         </div>
     );
 }
+
+export default PostMedia;

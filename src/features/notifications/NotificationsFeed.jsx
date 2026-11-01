@@ -37,7 +37,7 @@ export function NotificationsFeed() {
                 <Bell className="w-8 h-8 text-text-secondary/40 mb-4 block" />
                 <h3 className="font-bold text-text-primary mb-1 text-xl">No notifications yet</h3>
                 <p className="text-text-secondary text-md font-medium max-w-sm font-sans leading-relaxed">
-                    We'll let you know when something exciting happens inside your network coordinate coordinate mesh!
+                    We'll let you know when something exciting happens inside your network coordinate mesh!
                 </p>
             </div>
         );
@@ -49,6 +49,7 @@ export function NotificationsFeed() {
             <Virtuoso
                 useWindowScroll
                 data={notifications}
+                initialItemCount={Math.min(notifications.length, 20)}
                 computeItemKey={(index, item) => item?.id || index}
                 increaseViewportBy={350}
                 overscan={150}

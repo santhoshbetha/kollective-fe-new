@@ -16,6 +16,8 @@ const PasswordSettingsForm = lazy(() => import('../../features/settings/Settings
 const DangerZoneSettingsForm = lazy(() => import('../../features/settings/SettingsSubForms').then(m => ({ default: m.DangerZoneSettingsForm })));
 const InvitationsList = lazy(() => import('./InvitationsList'));
 const SettingsDashboard = lazy(() => import('../../features/settings/SettingsDashboard'));
+const BlockedProfilesForm = lazy(() => import('../../features/settings/BlockedProfilesForm').then(m => ({ default: m.BlockedProfilesForm || m.default })));
+const MutedProfilesForm = lazy(() => import('../../features/settings/MutedProfilesForm').then(m => ({ default: m.MutedProfilesForm || m.default })));
 
 export const SettingsPage = () => {
     const navigate = useNavigate();
@@ -114,6 +116,8 @@ export const SettingsPage = () => {
             { id: 'invitations', label: 'Organization Invitations', icon: 'mail_lock', desc: 'Pending team invites and access grants' },
             { id: 'email', label: 'Email Configuration', icon: 'mail', desc: 'Manage your contact address links' },
             { id: 'password', label: 'Security & Keys', icon: 'lock', desc: 'Modify entry passwords and authorization keys' },
+            { id: 'blocked_profiles', label: 'Blocked Profiles', icon: 'block', desc: 'Manage restricted profiles blocked from your timeline' },
+            { id: 'muted_profiles', label: 'Muted Profiles', icon: 'volume_off', desc: 'Manage muted feeds and hidden response cards' },
             { id: 'account', label: 'Danger Zone', icon: 'gavel', desc: 'Permanent account destruction matrices' }
         ];
     }, [isOrg, t]);
@@ -299,6 +303,16 @@ export const SettingsPage = () => {
                         {!isOrg && visitedTabs.has('password') && (
                             <div className={activeSettingsTab === 'password' ? 'block' : 'hidden'}>
                                 <PasswordSettingsForm />
+                            </div>
+                        )}
+                        {visitedTabs.has('blocked_profiles') && (
+                            <div className={activeSettingsTab === 'blocked_profiles' ? 'block' : 'hidden'}>
+                                <BlockedProfilesForm />
+                            </div>
+                        )}
+                        {visitedTabs.has('muted_profiles') && (
+                            <div className={activeSettingsTab === 'muted_profiles' ? 'block' : 'hidden'}>
+                                <MutedProfilesForm />
                             </div>
                         )}
                         {!isOrg && visitedTabs.has('account') && (

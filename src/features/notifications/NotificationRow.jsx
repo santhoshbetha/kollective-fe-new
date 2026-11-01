@@ -1,45 +1,92 @@
 // src/features/notifications/NotificationRow.jsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useToggleFollowUser } from './useNotificationsFeature';
+import { useAuthStore } from '../../store/auth/useAuthStore';
+import { useAccountsStore } from '../../store/useAccountsStore';
+import { getAvatarInitials, getTeamsBackgroundColor } from '../../utils/avatarUtils';
 import { Heart, MessageSquare, Award, Calendar, Bell, Scale } from 'lucide-react';
 import { ModerationAppealForm } from '../moderation/components/ModerationAppealForm';
 import { cn } from "@/lib/utils";
 
-export function NotificationRow({ item }) {
+const EMPTY_ARRAY = [];
+const EMPTY_OBJECT = {};
+
+export function NotificationRow({ item, notification: propNotification }) {
+    const notification = item || propNotification;
     const toggleFollowUser = useToggleFollowUser();
     const [isAppealOpen, setIsAppealOpen] = useState(false);
 
+    const authUser = useAuthStore((state) => state?.user);
+    const storeFollowingIds = useAccountsStore((state) => state?.following_ids || state?.followingIds || EMPTY_ARRAY);
+    const accountEntities = useAccountsStore((state) => state?.entities || EMPTY_OBJECT);
+
+    const followingIds = useMemo(() => {
+        const authIds = authUser?.following_ids || authUser?.followingIds || EMPTY_ARRAY;
+        const entityIds = Object.values(accountEntities)
+            .filter((acc) => acc?.following)
+            .map((acc) => String(acc.id));
+        return Array.from(new Set([
+            ...(Array.isArray(authIds) ? authIds.map(String) : []),
+            ...(Array.isArray(storeFollowingIds) ? storeFollowingIds.map(String) : []),
+            ...entityIds
+        ]));
+    }, [authUser, storeFollowingIds, accountEntities]);
+
     // Check both potential backend unread indicators
-    const isUnread = Boolean(item?.unread || item?.is_read === false || item?.read === false);
+    const isUnread = Boolean(notification?.unread || notification?.is_read === false || notification?.read === false);
 
     const isModerationNotice = Boolean(
-        item?.type === 'report' ||
-        item?.type === 'moderation' ||
-        item?.type === 'soft_delete' ||
-        item?.metadata?.sub_type === 'post_rejected' ||
-        item?.title?.toLowerCase().includes('soft-delete') ||
-        item?.title?.toLowerCase().includes('moderation') ||
-        item?.description?.toLowerCase().includes('soft-delete') ||
-        item?.description?.toLowerCase().includes('rejected') ||
-        item?.preview?.toLowerCase().includes('soft-delete') ||
-        item?.preview?.toLowerCase().includes('rejected')
+        notification?.type === 'report' ||
+        notification?.type === 'moderation' ||
+        notification?.type === 'soft_delete' ||
+        notification?.metadata?.sub_type === 'post_rejected' ||
+        notification?.title?.toLowerCase().includes('soft-delete') ||
+        notification?.title?.toLowerCase().includes('moderation') ||
+        notification?.description?.toLowerCase().includes('soft-delete') ||
+        notification?.description?.toLowerCase().includes('rejected') ||
+        notification?.preview?.toLowerCase().includes('soft-delete') ||
+        notification?.preview?.toLowerCase().includes('rejected')
     );
 
-    // Handle inline optimistic updates for follower relationships
-    const handleFollowBack = (e, username) => {
+    const actor = notification?.actor || notification?.user || notification?.account;
+    const actorId = notification?.actor_id || actor?.id;
+    const actorName = actor?.name || actor?.display_name || actor?.username || 'Someone';
+
+    // 1. Avatar Pic vs. Initials Fallback Rendering
+    const rawAvatarUrl = actor?.avatar_url || actor?.avatar;
+    const hasValidAvatar = Boolean(
+        rawAvatarUrl &&
+        typeof rawAvatarUrl === 'string' &&
+        rawAvatarUrl.trim() !== '' &&
+        rawAvatarUrl !== '/default-avatar.jpg'
+    );
+    const actorInitials = (
+        actor?.initials
+            ? String(actor.initials).trim().toUpperCase()
+            : getAvatarInitials(actorName)
+    ) || '?';
+    const avatarBgColor = getTeamsBackgroundColor(actorName || actorId || 'user');
+
+    // 2. Conditional "Follow Back" Button Clearance Logic
+    const isAlreadyFollowing = Boolean(
+        notification?.following ||
+        actor?.following ||
+        (actorId && followingIds.includes(String(actorId)))
+    );
+
+    const handleFollowBack = (e, targetIdentifier) => {
         e.stopPropagation();
-        if (!username) return;
-        toggleFollowUser.mutate(username);
+        if (!targetIdentifier) return;
+        toggleFollowUser.mutate(targetIdentifier);
     };
 
-    const actor = item?.actor || item?.user;
-    const actorName = actor?.name || actor?.username || 'Someone';
-    const actorAvatar = actor?.avatar || actor?.avatar_url || 'data:image/svg+xml;utf8,<svg xmlns="http://w3.org" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="%23222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="24" fill="%23555">?</text></svg>';
+    const mentionText = notification?.body || notification?.text || notification?.content || notification?.preview || notification?.preview_text || 'new mention';
+    const followBodyText = notification?.body || notification?.preview || notification?.preview_text;
 
     return (
         <div className="w-full pb-4">
             <div className={cn(
-                "notification-item rounded-2xl p-6 border relative overflow-hidden transition-all duration-300 flex items-start gap-4 text-left font-sans",
+                "notification-item rounded-2xl p-6 border relative transition-all duration-300 flex items-start gap-4 text-left font-sans",
                 isUnread
                     ? "border-l-4 border-l-primary-container border-white/10 bg-primary-container/[0.03]"
                     : "border-white/5 bg-surface-container-low"
@@ -48,14 +95,23 @@ export function NotificationRow({ item }) {
 
                 {actor ? (
                     <div className={cn(
-                        "w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 p-[1px] select-none",
+                        "w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 p-[1px] select-none flex items-center justify-center",
                         isUnread ? "border-primary-container" : "border-white/10"
                     )}>
-                        <img
-                            alt={actorName}
-                            className="w-full h-full rounded-full object-cover"
-                            src={actorAvatar}
-                        />
+                        {hasValidAvatar ? (
+                            <img
+                                alt={actorName}
+                                className="w-full h-full rounded-full object-cover"
+                                src={rawAvatarUrl}
+                            />
+                        ) : (
+                            <div
+                                style={{ backgroundColor: avatarBgColor }}
+                                className="w-full h-full rounded-full flex items-center justify-center font-bold text-white uppercase select-none text-sm tracking-wider leading-none"
+                            >
+                                <span>{actorInitials}</span>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className={cn(
@@ -64,7 +120,7 @@ export function NotificationRow({ item }) {
                     )}>
                         {isModerationNotice ? (
                             <Scale className="w-5 h-5 text-amber-400 stroke-[2.5px]" />
-                        ) : item?.type === 'event' ? (
+                        ) : notification?.type === 'event' ? (
                             <Calendar className="w-5 h-5 text-primary-container" />
                         ) : (
                             <Bell className="w-5 h-5 text-primary-container" />
@@ -72,82 +128,91 @@ export function NotificationRow({ item }) {
                     </div>
                 )}
 
-                <div className="flex-1 space-y-1 min-w-0">
-                    <div className="flex justify-between items-start gap-4">
-                        <div className="min-w-0 text-base md:text-lg">
-                            {(item?.type === 'like' || item?.type === 'favourite') && (
-                                <p className="text-text-primary">
-                                    <strong className="font-extrabold">{actorName}</strong> liked your post <span className="text-primary-container font-serif italic">"{item.postTitle || item.preview_text || 'Untitled'}"</span>
+                {/* 3. Flexbox Text Clamping Overrides (Multi-line natural word wrapping) */}
+                <div className="flex-1 min-w-0 space-y-1 break-words whitespace-normal">
+                    <div className="flex justify-between items-start gap-4 w-full min-w-0">
+                        <div className="flex-1 min-w-0 text-base md:text-lg break-words whitespace-normal">
+                            {(notification?.type === 'like' || notification?.type === 'favourite') && (
+                                <p className="text-text-primary break-words whitespace-normal">
+                                    <strong className="font-extrabold">{actorName}</strong> liked your post <span className="text-primary-container font-serif italic break-words whitespace-normal">"{notification.postTitle || notification.body || notification.preview_text || notification.preview || 'Untitled'}"</span>
                                 </p>
                             )}
-                            {item?.type === 'follow' && (
-                                <p className="text-text-primary">
-                                    <strong className="font-extrabold">{actorName}</strong> started following you
+                            {notification?.type === 'follow' && (
+                                <p className="text-text-primary break-words whitespace-normal">
+                                    <strong className="font-extrabold">{actorName}</strong>{' '}
+                                    {followBodyText
+                                        ? followBodyText.replace(new RegExp(`^${actorName}\\s*`, 'i'), '')
+                                        : 'started following you'}
                                 </p>
                             )}
-                            {item?.type === 'comment' && (
-                                <p className="text-text-primary">
+                            {(notification?.type === 'comment' || notification?.type === 'reply') && (
+                                <p className="text-text-primary break-words whitespace-normal">
                                     <strong className="font-extrabold">{actorName}</strong> commented on your pulse
+                                    {notification?.body ? `: "${notification.body}"` : ''}
                                 </p>
                             )}
-                            {item?.type === 'mention' && (
-                                <p className="text-text-primary">
-                                    <strong className="font-extrabold">{actorName}</strong> mentioned you: <span className="text-primary-container font-serif italic">"{item.preview || item.preview_text || 'new mention'}"</span>
+                            {notification?.type === 'mention' && (
+                                <p className="text-text-primary break-words whitespace-normal">
+                                    <strong className="font-extrabold">{actorName}</strong> mentioned you: <span className="text-primary-container font-serif italic break-words whitespace-normal">"{mentionText}"</span>
                                 </p>
                             )}
-                            {item?.type === 'post' && (
-                                <p className="text-text-primary">
-                                    <strong className="font-extrabold">{actorName}</strong> posted <span className="text-primary-container font-serif italic">"{item.postTitle || item.title || item.preview || 'new post'}"</span>
+                            {notification?.type === 'post' && (
+                                <p className="text-text-primary break-words whitespace-normal">
+                                    <strong className="font-extrabold">{actorName}</strong> posted <span className="text-primary-container font-serif italic break-words whitespace-normal">"{notification.postTitle || notification.title || notification.body || notification.preview || 'new post'}"</span>
                                 </p>
                             )}
-                            {item?.type === 'event' && (
-                                <p className="text-text-primary font-extrabold">
-                                    Event starting soon: {item.title || 'Community Mobilization'}
+                            {notification?.type === 'event' && (
+                                <p className="text-text-primary font-extrabold break-words whitespace-normal">
+                                    Event starting soon: {notification.title || notification.body || 'Community Mobilization'}
                                 </p>
                             )}
-                            {item?.type === 'highlight' && (
-                                <p className="text-text-primary">
-                                    <strong className="font-extrabold">{item.user?.name || 'System'}</strong> {item.title}
+                            {notification?.type === 'highlight' && (
+                                <p className="text-text-primary break-words whitespace-normal">
+                                    <strong className="font-extrabold">{actor?.name || 'System'}</strong> {notification.title || notification.body}
                                 </p>
                             )}
                             {isModerationNotice && (
-                                <p className="text-text-primary">
-                                    <strong className="font-extrabold text-amber-400">Governance Notice:</strong> {item.title || item.preview || "A moderation soft-delete action was executed on your content."}
-                                </p>
-                            )}
-                            {!['like', 'favourite', 'follow', 'comment', 'mention', 'post', 'event', 'highlight'].includes(item?.type) && !isModerationNotice && (
-                                <p className="text-text-primary">
-                                    <strong className="font-extrabold">{actorName}</strong> {item?.title || item?.preview || item?.preview_text || 'interacted with you'}
+                                <p className="text-text-primary break-words whitespace-normal">
+                                    <strong className="font-extrabold text-amber-400">Governance Notice:</strong> {notification.title || notification.body || notification.preview || "A moderation soft-delete action was executed on your content."}
                                 </p>
                             )}
 
-                            {item?.description && (
-                                <p className="text-sm text-text-secondary mt-1 font-medium leading-relaxed">{item.description}</p>
+                            {!['like', 'favourite', 'follow', 'comment', 'reply', 'mention', 'post', 'event', 'highlight'].includes(notification?.type) && !isModerationNotice && (
+                                <p className="text-text-primary break-words whitespace-normal">
+                                    <strong className="font-extrabold">{actorName}</strong>{' '}
+                                    {notification?.body || notification?.title || notification?.preview || notification?.preview_text || 'interacted with you'}
+                                </p>
                             )}
 
-                            {item?.commentText && (
-                                <blockquote className="border-l-2 border-white/10 pl-3 py-1 mt-2 text-sm text-text-secondary italic font-serif">
-                                    "{item.commentText}"
+                            {notification?.description && (
+                                <p className="text-sm text-text-secondary mt-1 font-medium leading-relaxed break-words whitespace-normal">
+                                    {notification.description}
+                                </p>
+                            )}
+
+                            {notification?.commentText && (
+                                <blockquote className="border-l-2 border-white/10 pl-3 py-1 mt-2 text-sm text-text-secondary italic font-serif break-words whitespace-normal">
+                                    "{notification.commentText}"
                                 </blockquote>
                             )}
                         </div>
-                        <span className="text-xs text-text-secondary font-mono whitespace-nowrap shrink-0 pt-0.5 select-none">{item?.time || 'Recent'}</span>
+                        <span className="text-xs text-text-secondary font-mono whitespace-nowrap shrink-0 pt-0.5 select-none">{notification?.time || 'Recent'}</span>
                     </div>
 
-                    <div className="pt-2 flex items-center gap-3 select-none font-mono text-[10px]">
-                        {item?.type === 'like' && (
+                    <div className="pt-2 flex items-center gap-3 select-none font-mono text-[10px] flex-wrap">
+                        {notification?.type === 'like' && (
                             <span className="flex items-center gap-1.5 font-bold text-primary-container bg-primary-container/10 border border-primary-container/20 px-3 py-1 rounded-full uppercase tracking-wider">
                                 <Heart className="w-3 h-3 fill-current" />
                                 <span>New Like</span>
                             </span>
                         )}
-                        {item?.type === 'comment' && (
+                        {notification?.type === 'comment' && (
                             <span className="flex items-center gap-1.5 font-bold text-text-primary bg-surface-container-high border border-white/5 px-3 py-1 rounded-full uppercase tracking-wider">
                                 <MessageSquare className="w-3 h-3" />
                                 <span>Comment</span>
                             </span>
                         )}
-                        {item?.type === 'highlight' && (
+                        {notification?.type === 'highlight' && (
                             <span className="flex items-center gap-1.5 font-bold text-text-secondary bg-white/5 border border-white/10 px-3 py-1 rounded-full uppercase tracking-wider">
                                 <Award className="w-3 h-3 fill-current" />
                                 <span>Community Highlight</span>
@@ -166,19 +231,14 @@ export function NotificationRow({ item }) {
                                 <span>Dispute Soft-Delete</span>
                             </button>
                         )}
-                        {item?.type === 'follow' && (
+                        {notification?.type === 'follow' && !isAlreadyFollowing && (
                             <button
                                 type="button"
-                                onClick={(e) => handleFollowBack(e, item.user?.name)}
+                                onClick={(e) => handleFollowBack(e, actorId || actor?.username || actor?.name)}
                                 disabled={toggleFollowUser.isPending}
-                                className={cn(
-                                    "px-4 py-1.5 rounded-xl font-bold uppercase tracking-wider active:scale-95 transition-all cursor-pointer border text-[10px] outline-none",
-                                    item.following
-                                        ? "bg-surface-container-high border-white/5 text-text-secondary"
-                                        : "bg-primary-container text-white border-primary-container crimson-glow font-extrabold"
-                                )}
+                                className="px-4 py-1.5 rounded-xl font-bold uppercase tracking-wider active:scale-95 transition-all cursor-pointer border text-[10px] outline-none bg-primary-container text-white border-primary-container crimson-glow font-extrabold"
                             >
-                                {item.following ? 'Following ✓' : 'Follow Back'}
+                                Follow Back
                             </button>
                         )}
                     </div>
@@ -188,7 +248,7 @@ export function NotificationRow({ item }) {
             <ModerationAppealForm
                 isOpen={isAppealOpen}
                 onClose={() => setIsAppealOpen(false)}
-                incidentId={item?.incident_id || item?.incidentId || item?.post_id || item?.target_id || item?.id}
+                incidentId={notification?.incident_id || notification?.incidentId || notification?.post_id || notification?.target_id || notification?.id}
             />
         </div>
     );

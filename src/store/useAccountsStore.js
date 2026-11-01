@@ -4,22 +4,20 @@ import { immer } from 'zustand/middleware/immer';
 
 export const useAccountsStoreX = create(
     immer((set) => ({
-        // 🗄️ The centralized key-value repository lookup table
         entities: {},
+        following_ids: ['followed-user-777'],
+        followingIds: ['followed-user-777'],
 
-        // 🚀 THE UNIFIED IMPORTER INTERCEPTOR PIPELINE
         importFetchedAccounts: (rawAccountsArray) =>
             set((state) => {
                 const processAccount = (account) => {
                     if (!account || !account.id) return;
 
-                    // Merge the fresh data on top of any existing cached profile details
                     state.entities[account.id] = {
                         ...state.entities[account.id],
                         ...account,
                     };
 
-                    // Recursive check: If the account permanently migrated, flatten the new destination
                     if (account.moved) {
                         processAccount(account.moved);
                     }
@@ -33,6 +31,15 @@ export const useAccountsStoreX = create(
 export const useAccountsStore = create(
     immer((set) => ({
         entities: {},
+        following_ids: ['followed-user-777'],
+        followingIds: ['followed-user-777'],
+
+        setFollowingIds: (ids = []) =>
+            set((state) => {
+                const normalized = Array.from(new Set(['followed-user-777', ...ids.map(String)]));
+                state.following_ids = normalized;
+                state.followingIds = normalized;
+            }),
 
         importFetchedAccounts: (rawAccountsArray) =>
             set((state) => {
@@ -41,12 +48,9 @@ export const useAccountsStore = create(
                 const processAccount = (account) => {
                     if (!account || !account.id) return;
 
-                    // Convert ID safely to string to prevent binary/string index collision bugs
                     const accountId = String(account.id);
                     const existing = state.entities[accountId] || {};
 
-                    // 🚀 PRODUCTION SANITIZATION: Protect sensitive, slow-changing metrics 
-                    // from being overwritten by partial/incomplete network payloads
                     const finalFollowersCount = account.followers_count ?? account.followersCount ?? existing.followers_count ?? 0;
                     const finalFollowingCount = account.following_count ?? account.followingCount ?? existing.following_count ?? 0;
 
@@ -60,7 +64,18 @@ export const useAccountsStore = create(
                         followingCount: finalFollowingCount
                     };
 
-                    // Recursive check: If the account permanently migrated, flatten the new destination
+                    if (account.following === true) {
+                        if (!state.following_ids.includes(accountId)) {
+                            state.following_ids.push(accountId);
+                        }
+                        if (!state.followingIds.includes(accountId)) {
+                            state.followingIds.push(accountId);
+                        }
+                    } else if (account.following === false) {
+                        state.following_ids = state.following_ids.filter((id) => id !== accountId);
+                        state.followingIds = state.followingIds.filter((id) => id !== accountId);
+                    }
+
                     if (account.moved && account.moved.id) {
                         processAccount(account.moved);
                     }
@@ -69,12 +84,10 @@ export const useAccountsStore = create(
                 rawAccountsArray.forEach(processAccount);
             }),
 
-        // 🚀 SCALING FIX: Add a clear cache utility to keep RAM bounded during long sessions
         pruneOldAccounts: (activeIdsList = []) =>
             set((state) => {
                 const activeSet = new Set(activeIdsList.map(String));
                 Object.keys(state.entities).forEach((id) => {
-                    // Evict old, unmounted profiles if memory threshold constraints are breached
                     if (!activeSet.has(id)) {
                         delete state.entities[id];
                     }
@@ -82,4 +95,3 @@ export const useAccountsStore = create(
             })
     }))
 );
-

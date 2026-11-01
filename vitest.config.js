@@ -19,5 +19,6 @@ export default defineConfig({
         setupFiles: './src/test/setup.js',
         globals: true,
         css: false,
+        maxWorkers: 1,
     },
 });

@@ -39,6 +39,11 @@ export function TimelineFeed() {
         staleTime: Infinity,
     });
 
+    const removedPostIds = usePostsStore((state) => state.removedPostIds);
+    const evictedAuthorIds = usePostsStore((state) => state.evictedAuthorIds);
+    const filteredHandles = usePostsStore((state) => state.filteredHandles);
+    const filteredTags = usePostsStore((state) => state.filteredTags);
+
     const unreadCount = bufferedPosts?.length || 0;
     // 🚀 UNIFIED FILTERS PROCESSING LAYER
     const filteredPosts = useMemo(() => {
@@ -49,6 +54,16 @@ export function TimelineFeed() {
             activeAccount,
             activeFilters,
             isProfilePage: false,
+        }).filter((p) => {
+            if (!p) return false;
+            if (p.id && removedPostIds?.[String(p.id)]) return false;
+            const reblogTargetId = p.reblog_of_id || p.reblog?.id || p.reblogOf;
+            if (reblogTargetId && removedPostIds?.[String(reblogTargetId)]) return false;
+            const replyTargetId = p.in_reply_to_id || p.parent_id || p.root_post_id;
+            if (replyTargetId && removedPostIds?.[String(replyTargetId)]) return false;
+            const authorId = p.author?.id || p.user_id || p.user?.id;
+            if (authorId && evictedAuthorIds?.[String(authorId)]) return false;
+            return true;
         });
 
         if (activeTab === 'Voices') {
@@ -58,7 +73,7 @@ export function TimelineFeed() {
         }
 
         return processed;
-    }, [data?.pages, currentUser, activeAccount, activeFilters, activeTab]);
+    }, [data?.pages, currentUser, activeAccount, activeFilters, activeTab, removedPostIds, evictedAuthorIds, filteredHandles, filteredTags]);
 
     const virtuosoRef = useRef(null);
     const scrollRestoredRef = useRef(false);

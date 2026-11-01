@@ -4,8 +4,12 @@ import { usePinnedPostsQuery, useUnpinPostMutation } from './usePinnedPostsFeatu
 import { PostCard } from '../../components/posts/PostCard';
 
 export function PinnedPostsSection({ accountId, isOwnProfile }) {
-    const { data: pinnedPosts, isPending, isError } = usePinnedPostsQuery(accountId);
+    const { data: rawData, isPending, isError } = usePinnedPostsQuery(accountId);
     const unpinMutation = useUnpinPostMutation(accountId);
+
+    const pinnedPosts = Array.isArray(rawData)
+        ? rawData
+        : (Array.isArray(rawData?.posts) ? rawData.posts : (Array.isArray(rawData?.data) ? rawData.data : []));
 
     if (isPending || isError || !pinnedPosts || pinnedPosts.length === 0) return null;
 

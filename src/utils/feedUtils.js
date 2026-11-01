@@ -36,8 +36,45 @@ export function processFeedPosts(posts, options = {}) {
     const seenCanonicalIds = new Set();
     const result = [];
 
+    let localFilterHandles = [];
+    let localFilterTags = [];
+    try {
+        if (typeof localStorage !== 'undefined') {
+            const rawRules = localStorage.getItem('kollective_filtered_stream_rules');
+            if (rawRules) {
+                const parsedRules = JSON.parse(rawRules);
+                if (Array.isArray(parsedRules?.handles)) localFilterHandles = parsedRules.handles;
+                if (Array.isArray(parsedRules?.tags)) localFilterTags = parsedRules.tags;
+            }
+        }
+    } catch (_e) {
+        // Ignore storage read errors
+    }
+
     for (const post of posts) {
         if (!post) continue;
+
+        // 0. Client-side localStorage author handle & hashtag filters
+        const postAuthorHandle = (post.author?.handle || post.author?.username || '').toLowerCase().trim();
+        const postAuthorClean = postAuthorHandle.replace(/^@/, '');
+        if (
+            localFilterHandles.length > 0 &&
+            postAuthorClean &&
+            (localFilterHandles.includes(postAuthorHandle) || localFilterHandles.includes(postAuthorClean))
+        ) {
+            continue;
+        }
+
+        if (localFilterTags.length > 0 && Array.isArray(post.tags) && post.tags.length > 0) {
+            const hasFilteredTag = post.tags.some((t) => {
+                const tagStr = (typeof t === 'object' ? (t?.name || t?.tag || '') : String(t))
+                    .toLowerCase()
+                    .replace(/^#/, '')
+                    .trim();
+                return tagStr && localFilterTags.includes(tagStr);
+            });
+            if (hasFilteredTag) continue;
+        }
 
         // 1. Keyword Filters
         if (activeFilters && Array.isArray(activeFilters) && activeFilters.length > 0 && post.text) {

@@ -124,8 +124,6 @@ export const OrganizePage = () => {
 
             {/* Right Sidebar sticky panel grid widget */}
             <aside className="w-full lg:w-80 flex flex-col gap-6 shrink-0 lg:sticky lg:top-20 h-fit">
-                <ScheduleWidget />
-
                 {/* Mobilize Call To Action Widget Panel Container */}
                 <section className="p-6 rounded-2xl border border-primary/20 bg-[#141414] relative overflow-hidden flex flex-col gap-3">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-primary-container/[0.02] blur-xl rounded-full pointer-events-none"></div>
@@ -144,9 +142,8 @@ export const OrganizePage = () => {
                         Create New Action
                     </button>
                 </section>
+                <ScheduleWidget />
             </aside>
-
-
 
             {/* Floating Notice Alert Overlay Toggles */}
             {toastMessage && (

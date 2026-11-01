@@ -145,6 +145,7 @@ export default function App() {
                   <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/suggestions" element={<SuggestionsPage />} />
                   <Route path="/post/:id" element={<PostDetailsPage />} />
+                  <Route path="/posts/:id" element={<PostDetailsPage />} />
                   <Route path="/tags/:id" element={<HashtagTimelinePage />} />
 
                   {/* Events Flow */}

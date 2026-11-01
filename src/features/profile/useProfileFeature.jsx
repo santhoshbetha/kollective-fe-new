@@ -16,6 +16,7 @@ export function useProfileQuery(username) {
             return res?.data || res;
         },
         enabled: !!username,
+        retry: (failureCount, error) => error?.status !== 403 && error?.status !== 404 && failureCount < 1,
         staleTime: 1000 * 60 * 5, // Profile metadata remains fresh for 5 minutes
     });
 }
@@ -55,13 +56,21 @@ export function useProfileTimelineQuery(username, currentMode = 'with_replies') 
             // Enforce Fediverse parameters: root_only triggers the exclude_replies flag on Elixir
             const excludeRepliesFlag = currentMode === 'root_only' ? '&exclude_replies=true' : '';
 
-            const res = await apiFetch(
-                `/api/v1/accounts/${username}/posts?limit=20${excludeRepliesFlag}${maxIdParam}`
-            );
+            let res;
+            try {
+                res = await apiFetch(
+                    `/api/v1/accounts/${username}/statuses?limit=20${excludeRepliesFlag}${maxIdParam}`
+                );
+            } catch (err) {
+                res = await apiFetch(
+                    `/api/v1/accounts/${username}/posts?limit=20${excludeRepliesFlag}${maxIdParam}`
+                );
+            }
             return res?.data || res;
         },
         getNextPageParam: getNextCursor,
         initialPageParam: null,
+        retry: (failureCount, error) => error?.status !== 403 && error?.status !== 404 && failureCount < 1,
         enabled: !!username,
     });
 }

@@ -58,12 +58,14 @@ export function ProfileFeed({ username }) {
                     <Virtuoso
                         useWindowScroll
                         data={filteredPosts}
+                        initialItemCount={filteredPosts.length > 0 ? Math.min(filteredPosts.length, 10) : 0}
+                        computeItemKey={(index, post) => post?.id || index}
                         endReached={() => {
                             if (hasNextPage && !isFetchingNextPage) fetchNextPage();
                         }}
                         overscan={400}
                         itemContent={(index, post) => (
-                            <PostCard post={post} isLast={index === filteredPosts.length - 1} />
+                            <PostCard post={post} inProfileFeed={true} isLast={index === filteredPosts.length - 1} />
                         )}
                         components={{
                             Footer: () => isFetchingNextPage && (

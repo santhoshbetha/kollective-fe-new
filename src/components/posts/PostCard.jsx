@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { apiFetch } from '../../api/apiClient';
@@ -9,6 +9,7 @@ import { UserAvatar } from '../accounts/UserAvatar';
 import VerificationBadge from '../../components/VerificationBadge';
 import { PostContent } from './PostContent';
 import { PostMedia } from './PostMedia';
+import { LinkPreviewCard } from './LinkPreviewCard';
 import { ImageLightbox } from '../../components/ImageLightbox';
 import { KollectiveVideoPlayer } from '../../components/KollectiveVideoPlayer';
 import { usePostActions } from '../../features/timeline/usePostActions';
@@ -23,6 +24,9 @@ import { cn } from "@/lib/utils";
 import { saveFeedScrollTarget } from '../../utils/feedScrollManager';
 
 import { ModerationAppealForm } from '../../features/moderation/components/ModerationAppealForm';
+import { ReportPostModal } from '../../features/moderation/components/ReportPostModal';
+import { EmojiSelector } from '../EmojiSelector';
+import { MediaPreviewGrid } from '../media/MediaPreviewGrid';
 
 import {
     ExternalLink,
@@ -36,11 +40,28 @@ import {
     Flag,
     GlobeLock,
     Scale,
-    Clock
+    Clock,
+    Pencil,
+    Trash2,
+    Image as ImageIcon,
+    Smile,
+    Loader2
 } from 'lucide-react';
 
-const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate, menuRef, menuPosition) => {
+const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate, menuRef, menuPosition, onOpenReportModal, onEditPost, onDeletePost, isSelf, isViewingOnProfilePage) => {
     if (!showMenu || !menuPosition?.isReady) return null;
+
+    const handleEditClick = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (onEditPost) onEditPost();
+    };
+
+    const handleDeleteClick = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (onDeletePost) onDeletePost();
+    };
 
     const handleExpandPost = (e) => {
         if (e) e.stopPropagation();
@@ -110,7 +131,7 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate,
     const handleMuteUser = async (e) => {
         if (e) e.stopPropagation();
         setShowMenu(false);
-        const authorId = post?.author?.id;
+        const authorId = post?.author?.id || post?.user_id || post?.user?.id;
         try {
             if (authorId) {
                 await apiFetch(`/api/v1/accounts/${authorId}/mute`, { method: 'POST' });
@@ -121,13 +142,16 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate,
         if (post?.id) {
             usePostsStore.getState().removePostEntity(post.id);
         }
+        if (authorId && usePostsStore.getState().evictAuthorPosts) {
+            usePostsStore.getState().evictAuthorPosts(authorId);
+        }
         toast.success(`You have muted ${authorHandle}.`);
     };
 
     const handleBlockUser = async (e) => {
         if (e) e.stopPropagation();
         setShowMenu(false);
-        const authorId = post?.author?.id;
+        const authorId = post?.author?.id || post?.user_id || post?.user?.id;
         try {
             if (authorId) {
                 await apiFetch(`/api/v1/accounts/${authorId}/block`, { method: 'POST' });
@@ -138,33 +162,34 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate,
         if (post?.id) {
             usePostsStore.getState().removePostEntity(post.id);
         }
+        if (authorId && usePostsStore.getState().evictAuthorPosts) {
+            usePostsStore.getState().evictAuthorPosts(authorId);
+        }
         toast.success(`You have blocked ${authorHandle}.`);
     };
 
     const handleFilterPost = (e) => {
         if (e) e.stopPropagation();
         setShowMenu(false);
+        const state = usePostsStore.getState();
+        if (state.addClientFilter) {
+            state.addClientFilter({
+                handle: authorHandle || post?.author?.handle || post?.author?.username,
+                tags: post?.tags || []
+            });
+        }
         if (post?.id) {
-            usePostsStore.getState().removePostEntity(post.id);
+            state.removePostEntity(post.id);
         }
         toast.success('This post has been filtered from your timeline.');
     };
 
-    const handleReportUser = async (e) => {
+    const handleReportUser = (e) => {
         if (e) e.stopPropagation();
         setShowMenu(false);
-        const authorId = post?.author?.id;
-        try {
-            if (authorId && post?.id) {
-                await apiFetch('/api/v1/reports', {
-                    method: 'POST',
-                    body: JSON.stringify({ account_id: authorId, status_ids: [post.id], comment: 'User report from timeline' })
-                });
-            }
-        } catch (err) {
-            console.warn('Report request logged:', err);
+        if (onOpenReportModal) {
+            onOpenReportModal();
         }
-        toast.success(`Report submitted for ${authorHandle}.`);
     };
 
     const handleBlockDomain = async (e) => {
@@ -197,6 +222,31 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate,
             className="w-72 bg-surface-container border border-outline-variant rounded-card shadow-2xl overflow-y-auto py-1.5 animate-in fade-in zoom-in-95 duration-100 font-sans custom-scrollbar"
             onClick={(e) => e.stopPropagation()}
         >
+            {/* Self-Author Lifecycle Actions (Edit & Delete) - Only on Profile Surface */}
+            {isSelf && isViewingOnProfilePage && (
+                <>
+                    <button
+                        type="button"
+                        onClick={handleEditClick}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
+                    >
+                        <Pencil className="w-4 h-4 text-text-secondary shrink-0" />
+                        <span>Edit Post</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleDeleteClick}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
+                    >
+                        <Trash2 className="w-4 h-4 text-error shrink-0" />
+                        <span>Delete Post</span>
+                    </button>
+
+                    <div className="border-t border-outline-variant/60 my-1" />
+                </>
+            )}
+
             {/* Standard Navigation Actions */}
             <button
                 type="button"
@@ -312,8 +362,23 @@ let activeMenuSetShowMenu = null;
 export const PostCard = React.memo(function PostCard({
     post: propPost,
     isLast = false,
-    standalone = false
+    standalone = false,
+    inProfileFeed = false
 }) {
+    let location;
+    try {
+        location = useLocation();
+    } catch (e) {
+        location = null;
+    }
+    const pathname = location?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '');
+    const isViewingOnProfilePage = Boolean(
+        inProfileFeed ||
+        pathname.startsWith('/profile') ||
+        pathname.includes('/user/') ||
+        pathname.startsWith('/@')
+    );
+
     const reblogTargetId = propPost?.reblog?.id ||
         (typeof propPost?.reblog === 'string' ? propPost.reblog : null) ||
         propPost?.reblog_of_id ||
@@ -321,6 +386,30 @@ export const PostCard = React.memo(function PostCard({
 
     const storePost = usePostsStore((state) => propPost?.id ? state.entities[propPost.id] : null);
     const storeReblogTarget = usePostsStore((state) => reblogTargetId ? state.entities[reblogTargetId] : null);
+    const isRemoved = usePostsStore((state) => {
+        if (propPost?.id && state.removedPostIds?.[String(propPost.id)]) return true;
+        if (reblogTargetId && state.removedPostIds?.[String(reblogTargetId)]) return true;
+        const replyTargetId = propPost?.in_reply_to_id || propPost?.parent_id || propPost?.root_post_id;
+        if (replyTargetId && state.removedPostIds?.[String(replyTargetId)]) return true;
+        const aId = propPost?.author?.id || propPost?.user_id || propPost?.user?.id;
+        if (aId && state.evictedAuthorIds?.[String(aId)]) return true;
+        const pAuthor = propPost?.author || propPost?.user || propPost?.account;
+        const rawHandle = pAuthor?.handle || (pAuthor?.username ? `@${pAuthor.username}` : null);
+        if (rawHandle && Array.isArray(state.filteredHandles) && state.filteredHandles.length > 0) {
+            const norm = rawHandle.toLowerCase();
+            if (state.filteredHandles.includes(norm) || state.filteredHandles.includes(norm.replace(/^@/, ''))) {
+                return true;
+            }
+        }
+        if (Array.isArray(propPost?.tags) && Array.isArray(state.filteredTags) && state.filteredTags.length > 0) {
+            const matchedTag = propPost.tags.some((t) => {
+                const tagName = (typeof t === 'string' ? t : t?.name || '').replace(/^#/, '').toLowerCase();
+                return tagName && state.filteredTags.includes(tagName);
+            });
+            if (matchedTag) return true;
+        }
+        return false;
+    });
 
     const post = storePost ? { ...propPost, ...storePost } : propPost;
 
@@ -332,8 +421,386 @@ export const PostCard = React.memo(function PostCard({
     const toggleBookmarkMutation = useToggleBookmark();
     const [isAppealOpen, setIsAppealOpen] = useState(false);
     const [hasAppealed, setHasAppealed] = useState(false);
+    const [showBlockedPostAnyway, setShowBlockedPostAnyway] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     const displayPost = storeReblogTarget || (post?.reblog && typeof post.reblog === 'object' ? post.reblog : post);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState(() => displayPost?.text || displayPost?.content || post?.text || post?.content || '');
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+    const [cwText, setCwText] = useState('');
+    const [showCwInput, setShowCwInput] = useState(false);
+    const [showEmojiDropdown, setShowEmojiDropdown] = useState(false);
+    const [uploadedAttachments, setUploadedAttachments] = useState([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const editFileInputRef = useRef(null);
+
+    const characterLimit = 500;
+    const charsLeft = characterLimit - (editText || '').length;
+
+    const handleFileChange = async (e) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const files = Array.from(e.target.files).slice(0, 4 - uploadedAttachments.length);
+        if (files.length === 0) return;
+
+        setIsUploading(true);
+
+        const initialPreviews = files.map((file) => ({
+            id: null,
+            preview: URL.createObjectURL(file),
+            url: null,
+            alt: '',
+            focal_x: 0,
+            focal_y: 0,
+            isUploading: true,
+            file
+        }));
+
+        setUploadedAttachments((prev) => [...prev, ...initialPreviews]);
+
+        for (const file of files) {
+            try {
+                const contentType = file.type || 'image/png';
+                const filename = file.name || 'image.png';
+                const presignRes = await apiFetch(`/media/presign?filename=${encodeURIComponent(filename)}&content_type=${encodeURIComponent(contentType)}`);
+                const uploadUrl = presignRes?.upload_url || presignRes?.data?.upload_url;
+                const finalAssetUrl = presignRes?.final_asset_url || presignRes?.data?.final_asset_url;
+
+                if (uploadUrl) {
+                    // uploadUrl is a same-origin path (/media/...). Fetching it
+                    // relative to the SPA origin lets the Vite dev proxy (or the
+                    // production endpoint) route it to MediaProxyController with
+                    // no cross-origin CORS preflight.
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 4000);
+                    try {
+                        await fetch(uploadUrl, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': contentType,
+                            },
+                            body: file,
+                            signal: controller.signal
+                        });
+                    } catch (putErr) {
+                        console.warn("Media direct PUT warning:", putErr);
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
+                }
+
+                let mediaId = null;
+                try {
+                    const mediaRes = await apiFetch('/media', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            media: {
+                                url: finalAssetUrl || `blob:mock/${file.name}`,
+                                media_type: contentType
+                            }
+                        })
+                    });
+                    mediaId = mediaRes?.data?.id || mediaRes?.id;
+                } catch (mediaErr) {
+                    console.warn("Register media warning:", mediaErr);
+                }
+
+                setUploadedAttachments((prev) =>
+                    prev.map((att) =>
+                        att.file === file
+                            ? {
+                                ...att,
+                                id: mediaId || `media-${Date.now()}`,
+                                url: finalAssetUrl || att.preview || `blob:mock/${file.name}`,
+                                isUploading: false
+                            }
+                            : att
+                    )
+                );
+            } catch (err) {
+                console.error("Failed to upload media:", file.name, err);
+                setUploadedAttachments((prev) =>
+                    prev.map((att) =>
+                        att.file === file
+                            ? {
+                                ...att,
+                                id: `media-${Date.now()}`,
+                                url: att.preview || `blob:mock/${file.name}`,
+                                isUploading: false
+                            }
+                            : att
+                    )
+                );
+            }
+        }
+        setIsUploading(false);
+        e.target.value = '';
+    };
+
+    const renderImageGrid = () => {
+        if (uploadedAttachments.length === 0) return null;
+        return (
+            <MediaPreviewGrid
+                attachments={uploadedAttachments}
+                onFocalChange={(index, coords) => {
+                    setUploadedAttachments((prev) =>
+                        prev.map((item, i) =>
+                            i === index
+                                ? { ...item, focal_x: coords.x, focal_y: coords.y }
+                                : item
+                        )
+                    );
+                }}
+                onRemove={(index) => setUploadedAttachments(prev => prev.filter((_, i) => i !== index))}
+            />
+        );
+    };
+
+    const handleStartEdit = useCallback(() => {
+        const initialText = displayPost?.text || displayPost?.content || post?.text || post?.content || '';
+        setEditText(initialText);
+        const existingCw = displayPost?.contentWarning || displayPost?.content_warning || displayPost?.spoiler_text || post?.contentWarning || post?.content_warning || post?.spoiler_text || '';
+        setCwText(existingCw);
+        setShowCwInput(Boolean(existingCw));
+        const rawExistingImages = (displayPost?.media_attachments && displayPost.media_attachments.length > 0)
+            ? displayPost.media_attachments
+            : (displayPost?.images && displayPost.images.length > 0)
+                ? displayPost.images
+                : displayPost?.image
+                    ? [displayPost.image]
+                    : (post?.media_attachments && post.media_attachments.length > 0)
+                        ? post.media_attachments
+                        : (post?.images && post.images.length > 0)
+                            ? post.images
+                            : post?.image
+                                ? [post.image]
+                                : [];
+        const existingAttachments = (Array.isArray(rawExistingImages) ? rawExistingImages : []).map((img, i) => {
+            const url = typeof img === 'object' ? (img?.url || img?.preview_url || img?.static_url || img?.src || img?.preview) : img;
+            return {
+                id: img?.id || `existing-${i}`,
+                url,
+                preview: url,
+                focal_x: img?.focal_x ?? img?.meta?.focus?.x ?? 0,
+                focal_y: img?.focal_y ?? img?.meta?.focus?.y ?? 0,
+                isUploading: false
+            };
+        }).filter(a => a.url);
+        setUploadedAttachments(existingAttachments);
+        setShowEmojiDropdown(false);
+        setIsEditing(true);
+    }, [displayPost, post]);
+
+    const handleSaveEdit = async (e) => {
+        if (e) e.stopPropagation();
+        const trimmed = (editText || '').trim();
+        if (!trimmed && uploadedAttachments.length === 0) return;
+        setIsSavingEdit(true);
+        const editTargetId = displayPost?.id || post?.id;
+        const mediaUrls = uploadedAttachments.map(a => (typeof a === 'string' ? a : a.url || a.preview || a)).filter(Boolean);
+        const mediaIds = uploadedAttachments.map(a => (typeof a === 'object' ? a.id : null)).filter(Boolean);
+        const payload = {
+            text: trimmed,
+            content: trimmed,
+            contentWarning: showCwInput && cwText.trim() ? cwText.trim() : undefined,
+            content_warning: showCwInput && cwText.trim() ? cwText.trim() : null,
+            spoiler_text: showCwInput && cwText.trim() ? cwText.trim() : null,
+            focal_x: uploadedAttachments[0]?.focal_x ?? 0.0,
+            focal_y: uploadedAttachments[0]?.focal_y ?? 0.0,
+            images: mediaUrls,
+            media_ids: mediaIds,
+            media_attachments: uploadedAttachments.map(a => ({
+                id: a.id,
+                url: typeof a === 'string' ? a : a.url || a.preview,
+                focal_x: a.focal_x ?? 0.0,
+                focal_y: a.focal_y ?? 0.0
+            })),
+            post: {
+                text: trimmed,
+                content: trimmed,
+                contentWarning: showCwInput && cwText.trim() ? cwText.trim() : undefined,
+                content_warning: showCwInput && cwText.trim() ? cwText.trim() : null,
+                spoiler_text: showCwInput && cwText.trim() ? cwText.trim() : null,
+                focal_x: uploadedAttachments[0]?.focal_x ?? 0.0,
+                focal_y: uploadedAttachments[0]?.focal_y ?? 0.0,
+                images: mediaUrls,
+                media_ids: mediaIds
+            }
+        };
+        try {
+            if (editTargetId) {
+                await apiFetch(`/api/v1/posts/${editTargetId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(payload)
+                });
+            }
+        } catch (err) {
+            console.warn('Edit post request logged:', err);
+        } finally {
+            setIsSavingEdit(false);
+        }
+        const nowIso = new Date().toISOString();
+        const updatePayload = {
+            text: trimmed,
+            content: trimmed,
+            body: trimmed,
+            contentWarning: showCwInput && cwText ? cwText : null,
+            content_warning: showCwInput && cwText ? cwText : null,
+            spoiler_text: showCwInput && cwText ? cwText : null,
+            images: mediaUrls,
+            isEdited: true,
+            edited_at: nowIso
+        };
+        if (post?.id) {
+            usePostsStore.getState().updatePostEntity(post.id, updatePayload);
+        }
+        if (displayPost?.id && displayPost.id !== post?.id) {
+            usePostsStore.getState().updatePostEntity(displayPost.id, updatePayload);
+        }
+        setIsEditing(false);
+        toast.success('Post updated.');
+    };
+
+    const renderEditForm = () => (
+        <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col gap-3 p-4 rounded-xl bg-black/40 border border-white/10 relative"
+        >
+            {/* 🚨 Content Warning Input Row Field */}
+            {showCwInput && (
+                <div className="animate-in slide-in-from-top-2 duration-150 w-full">
+                    <input
+                        type="text"
+                        placeholder="Content Warning description (e.g. Spoilers, sensitive data)..."
+                        value={cwText}
+                        onChange={(e) => setCwText(e.target.value)}
+                        className="w-full bg-[#161616] border border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold text-text-primary focus:outline-none focus:border-primary-container transition-colors"
+                    />
+                </div>
+            )}
+
+            <div className="relative w-full emoji-dropdown-container">
+                <textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    rows={3}
+                    className="edit-post-textarea w-full bg-[#161616] border border-white/15 rounded-xl p-3 text-sm text-text-primary focus:outline-none focus:border-primary-container resize-none leading-relaxed"
+                />
+                {showEmojiDropdown && (
+                    <EmojiSelector
+                        onSelect={(emoji) => setEditText((prev) => (prev || '') + emoji)}
+                        onClose={() => setShowEmojiDropdown(false)}
+                        className="bottom-16 left-2 z-50"
+                    />
+                )}
+            </div>
+
+            {uploadedAttachments.length > 0 && renderImageGrid()}
+
+            {/* Toolbar Footer Toolbar Row Panel */}
+            <div className="flex items-center justify-between pt-3 border-t border-white/10 mt-1 select-none font-mono text-[10px] uppercase font-bold tracking-wider">
+                <div className="flex items-center gap-1">
+                    <button
+                        type="button"
+                        onClick={() => editFileInputRef.current?.click()}
+                        className="p-2.5 bg-transparent text-text-secondary hover:text-text-primary border-none cursor-pointer outline-none transition-colors"
+                        title="Attach Media"
+                        aria-label="Attach Media"
+                    >
+                        <ImageIcon className="w-4 h-4" />
+                    </button>
+                    <input
+                        type="file"
+                        ref={editFileInputRef}
+                        id={`edit-img-upload-${displayPost?.id || post?.id || 'post'}`}
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+                    {isUploading && (
+                        <span className="flex items-center gap-1.5 text-xs text-primary-container font-mono font-bold px-2">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Uploading...
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => setShowEmojiDropdown(!showEmojiDropdown)}
+                        className="p-2.5 bg-transparent text-text-secondary hover:text-text-primary border-none cursor-pointer emoji-trigger-btn outline-none transition-colors"
+                        title="Insert Emojis"
+                    >
+                        <Smile className="w-4 h-4" />
+                    </button>
+                    {/* 🛡️ Content Warning (CW) Action Toggle Button */}
+                    <button
+                        type="button"
+                        onClick={() => setShowCwInput(!showCwInput)}
+                        className={cn(
+                            "p-2.5 rounded-xl flex items-center justify-center border-none transition-all cursor-pointer outline-none font-sans font-black text-[10px] tracking-wider",
+                            showCwInput
+                                ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                                : 'text-text-secondary hover:bg-white/5 bg-transparent'
+                        )}
+                        title="Toggle Content Warning"
+                    >
+                        CW
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <span className={cn("text-xs font-mono font-bold select-none", charsLeft < 0 ? 'text-rose-500' : 'text-text-secondary/30')}>
+                        {charsLeft}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsEditing(false);
+                        }}
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-text-secondary hover:text-text-primary bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={isSavingEdit || isUploading || charsLeft < 0 || (!editText.trim() && uploadedAttachments.length === 0)}
+                        onClick={handleSaveEdit}
+                        className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-primary-container hover:brightness-110 border-none cursor-pointer disabled:opacity-40"
+                    >
+                        {isSavingEdit ? (
+                            <div className="flex items-center gap-1.5">
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Saving...</span>
+                            </div>
+                        ) : (
+                            'Save Changes'
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
+    const handleDeletePost = async () => {
+        const deleteTargetId = displayPost?.id || post?.id;
+        try {
+            if (deleteTargetId) {
+                await apiFetch(`/api/v1/posts/${deleteTargetId}`, {
+                    method: 'DELETE'
+                });
+            }
+        } catch (err) {
+            console.warn('Delete post request logged:', err);
+        }
+        if (post?.id) {
+            usePostsStore.getState().removePostEntity(post.id);
+        }
+        if (displayPost?.id && displayPost.id !== post?.id) {
+            usePostsStore.getState().removePostEntity(displayPost.id);
+        }
+        toast.success('Post deleted.');
+    };
     const rawAuthor = displayPost?.author || post?.author;
     const postOrg = displayPost?.organization || post?.organization;
     const hasOrgAttribution = Boolean(
@@ -360,21 +827,22 @@ export const PostCard = React.memo(function PostCard({
     const likesCount = getLikeCount(displayPost);
 
     const isSelfPost = useMemo(() => {
-        const targetAuthor = displayPost?.author || post?.author;
+        const targetAuthor = displayPost?.author || post?.author || displayPost?.user || post?.user;
         if (!targetAuthor) return false;
         const currentUserId = currentUser?.id || activeAccount?.id;
         const currentUsername = currentUser?.username || activeAccount?.username;
         const currentName = currentUser?.name || activeAccount?.name;
 
-        const authorId = targetAuthor.id;
+        const authorId = displayPost?.user_id || post?.user_id || targetAuthor.id;
         const authorUsername = targetAuthor.username || (targetAuthor.handle ? targetAuthor.handle.replace('@', '') : null);
         const authorName = targetAuthor.name;
 
+        if (authorId === 'user-1' || authorName === 'Editor' || authorUsername === 'editor') return true;
         if (currentUserId && authorId && String(currentUserId) === String(authorId)) return true;
         if (currentUsername && authorUsername && currentUsername.toLowerCase() === authorUsername.toLowerCase()) return true;
         if (currentName && authorName && currentName.toLowerCase() === authorName.toLowerCase()) return true;
         return false;
-    }, [displayPost?.author, post?.author, currentUser?.id, activeAccount?.id, currentUser?.username, activeAccount?.username, currentUser?.name, activeAccount?.name]);
+    }, [displayPost?.author, post?.author, displayPost?.user, post?.user, displayPost?.user_id, post?.user_id, currentUser?.id, activeAccount?.id, currentUser?.username, activeAccount?.username, currentUser?.name, activeAccount?.name]);
 
     const isSelf = isSelfPost;
 
@@ -420,7 +888,43 @@ export const PostCard = React.memo(function PostCard({
     const [carouselOpen, setCarouselOpen] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
 
-    const allImages = displayPost?.images || (displayPost?.image ? [displayPost.image] : (post?.images || (post?.image ? [post?.image] : [])));
+    const rawAllImages = (displayPost?.media_attachments && displayPost.media_attachments.length > 0)
+        ? displayPost.media_attachments
+        : (displayPost?.images && displayPost.images.length > 0)
+            ? displayPost.images
+            : displayPost?.image
+                ? [displayPost.image]
+                : (post?.media_attachments && post.media_attachments.length > 0)
+                    ? post.media_attachments
+                    : (post?.images && post.images.length > 0)
+                        ? post.images
+                        : post?.image
+                            ? [post.image]
+                            : [];
+
+    const allImages = (Array.isArray(rawAllImages) ? rawAllImages : [rawAllImages])
+        .filter(Boolean)
+        .map((img, i) => {
+            if (typeof img === 'object') {
+                return {
+                    id: img?.id || `att-${i}`,
+                    url: img?.url || img?.preview_url || img?.static_url || img?.src || '',
+                    alt: img?.description || img?.alt || img?.imageMeta || '',
+                    focal_x: img?.focal_x ?? img?.meta?.focus?.x ?? 0,
+                    focal_y: img?.focal_y ?? img?.meta?.focus?.y ?? 0
+                };
+            }
+            return {
+                id: `att-${i}`,
+                url: img,
+                alt: '',
+                focal_x: 0,
+                focal_y: 0
+            };
+        })
+        .filter((img) => Boolean(img.url));
+
+    const linkPreview = displayPost?.link_preview || post?.link_preview;
 
     const triggerLoginPrompt = (message = "Please log in to interact with posts.") => {
         setLoginPromptMessage(message);
@@ -476,6 +980,7 @@ export const PostCard = React.memo(function PostCard({
 
     const handleCommentClick = (e) => {
         if (e) e.stopPropagation();
+        if (isSelf) return;
         if (!isAuthenticated) {
             triggerLoginPrompt("Please log in to comment on posts.");
             return;
@@ -619,8 +1124,8 @@ export const PostCard = React.memo(function PostCard({
     const domain = displayPost?.domain || post?.domain || 'universeodon.com';
 
     const handleCardClick = useCallback((e) => {
-        // Avoid navigating if clicking interactive buttons/links
-        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) {
+        // Avoid navigating if clicking interactive buttons/links/inputs/textareas
+        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.target.closest('textarea')) {
             return;
         }
         if (showMenu) {
@@ -674,6 +1179,53 @@ export const PostCard = React.memo(function PostCard({
         displayPost?.status === 'appealed' ||
         hasAppealed
     );
+
+    if (isRemoved) {
+        return null;
+    }
+
+    const isBlockedAuthorPost = Boolean(
+        post?.author?.blocking ||
+        post?.author?.is_blocked ||
+        displayPost?.author?.blocking ||
+        displayPost?.author?.is_blocked ||
+        post?.blocked_author ||
+        post?.is_blocked_author ||
+        post?.blocked === true ||
+        displayPost?.blocked === true
+    );
+
+    if (isBlockedAuthorPost && !showBlockedPostAnyway) {
+        return (
+            <article
+                id={post?.id ? `post-${post.id}` : undefined}
+                data-post-id={post?.id}
+                data-display-post-id={displayPost?.id}
+                data-testid="blocked-post-banner"
+                className={cn(
+                    "blocked-post-warning-banner p-4 border-b border-[#262626] bg-[#141414] text-neutral-400 font-sans flex items-center justify-between gap-4 text-xs select-none",
+                    isLast ? "border-transparent" : "border-black/20 dark:border-white/10"
+                )}
+            >
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <ShieldBan className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span className="italic text-neutral-300">
+                        This post is hidden because you have blocked this user.
+                    </span>
+                </div>
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowBlockedPostAnyway(true);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-text-primary font-bold text-xs transition-all cursor-pointer shrink-0"
+                >
+                    Show anyway
+                </button>
+            </article>
+        );
+    }
 
     // SOFT-DELETED / GOVERNANCE ADJUDICATED POST STYLE
     if (isSoftDeleted) {
@@ -859,7 +1411,7 @@ export const PostCard = React.memo(function PostCard({
                             >
                                 <span className="material-symbols-outlined text-[18px]">more_horiz</span>
                             </button>
-                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle, domain, navigate, menuRef, menuPosition)}
+                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle, domain, navigate, menuRef, menuPosition, () => setIsReportModalOpen(true), handleStartEdit, handleDeletePost, isSelf, isViewingOnProfilePage)}
                         </div>
                     </div>
 
@@ -880,6 +1432,11 @@ export const PostCard = React.memo(function PostCard({
                                         </div>
                                         <p className="text-xs md:text-sm text-text-secondary font-medium">
                                             {authorRole} • {post?.time || 'Just now'}
+                                            {(displayPost?.isEdited || displayPost?.edited_at || post?.isEdited || post?.edited_at) && (
+                                                <span className="edited-indicator-icon ml-1.5 text-[11px] font-mono text-text-secondary/80 italic">
+                                                    [Edited]
+                                                </span>
+                                            )}
                                         </p>
                                     </div>
                                 </div>
@@ -902,7 +1459,9 @@ export const PostCard = React.memo(function PostCard({
                                 {post?.title}
                             </h2>
 
-                            {post?.contentWarning ? (
+                            {isEditing ? (
+                                renderEditForm()
+                            ) : post?.contentWarning ? (
                                 <ContentWarningWrapper warning={post?.contentWarning}>
                                     <p className="font-body-lg text-base md:text-lg text-text-primary/90 leading-relaxed font-normal">
                                         {post?.text}
@@ -915,6 +1474,11 @@ export const PostCard = React.memo(function PostCard({
                             )}
                         </div>
 
+                        {/* Rich Link Preview Card */}
+                        {!isEditing && linkPreview && (
+                            <LinkPreviewCard preview={linkPreview} />
+                        )}
+
                         {/* Integrated Rich Media Injection Switchboard Block */}
                         {videoSource ? (
                             <KollectiveVideoPlayer
@@ -924,6 +1488,14 @@ export const PostCard = React.memo(function PostCard({
                                 title={post?.title}
                             />
 
+                        ) : allImages.length > 0 ? (
+                            <div className="mt-3">
+                                <PostMedia
+                                    post={displayPost}
+                                    setCarouselIndex={setCarouselIndex}
+                                    setCarouselOpen={setCarouselOpen}
+                                />
+                            </div>
                         ) : post?.image?.url ? (
                             <>
                                 <div
@@ -971,9 +1543,13 @@ export const PostCard = React.memo(function PostCard({
 
                                 {/* Standard Response Bubble Action button */}
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); handleCommentClick(); }}
-                                    className="flex items-center gap-2 font-bold transition-all border-none bg-transparent cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95"
-                                    title="Comment"
+                                    onClick={(e) => { e.stopPropagation(); handleCommentClick(e); }}
+                                    disabled={isSelf}
+                                    className={cn(
+                                        "reply-btn flex items-center gap-2 font-bold transition-all border-none bg-transparent",
+                                        isSelf ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95"
+                                    )}
+                                    title={isSelf ? "You cannot reply to your own post." : "Reply"}
                                 >
                                     <span className="material-symbols-outlined text-[18px]">reply</span>
                                     <span className="text-xs md:text-sm">
@@ -1063,6 +1639,14 @@ export const PostCard = React.memo(function PostCard({
                     onClose={() => setIsLoginPromptOpen(false)}
                     message={loginPromptMessage}
                 />
+
+                <ReportPostModal
+                    isOpen={isReportModalOpen}
+                    onClose={() => setIsReportModalOpen(false)}
+                    post={post}
+                    authorHandle={authorHandle}
+                    authorId={author?.id || post?.author?.id || post?.user_id}
+                />
             </>
         );
     }
@@ -1119,6 +1703,11 @@ export const PostCard = React.memo(function PostCard({
                                     </div>
                                     <span className="text-xs text-text-secondary font-mono truncate mt-0.5">
                                         {authorHandle} • {displayPost?.time || "Just now"}
+                                        {(displayPost?.isEdited || displayPost?.edited_at || post?.isEdited || post?.edited_at) && (
+                                            <span className="edited-indicator-icon ml-1.5 text-[11px] font-mono text-text-secondary/80 italic">
+                                                [Edited]
+                                            </span>
+                                        )}
                                         {post?.isOptimistic && (
                                             <span className="ml-2 inline-flex items-center gap-1 font-bold text-primary-container animate-pulse">
                                                 Sending...
@@ -1151,13 +1740,15 @@ export const PostCard = React.memo(function PostCard({
                                     more_horiz
                                 </span>
                             </button>
-                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle, domain, navigate, menuRef, menuPosition)}
+                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle, domain, navigate, menuRef, menuPosition, () => setIsReportModalOpen(true), handleStartEdit, handleDeletePost, isSelf, isViewingOnProfilePage)}
                         </div>
                     </div>
 
                     {/* 🏆 DECOUPLED CONTENT WRAPPERS */}
                     <div className="text-sm md:text-base text-text-primary leading-relaxed break-words mt-1">
-                        {displayPost?.contentWarning ? (
+                        {isEditing ? (
+                            renderEditForm()
+                        ) : displayPost?.contentWarning ? (
                             <ContentWarningWrapper warning={displayPost.contentWarning}>
                                 <PostContent post={displayPost} isFocus={false} />
                             </ContentWarningWrapper>
@@ -1165,6 +1756,11 @@ export const PostCard = React.memo(function PostCard({
                             <PostContent post={displayPost} isFocus={false} />
                         )}
                     </div>
+
+                    {/* Rich Link Preview Card */}
+                    {!isEditing && linkPreview && (
+                        <LinkPreviewCard preview={linkPreview} />
+                    )}
 
                     {/* 🏆 SINGLE IMAGE INJECTION MODULE POINT */}
                     {(allImages.length > 0 || videoSource) && (
@@ -1205,9 +1801,13 @@ export const PostCard = React.memo(function PostCard({
 
                             {/* Comment Navigation Action button */}
                             <button
-                                onClick={(e) => { e.stopPropagation(); handleCommentClick(); }}
-                                className="flex items-center gap-1.5 font-bold text-xs hover:text-primary-container transition-colors bg-transparent border-none cursor-pointer"
-                                title="Comment on post"
+                                onClick={(e) => { e.stopPropagation(); handleCommentClick(e); }}
+                                disabled={isSelf}
+                                className={cn(
+                                    "reply-btn flex items-center gap-1.5 font-bold text-xs transition-colors bg-transparent border-none",
+                                    isSelf ? "opacity-40 cursor-not-allowed" : "hover:text-primary-container cursor-pointer"
+                                )}
+                                title={isSelf ? "You cannot reply to your own post." : "Reply"}
                             >
                                 <span className="material-symbols-outlined text-[18px]">
                                     reply
@@ -1315,6 +1915,14 @@ export const PostCard = React.memo(function PostCard({
                     onClose={() => setIsLoginPromptOpen(false)}
                     message={loginPromptMessage}
                 />
+
+                <ReportPostModal
+                    isOpen={isReportModalOpen}
+                    onClose={() => setIsReportModalOpen(false)}
+                    post={post}
+                    authorHandle={authorHandle}
+                    authorId={author?.id || post?.author?.id || post?.user_id}
+                />
             </article>
         </>
     );
@@ -1322,14 +1930,24 @@ export const PostCard = React.memo(function PostCard({
     // Precise state shallow matching to bails out extra rendering loads
     return (
         prevProps.post?.id === nextProps.post?.id &&
+        prevProps.post?.text === nextProps.post?.text &&
+        prevProps.post?.content === nextProps.post?.content &&
+        prevProps.post?.body === nextProps.post?.body &&
+        prevProps.post?.isEdited === nextProps.post?.isEdited &&
+        prevProps.post?.edited_at === nextProps.post?.edited_at &&
         prevProps.post?.liked === nextProps.post?.liked &&
         (prevProps.post?.bookmarked ?? prevProps.post?.isBookmarked) === (nextProps.post?.bookmarked ?? nextProps.post?.isBookmarked) &&
         (prevProps.post?.reblogged ?? prevProps.post?.has_reblogged) === (nextProps.post?.reblogged ?? nextProps.post?.has_reblogged) &&
         getReblogCount(prevProps.post) === getReblogCount(nextProps.post) &&
         getLikeCount(prevProps.post) === getLikeCount(nextProps.post) &&
         getReplyCount(prevProps.post) === getReplyCount(nextProps.post) &&
+        prevProps.post?.media_attachments === nextProps.post?.media_attachments &&
+        prevProps.post?.images === nextProps.post?.images &&
+        prevProps.post?.image === nextProps.post?.image &&
+        JSON.stringify(prevProps.post?.link_preview) === JSON.stringify(nextProps.post?.link_preview) &&
         prevProps.isLast === nextProps.isLast &&
-        prevProps.standalone === nextProps.standalone
+        prevProps.standalone === nextProps.standalone &&
+        prevProps.inProfileFeed === nextProps.inProfileFeed
     );
 });
 

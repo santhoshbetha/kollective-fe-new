@@ -48,7 +48,12 @@ export function UserProfilePage() {
   const cleanUsername = (username || currentUser?.username || activeAccount?.username || '').toLowerCase().replace('@', '');
 
   // 📡 REST DATA HANDLERS: Fetch profiles straight from your backend storage endpoints
-  const { data: remoteProfile, isLoading: isProfileLoading } = useProfileQuery(cleanUsername);
+  const {
+    data: remoteProfile,
+    isLoading: isProfileLoading,
+    isError: isProfileError,
+    error: profileError
+  } = useProfileQuery(cleanUsername);
 
   // 🛡️ Safe guard isOwnProfile boolean evaluations
   const isOwnProfile = useMemo(() => {
@@ -257,10 +262,49 @@ export function UserProfilePage() {
   const isJournalist = profile.badge_type?.toLowerCase() === 'journalist' || !!profile.portfolio_url;
   const isOrg = profile.type === 'organization' || profile.badge_type?.toLowerCase() === 'organization' || profile.badge_type?.toLowerCase() === 'warned';
 
+  const isBlockedProfile = Boolean(
+    (isProfileError && (
+      profileError?.status === 403 ||
+      profileError?.data?.error === 'blocked' ||
+      /blocked/i.test(profileError?.message || '')
+    )) ||
+    remoteProfile?.error === 'blocked' ||
+    remoteProfile?.blocked_by === true ||
+    remoteProfile?.relationship?.blocked_by === true
+  );
+
   if (isProfileLoading) {
     return (
       <div className="max-w-7xl mx-auto p-6 text-center text-xs font-mono text-text-secondary animate-pulse">
         COMPILING_DECENTRALIZED_IDENTITY_SCHEMA...
+      </div>
+    );
+  }
+
+  if (isBlockedProfile) {
+    return (
+      <div className="max-w-3xl mx-auto py-24 px-6 flex flex-col items-center justify-center text-center">
+        <div
+          data-testid="blocked-profile-banner"
+          className="blocked-profile-banner glass-panel rounded-2xl border border-rose-500/30 bg-[#141414] p-10 max-w-lg w-full flex flex-col items-center gap-4 shadow-2xl"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500">
+            <AlertTriangle className="w-7 h-7" />
+          </div>
+          <h1 className="text-2xl font-extrabold text-text-primary tracking-tight">
+            You are blocked
+          </h1>
+          <p className="text-sm text-text-secondary leading-relaxed">
+            You are blocked. You are blocked from following or viewing this account&apos;s posts.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/home')}
+            className="mt-2 px-6 py-2.5 rounded-xl bg-surface-container-high border border-white/10 text-text-primary text-xs font-bold uppercase tracking-wider hover:bg-white/10 transition-all cursor-pointer"
+          >
+            Return to Feed
+          </button>
+        </div>
       </div>
     );
   }
@@ -300,7 +344,7 @@ export function UserProfilePage() {
           </div>
 
           {/* Integrated Biography Block Info Core Area */}
-          <div className="p-6 relative flex flex-col gap-6">
+          <div className="profile-bio-container p-6 relative flex flex-col gap-6">
             <div className="flex justify-between items-start">
               <UserAvatar
                 user={profile}
@@ -671,7 +715,7 @@ export function UserProfilePage() {
           })}
         </div>
         {/* Sub-reply dynamic lists stream or organization panel lists core wrapper viewports */}
-        <div className="flex flex-col gap-6 mt-2">
+        <div className="timeline flex flex-col gap-6 mt-2">
           {/* 🚀 ROSTER ACTION INTERCEPT: If connectionView is armed, mount the vertical directory stack */}
           {connectionView ? (
             <div className="flex flex-col gap-2">

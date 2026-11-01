@@ -56,7 +56,7 @@ export async function apiFetch(endpoint, options = {}, incomingQueryClient) {
     console.log("apiFetch respnse:;", response)
 
     // 3️⃣ 🚨 GLOBAL RECOVERY INTERCEPTION: Catch systemic credential drops or token revocations
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
         console.warn('Token revoked or session expired. Initiating global logout evacuation.');
 
         // A. Safely clear local TanStack Query cache instances to protect user data leaking

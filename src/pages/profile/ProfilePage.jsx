@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProfileQuery, useToggleFollowMutation } from '../../features/profile/useProfileFeature';
 import { ProfileFeed } from '../../features/profile/ProfileFeed';
+import { PinnedPostsSection } from '../../features/profile/PinnedPostsSection';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { useDirectMessageStore } from '../../store/useDirectMessageStore';
 import { UserAvatar } from '../../components/accounts/UserAvatar';
@@ -17,12 +18,27 @@ export const ProfilePage = () => {
     const activeAccount = useAuthStore((state) => state.activeAccount);
     const isOrgNonAdmin = activeAccount?.type === 'organization' && !['admin', 'owner'].includes(activeAccount?.role?.toLowerCase());
     const orgNonAdminTooltip = "Only administrators can perform social actions on behalf of this organization";
-    const isOwnProfile = currentUser?.handle?.toLowerCase().replace('@', '') === username?.toLowerCase();
+    const targetUsername = username || currentUser?.username || activeAccount?.username;
+    const isOwnProfile = !username ||
+        (currentUser?.handle && currentUser.handle.toLowerCase().replace('@', '') === targetUsername?.toLowerCase()) ||
+        (currentUser?.username && currentUser.username.toLowerCase() === targetUsername?.toLowerCase());
 
-    const { data: profile, isPending, isError } = useProfileQuery(username);
-    const toggleFollow = useToggleFollowMutation(username);
+    const { data: remoteProfile, isPending, isError, error } = useProfileQuery(targetUsername);
+    const toggleFollow = useToggleFollowMutation(targetUsername);
+    const profile = remoteProfile || (isOwnProfile ? (currentUser || activeAccount) : null);
 
-    if (isPending) {
+    const isBlockedProfile = Boolean(
+        (isError && (
+            error?.status === 403 ||
+            error?.data?.error === 'blocked' ||
+            /blocked/i.test(error?.message || '')
+        )) ||
+        profile?.error === 'blocked' ||
+        profile?.blocked_by === true ||
+        profile?.relationship?.blocked_by === true
+    );
+
+    if (isPending && !profile) {
         return (
             <div className="pt-32 text-center flex flex-col items-center justify-center gap-4 w-full">
                 <div className="w-8 h-8 rounded-full border-2 border-t-primary-container border-white/10 animate-spin" />
@@ -31,7 +47,33 @@ export const ProfilePage = () => {
         );
     }
 
-    if (isError || !profile) {
+    if (isBlockedProfile) {
+        return (
+            <div className="max-w-3xl mx-auto py-24 px-6 flex flex-col items-center justify-center text-center">
+                <div
+                    data-testid="blocked-profile-banner"
+                    className="blocked-profile-banner glass-panel rounded-2xl border border-rose-500/30 bg-[#141414] p-10 max-w-lg w-full flex flex-col items-center gap-4 shadow-2xl"
+                >
+                    <span className="material-symbols-outlined text-4xl text-rose-500">block</span>
+                    <h1 className="text-2xl font-extrabold text-text-primary tracking-tight">
+                        You are blocked
+                    </h1>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                        You are blocked. You are blocked from following or viewing this account&apos;s posts.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/home')}
+                        className="mt-2 px-6 py-2.5 rounded-xl bg-surface-container-high border border-white/10 text-text-primary text-xs font-bold uppercase tracking-wider hover:bg-white/10 transition-all cursor-pointer"
+                    >
+                        Return to Feed
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if ((isError && !profile) || !profile) {
         return (
             <div className="pt-32 text-center max-w-md mx-auto flex flex-col items-center gap-4">
                 <span className="material-symbols-outlined text-4xl text-rose-500">no_accounts</span>
@@ -144,7 +186,7 @@ export const ProfilePage = () => {
             />
 
             {/* 🏆 DECOUPLED INFINITE ACTION FEED CONTAINER INJECTION POINT */}
-            <ProfileFeed username={username} />
+            <ProfileFeed username={targetUsername || profile?.id || 'me'} />
 
         </div>
     );
