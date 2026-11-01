@@ -1148,18 +1148,38 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
                     <div className="text-sm md:text-base text-text-primary/95 leading-relaxed break-words w-full">
                         {isEditing ? (
                             renderEditForm()
+                        ) : postWarning ? (
+                            <ContentWarningWrapper warning={postWarning}>
+                                <PostContent post={post} isFocus={isFocus} />
+                                {!isEditing && post?.link_preview && (
+                                    <div className="mt-2">
+                                        <LinkPreviewCard preview={post.link_preview} />
+                                    </div>
+                                )}
+                                {!isEditing && allImages.length > 0 && (
+                                    <div className="mt-3">
+                                        <PostMediaGrid
+                                            mediaAttachments={allImages}
+                                            onMediaClick={(idx) => {
+                                                setCarouselIndex(idx);
+                                                setCarouselOpen(true);
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                            </ContentWarningWrapper>
                         ) : (
                             <PostContent post={post} isFocus={isFocus} />
                         )}
                     </div>
 
                     {/* Rich Link Preview Card */}
-                    {!isEditing && post?.link_preview && (
+                    {!isEditing && !postWarning && post?.link_preview && (
                         <LinkPreviewCard preview={post.link_preview} />
                     )}
 
                     {/* Mosaic Media Layout Container */}
-                    {!isEditing && allImages.length > 0 && (
+                    {!isEditing && !postWarning && allImages.length > 0 && (
                         <div className="mt-3">
                             <PostMediaGrid
                                 mediaAttachments={allImages}
