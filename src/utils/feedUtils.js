@@ -89,6 +89,23 @@ export function processFeedPosts(posts, options = {}) {
         const targetPost = (post.reblog && typeof post.reblog === 'object') ? post.reblog : post;
         const targetAuthor = targetPost.author || targetPost.account || targetPost.postedBy;
 
+        // 2. Rule 1: Self-Content Exclusion Rule (suppress self-posts on non-profile feeds)
+        if (!isProfilePage) {
+            if (
+                isCurrentUserAuthor(itemAuthor) ||
+                isCurrentUserAuthor(targetAuthor) ||
+                isCurrentUserAuthor(post.user) ||
+                (currentUserId && (
+                    String(post.user_id) === String(currentUserId) ||
+                    String(post.author_id) === String(currentUserId) ||
+                    String(post.author?.id) === String(currentUserId) ||
+                    String(post.user?.id) === String(currentUserId)
+                ))
+            ) {
+                continue;
+            }
+        }
+
 
         // 3. Rule 2: Reblog Deduplication Rule
         // Find canonical post ID for deduplication

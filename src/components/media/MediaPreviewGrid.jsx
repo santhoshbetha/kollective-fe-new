@@ -3,6 +3,13 @@ import { cn } from '@/lib/utils';
 import { FocalPointSelector } from './FocalPointSelector';
 import { useImageAspect } from '@/hooks/useImageAspect';
 
+const isVideoAttachment = (att) => {
+    if (!att) return false;
+    const type = (att.media_type || att.type || att.file?.type || '').toLowerCase();
+    const url = (att.url || att.preview || att.file?.name || '').toLowerCase();
+    return type.startsWith('video/') || /\.(mp4|mov|webm)($|\?)/i.test(url);
+};
+
 /**
  * Upload/edit preview grid that mirrors the timeline's crop framing:
  * - Single image: 4:5 frame for portraits, 16:9 for landscape/orientation-unknown.
@@ -23,7 +30,7 @@ export function MediaPreviewGrid({ attachments = [], onFocalChange, onRemove, on
     return (
         <div
             className={cn(
-                'grid gap-2 w-full overflow-hidden relative select-none mt-2',
+                'media-preview-grid grid gap-2 w-full overflow-hidden relative select-none mt-2',
                 frameClass,
                 count === 1 ? 'grid-cols-1' : 'grid-cols-2'
             )}
@@ -34,32 +41,52 @@ export function MediaPreviewGrid({ attachments = [], onFocalChange, onRemove, on
                     data-testid="media-preview"
                     className="w-full h-full relative group overflow-hidden bg-neutral-950 rounded-xl border border-black/5 dark:border-white/5"
                 >
-                    <FocalPointSelector
-                        imageUrl={att.preview || att.url}
-                        focalX={att.focal_x ?? 0}
-                        focalY={att.focal_y ?? 0}
-                        onChange={(coords) => onFocalChange?.(index, coords)}
-                    />
-                    <button
-                        type="button"
-                        onClick={() => onRemove?.(index)}
-                        className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/70 hover:bg-black/90 text-white cursor-pointer border-none flex items-center justify-center font-sans font-bold text-xs shadow-md z-10 outline-none"
-                        aria-label={`Remove image ${index + 1}`}
-                    >
-                        ✕
-                    </button>
-                    {onAltClick && (
-                        <button
-                            type="button"
-                            onClick={() => onAltClick(index, att)}
-                            className={cn(
-                                "absolute bottom-2 left-2 px-2 py-0.5 text-[10px] font-black rounded-md flex items-center gap-1 uppercase tracking-wider text-white z-10 cursor-pointer border-none outline-none",
-                                att.alt ? 'bg-emerald-600/90' : 'bg-amber-600/90'
+                    {isVideoAttachment(att) ? (
+                        <div className="w-full h-full relative group overflow-hidden bg-black rounded-xl">
+                            <video
+                                src={att.preview || att.url}
+                                controls
+                                className="w-full h-full object-cover"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => onRemove?.(index)}
+                                className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/70 hover:bg-black/90 text-white cursor-pointer border-none flex items-center justify-center font-sans font-bold text-xs shadow-md z-10 outline-none"
+                                aria-label={`Remove video ${index + 1}`}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <FocalPointSelector
+                                imageUrl={att.preview || att.url}
+                                focalX={att.focal_x ?? 0}
+                                focalY={att.focal_y ?? 0}
+                                onChange={(coords) => onFocalChange?.(index, coords)}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => onRemove?.(index)}
+                                className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/70 hover:bg-black/90 text-white cursor-pointer border-none flex items-center justify-center font-sans font-bold text-xs shadow-md z-10 outline-none"
+                                aria-label={`Remove image ${index + 1}`}
+                            >
+                                ✕
+                            </button>
+                            {onAltClick && (
+                                <button
+                                    type="button"
+                                    onClick={() => onAltClick(index, att)}
+                                    className={cn(
+                                        "absolute bottom-2 left-2 px-2 py-0.5 text-[10px] font-black rounded-md flex items-center gap-1 uppercase tracking-wider text-white z-10 cursor-pointer border-none outline-none",
+                                        att.alt ? 'bg-emerald-600/90' : 'bg-amber-600/90'
+                                    )}
+                                    aria-label={`Describe image ${index + 1}`}
+                                >
+                                    ALT
+                                </button>
                             )}
-                            aria-label={`Describe image ${index + 1}`}
-                        >
-                            ALT
-                        </button>
+                        </>
                     )}
                 </div>
             ))}

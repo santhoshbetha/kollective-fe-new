@@ -21,14 +21,22 @@ export function useHomeTimeline() {
         // 🚀 THE TIMELINE CACHE MAP KEY: Matches your global syncAllCacheQueries partial matchers
         queryKey: ['timeline', 'home', activeTab, accountContext, accountId, isAuthenticated, countryKey],
         queryFn: async ({ pageParam, signal }) => {
+            const tabParamMap = {
+                'All Activity': 'all',
+                'Voices': 'voices',
+                'Following': 'following',
+                'Popular': 'popular',
+            };
+            const tabName = tabParamMap[activeTab] || (typeof activeTab === 'string' ? activeTab.toLowerCase() : 'all');
+
             let filterQuery = '';
             let sortQuery = 'sort=newest';
 
-            if (activeTab === 'Voices') {
+            if (tabName === 'voices') {
                 filterQuery = '&category=voice';
-            } else if (activeTab === 'Following') {
+            } else if (tabName === 'following') {
                 filterQuery = '&feed=following&filter=following';
-            } else if (activeTab === 'Popular') {
+            } else if (tabName === 'popular') {
                 sortQuery = 'sort=top';
             }
 
@@ -38,7 +46,7 @@ export function useHomeTimeline() {
                 ? `&country=${encodeURIComponent(detectedCountry)}&country_code=${encodeURIComponent(countryCode || 'US')}`
                 : '';
             const contextParam = `context=${encodeURIComponent(accountContext)}`;
-            const path = `/timeline?${contextParam}&${sortQuery}${filterQuery}${countryParam}${cursorParam}`;
+            const path = `/timeline?tab=${tabName}&${contextParam}&${sortQuery}${filterQuery}${countryParam}${cursorParam}`;
 
             let rawData;
             try {
@@ -48,7 +56,7 @@ export function useHomeTimeline() {
                     throw err;
                 }
                 console.warn('apiFetch failed for home timeline, falling back to mockApi', err);
-                rawData = await api.getPosts({ tab: activeTab, max_id: pageParam, country: detectedCountry });
+                rawData = await api.getPosts({ tab: tabName, max_id: pageParam, country: detectedCountry });
             }
 
             // Standardize shapes into a reliable internal contract:
@@ -92,10 +100,3 @@ export function useHomeTimeline() {
         refetchOnWindowFocus: false,
     });
 }
-
-
-
-
-
-
-

@@ -1,22 +1,52 @@
 // src/pages/CommunitiesPage.jsx
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { CommunitiesFeed } from '../../features/communities/CommunitiesFeed';
-import { useCountry } from '../../hooks/useCountry';
 
 export const CommunitiesPage = () => {
     // 🎛️ Pull dynamic geographic state settings natively out of your unified useStore
     const activeTab = useStore((state) => state.communitiesTab);
     const setActiveTab = useStore((state) => state.setCommunitiesTab);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-    const { countryCode, countryName } = useCountry();
 
-    const tabs = isAuthenticated ? ['Local', 'State', countryName || 'Country', 'World'] : ['Country', 'World'];
+    // Dynamic Country Tab Labeling (ipapi.co integration with fallback to "Country")
+    const [countryName, setCountryName] = useState('Country');
+
+    useEffect(() => {
+        let isMounted = true;
+
+        async function fetchCountry() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch country from ipapi');
+                }
+                const data = await response.json();
+                if (isMounted && data?.country_name) {
+                    setCountryName(data.country_name);
+                }
+            } catch (err) {
+                if (isMounted) {
+                    setCountryName('Country');
+                }
+            }
+        }
+
+        fetchCountry();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const tabs = isAuthenticated
+        ? ['Local', 'State', countryName, 'World']
+        : [countryName, 'World'];
 
     useEffect(() => {
         if (!isAuthenticated && (activeTab === 'Local' || activeTab === 'State')) {
-            setActiveTab(countryName ? countryName : 'Country');
+            setActiveTab(countryName);
         }
     }, [isAuthenticated, activeTab, setActiveTab, countryName]);
 
@@ -36,12 +66,15 @@ export const CommunitiesPage = () => {
                 </div>
 
                 {/* Geographic Tabs Navigation Selection Row */}
-                <div className="flex gap-3 overflow-x-auto py-0 px-1 no-scrollbar border-b border-white/5 mb-0">
+                <div className="flex gap-3 overflow-x-auto py-0 px-1 no-scrollbar border-b border-white/5 mb-0" role="tablist">
                     {tabs.map((tab) => {
-                        const isActive = activeTab === tab;
+                        const isCountryTab = tab === countryName;
+                        const isActive = activeTab === tab || (isCountryTab && (activeTab === 'Country' || activeTab === countryName));
                         return (
                             <button
                                 key={tab}
+                                role="tab"
+                                aria-selected={isActive}
                                 onClick={() => setActiveTab(tab)}
                                 className={`px-6 py-2 rounded-full font-bold text-label-md transition-all duration-200 whitespace-nowrap cursor-pointer border ${isActive
                                     ? 'bg-primary-container text-white border-primary-container crimson-glow'
@@ -55,7 +88,7 @@ export const CommunitiesPage = () => {
                 </div>
 
                 {/* ⚡ DECENTRALIZED VIRTUALIZED FEED INNER ARCHITECTURE CONTAINER */}
-                <CommunitiesFeed />
+                <CommunitiesFeed countryName={countryName} />
 
             </div>
 

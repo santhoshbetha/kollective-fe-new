@@ -11,7 +11,7 @@ import { useAuthStore } from '../../store/auth/useAuthStore';
 import { processFeedPosts } from '../../utils/feedUtils';
 import { getFeedScrollTarget, clearFeedScrollTarget } from '../../utils/feedScrollManager';
 
-export function CommunitiesFeed() {
+export function CommunitiesFeed({ countryName } = {}) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const activeTab = useStore((state) => state.communitiesTab);
@@ -42,7 +42,7 @@ export function CommunitiesFeed() {
         isFetchingNextPage,
         status,
         refetch
-    } = useCommunitiesFeed();
+    } = useCommunitiesFeed(countryName);
 
     // 📡 Real-time Push Staging Buffer Query
     const { data: bufferedPosts = [] } = useQuery({

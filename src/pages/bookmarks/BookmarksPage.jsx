@@ -1,12 +1,12 @@
 // src/pages/BookmarksPage.jsx
 import React, { useState } from 'react';
 import { BookmarksFeed } from '../../features/bookmarks/BookmarksFeed';
-import { cn } from "@/lib/utils"; // Adjust to match your utility project layout
+import { cn } from "@/lib/utils";
 
 export const BookmarksPage = () => {
-    const [activeFilter, setActiveFilter] = useState('All Categories');
+    const [activeFilter, setActiveFilter] = useState('All');
 
-    const filters = ['All Categories', 'Manifestos', 'Strategy'];
+    const filters = ['All', 'Media', 'Links'];
 
     return (
         <div data-testid="bookmarks-page" className="max-w-3xl mx-auto flex flex-col gap-6 w-full text-left">
@@ -18,24 +18,26 @@ export const BookmarksPage = () => {
                         Saved Posts
                     </h1>
                     <p className="text-xs font-medium text-text-secondary">
-                        Archive of your most inspiring revolutionary insights.
+                        Archive of your saved posts and resources.
                     </p>
                 </div>
 
                 {/* Filter Selection Tabs Chips */}
-                <div className="flex gap-2 self-start md:self-auto overflow-x-auto pb-1 no-scrollbar font-mono text-xs w-full sm:w-auto">
+                <div className="flex gap-2 self-start md:self-auto overflow-x-auto pb-1 no-scrollbar font-mono text-xs w-full sm:w-auto" role="tablist">
                     {filters.map((filter) => {
                         const isActive = activeFilter === filter;
                         return (
                             <button
                                 type="button"
                                 key={filter}
+                                role="tab"
+                                aria-selected={isActive}
                                 onClick={() => setActiveFilter(filter)}
                                 className={cn(
                                     "px-4 py-1.5 rounded-full font-bold transition-all border whitespace-nowrap cursor-pointer outline-none",
                                     isActive
-                                        ? "bg-primary-container text-white border-primary-container crimson-glow font-extrabold shadow-sm"
-                                        : "bg-surface-container-high border-white/5 hover:bg-white/[0.02] text-text-secondary hover:text-white"
+                                        ? "bg-surface-container-high bg-primary-container text-primary text-white border-primary-container crimson-glow font-bold font-extrabold shadow-sm"
+                                        : "bg-surface-container border-white/5 hover:bg-white/[0.02] text-text-secondary hover:text-white"
                                 )}
                             >
                                 {filter}

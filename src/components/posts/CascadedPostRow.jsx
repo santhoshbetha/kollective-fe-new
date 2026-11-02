@@ -18,6 +18,7 @@ import {
     Clock,
     Pencil,
     Trash2,
+    Bookmark,
     Image as ImageIcon,
     Smile,
     Loader2
@@ -55,7 +56,8 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
     onBookmark,
     onReblog,
     renderMenu: propRenderMenu,
-    inProfileFeed = false
+    inProfileFeed = false,
+    inBookmarksFeed = false
 }) {
     let location;
     try {
@@ -64,11 +66,21 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
         location = null;
     }
     const pathname = location?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '');
+    const search = location?.search || (typeof window !== 'undefined' ? window.location.search : '');
     const isViewingOnProfilePage = Boolean(
         inProfileFeed ||
         pathname.startsWith('/profile') ||
         pathname.includes('/user/') ||
         pathname.startsWith('/@')
+    );
+    const isViewingOnBookmarksPage = Boolean(
+        inBookmarksFeed ||
+        pathname.includes('bookmark') ||
+        search.includes('tab=bookmarks') ||
+        (typeof window !== 'undefined' && (
+            window.location.pathname.includes('bookmark') ||
+            window.location.search.includes('tab=bookmarks')
+        ))
     );
 
     // 🚀 Reactive store subscription stays atomic per post item card boundary
@@ -702,6 +714,12 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
         setIsReportModalOpen(true);
     };
 
+    const handleRemoveBookmark = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (onBookmark) onBookmark(post?.id);
+    };
+
     const handleBlockDomain = async (e) => {
         if (e) e.stopPropagation();
         setShowMenu(false);
@@ -735,7 +753,36 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
                 className="w-64 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-y-auto py-1.5 animate-in fade-in zoom-in-95 duration-100 font-sans custom-scrollbar"
                 onClick={(e) => e.stopPropagation()}
             >
-                {isSelf && isViewingOnProfilePage && (
+                {isSelf && (isViewingOnBookmarksPage || post?.bookmarked || post?.isBookmarked) && !isViewingOnProfilePage ? (
+                    <>
+                        <button
+                            type="button"
+                            onClick={handleRemoveBookmark}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                        >
+                            <Bookmark className="w-4 h-4 text-text-secondary shrink-0" />
+                            <span>Remove Bookmark</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleCopyLink}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                        >
+                            <Copy className="w-4 h-4 text-text-secondary shrink-0" />
+                            <span>Copy link to post</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleExpandPost}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                        >
+                            <ExternalLink className="w-4 h-4 text-text-secondary shrink-0" />
+                            <span>Expand this post</span>
+                        </button>
+                    </>
+                ) : isSelf && isViewingOnProfilePage ? (
                     <>
                         <button
                             type="button"
@@ -755,109 +802,69 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
                             <span>Delete Post</span>
                         </button>
 
-                        <div className="border-t border-white/10 my-1" />
-                    </>
-                )}
-
-                {!isFocus && (
-                    <button
-                        type="button"
-                        onClick={handleExpandPost}
-                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
-                    >
-                        <ExternalLink className="w-4 h-4 text-text-secondary shrink-0" />
-                        <span>Expand this post</span>
-                    </button>
-                )}
-
-                <button
-                    type="button"
-                    onClick={handleOpenOriginalPage}
-                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
-                >
-                    <LinkIcon className="w-4 h-4 text-text-secondary shrink-0" />
-                    <span>Open original page</span>
-                </button>
-
-                <button
-                    type="button"
-                    onClick={handleCopyLink}
-                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
-                >
-                    <Copy className="w-4 h-4 text-text-secondary shrink-0" />
-                    <span>Copy link to post</span>
-                </button>
-
-                <div className="border-t border-white/10 my-1" />
-
-                <button
-                    type="button"
-                    onClick={handleMention}
-                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
-                >
-                    <AtSign className="w-4 h-4 text-text-secondary shrink-0" />
-                    <span className="break-all line-clamp-2 flex-1">Mention {authorHandle}</span>
-                </button>
-
-                <button
-                    type="button"
-                    onClick={handlePrivateMention}
-                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
-                >
-                    <Mail className="w-4 h-4 text-text-secondary shrink-0" />
-                    <span className="break-all line-clamp-2 flex-1">Privately mention {authorHandle}</span>
-                </button>
-
-                <div className="border-t border-white/10 my-1" />
-
-                <button
-                    type="button"
-                    onClick={handleMuteUser}
-                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent min-w-0"
-                >
-                    <VolumeX className="w-4 h-4 text-red-400 shrink-0" />
-                    <span className="break-all line-clamp-2 flex-1">Mute {authorHandle}</span>
-                </button>
-
-                <button
-                    type="button"
-                    onClick={handleBlockUser}
-                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
-                >
-                    <ShieldBan className="w-4 h-4 text-red-400 shrink-0" />
-                    <span className="break-all line-clamp-2 flex-1">Block {authorHandle}</span>
-                </button>
-
-                <div className="border-t border-white/10 my-1" />
-
-                <button
-                    type="button"
-                    onClick={handleFilterPost}
-                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
-                >
-                    <Filter className="w-4 h-4 text-red-400 shrink-0" />
-                    <span className="break-all line-clamp-2 flex-1">Filter this post</span>
-                </button>
-
-                <button
-                    type="button"
-                    onClick={handleReportUser}
-                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
-                >
-                    <Flag className="w-4 h-4 text-red-400 shrink-0" />
-                    <span className="break-all line-clamp-2 flex-1">Report {authorHandle}</span>
-                </button>
-
-                {domain && (
-                    <>
-                        <div className="border-t border-white/10 my-1" />
                         <button
                             type="button"
-                            onClick={handleBlockDomain}
+                            onClick={handleCopyLink}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                        >
+                            <Copy className="w-4 h-4 text-text-secondary shrink-0" />
+                            <span>Copy link to post</span>
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <button
+                            type="button"
+                            onClick={handleExpandPost}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                        >
+                            <ExternalLink className="w-4 h-4 text-text-secondary shrink-0" />
+                            <span>Expand this post</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleCopyLink}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                        >
+                            <Copy className="w-4 h-4 text-text-secondary shrink-0" />
+                            <span>Copy link to post</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleMention}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-white/5 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                        >
+                            <AtSign className="w-4 h-4 text-text-secondary shrink-0" />
+                            <span className="break-all line-clamp-2 flex-1">Mention {authorHandle}</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleMuteUser}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent min-w-0"
+                        >
+                            <VolumeX className="w-4 h-4 text-red-400 shrink-0" />
+                            <span className="break-all line-clamp-2 flex-1">Mute {authorHandle}</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleBlockUser}
                             className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
                         >
-                            <GlobeLock className="w-4 h-4 text-red-400 shrink-0" />
-                            <span>Block domain {domain}</span>
+                            <ShieldBan className="w-4 h-4 text-red-400 shrink-0" />
+                            <span className="break-all line-clamp-2 flex-1">Block {authorHandle}</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleReportUser}
+                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3 cursor-pointer border-none bg-transparent"
+                        >
+                            <Flag className="w-4 h-4 text-red-400 shrink-0" />
+                            <span className="break-all line-clamp-2 flex-1">Report {authorHandle || 'post'}</span>
                         </button>
                     </>
                 )}
@@ -1192,74 +1199,76 @@ export const CascadedPostRow = React.memo(function CascadedPostRow({
                     )}
 
                     {/* Row 4: Engagement Actions Panel Toolbars */}
-                    <div className="pt-3.5 flex items-center gap-8 text-text-secondary border-t border-white/5 w-full">
-                        <button
-                            type="button"
-                            disabled={isSelf}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isSelf && onReplyClick) {
-                                    onReplyClick(
-                                        postAuthor?.name || postAuthor?.username || 'user',
-                                        post?.id
-                                    );
-                                }
-                            }}
-                            title={isSelf ? "You cannot reply to your own post." : "Reply"}
-                            className={cn(
-                                "reply-btn flex items-center gap-1.5 text-sm bg-transparent border-none transition-colors",
-                                isSelf ? "opacity-40 cursor-not-allowed text-text-secondary/50" : "hover:text-primary-container cursor-pointer"
-                            )}
-                        >
-                            <span className="material-symbols-outlined text-[18px]">reply</span>
-                            <span>{getReplyCount(post).toLocaleString()}</span>
-                        </button>
+                    {!(isSelf && (isViewingOnProfilePage || isViewingOnBookmarksPage)) && (
+                        <div className="action-bar-row pt-3.5 flex items-center gap-8 text-text-secondary border-t border-white/5 w-full">
+                            <button
+                                type="button"
+                                disabled={isSelf}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!isSelf && onReplyClick) {
+                                        onReplyClick(
+                                            postAuthor?.name || postAuthor?.username || 'user',
+                                            post?.id
+                                        );
+                                    }
+                                }}
+                                title={isSelf ? "You cannot reply to your own post." : "Reply"}
+                                className={cn(
+                                    "reply-btn flex items-center gap-1.5 text-sm bg-transparent border-none transition-colors",
+                                    isSelf ? "opacity-40 cursor-not-allowed text-text-secondary/50" : "hover:text-primary-container cursor-pointer"
+                                )}
+                            >
+                                <span className="material-symbols-outlined text-[18px]">reply</span>
+                                <span>{getReplyCount(post).toLocaleString()}</span>
+                            </button>
 
-                        <button
-                            type="button"
-                            disabled={isSelf || isAlreadyReblogged}
-                            onClick={handleReblogClick}
-                            title={isSelf ? "You cannot reblog your own post" : isAlreadyReblogged ? "Already reblogged this post" : "Reblog post"}
-                            className={cn(
-                                "flex items-center gap-1.5 font-bold text-sm transition-all border-none bg-transparent shrink-0",
-                                isSelf ? "opacity-40 cursor-not-allowed text-text-secondary/50" : isAlreadyReblogged ? "text-emerald-500 font-extrabold cursor-default opacity-90" : "text-text-secondary hover:text-emerald-500 cursor-pointer"
-                            )}
-                        >
-                            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}>repeat</span>
-                            <span>{(reblogsCount).toLocaleString()}</span>
-                        </button>
+                            <button
+                                type="button"
+                                disabled={isSelf || isAlreadyReblogged}
+                                onClick={handleReblogClick}
+                                title={isSelf ? "You cannot reblog your own post" : isAlreadyReblogged ? "Already reblogged this post" : "Reblog post"}
+                                className={cn(
+                                    "flex items-center gap-1.5 font-bold text-sm transition-all border-none bg-transparent shrink-0",
+                                    isSelf ? "opacity-40 cursor-not-allowed text-text-secondary/50" : isAlreadyReblogged ? "text-emerald-500 font-extrabold cursor-default opacity-90" : "text-text-secondary hover:text-emerald-500 cursor-pointer"
+                                )}
+                            >
+                                <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}>repeat</span>
+                                <span>{(reblogsCount).toLocaleString()}</span>
+                            </button>
 
-                        <button
-                            type="button"
-                            disabled={isSelf}
-                            onClick={(e) => { e.stopPropagation(); if (!isSelf && onLike) onLike(post?.id); }}
-                            title={isSelf ? "You cannot like your own post" : "Like"}
-                            className={cn(
-                                "flex items-center gap-1.5 text-sm transition-colors bg-transparent border-none",
-                                isSelf ? "opacity-40 cursor-not-allowed text-text-secondary/50" : post?.liked ? "text-primary-container font-black cursor-pointer" : "hover:text-white cursor-pointer"
-                            )}
-                        >
-                            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
-                                star
-                            </span>
-                            <span>{(post?.likes || 0).toLocaleString()}</span>
-                        </button>
+                            <button
+                                type="button"
+                                disabled={isSelf}
+                                onClick={(e) => { e.stopPropagation(); if (!isSelf && onLike) onLike(post?.id); }}
+                                title={isSelf ? "You cannot like your own post" : "Like"}
+                                className={cn(
+                                    "flex items-center gap-1.5 text-sm transition-colors bg-transparent border-none",
+                                    isSelf ? "opacity-40 cursor-not-allowed text-text-secondary/50" : post?.liked ? "text-primary-container font-black cursor-pointer" : "hover:text-white cursor-pointer"
+                                )}
+                            >
+                                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.liked ? "'FILL' 1" : "'FILL' 0" }}>
+                                    star
+                                </span>
+                                <span>{(post?.likes || 0).toLocaleString()}</span>
+                            </button>
 
-                        <button
-                            type="button"
-                            disabled={isSelf}
-                            onClick={(e) => { e.stopPropagation(); if (!isSelf && onBookmark) onBookmark(post?.id); }}
-                            title={isSelf ? "You cannot bookmark your own post" : "Bookmark"}
-                            className={cn(
-                                "flex items-center gap-1.5 text-sm transition-colors bg-transparent border-none ml-auto",
-                                isSelf ? "opacity-40 cursor-not-allowed text-text-secondary/50" : post?.bookmarked ? "text-amber-500 cursor-pointer" : "hover:text-amber-500 cursor-pointer"
-                            )}
-                        >
-                            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}>
-                                bookmark
-                            </span>
-                        </button>
-                    </div>
+                            <button
+                                type="button"
+                                disabled={isSelf}
+                                onClick={(e) => { e.stopPropagation(); if (!isSelf && onBookmark) onBookmark(post?.id); }}
+                                title={isSelf ? "You cannot bookmark your own post" : "Bookmark"}
+                                className={cn(
+                                    "flex items-center gap-1.5 text-sm transition-colors bg-transparent border-none ml-auto",
+                                    isSelf ? "opacity-40 cursor-not-allowed text-text-secondary/50" : post?.bookmarked ? "text-amber-500 cursor-pointer" : "hover:text-amber-500 cursor-pointer"
+                                )}
+                            >
+                                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: post?.bookmarked ? "'FILL' 1" : "'FILL' 0" }}>
+                                    bookmark
+                                </span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -78,6 +78,10 @@ export const SettingsPage = () => {
         const personalIllegalTabs = ['org_workspace'];
 
         let resolvedTab = tabParam;
+        if (tabParam === 'bookmarks') {
+            navigate('/bookmarks', { replace: true });
+            return;
+        }
         if (isOrg && orgIllegalTabs.includes(tabParam)) {
             resolvedTab = 'index';
             setSearchParams({ tab: 'index' }, { replace: true });
@@ -114,7 +118,7 @@ export const SettingsPage = () => {
             { id: 'index', label: t('pref_heading'), icon: 'settings_accessibility', desc: t('pref_desc') },
             { id: 'profile', label: 'Edit Profile', icon: 'account_circle', desc: 'Update profile picture, banner, and info' },
             { id: 'invitations', label: 'Organization Invitations', icon: 'mail_lock', desc: 'Pending team invites and access grants' },
-            { id: 'email', label: 'Email Configuration', icon: 'mail', desc: 'Manage your contact address links' },
+            { id: 'email', label: 'Email Configuration', icon: 'mail', desc: 'Manage your contact email addresses' },
             { id: 'password', label: 'Security & Keys', icon: 'lock', desc: 'Modify entry passwords and authorization keys' },
             { id: 'blocked_profiles', label: 'Blocked Profiles', icon: 'block', desc: 'Manage restricted profiles blocked from your timeline' },
             { id: 'muted_profiles', label: 'Muted Profiles', icon: 'volume_off', desc: 'Manage muted feeds and hidden response cards' },

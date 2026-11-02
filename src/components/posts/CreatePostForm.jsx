@@ -12,6 +12,40 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFo
 import { Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { MediaPreviewGrid } from '../media/MediaPreviewGrid';
+import { toast } from 'sonner';
+
+const isVideoFile = (file) => {
+    if (!file) return false;
+    const videoTypes = ['video/mp4', 'video/quicktime', 'video/webm'];
+    const videoExts = ['.mp4', '.mov', '.webm'];
+    const name = (file.name || '').toLowerCase();
+    const type = (file.type || '').toLowerCase();
+    return videoTypes.includes(type) || videoExts.some(ext => name.endsWith(ext));
+};
+
+const isVideoAttachment = (att) => {
+    if (!att) return false;
+    const type = (att.media_type || att.type || att.file?.type || '').toLowerCase();
+    const url = (att.url || att.preview || att.file?.name || '').toLowerCase();
+    return type.startsWith('video/') || /\.(mp4|mov|webm)($|\?)/i.test(url);
+};
+
+const getVideoDuration = (file) => {
+    return new Promise((resolve) => {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        const url = URL.createObjectURL(file);
+        video.src = url;
+        video.onloadedmetadata = () => {
+            URL.revokeObjectURL(url);
+            resolve(video.duration || 0);
+        };
+        video.onerror = () => {
+            URL.revokeObjectURL(url);
+            resolve(0);
+        };
+    });
+};
 
 export function CreatePostForm({
     user,
@@ -143,12 +177,73 @@ export function CreatePostForm({
 
     const handleFileChange = async (e) => {
         if (!e.target.files || e.target.files.length === 0) return;
-        const files = Array.from(e.target.files).slice(0, 4 - uploadedAttachments.length);
-        console.log("[CreatePostForm] handleFileChange files count:", files.length);
-        if (files.length === 0) return;
+        const incomingFiles = Array.from(e.target.files);
+        console.log("[CreatePostForm] handleFileChange files count:", incomingFiles.length);
+
+        const currentHasImage = uploadedAttachments.some(a => !isVideoAttachment(a));
+        const currentHasVideo = uploadedAttachments.some(a => isVideoAttachment(a));
+
+        const incomingVideos = incomingFiles.filter(isVideoFile);
+        const incomingImages = incomingFiles.filter(f => !isVideoFile(f));
+
+        // Strict Exclusionary Rule (A post can contain Images OR a single Video, never both)
+        if (
+            (currentHasImage && incomingVideos.length > 0) ||
+            (currentHasVideo && incomingImages.length > 0) ||
+            (incomingVideos.length > 0 && incomingImages.length > 0)
+        ) {
+            toast.error("Cannot mix images and video in a single post");
+            e.target.value = '';
+            return;
+        }
+
+        // Maximum of 1 video item per post card
+        if (incomingVideos.length > 1 || (currentHasVideo && incomingVideos.length > 0)) {
+            toast.error("A post can only contain a single video.");
+            e.target.value = '';
+            return;
+        }
+
+        // Constraints validation for each incoming file
+        for (const file of incomingFiles) {
+            // Max File Size: Hard capped at 300MB
+            if (file.size > 300 * 1024 * 1024) {
+                toast.error("File size exceeds the 300MB structural threshold");
+                e.target.value = '';
+                return;
+            }
+
+            if (isVideoFile(file)) {
+                // Allowed Formats: .mp4, .mov, and .webm
+                const name = (file.name || '').toLowerCase();
+                const type = (file.type || '').toLowerCase();
+                const validFormats = ['.mp4', '.mov', '.webm'];
+                const validMimes = ['video/mp4', 'video/quicktime', 'video/webm'];
+                const isFormatValid = validFormats.some(ext => name.endsWith(ext)) || validMimes.includes(type);
+                if (!isFormatValid) {
+                    toast.error("Unsupported video format. Allowed formats: .mp4, .mov, .webm");
+                    e.target.value = '';
+                    return;
+                }
+
+                // Max Duration: Hard capped at 140 seconds
+                const duration = await getVideoDuration(file);
+                if (duration > 140) {
+                    toast.error("Video duration cannot exceed 140 seconds.");
+                    e.target.value = '';
+                    return;
+                }
+            }
+        }
+
+        const files = incomingFiles.slice(0, 4 - uploadedAttachments.length);
+        if (files.length === 0) {
+            e.target.value = '';
+            return;
+        }
 
         setIsUploading(true);
-        setPostTab('image');
+        setPostTab(incomingVideos.length > 0 ? 'video' : 'image');
 
         // Create local preview items immediately for snappy UX
         const initialPreviews = files.map((file) => ({
@@ -159,15 +254,16 @@ export function CreatePostForm({
             focal_x: 0,
             focal_y: 0,
             isUploading: true,
-            file
+            file,
+            media_type: file.type || (isVideoFile(file) ? 'video/mp4' : 'image/png')
         }));
 
         setUploadedAttachments((prev) => [...prev, ...initialPreviews]);
 
         for (const file of files) {
             try {
-                const contentType = file.type || 'image/png';
-                const filename = file.name || 'image.png';
+                const contentType = file.type || (isVideoFile(file) ? 'video/mp4' : 'image/png');
+                const filename = file.name || (isVideoFile(file) ? 'video.mp4' : 'image.png');
                 console.log("[CreatePostForm] Requesting presign for:", filename, contentType);
                 const presignRes = await apiFetch(`/media/presign?filename=${encodeURIComponent(filename)}&content_type=${encodeURIComponent(contentType)}`);
                 console.log("[CreatePostForm] Presign response:", presignRes);
@@ -207,7 +303,8 @@ export function CreatePostForm({
                                 ...att,
                                 id: mediaId,
                                 url: finalAssetUrl,
-                                isUploading: false
+                                isUploading: false,
+                                media_type: contentType
                             }
                             : att
                     )
@@ -584,19 +681,21 @@ export function CreatePostForm({
                 {/* Toolbar Footer Toolbar Row Panel */}
                 <div className="flex items-center justify-between pt-4 border-t border-black/5 dark:border-white/5 mt-2 select-none font-mono text-[10px] uppercase font-bold tracking-wider">
                     <div className="flex items-center gap-1">
-                        <button
-                            type="button"
-                            onClick={() => { setPostTab('image'); setTimeout(() => document.getElementById('modal-img-upload')?.click(), 50); }}
-                            className="p-2.5 bg-transparent text-text-secondary hover:text-text-primary border-none cursor-pointer outline-none transition-colors"
-                            title="Attach Media"
-                            aria-label="Attach Media"
-                        >
-                            <ImageIcon className="w-4 h-4" />
-                        </button>
+                        {!uploadedAttachments.some(isVideoAttachment) && (
+                            <button
+                                type="button"
+                                onClick={() => { setPostTab('image'); setTimeout(() => document.getElementById('modal-img-upload')?.click(), 50); }}
+                                className="p-2.5 bg-transparent text-text-secondary hover:text-text-primary border-none cursor-pointer outline-none transition-colors"
+                                title="Attach Media"
+                                aria-label="Attach Media"
+                            >
+                                <ImageIcon className="w-4 h-4" />
+                            </button>
+                        )}
                         <input
                             type="file"
                             id="modal-img-upload"
-                            accept="image/*"
+                            accept="image/*,video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
                             multiple
                             className="hidden"
                             onChange={handleFileChange}

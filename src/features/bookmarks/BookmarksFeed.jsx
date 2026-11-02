@@ -5,9 +5,9 @@ import { useBookmarksQuery } from './useBookmarksQuery';
 import { PostCard } from '../../components/posts/PostCard';
 import { usePostsStore } from '../../store/usePostsStore';
 import { Bookmark, AlertCircle, RefreshCw } from 'lucide-react';
-import { cn } from "@/lib/utils"; // Adjust to match local helper paths
+import { cn } from "@/lib/utils";
 
-export function BookmarksFeed({ activeFilter = 'All Categories' }) {
+export function BookmarksFeed({ activeFilter = 'All' }) {
     // 🔄 Pull infinite pages from our TanStack query caching layout
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useBookmarksQuery();
 
@@ -19,7 +19,7 @@ export function BookmarksFeed({ activeFilter = 'All Categories' }) {
         // Flatten infinite pages without triggering intermediate side-effect store sync flushes
         const pagesArray = data?.pages || [];
         const rawPosts = pagesArray.flatMap((page) =>
-            page?.data || page?.posts || (Array.isArray(page) ? page : [])
+            page?.bookmarks || page?.data || page?.posts || (Array.isArray(page) ? page : [])
         );
 
         // Merge baseline network records with the active single-source-of-truth store entities
@@ -32,20 +32,20 @@ export function BookmarksFeed({ activeFilter = 'All Categories' }) {
         return allMergedPosts.filter((post) => {
             // Guard clause: Filter out if explicitly removed locally from user bookmarks matrix
             if (post?.bookmarked === false || post?.isBookmarked === false) return false;
-            if (activeFilter === 'All Categories') return true;
+            if (activeFilter === 'All' || activeFilter === 'All Categories') return true;
 
-            const contentText = (post?.content || post?.text || '').toLowerCase();
-
-            if (activeFilter === 'Manifestos') {
-                return contentText.includes('sovereign') ||
-                    contentText.includes('sovereignty') ||
-                    contentText.includes('reclamation');
+            if (activeFilter === 'Media') {
+                const hasMediaAttachments = Array.isArray(post.media_attachments) && post.media_attachments.length > 0;
+                const hasImages = Array.isArray(post.images) && post.images.length > 0;
+                const hasImage = !!post.image;
+                const hasVideo = !!(post.video || post.video_url || post.videoUrl);
+                return hasMediaAttachments || hasImages || hasImage || hasVideo;
             }
 
-            if (activeFilter === 'Strategy') {
-                return contentText.includes('report') ||
-                    contentText.includes('negotiations') ||
-                    (Array.isArray(post?.tags) && post.tags.some(t => String(t).toLowerCase().includes('governance')));
+            if (activeFilter === 'Links') {
+                return post.link_preview !== null && post.link_preview !== undefined && (
+                    typeof post.link_preview === 'object' ? Object.keys(post.link_preview).length > 0 : true
+                );
             }
 
             return true;
@@ -76,7 +76,7 @@ export function BookmarksFeed({ activeFilter = 'All Categories' }) {
                 <Bookmark className="w-8 h-8 text-text-secondary/40 mb-4 block" />
                 <h3 className="font-bold text-text-primary mb-1 text-lg">No saved posts found</h3>
                 <p className="text-text-secondary text-xs leading-relaxed max-w-md font-medium font-sans">
-                    {activeFilter === 'All Categories'
+                    {activeFilter === 'All' || activeFilter === 'All Categories'
                         ? 'Save posts from the home timeline feed to read or refer to them here later!'
                         : `No saved posts match the "${activeFilter}" classification filter query.`}
                 </p>
@@ -125,7 +125,7 @@ export function BookmarksFeed({ activeFilter = 'All Categories' }) {
                 // 🚀 FIXED KEY IDENTIFIER: Uses post.id to seal structural animation frames cleanly
                 itemContent={(index, post) => (
                     <div className="w-full animate-in fade-in duration-150">
-                        <PostCard post={post} />
+                        <PostCard post={post} inBookmarksFeed={true} />
                     </div>
                 )}
             />

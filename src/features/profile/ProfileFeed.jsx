@@ -1,28 +1,73 @@
 // src/features/profile/ProfileFeed.jsx
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Virtuoso } from 'react-virtuoso';
+import { Link } from 'react-router-dom';
 import { PostCard } from '../../components/posts/PostCard';
 import { useProfileTimelineQuery } from './useProfileFeature';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { processFeedPosts } from '../../utils/feedUtils';
 
 export function ProfileFeed({ username }) {
-    const [activeTab, setActiveTab] = useState('Posts'); // 'Posts' | 'Media' | 'Voices'
+    const [activeTab, setActiveTab] = useState('Posts'); // 'Posts' | 'Posts & Replies' | 'Media' | 'Voices'
     const currentUser = useAuthStore((state) => state.user);
     const activeAccount = useAuthStore((state) => state.activeAccount);
 
-    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useProfileTimelineQuery(username, 'root_only');
+    const currentMode = activeTab === 'Posts' ? 'root_only' : 'with_replies';
+    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useProfileTimelineQuery(username, currentMode);
 
     // Flatten our dynamic infinite query pages into a unified sequential array mapping
     const rawPosts = data?.pages.flatMap((page) => (Array.isArray(page) ? page : page.posts || page.data || [])) || [];
     const allPosts = processFeedPosts(rawPosts, { currentUser, activeAccount, isProfilePage: true });
 
+    // Extract image thumbnail items for the Media mosaic grid
+    const mediaItems = useMemo(() => {
+        const items = [];
+        for (const post of allPosts) {
+            const postId = post?.id;
+            if (!postId) continue;
+
+            if (Array.isArray(post.media_attachments)) {
+                for (const att of post.media_attachments) {
+                    const url = att?.preview_url || att?.url;
+                    if (url && !items.some((it) => it.url === url && it.postId === postId)) {
+                        items.push({ url, postId, post });
+                    }
+                }
+            }
+            if (Array.isArray(post.images)) {
+                for (const img of post.images) {
+                    const url = typeof img === 'string' ? img : (img?.preview_url || img?.url);
+                    if (url && !items.some((it) => it.url === url && it.postId === postId)) {
+                        items.push({ url, postId, post });
+                    }
+                }
+            }
+            if (post.image) {
+                const url = typeof post.image === 'string' ? post.image : (post.image?.preview_url || post.image?.url);
+                if (url && !items.some((it) => it.url === url && it.postId === postId)) {
+                    items.push({ url, postId, post });
+                }
+            }
+        }
+        return items;
+    }, [allPosts]);
+
     // Filter content tokens inside local memory buckets symmetrically
-    const filteredPosts = allPosts.filter((post) => {
-        if (activeTab === 'Media') return post.images && post.images.length > 0;
-        if (activeTab === 'Voices') return !!post.isVoice;
-        return true; // Default: 'Posts' returns the complete timeline sequence
-    });
+    const filteredPosts = useMemo(() => {
+        return allPosts.filter((post) => {
+            if (!post) return false;
+            if (activeTab === 'Posts') {
+                return !post.parent_id && !post.in_reply_to_id && !post.inReplyToId;
+            }
+            if (activeTab === 'Posts & Replies' || activeTab === 'Posts & replies') {
+                return true;
+            }
+            if (activeTab === 'Voices') {
+                return !!(post.isVoice || post.category === 'voice' || post.category === 'voices');
+            }
+            return true;
+        });
+    }, [allPosts, activeTab]);
 
     if (status === 'pending') {
         return <div className="text-center py-12 text-xs font-bold font-mono uppercase tracking-widest text-text-secondary/40 animate-pulse">Syncing feed parameters...</div>;
@@ -32,7 +77,7 @@ export function ProfileFeed({ username }) {
         <div className="w-full flex flex-col gap-4 mt-2">
             {/* 🧭 Local View Filter Tab Row Panel */}
             <div className="flex border-b border-white/5 bg-surface-container-lowest/30 p-1 rounded-xl select-none">
-                {['Posts', 'Media', 'Voices'].map((tab) => (
+                {['Posts', 'Posts & Replies', 'Media', 'Voices'].map((tab) => (
                     <button
                         key={tab}
                         type="button"
@@ -47,8 +92,30 @@ export function ProfileFeed({ username }) {
                 ))}
             </div>
 
-            {/* 🥞 VIRTUALIZED TIMELINE INTERACTION STREAM CANVAS */}
-            {filteredPosts.length === 0 ? (
+            {/* 🥞 MEDIA TAB: Multi-column image mosaic grid layout */}
+            {activeTab === 'Media' ? (
+                <div className="media-grid grid grid-cols-3 gap-2 p-2 bg-[#141414] border border-[#262626] rounded-2xl overflow-hidden shadow-2xl w-full">
+                    {mediaItems.length === 0 ? (
+                        <div className="col-span-3 py-12 text-center font-mono text-xs text-text-secondary/40">
+                            NO_MEDIA_FOUND: No media items posted yet.
+                        </div>
+                    ) : (
+                        mediaItems.map((item, idx) => (
+                            <Link
+                                key={`${item.postId}-${idx}`}
+                                to={`/post/${item.postId}`}
+                                className="aspect-square relative group overflow-hidden rounded-xl bg-surface-container-high border border-white/5 cursor-pointer block"
+                            >
+                                <img
+                                    src={item.url}
+                                    alt=""
+                                    className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                />
+                            </Link>
+                        ))
+                    )}
+                </div>
+            ) : filteredPosts.length === 0 ? (
                 <div className="glass-card rounded-2xl p-12 text-center border border-white/5 bg-surface-container-low/40">
                     <span className="material-symbols-outlined text-3xl text-text-secondary/30 mb-2">grid_view</span>
                     <p className="text-sm font-medium text-text-secondary">No activity listed under this tab index yet.</p>

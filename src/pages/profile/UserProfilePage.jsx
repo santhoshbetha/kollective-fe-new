@@ -188,8 +188,8 @@ export function UserProfilePage() {
 
   const profileTabs = useMemo(() => {
     const baseTabs = (profile.type === 'organization' || profile.badge_type?.toLowerCase() === 'organization' || profile.badge_type?.toLowerCase() === 'warned')
-      ? ['Posts', 'Posts & replies', 'Media', 'Team']
-      : ['Posts', 'Posts & replies', 'Media'];
+      ? ['Posts', 'Posts & Replies', 'Media', 'Team']
+      : ['Posts', 'Posts & Replies', 'Media'];
 
     if (isOwnProfile) {
       return [...baseTabs, 'My Events', 'My Businesses'];
@@ -217,11 +217,47 @@ export function UserProfilePage() {
   // Flatten timeline parameters from TanStack infinite queries pages
   const finalUserPosts = useMemo(() => {
     const posts = timelinePagesData?.pages?.flatMap(page => page?.posts || page?.data || (Array.isArray(page) ? page : [])) || [];
-    if (activeTab === 'Media') {
-      return posts.filter(p => Array.isArray(p?.images) && p.images.length > 0);
+    if (activeTab === 'Posts') {
+      return posts.filter(p => !p?.parent_id && !p?.in_reply_to_id && !p?.inReplyToId);
+    }
+    if (activeTab === 'Posts & Replies' || activeTab === 'Posts & replies') {
+      return posts;
     }
     return posts;
   }, [timelinePagesData?.pages, activeTab]);
+
+  const mediaItems = useMemo(() => {
+    const items = [];
+    const posts = timelinePagesData?.pages?.flatMap(page => page?.posts || page?.data || (Array.isArray(page) ? page : [])) || [];
+    for (const post of posts) {
+      const postId = post?.id;
+      if (!postId) continue;
+
+      if (Array.isArray(post.media_attachments)) {
+        for (const att of post.media_attachments) {
+          const url = att?.preview_url || att?.url;
+          if (url && !items.some((it) => it.url === url && it.postId === postId)) {
+            items.push({ url, postId, post });
+          }
+        }
+      }
+      if (Array.isArray(post.images)) {
+        for (const img of post.images) {
+          const url = typeof img === 'string' ? img : (img?.preview_url || img?.url);
+          if (url && !items.some((it) => it.url === url && it.postId === postId)) {
+            items.push({ url, postId, post });
+          }
+        }
+      }
+      if (post.image) {
+        const url = typeof post.image === 'string' ? post.image : (post.image?.preview_url || post.image?.url);
+        if (url && !items.some((it) => it.url === url && it.postId === postId)) {
+          items.push({ url, postId, post });
+        }
+      }
+    }
+    return items;
+  }, [timelinePagesData?.pages]);
 
   const displayMetadata = useMemo(() => {
     let meta = Array.isArray(profile?.metadata) ? [...profile.metadata] : [];
@@ -1059,6 +1095,28 @@ export function UserProfilePage() {
                     </button>
                   </div>
                 ))}
+              </div>
+            ) : activeTab === 'Media' ? (
+              <div className="media-grid grid grid-cols-3 gap-2 p-2 bg-[#141414] border border-[#262626] rounded-2xl overflow-hidden shadow-2xl w-full">
+                {mediaItems.length === 0 ? (
+                  <div className="col-span-3 py-12 text-center font-mono text-xs text-text-secondary/40">
+                    NO_MEDIA_FOUND: No media items posted yet.
+                  </div>
+                ) : (
+                  mediaItems.map((item, idx) => (
+                    <Link
+                      key={`${item.postId}-${idx}`}
+                      to={`/post/${item.postId}`}
+                      className="aspect-square relative group overflow-hidden rounded-xl bg-surface-container-high border border-white/5 cursor-pointer block"
+                    >
+                      <img
+                        src={item.url}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                      />
+                    </Link>
+                  ))
+                )}
               </div>
             ) : finalUserPosts.length === 0 ? (
               /* 🌌 Empty State Feed Stream Fallback */

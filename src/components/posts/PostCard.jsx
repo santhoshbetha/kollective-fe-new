@@ -43,13 +43,20 @@ import {
     Clock,
     Pencil,
     Trash2,
+    Bookmark,
     Image as ImageIcon,
     Smile,
     Loader2
 } from 'lucide-react';
 
-const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate, menuRef, menuPosition, onOpenReportModal, onEditPost, onDeletePost, isSelf, isViewingOnProfilePage) => {
+const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate, menuRef, menuPosition, onOpenReportModal, onEditPost, onDeletePost, isSelf, isViewingOnProfilePage, isViewingOnBookmarksPage, onToggleBookmark) => {
     if (!showMenu || !menuPosition?.isReady) return null;
+
+    const handleRemoveBookmark = (e) => {
+        if (e) e.stopPropagation();
+        setShowMenu(false);
+        if (onToggleBookmark) onToggleBookmark(e);
+    };
 
     const handleEditClick = (e) => {
         if (e) e.stopPropagation();
@@ -222,8 +229,36 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate,
             className="w-72 bg-surface-container border border-outline-variant rounded-card shadow-2xl overflow-y-auto py-1.5 animate-in fade-in zoom-in-95 duration-100 font-sans custom-scrollbar"
             onClick={(e) => e.stopPropagation()}
         >
-            {/* Self-Author Lifecycle Actions (Edit & Delete) - Only on Profile Surface */}
-            {isSelf && isViewingOnProfilePage && (
+            {isSelf && (isViewingOnBookmarksPage || post?.bookmarked || post?.isBookmarked) && !isViewingOnProfilePage ? (
+                <>
+                    <button
+                        type="button"
+                        onClick={handleRemoveBookmark}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
+                    >
+                        <Bookmark className="w-4 h-4 text-text-secondary shrink-0" />
+                        <span>Remove Bookmark</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleCopyLink}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
+                    >
+                        <Copy className="w-4 h-4 text-text-secondary shrink-0" />
+                        <span>Copy link to post</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleExpandPost}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
+                    >
+                        <ExternalLink className="w-4 h-4 text-text-secondary shrink-0" />
+                        <span>Expand this post</span>
+                    </button>
+                </>
+            ) : isSelf && isViewingOnProfilePage ? (
                 <>
                     <button
                         type="button"
@@ -243,112 +278,72 @@ const renderMenu = (post, showMenu, setShowMenu, authorHandle, domain, navigate,
                         <span>Delete Post</span>
                     </button>
 
-                    <div className="border-t border-outline-variant/60 my-1" />
+                    <button
+                        type="button"
+                        onClick={handleCopyLink}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
+                    >
+                        <Copy className="w-4 h-4 text-text-secondary shrink-0" />
+                        <span>Copy link to post</span>
+                    </button>
+                </>
+            ) : (
+                <>
+                    <button
+                        type="button"
+                        onClick={handleExpandPost}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
+                    >
+                        <ExternalLink className="w-4 h-4 text-text-secondary shrink-0" />
+                        <span>Expand this post</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleCopyLink}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
+                    >
+                        <Copy className="w-4 h-4 text-text-secondary shrink-0" />
+                        <span>Copy link to post</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleMention}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
+                    >
+                        <AtSign className="w-4 h-4 text-text-secondary shrink-0" />
+                        <span className="break-all line-clamp-2 flex-1">Mention {authorHandle}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleMuteUser}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none min-w-0"
+                    >
+                        <VolumeX className="w-4 h-4 text-error shrink-0" />
+                        <span className="break-all line-clamp-2 flex-1">Mute {authorHandle}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleBlockUser}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
+                    >
+                        <ShieldBan className="w-4 h-4 text-error shrink-0" />
+                        <span className="break-all line-clamp-2 flex-1">Block {authorHandle}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleReportUser}
+                        className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
+                    >
+                        <Flag className="w-4 h-4 text-error shrink-0" />
+                        <span className="break-all line-clamp-2 flex-1">Report {authorHandle || 'post'}</span>
+                    </button>
                 </>
             )}
-
-            {/* Standard Navigation Actions */}
-            <button
-                type="button"
-                onClick={handleExpandPost}
-                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
-            >
-                <ExternalLink className="w-4 h-4 text-text-secondary shrink-0" />
-                <span>Expand this post</span>
-            </button>
-
-            <button
-                type="button"
-                onClick={handleOpenOriginalPage}
-                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
-            >
-                <LinkIcon className="w-4 h-4 text-text-secondary shrink-0" />
-                <span>Open original page</span>
-            </button>
-
-            <button
-                type="button"
-                onClick={handleCopyLink}
-                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
-            >
-                <Copy className="w-4 h-4 text-text-secondary shrink-0" />
-                <span>Copy link to post</span>
-            </button>
-
-            <div className="border-t border-outline-variant/60 my-1" />
-
-            {/* Social Interaction Actions */}
-            <button
-                type="button"
-                onClick={handleMention}
-                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
-            >
-                <AtSign className="w-4 h-4 text-text-secondary shrink-0" />
-                <span className="break-all line-clamp-2 flex-1">Mention {authorHandle}</span>
-            </button>
-
-            <button
-                type="button"
-                onClick={handlePrivateMention}
-                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-surface-container-high transition-colors flex items-center gap-3 cursor-pointer border-none"
-            >
-                <Mail className="w-4 h-4 text-text-secondary shrink-0" />
-                <span className="break-all line-clamp-2 flex-1">Privately mention {authorHandle}</span>
-            </button>
-
-            <div className="border-t border-outline-variant/60 my-1" />
-
-            {/* Destructive / Moderation Actions */}
-            <button
-                type="button"
-                onClick={handleMuteUser}
-                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none min-w-0"
-            >
-                <VolumeX className="w-4 h-4 text-error shrink-0" />
-                <span className="break-all line-clamp-2 flex-1">Mute {authorHandle}</span>
-            </button>
-
-            <button
-                type="button"
-                onClick={handleBlockUser}
-                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
-            >
-                <ShieldBan className="w-4 h-4 text-error shrink-0" />
-                <span className="break-all line-clamp-2 flex-1">Block {authorHandle}</span>
-            </button>
-
-            <div className="border-t border-outline-variant/60 my-1" />
-
-            <button
-                type="button"
-                onClick={handleFilterPost}
-                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
-            >
-                <Filter className="w-4 h-4 text-error shrink-0" />
-                <span className="break-all line-clamp-2 flex-1">Filter this post</span>
-            </button>
-
-            <div className="border-t border-outline-variant/60 my-1" />
-
-            <button
-                type="button"
-                onClick={handleReportUser}
-                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
-            >
-                <Flag className="w-4 h-4 text-error shrink-0" />
-                <span className="break-all line-clamp-2 flex-1">Report {authorHandle}</span>
-            </button>
-
-            <div className="border-t border-outline-variant/60 my-1" />
-
-            <button
-                type="button"
-                onClick={handleBlockDomain}
-                className="w-full text-left px-4 py-2.5 text-xs font-semibold text-error hover:bg-error-container/20 transition-colors flex items-center gap-3 cursor-pointer border-none"
-            >
-                <GlobeLock className="w-4 h-4 text-error shrink-0" />
-                <span>Block domain {domain}</span>
-            </button>
         </div>
     );
 
@@ -363,7 +358,8 @@ export const PostCard = React.memo(function PostCard({
     post: propPost,
     isLast = false,
     standalone = false,
-    inProfileFeed = false
+    inProfileFeed = false,
+    inBookmarksFeed = false
 }) {
     let location;
     try {
@@ -372,11 +368,21 @@ export const PostCard = React.memo(function PostCard({
         location = null;
     }
     const pathname = location?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '');
+    const search = location?.search || (typeof window !== 'undefined' ? window.location.search : '');
     const isViewingOnProfilePage = Boolean(
         inProfileFeed ||
         pathname.startsWith('/profile') ||
         pathname.includes('/user/') ||
         pathname.startsWith('/@')
+    );
+    const isViewingOnBookmarksPage = Boolean(
+        inBookmarksFeed ||
+        pathname.includes('bookmark') ||
+        search.includes('tab=bookmarks') ||
+        (typeof window !== 'undefined' && (
+            window.location.pathname.includes('bookmark') ||
+            window.location.search.includes('tab=bookmarks')
+        ))
     );
 
     const reblogTargetId = propPost?.reblog?.id ||
@@ -1412,7 +1418,7 @@ export const PostCard = React.memo(function PostCard({
                             >
                                 <span className="material-symbols-outlined text-[18px]">more_horiz</span>
                             </button>
-                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle, domain, navigate, menuRef, menuPosition, () => setIsReportModalOpen(true), handleStartEdit, handleDeletePost, isSelf, isViewingOnProfilePage)}
+                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle, domain, navigate, menuRef, menuPosition, () => setIsReportModalOpen(true), handleStartEdit, handleDeletePost, isSelf, isViewingOnProfilePage, isViewingOnBookmarksPage, handleBookmarkClick)}
                         </div>
                     </div>
 
@@ -1568,91 +1574,93 @@ export const PostCard = React.memo(function PostCard({
                         ) : null)}
 
                         {/* Action Bar Engagement Matrix Row Footer */}
-                        <div className="flex items-center justify-between pt-4 border-t border-white/5 text-text-secondary">
-                            <div className="flex items-center gap-6">
+                        {!(isSelf && (isViewingOnProfilePage || isViewingOnBookmarksPage)) && (
+                            <div className="action-bar-row flex items-center justify-between pt-4 border-t border-white/5 text-text-secondary">
+                                <div className="flex items-center gap-6">
 
-                                {/* Standard Response Bubble Action button */}
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleCommentClick(e); }}
-                                    disabled={isSelf}
-                                    className={cn(
-                                        "reply-btn flex items-center gap-2 font-bold transition-all border-none bg-transparent",
-                                        isSelf ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95"
-                                    )}
-                                    title={isSelf ? "You cannot reply to your own post." : "Reply"}
-                                >
-                                    <span className="material-symbols-outlined text-[18px]">reply</span>
-                                    <span className="text-xs md:text-sm">
-                                        {commentsDisplayCount.toLocaleString()}
-                                    </span>
-                                </button>
+                                    {/* Standard Response Bubble Action button */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleCommentClick(e); }}
+                                        disabled={isSelf}
+                                        className={cn(
+                                            "reply-btn flex items-center gap-2 font-bold transition-all border-none bg-transparent",
+                                            isSelf ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95"
+                                        )}
+                                        title={isSelf ? "You cannot reply to your own post." : "Reply"}
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">reply</span>
+                                        <span className="text-xs md:text-sm">
+                                            {commentsDisplayCount.toLocaleString()}
+                                        </span>
+                                    </button>
 
-                                {/* Reblog/Boost action button */}
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleReblogClick(); }}
-                                    disabled={isActionPending || isAlreadyReblogged || isOrgNonAdmin}
-                                    className={cn(
-                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent",
-                                        isOrgNonAdmin
-                                            ? "opacity-30 cursor-not-allowed"
-                                            : isAlreadyReblogged
-                                            ? "text-emerald-500 font-extrabold cursor-default opacity-80"
-                                            : "cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95"
-                                    )}
-                                    title={isOrgNonAdmin ? orgNonAdminTooltip : "Boost"}
-                                >
-                                    <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}>
-                                        repeat
-                                    </span>
-                                    <span className="text-xs md:text-sm">
-                                        {reblogsCount.toLocaleString()}
-                                    </span>
-                                </button>
+                                    {/* Reblog/Boost action button */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleReblogClick(); }}
+                                        disabled={isActionPending || isAlreadyReblogged || isOrgNonAdmin}
+                                        className={cn(
+                                            "flex items-center gap-2 font-bold transition-all border-none bg-transparent",
+                                            isOrgNonAdmin
+                                                ? "opacity-30 cursor-not-allowed"
+                                                : isAlreadyReblogged
+                                                ? "text-emerald-500 font-extrabold cursor-default opacity-80"
+                                                : "cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95"
+                                        )}
+                                        title={isOrgNonAdmin ? orgNonAdminTooltip : "Boost"}
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}>
+                                            repeat
+                                        </span>
+                                        <span className="text-xs md:text-sm">
+                                            {reblogsCount.toLocaleString()}
+                                        </span>
+                                    </button>
 
-                                {/* Heart / Endorsement Tracker button */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleLikeClick();
-                                    }}
+                                    {/* Heart / Endorsement Tracker button */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleLikeClick();
+                                        }}
+                                        disabled={isActionPending || isOrgNonAdmin}
+                                        className={cn(
+                                            "flex items-center gap-2 font-bold transition-all border-none bg-transparent",
+                                            isOrgNonAdmin
+                                                ? "opacity-30 cursor-not-allowed"
+                                                : "cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95",
+                                            post?.liked ? "text-primary-container font-extrabold" : ""
+                                        )}
+                                        title={isOrgNonAdmin ? orgNonAdminTooltip : post?.liked ? "Unlike" : "Like"}
+                                    >
+                                        <span
+                                            className="material-symbols-outlined text-[18px]"
+                                            style={{ fontVariationSettings: displayPost?.liked ? "'FILL' 1" : "'FILL' 0" }}>
+                                            star
+                                        </span>
+                                        <span>
+                                            {likesCount.toLocaleString()}
+                                        </span>
+                                    </button>
+                                </div>
+
+                                {/* Interactive Campaign/Action Button Core Interface */}
+                                <Button
+                                    onClick={(e) => { e.stopPropagation(); handleJoinActionClick(); }}
                                     disabled={isActionPending || isOrgNonAdmin}
+                                    title={isOrgNonAdmin ? orgNonAdminTooltip : undefined}
                                     className={cn(
-                                        "flex items-center gap-2 font-bold transition-all border-none bg-transparent",
+                                        "px-5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 border",
                                         isOrgNonAdmin
-                                            ? "opacity-30 cursor-not-allowed"
-                                            : "cursor-pointer hover:text-text-primary hover:scale-105 active:scale-95",
-                                        post?.liked ? "text-primary-container font-extrabold" : ""
+                                            ? "opacity-30 cursor-not-allowed pointer-events-none bg-white/5 text-text-secondary border-white/5"
+                                            : isActionJoined
+                                            ? "bg-white/5 text-primary-container border-white/10 cursor-pointer"
+                                            : "bg-primary-container text-white border-transparent hover:brightness-110 crimson-glow cursor-pointer"
                                     )}
-                                    title={isOrgNonAdmin ? orgNonAdminTooltip : post?.liked ? "Unlike" : "Like"}
                                 >
-                                    <span
-                                        className="material-symbols-outlined text-[18px]"
-                                        style={{ fontVariationSettings: displayPost?.liked ? "'FILL' 1" : "'FILL' 0" }}>
-                                        star
-                                    </span>
-                                    <span>
-                                        {likesCount.toLocaleString()}
-                                    </span>
-                                </button>
+                                    {isActionJoined ? '✓ Joined Action' : 'Join the Action'}
+                                </Button>
                             </div>
-
-                            {/* Interactive Campaign/Action Button Core Interface */}
-                            <Button
-                                onClick={(e) => { e.stopPropagation(); handleJoinActionClick(); }}
-                                disabled={isActionPending || isOrgNonAdmin}
-                                title={isOrgNonAdmin ? orgNonAdminTooltip : undefined}
-                                className={cn(
-                                    "px-5 py-2 rounded-xl font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 border",
-                                    isOrgNonAdmin
-                                        ? "opacity-30 cursor-not-allowed pointer-events-none bg-white/5 text-text-secondary border-white/5"
-                                        : isActionJoined
-                                        ? "bg-white/5 text-primary-container border-white/10 cursor-pointer"
-                                        : "bg-primary-container text-white border-transparent hover:brightness-110 crimson-glow cursor-pointer"
-                                )}
-                            >
-                                {isActionJoined ? '✓ Joined Action' : 'Join the Action'}
-                            </Button>
-                        </div>
+                        )}
                     </div>
                 </article>
                 {/* Lightbox Modals & Identity Overlay elements */}
@@ -1770,7 +1778,7 @@ export const PostCard = React.memo(function PostCard({
                                     more_horiz
                                 </span>
                             </button>
-                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle, domain, navigate, menuRef, menuPosition, () => setIsReportModalOpen(true), handleStartEdit, handleDeletePost, isSelf, isViewingOnProfilePage)}
+                            {renderMenu && renderMenu(post, showMenu, handleToggleMenu, authorHandle, domain, navigate, menuRef, menuPosition, () => setIsReportModalOpen(true), handleStartEdit, handleDeletePost, isSelf, isViewingOnProfilePage, isViewingOnBookmarksPage, handleBookmarkClick)}
                         </div>
                     </div>
 
@@ -1840,110 +1848,112 @@ export const PostCard = React.memo(function PostCard({
                     )}
 
                     {/* Engagement Action Button Toolbar Row */}
-                    <div className="mt-5 flex items-center justify-between gap-4 border-t border-white/5 pt-4 w-full min-w-0 text-text-secondary">
-                        <div className="flex items-center gap-6">
+                    {!(isSelf && (isViewingOnProfilePage || isViewingOnBookmarksPage)) && (
+                        <div className="action-bar-row mt-5 flex items-center justify-between gap-4 border-t border-white/5 pt-4 w-full min-w-0 text-text-secondary">
+                            <div className="flex items-center gap-6">
 
-                            {/* Comment Navigation Action button */}
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleCommentClick(e); }}
-                                disabled={isSelf}
-                                className={cn(
-                                    "reply-btn flex items-center gap-1.5 font-bold text-xs transition-colors bg-transparent border-none",
-                                    isSelf ? "opacity-40 cursor-not-allowed" : "hover:text-primary-container cursor-pointer"
-                                )}
-                                title={isSelf ? "You cannot reply to your own post." : "Reply"}
-                            >
-                                <span className="material-symbols-outlined text-[18px]">
-                                    reply
-                                </span>
-                                <span>{(getReplyCount(displayPost) || getReplyCount(post)).toLocaleString()}</span>
-                            </button>
-
-                            {/* Share / Reblog Sync Action button */}
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleReblogClick(); }}
-                                disabled={isSelf || isActionPending || isOrgNonAdmin}
-                                className={cn(
-                                    "reblog-btn flex items-center gap-1.5 font-bold text-xs transition-colors border-none bg-transparent",
-                                    isOrgNonAdmin
-                                        ? "opacity-30 cursor-not-allowed"
-                                        : isSelf
-                                        ? "opacity-30 cursor-not-allowed"
-                                        : isAlreadyReblogged
-                                        ? "text-emerald-500 font-extrabold cursor-pointer"
-                                        : "hover:text-emerald-500 cursor-pointer"
-                                )}
-                                title={isOrgNonAdmin ? orgNonAdminTooltip : isSelf ? "Own post" : isAlreadyReblogged ? "Undo reblog" : "Reblog"}
-                            >
-                                <span
-                                    className="material-symbols-outlined text-[18px]"
-                                    style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}
+                                {/* Comment Navigation Action button */}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleCommentClick(e); }}
+                                    disabled={isSelf}
+                                    className={cn(
+                                        "reply-btn flex items-center gap-1.5 font-bold text-xs transition-colors bg-transparent border-none",
+                                        isSelf ? "opacity-40 cursor-not-allowed" : "hover:text-primary-container cursor-pointer"
+                                    )}
+                                    title={isSelf ? "You cannot reply to your own post." : "Reply"}
                                 >
-                                    repeat
-                                </span>
-                                <span>{reblogsCount.toLocaleString()}</span>
-                            </button>
+                                    <span className="material-symbols-outlined text-[18px]">
+                                        reply
+                                    </span>
+                                    <span>{(getReplyCount(displayPost) || getReplyCount(post)).toLocaleString()}</span>
+                                </button>
 
-                            {/* Like Sync Engagement Action button */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleLikeClick();
-                                }}
-                                disabled={isActionPending || isOrgNonAdmin}
-                                className={cn(
-                                    "like-btn flex items-center gap-1.5 font-bold text-xs transition-colors bg-transparent border-none",
-                                    isOrgNonAdmin
-                                        ? "opacity-30 cursor-not-allowed"
-                                        : "cursor-pointer",
-                                    (displayPost?.liked) ? "text-primary-container font-extrabold" : "hover:text-white"
-                                )}
-                                title={isOrgNonAdmin ? orgNonAdminTooltip : "Like"}
-                            >
-                                <span className="material-symbols-outlined text-[18px]"
-                                    style={{ fontVariationSettings: (displayPost?.liked) ? "'FILL' 1" : "'FILL' 0" }}>
-                                    star
-                                </span>
-                                <span>{likesCount.toLocaleString()}</span>
-                            </button>
+                                {/* Share / Reblog Sync Action button */}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleReblogClick(); }}
+                                    disabled={isSelf || isActionPending || isOrgNonAdmin}
+                                    className={cn(
+                                        "reblog-btn flex items-center gap-1.5 font-bold text-xs transition-colors border-none bg-transparent",
+                                        isOrgNonAdmin
+                                            ? "opacity-30 cursor-not-allowed"
+                                            : isSelf
+                                            ? "opacity-30 cursor-not-allowed"
+                                            : isAlreadyReblogged
+                                            ? "text-emerald-500 font-extrabold cursor-pointer"
+                                            : "hover:text-emerald-500 cursor-pointer"
+                                    )}
+                                    title={isOrgNonAdmin ? orgNonAdminTooltip : isSelf ? "Own post" : isAlreadyReblogged ? "Undo reblog" : "Reblog"}
+                                >
+                                    <span
+                                        className="material-symbols-outlined text-[18px]"
+                                        style={{ fontVariationSettings: isAlreadyReblogged ? "'wght' 700" : "'wght' 400" }}
+                                    >
+                                        repeat
+                                    </span>
+                                    <span>{reblogsCount.toLocaleString()}</span>
+                                </button>
+
+                                {/* Like Sync Engagement Action button */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleLikeClick();
+                                    }}
+                                    disabled={isActionPending || isOrgNonAdmin}
+                                    className={cn(
+                                        "like-btn flex items-center gap-1.5 font-bold text-xs transition-colors bg-transparent border-none",
+                                        isOrgNonAdmin
+                                            ? "opacity-30 cursor-not-allowed"
+                                            : "cursor-pointer",
+                                        (displayPost?.liked) ? "text-primary-container font-extrabold" : "hover:text-white"
+                                    )}
+                                    title={isOrgNonAdmin ? orgNonAdminTooltip : "Like"}
+                                >
+                                    <span className="material-symbols-outlined text-[18px]"
+                                        style={{ fontVariationSettings: (displayPost?.liked) ? "'FILL' 1" : "'FILL' 0" }}>
+                                        star
+                                    </span>
+                                    <span>{likesCount.toLocaleString()}</span>
+                                </button>
+                            </div>
+
+                            {/* Context Action layout toggle section */}
+                            {displayPost?.communityJoinable ? (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleJoinCircleClick(); }}
+                                    className={cn(
+                                        "px-3.5 py-1.5 rounded-xl border font-bold text-[11px] transition-all whitespace-nowrap cursor-pointer",
+                                        isCircleJoined ? "bg-white/5 text-text-primary border-white/10" : "border-primary-container/40 text-primary-container hover:bg-primary-container hover:text-white"
+                                    )}
+                                >
+                                    {isCircleJoined ? '✓ Joined Circle' : 'Join Circle'}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleBookmarkClick}
+                                    disabled={isActionPending}
+                                    data-testid="bookmark-btn"
+                                    aria-label={isBookmarked ? "Remove bookmark" : "Bookmark post"}
+                                    aria-pressed={isBookmarked}
+                                    className={cn(
+                                        "flex items-center justify-center p-1.5 rounded-full transition-colors border-none bg-transparent ml-auto cursor-pointer",
+                                        isBookmarked
+                                            ? "text-amber-500 hover:bg-white/5 active-bookmarked"
+                                            : "text-text-secondary hover:text-text-primary hover:bg-white/5"
+                                    )}
+                                    title={isBookmarked ? "Bookmarked" : "Bookmark"}
+                                >
+                                    <span
+                                        data-testid="bookmark-icon"
+                                        className="material-symbols-outlined text-[18px]"
+                                        style={{ fontVariationSettings: isBookmarked ? "'FILL' 1" : "'FILL' 0" }}
+                                    >
+                                        bookmark
+                                    </span>
+                                </button>
+                            )}
                         </div>
-
-                        {/* Context Action layout toggle section */}
-                        {displayPost?.communityJoinable ? (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleJoinCircleClick(); }}
-                                className={cn(
-                                    "px-3.5 py-1.5 rounded-xl border font-bold text-[11px] transition-all whitespace-nowrap cursor-pointer",
-                                    isCircleJoined ? "bg-white/5 text-text-primary border-white/10" : "border-primary-container/40 text-primary-container hover:bg-primary-container hover:text-white"
-                                )}
-                            >
-                                {isCircleJoined ? '✓ Joined Circle' : 'Join Circle'}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleBookmarkClick}
-                                disabled={isActionPending}
-                                data-testid="bookmark-btn"
-                                aria-label={isBookmarked ? "Remove bookmark" : "Bookmark post"}
-                                aria-pressed={isBookmarked}
-                                className={cn(
-                                    "flex items-center justify-center p-1.5 rounded-full transition-colors border-none bg-transparent ml-auto cursor-pointer",
-                                    isBookmarked
-                                        ? "text-amber-500 hover:bg-white/5 active-bookmarked"
-                                        : "text-text-secondary hover:text-text-primary hover:bg-white/5"
-                                )}
-                                title={isBookmarked ? "Bookmarked" : "Bookmark"}
-                            >
-                                <span
-                                    data-testid="bookmark-icon"
-                                    className="material-symbols-outlined text-[18px]"
-                                    style={{ fontVariationSettings: isBookmarked ? "'FILL' 1" : "'FILL' 0" }}
-                                >
-                                    bookmark
-                                </span>
-                            </button>
-                        )}
-                    </div>
+                    )}
                 </div>
 
                 {/* 🏆 FULLSCREEN IMAGE CAROUSEL CANVASES */}
