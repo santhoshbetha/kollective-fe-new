@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { COLOR_CLASSES } from '../../features/calendar/calendar-utils';
 import { getOrganizerName } from '../../utils/eventUtils';
+import { UserHoverCard } from '../accounts/UserHoverCard';
 import { X, Calendar as CalendarIcon, MapPin, User, Heart, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export function EventDetailsModal({ event, onClose, onInterestToggle, onAttendanceToggle }) {
@@ -85,7 +86,14 @@ export function EventDetailsModal({ event, onClose, onInterestToggle, onAttendan
 
                         <div className="flex items-center gap-3 text-text-secondary text-sm">
                             <User className="w-4 h-4 text-primary-container shrink-0" />
-                            <span>Organized by <strong className="text-text-primary">{organizerName}</strong></span>
+                            <span>
+                                Organized by{" "}
+                                <UserHoverCard author={event.organizer || event.author || event.user || { name: organizerName, username: organizerName }}>
+                                    <strong className="text-text-primary hover:underline cursor-pointer">
+                                        {organizerName}
+                                    </strong>
+                                </UserHoverCard>
+                            </span>
                         </div>
                     </div>
 
@@ -102,8 +110,8 @@ export function EventDetailsModal({ event, onClose, onInterestToggle, onAttendan
                             <button
                                 onClick={() => onAttendanceToggle?.(event.id)}
                                 className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border ${event.isAttending
-                                        ? 'bg-primary-container text-white border-primary-container'
-                                        : 'bg-surface-container-high border-white/10 text-text-secondary hover:text-white'
+                                    ? 'bg-primary-container text-white border-primary-container'
+                                    : 'bg-surface-container-high border-white/10 text-text-secondary hover:text-white'
                                     }`}
                             >
                                 <CheckCircle2 className="w-4 h-4" />
@@ -113,8 +121,8 @@ export function EventDetailsModal({ event, onClose, onInterestToggle, onAttendan
                             <button
                                 onClick={() => onInterestToggle?.(event.id)}
                                 className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border ${event.isInterested
-                                        ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
-                                        : 'bg-surface-container-high border-white/10 text-text-secondary hover:text-white'
+                                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
+                                    : 'bg-surface-container-high border-white/10 text-text-secondary hover:text-white'
                                     }`}
                             >
                                 <Heart className={`w-4 h-4 ${event.isInterested ? 'fill-amber-400' : ''}`} />

@@ -147,6 +147,8 @@ export default function App() {
                   <Route path="/post/:id" element={<PostDetailsPage />} />
                   <Route path="/posts/:id" element={<PostDetailsPage />} />
                   <Route path="/tags/:id" element={<HashtagTimelinePage />} />
+                  <Route path="/tags/:tag" element={<HashtagTimelinePage />} />
+                  <Route path="/timelines/tag/:tag" element={<HashtagTimelinePage />} />
 
                   {/* Events Flow */}
                   <Route path="/events" element={<EventsPage />} />

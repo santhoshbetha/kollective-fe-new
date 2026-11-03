@@ -99,6 +99,10 @@ export function PostBusinessPage() {
         'Community Funded', 'Democratic Governance', 'Open Book Management'
     ]);
     const [customTag, setCustomTag] = useState('');
+    // 🖼️ GALLERY INTAKE (Gap 1): the details page renders a photo gallery, so the
+    // registration form must collect the gallery URLs as well.
+    const [galleryImages, setGalleryImages] = useState([]);
+    const [galleryUrlInput, setGalleryUrlInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
 
@@ -129,6 +133,19 @@ export function PostBusinessPage() {
             setSelectedTags((prev) => [...prev, cleanTag]);
             setCustomTag('');
         }
+    };
+
+    const handleAddGalleryImage = (e) => {
+        if (e) e.preventDefault();
+        const cleanUrl = galleryUrlInput.trim();
+        if (cleanUrl && !galleryImages.includes(cleanUrl)) {
+            setGalleryImages((prev) => [...prev, cleanUrl]);
+            setGalleryUrlInput('');
+        }
+    };
+
+    const handleRemoveGalleryImage = (url) => {
+        setGalleryImages((prev) => prev.filter((img) => img !== url));
     };
 
     const handleSubmit = async (e) => {
@@ -184,6 +201,9 @@ export function PostBusinessPage() {
                 profile_image_url: finalImageUrl,
                 services: selectedTags,
                 tags: selectedTags,
+                // 🖼️ GALLERY + SECONDARY MEDIA COORDINATES
+                images: galleryImages,
+                gallery: galleryImages,
                 owner: user?.username || 'anonymous',
                 ownerAvatar: user?.avatar_url || '',
                 rating: 5.0,
@@ -195,6 +215,8 @@ export function PostBusinessPage() {
                     hours: computedHours,
                     services: selectedTags,
                     tags: selectedTags,
+                    images: galleryImages,
+                    gallery: galleryImages,
                     employee_range: formData.employees,
                     established: parseInt(formData.established, 10) || new Date().getFullYear(),
                     rating: 5.0,
@@ -248,7 +270,9 @@ export function PostBusinessPage() {
                         <ChevronDown className="w-3 h-3 text-text-secondary rotate-270" />
                         <span className="text-primary-container">Post Business Node</span>
                     </nav>
-                    <h1 className="font-headline-lg text-3xl font-black text-white tracking-tight">List Your Enterprise</h1>
+                    <h1 className="font-headline-lg text-3xl font-black dark:text-white tracking-tight">
+                        List Your Enterprise
+                    </h1>
                     <p className="text-text-secondary font-medium text-lg max-w-xl mt-1.5 leading-relaxed font-sans">
                         Scale the collective economy by sharing your local business with the community. Let's build systemic resilience together.
                     </p>
@@ -545,7 +569,59 @@ export function PostBusinessPage() {
                                         onChange={(e) => setCustomTag(e.target.value)}
                                         placeholder="Enter custom service..."
                                         className="flex-1 dark:bg-[#0d1117] bg-white border border-white/10 rounded-xl px-4 py-2 dark:text-white text-md focus:border-primary-container focus:outline-none transition-all font-medium" type="text" />
-                                    <button type="button" onClick={handleAddCustomTag} className="px-4 py-2 bg-[#262626] border border-white/5 rounded-xl text-md dark:text-white hover:text-primary-container hover:bg-white/5 transition-all font-mono font-bold cursor-pointer">Add</button>
+                                    <button type="button" onClick={handleAddCustomTag}
+                                        className="px-4 py-2 dark:bg-[#262626] border border-white/5 rounded-xl text-md dark:text-white hover:text-primary-container hover:bg-white/5 transition-all font-mono font-bold cursor-pointer">
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 🖼️ Gallery Photos Intake (rendered on the Business Details page) */}
+                            <div className="md:col-span-2 space-y-3 pt-4 border-t border-black/5 dark:border-white/5">
+                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">
+                                    Gallery Photos
+                                </label>
+                                <p className="text-[12px] text-text-secondary/60 font-sans">
+                                    Add image URLs shown inside the business Gallery section. The first photo is the primary badge in the directory.
+                                </p>
+
+                                {galleryImages.length > 0 && (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                        {galleryImages.map((imgUrl) => (
+                                            <div key={`gallery-preview-${imgUrl}`} className="relative aspect-square rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 group">
+                                                <img src={imgUrl} alt="Gallery preview" className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    data-testid="remove-gallery-image-btn"
+                                                    onClick={() => handleRemoveGalleryImage(imgUrl)}
+                                                    className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-black/70 text-white border-none cursor-pointer opacity-90 hover:bg-black transition-all"
+                                                    aria-label="Remove gallery image"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2 max-w-xl">
+                                    <input
+                                        data-testid="gallery-image-input"
+                                        value={galleryUrlInput}
+                                        onChange={(e) => setGalleryUrlInput(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddGalleryImage(); } }}
+                                        placeholder="https://example.com/storefront.jpg"
+                                        className="flex-1 dark:bg-[#0d1117] bg-white border border-black/10 dark:border-white/10 rounded-xl px-4 py-2 dark:text-white text-sm focus:border-primary-container focus:outline-none transition-all font-mono"
+                                        type="url"
+                                    />
+                                    <button
+                                        type="button"
+                                        data-testid="add-gallery-image-btn"
+                                        onClick={handleAddGalleryImage}
+                                        className="px-4 py-2 dark:bg-[#262626] border border-white/5 rounded-xl text-sm dark:text-white hover:text-primary-container hover:bg-white/5 transition-all font-mono font-bold cursor-pointer"
+                                    >
+                                        Add Photo
+                                    </button>
                                 </div>
                             </div>
                         </div>

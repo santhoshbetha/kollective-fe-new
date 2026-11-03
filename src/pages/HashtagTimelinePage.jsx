@@ -1,21 +1,75 @@
 // src/pages/HashtagTimelinePage.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Virtuoso } from 'react-virtuoso';
-import { useHashtagTimelineQuery, useFollowTagMutation } from '../features/timeline/useHashtagTimeline';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { useHashtagTimelineQuery } from '../features/timeline/useHashtagTimeline';
+import { apiFetch } from '../api/apiClient';
 import { PostCard } from '../components/posts/PostCard';
 
 export const HashtagTimelinePage = () => {
-    const { id: tagId } = useParams();
+    const { tag: routeTag, id: routeId } = useParams();
+    const tag = (routeTag || routeId || '').toLowerCase();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
-    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useHashtagTimelineQuery(tagId);
-    const followMutation = useFollowTagMutation(tagId);
+    const { data, isLoading, status } = useHashtagTimelineQuery(tag);
 
-    const posts = data?.pages.flatMap((page) => page.posts || page || []) || [];
+    const [isFollowingTag, setIsFollowingTag] = useState(false);
+    const [isPending, setIsPending] = useState(false);
 
-    // Extract state properties directly from your first response page header metrics if available
-    const isFollowingTag = data?.pages[0]?.following ?? false;
+    // Synchronize initial follow state if present in the response
+    useEffect(() => {
+        if (data && typeof data === 'object') {
+            if (data.following !== undefined) {
+                setIsFollowingTag(Boolean(data.following));
+            } else if (data.pages?.[0]?.following !== undefined) {
+                setIsFollowingTag(Boolean(data.pages[0].following));
+            }
+        }
+    }, [data]);
+
+    // Extract posts supporting diverse backend and mock payload formats
+    const posts = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.posts)
+            ? data.posts
+            : (Array.isArray(data?.data)
+                ? data.data
+                : (Array.isArray(data?.entries)
+                    ? data.entries
+                    : (data?.pages ? data.pages.flatMap((page) => Array.isArray(page) ? page : (page?.posts || page?.data || page?.entries || [])) : []))));
+
+    const handleToggleFollow = async () => {
+        if (isPending || !tag) return;
+        setIsPending(true);
+        const nextState = !isFollowingTag;
+        setIsFollowingTag(nextState);
+
+        try {
+            const cleanTag = encodeURIComponent(tag);
+            const endpoint = nextState
+                ? `/api/v1/tags/${cleanTag}/follow`
+                : `/api/v1/tags/${cleanTag}/unfollow`;
+            await apiFetch(endpoint, { method: 'POST' });
+
+            if (nextState) {
+                toast.success(`Following #${tag}`);
+            } else {
+                toast.success(`Unfollowed #${tag}`);
+            }
+
+            queryClient.invalidateQueries({ queryKey: ['timelines', 'hashtag', tag] });
+            queryClient.invalidateQueries({ queryKey: ['followed_tags'] });
+            queryClient.invalidateQueries({ queryKey: ['followed-tags'] });
+        } catch (err) {
+            console.error('Failed to toggle hashtag follow status:', err);
+            setIsFollowingTag(!nextState);
+            toast.error('Failed to update hashtag follow status');
+        } finally {
+            setIsPending(false);
+        }
+    };
 
     return (
         <div className="max-w-3xl mx-auto flex flex-col gap-6 pb-20 w-full animate-in fade-in duration-200">
@@ -27,7 +81,9 @@ export const HashtagTimelinePage = () => {
                         #
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-text-primary tracking-tight">#{tagId}</h1>
+                        <h1 className="text-2xl font-black text-text-primary tracking-tight">
+                            # {tag}
+                        </h1>
                         <p className="text-xs text-text-secondary mt-0.5">Public collective channel stream tracking topic properties</p>
                     </div>
                 </div>
@@ -35,39 +91,43 @@ export const HashtagTimelinePage = () => {
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
-                        disabled={followMutation.isPending}
-                        onClick={() => followMutation.mutate({ isFollowing: isFollowingTag })}
+                        disabled={isPending}
+                        onClick={handleToggleFollow}
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${isFollowingTag
-                            ? 'bg-surface-container-high border-white/5 text-text-secondary'
-                            : 'bg-primary-container text-white border-primary-container crimson-glow font-black'
+                            ? 'bg-surface-container-high border-white/10 text-text-secondary hover:text-white'
+                            : 'bg-primary-container text-white border-primary-container crimson-glow font-black hover:opacity-90'
                             }`}
                     >
-                        {isFollowingTag ? 'Pinned ✓' : 'Pin Tag'}
+                        {isPending ? 'Updating...' : (isFollowingTag ? 'Following' : 'Follow Tag')}
                     </button>
-                    <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 bg-surface-container border border-white/10 rounded-xl text-xs font-bold text-white cursor-pointer">Back</button>
+                    <button
+                        type="button"
+                        onClick={() => navigate(-1)}
+                        className="px-4 py-2 bg-surface-container border border-white/10 rounded-xl text-xs font-bold text-white cursor-pointer hover:bg-surface-container-high transition-colors"
+                    >
+                        Back
+                    </button>
                 </div>
             </div>
 
-            {/* 🥞 VIRTUALIZED CONTINUOUS FLOW MAP CANVAS */}
-            {status === 'pending' ? (
-                <div className="py-12 text-center"><div className="w-6 h-6 rounded-full border-2 border-t-primary-container border-white/10 animate-spin mx-auto" /></div>
+            {/* 🥞 FEED STREAM CONTAINER */}
+            {status === 'pending' || isLoading ? (
+                <div className="py-12 text-center">
+                    <div className="w-6 h-6 rounded-full border-2 border-t-primary-container border-white/10 animate-spin mx-auto" />
+                </div>
             ) : posts.length === 0 ? (
                 <div className="p-12 text-center border border-white/5 bg-surface-container-low/40 rounded-2xl">
                     <p className="text-sm text-text-secondary">No recorded updates registered under this hashtag coordinate yet.</p>
                 </div>
             ) : (
-                <div className="flex flex-col border border-[#262626] bg-[#141414] rounded-2xl overflow-hidden shadow-2xl w-full">
-                    <Virtuoso
-                        useWindowScroll
-                        data={posts}
-                        endReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
-                        overscan={400}
-                        itemContent={(index, post) => (
-                            <PostCard post={post} isLast={index === posts.length - 1} />
-                        )}
-                    />
+                <div className="flex flex-col border border-[#262626] bg-[#141414] rounded-2xl overflow-hidden shadow-2xl w-full divide-y divide-white/5">
+                    {posts.map((post, index) => (
+                        <PostCard key={post.id || index} post={post} isLast={index === posts.length - 1} />
+                    ))}
                 </div>
             )}
         </div>
     );
 };
+
+export default HashtagTimelinePage;

@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
 import { UserAvatar } from '../../components/accounts/UserAvatar';
 import { useAuthStore } from '../../store/auth/useAuthStore';
+import { useDirectMessageStore } from '../../store/useDirectMessageStore';
 import { useConversationChannel } from '../../features/conversations/hooks/useConversationChannel';
 import { encryptAndUploadAttachment } from '../../features/conversations/utils/mediaCrypto';
 import { ChatKeyRecoveryDialog } from '../../features/conversations/components/ChatKeyRecoveryDialog';
@@ -28,6 +29,7 @@ import { toast } from 'sonner';
 export default function MessagesPage() {
     const navigate = useNavigate();
     const { conversationId: routeConvId } = useParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const currentUser = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -89,6 +91,26 @@ export default function MessagesPage() {
         navigate(`/messages/${conversationId}`);
         setShowConversationList(false);
     };
+
+    // 💬 DEEP-LINK ENTRY POINT: /messages?user=<handle> (Business Card "Contact" CTA)
+    // Opens the floating DM drawer for the requested operator and clears the query
+    // param so refreshes never stack duplicate conversation drawers.
+    const requestedRecipient = searchParams.get('user');
+
+    useEffect(() => {
+        if (!requestedRecipient) return;
+
+        const handle = String(requestedRecipient).replace(/^@/, '').trim();
+        if (!handle) return;
+
+        useDirectMessageStore.getState().openDM({ username: handle, handle: `@${handle}`, name: handle });
+
+        setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.delete('user');
+            return next;
+        }, { replace: true });
+    }, [requestedRecipient, setSearchParams]);
 
     // 📡 2. BIND REAL-TIME PHOENIX WEBSOCKET CHANNEL LAYER
     const { messages: socketMessages = [], isJoining, joinError, sendMessage, channel } = useConversationChannel(selectedConversation);

@@ -305,11 +305,12 @@ export function useAddEventComment(defaultEventId) {
 
 /**
  * 📡 Hook F: Fetches internal discussion subkey logs for a single target event
+ * `enabled` lets callers hard-gate the request behind the state geofence.
  */
-export function useEventCommentsQuery(eventId) {
+export function useEventCommentsQuery(eventId, { enabled = true } = {}) {
     return useQuery({
         queryKey: ['event_comments', eventId],
-        enabled: Boolean(eventId),
+        enabled: Boolean(eventId) && Boolean(enabled),
         queryFn: async () => {
             try {
                 const res = await apiFetch(`/event_comments?event_id=${eventId}`);

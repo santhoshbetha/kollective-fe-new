@@ -1,33 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth/useAuthStore';
-import { useProposalDetailsQuery } from '../../features/businesses/useProposalsFeature';
+import {
+  useProposalDetailsQuery,
+  useProposalCommentsQuery,
+  useAddProposalComment,
+  uploadProposalCommentImage,
+} from '../../features/businesses/useProposalsFeature';
+import { UserHoverCard } from '../../components/accounts/UserHoverCard';
+import { getItemState } from '../../utils/geoUtils';
 
 export const BusinessProposalDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const { proposal, proposalLoading, proposalError } = useProposalDetailsQuery(id);
+  const { proposal: proposalPayload, proposalLoading, proposalError } = useProposalDetailsQuery(id);
+  const proposal = proposalPayload?.proposal || proposalPayload;
 
+  // 💬 THREADED DISCUSSION ENGINE (mirrors the Event Details comment pipeline)
   const [newComment, setNewComment] = useState('');
-  const [comments, setComments] = useState([
-    {
-      id: 'c-1',
-      author: 'investor_jane',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
-      text: "This sounds like a great opportunity! I'm interested in learning more about the financial projections.",
-      time: '2 days ago',
-      verified: false
-    },
-    {
-      id: 'c-2',
-      author: 'BusinessConsultCo',
-      avatar: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=150&q=80',
-      text: "We've worked on similar projects. Would love to discuss potential partnership opportunities. DM us!",
-      time: '1 day ago',
-      verified: true
-    }
-  ]);
+  const [commentImage, setCommentImage] = useState(null);
+  const [replyParentId, setReplyParentId] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [replyImage, setReplyImage] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+  const commentFileInputRef = useRef(null);
+  const replyFileInputRef = useRef(null);
+
+  const triggerToast = (msg, type = 'error') => {
+    setToastMessage({ msg, type });
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // 🔒 STATE-LEVEL GEOFENCE: discussion belongs to the proposal's physical state.
+  const proposalState = getItemState(proposal);
+  const currentUserState = user?.state || user?.origin_state || user?.political_location?.state || null;
+  const normalizedUserState = currentUserState ? String(currentUserState).trim().toUpperCase() : null;
+  const isDiscussionLocked = Boolean(proposalState) && normalizedUserState !== proposalState;
+
+  const { comments, commentsLoading } = useProposalCommentsQuery(id, {
+    // Never issue the network read until the proposal has resolved AND the
+    // state boundary has been cleared (prevents a wasted 403 round-trip).
+    enabled: Boolean(proposal) && !isDiscussionLocked,
+  });
+  const addCommentMutation = useAddProposalComment(id);
 
   const [hasInterest, setHasInterest] = useState(false);
   const [interestCount, setInterestCount] = useState(23);
@@ -82,21 +99,84 @@ export const BusinessProposalDetailsPage = () => {
     }
   };
 
+  // 💬 DISCUSSION PIPELINE (state-gated)
+  const readFileAsDataUrl = (file, setter) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setter(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const submitComment = async ({ text, image, parentId, reset }) => {
+    if (isDiscussionLocked) return;
+    if (!String(text || '').trim() && !image) return;
+
+    setIsSubmitting(true);
+    try {
+      const uploadedImageUrl = image ? await uploadProposalCommentImage(image) : null;
+
+      addCommentMutation.mutate(
+        { content: String(text || '').trim(), imageUrl: uploadedImageUrl, parentId },
+        {
+          onSuccess: () => {
+            reset();
+            setIsSubmitting(false);
+            triggerToast(parentId ? 'Reply posted!' : 'Comment posted successfully!', 'success');
+          },
+          onError: (err) => {
+            setIsSubmitting(false);
+            triggerToast(err?.message || 'Failed to post comment.', 'error');
+          },
+        }
+      );
+    } catch (err) {
+      setIsSubmitting(false);
+      triggerToast(err?.message || 'Failed to upload attachment.', 'error');
+    }
+  };
+
   const handlePostComment = (e) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    submitComment({
+      text: newComment,
+      image: commentImage,
+      parentId: null,
+      reset: () => {
+        setNewComment('');
+        setCommentImage(null);
+      },
+    });
+  };
 
-    const newCommentObj = {
-      id: `c-${Date.now()}`,
-      author: user?.username || (user?.handle ? user.handle.replace('@', '') : 'julian_thorne'),
-      avatar: user?.avatar_url || user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-      text: newComment.trim(),
-      time: 'Just now',
-      verified: false
-    };
+  const handlePostReply = (parentId) => {
+    submitComment({
+      text: replyText,
+      image: replyImage,
+      parentId,
+      reset: () => {
+        setReplyText('');
+        setReplyImage(null);
+        setReplyParentId(null);
+      },
+    });
+  };
 
-    setComments(prev => [newCommentObj, ...prev]);
-    setNewComment('');
+  // 💬 CONTACT PROPOSER (Phase 4): deep-link into the private message module.
+  const proposalHandle =
+    proposal.user?.handle ||
+    proposal.user?.username ||
+    (typeof proposal.owner === 'object' ? (proposal.owner?.handle || proposal.owner?.username) : null) ||
+    (typeof proposal.owner === 'string' ? proposal.owner : null) ||
+    proposal.owner_name ||
+    null;
+
+  const handleContactProposerClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const targetHandle = String(proposalHandle || '').replace(/^@/, '').trim();
+    if (targetHandle) {
+      navigate(`/messages?user=${encodeURIComponent(targetHandle)}`);
+    }
   };
 
   const handleToggleInterest = () => {
@@ -117,11 +197,39 @@ export const BusinessProposalDetailsPage = () => {
   const statusText = proposal.status || 'Active';
   const ownerHandle = proposal.owner_name || (typeof proposal.owner === 'string' ? proposal.owner : proposal.owner?.username) || 'proposer';
   const ownerAvatar = proposal.ownerAvatar || proposal.owner_avatar || (typeof proposal.owner === 'object' ? proposal.owner?.avatar_url : null);
-  const lookingForTags = (Array.isArray(proposal.tags) && proposal.tags.length > 0)
+
+  const meta = proposal.metadata || {};
+  const strategyText = (value) => (typeof value === 'string' && value.trim() ? value.trim() : null);
+  const implementationStrategyText =
+    strategyText(proposal.implementation_strategy) || strategyText(meta.implementation_strategy);
+  const cooperativeModelText =
+    strategyText(proposal.cooperative_model) || strategyText(meta.cooperative_model);
+  const projectMilestonesText =
+    strategyText(proposal.project_milestones) || strategyText(meta.project_milestones);
+  const lookingForText =
+    strategyText(proposal.looking_for_text) ||
+    strategyText(meta.looking_for_text) ||
+    strategyText(proposal.looking_for) ||
+    strategyText(meta.looking_for);
+
+  const splitStrategyLines = (text) => (typeof text === 'string'
+    ? text.split(/[\n,]+/).map((line) => line.trim()).filter(Boolean)
+    : []);
+
+  const rawLookingFor = Array.isArray(proposal.tags) && proposal.tags.length > 0
     ? proposal.tags
     : ((Array.isArray(proposal.looking_for) && proposal.looking_for.length > 0)
       ? proposal.looking_for
-      : ['Co-founder', 'Tech Lead', 'Operations']);
+      : splitStrategyLines(lookingForText));
+
+  const lookingForTags = rawLookingFor.length > 0
+    ? rawLookingFor
+    : ['Co-founder', 'Tech Lead', 'Operations'];
+
+  const milestoneLines = splitStrategyLines(projectMilestonesText);
+  const projectMilestones = milestoneLines.length > 0
+    ? milestoneLines
+    : ['Q1 2026: Finalize specs', 'Q2 2026: Community approvals', 'Q3 2026: Beta deployment'];
 
   const isOwner = Boolean(
     user && proposal && (
@@ -139,8 +247,9 @@ export const BusinessProposalDetailsPage = () => {
       {/* Back Link & Edit Header */}
       <div className="sticky top-[80px] z-30 bg-background/90 backdrop-blur-md py-3 mb-6 border-b dark:border-white/5 border-black/5 flex items-center justify-between">
         <button
-          onClick={() => navigate('/businesses')}
-          className="flex items-center gap-2 text-primary-container hover:brightness-110 transition-all font-bold text-sm bg-transparent border-none cursor-pointer"
+          onClick={() => navigate('/businesses', { state: { returnTab: 'proposals' } })}
+          data-testid="back-to-businesses-btn"
+          className="back-navigation-btn flex items-center gap-2 text-primary-container hover:brightness-110 transition-all font-bold text-sm bg-transparent border-none cursor-pointer"
         >
           <span className="material-symbols-outlined text-sm">arrow_back</span>
           Back to Businesses
@@ -183,17 +292,19 @@ export const BusinessProposalDetailsPage = () => {
               <span className="bg-primary-container/20 text-primary-container text-sm uppercase font-bold tracking-widest px-2.5 py-1 rounded border border-primary-container/20">
                 {categoryText}
               </span>
-              <div className="flex items-center gap-2 text-text-secondary text-sm">
-                {ownerAvatar ? (
-                  <img src={ownerAvatar} alt={ownerHandle} className="w-5 h-5 rounded-full object-cover border border-primary/20 shrink-0" />
-                ) : (
-                  <span className="material-symbols-outlined text-[16px] text-green-400">verified</span>
-                )}
-                <span>Active Coordinator @{ownerHandle}</span>
-              </div>
+              <UserHoverCard author={proposal.proposer || proposal.owner || proposal.user || proposal.author || { name: ownerHandle, username: ownerHandle, avatar: ownerAvatar }}>
+                <div className="flex items-center gap-2 text-text-secondary text-sm cursor-pointer">
+                  {ownerAvatar ? (
+                    <img src={ownerAvatar} alt={ownerHandle} className="w-5 h-5 rounded-full object-cover border border-primary/20 shrink-0" />
+                  ) : (
+                    <span className="material-symbols-outlined text-[16px] text-green-400">verified</span>
+                  )}
+                  <span className="hover:underline">Active Coordinator @{ownerHandle}</span>
+                </div>
+              </UserHoverCard>
             </div>
 
-            <h2 className="font-headline-lg text-3xl font-extrabold text-text-primary mb-4 leading-tight">
+            <h2 data-testid="proposal-details-title" className="font-headline-lg text-3xl font-extrabold text-text-primary mb-4 leading-tight">
               {proposalTitle}
             </h2>
             <p className="font-body-lg text-base md:text-lg text-on-surface-variant leading-relaxed max-w-4xl">
@@ -225,8 +336,10 @@ export const BusinessProposalDetailsPage = () => {
               {hasInterest ? 'Backing Registered' : 'Back this Proposal'}
             </button>
             <button
-              onClick={() => alert(`Starting channel with Proposer @${ownerHandle} for: ${proposalTitle}`)}
-              className="border border-white/10 hover:border-primary-container/30 text-text-secondary hover:text-white px-6 py-3.5 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 bg-transparent cursor-pointer"
+              onClick={handleContactProposerClick}
+              data-testid="contact-proposer-btn"
+              disabled={!proposalHandle}
+              className="border border-white/10 hover:border-primary-container/30 text-text-secondary hover:text-white px-6 py-3.5 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 bg-transparent cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined text-sm">mail</span>
               Contact Proposer
@@ -282,8 +395,9 @@ export const BusinessProposalDetailsPage = () => {
               <span className="material-symbols-outlined text-primary-container">description</span>
               <h3 className="font-headline-md text-lg font-bold text-text-primary">Implementation Strategy</h3>
             </div>
-            <p className="font-body-md text-lg text-text-secondary leading-relaxed space-y-4">
-              This initiative is structured as a member-owned cooperative node. Under local charter guidelines, all physical capital assets (such as equipment, software, solar arrays, etc.) will be held under joint ownership to prevent corporate speculation. We project localized deployment within the current quarter.
+            <p className="font-body-md text-lg text-text-secondary leading-relaxed whitespace-pre-line">
+              {implementationStrategyText ||
+                'This initiative is structured as a member-owned cooperative node. Under local charter guidelines, all physical capital assets (such as equipment, software, solar arrays, etc.) will be held under joint ownership to prevent corporate speculation. We project localized deployment within the current quarter.'}
             </p>
           </div>
 
@@ -293,8 +407,9 @@ export const BusinessProposalDetailsPage = () => {
               <span className="material-symbols-outlined text-text-secondary">trending_up</span>
               <h3 className="font-headline-md text-lg font-bold text-text-primary">Cooperative Model</h3>
             </div>
-            <p className="font-body-md text-lg text-text-secondary leading-relaxed mb-6">
-              Revenues generated by this node will be split according to member hours and reinvested into local storage systems, avoiding any transaction tax by credit processors.
+            <p className="font-body-md text-lg text-text-secondary leading-relaxed mb-6 whitespace-pre-line">
+              {cooperativeModelText ||
+                'Revenues generated by this node will be split according to member hours and reinvested into local storage systems, avoiding any transaction tax by credit processors.'}
             </p>
             <div className="p-4 rounded-2xl bg-surface-container-high border border-white/5 max-w-sm">
               <span className="text-sm font-bold text-text-secondary uppercase tracking-widest">Target Project Valuation</span>
@@ -305,62 +420,267 @@ export const BusinessProposalDetailsPage = () => {
           </div>
 
           {/* Discussion */}
-          <div className="glass-card p-8 rounded-3xl border border-white/5">
-            <div className="flex items-center gap-2.5 mb-8">
-              <span className="material-symbols-outlined text-primary-container">forum</span>
-              <h3 className="font-headline-md text-lg font-bold text-text-primary">Discussion</h3>
+          <div className="glass-card p-8 rounded-3xl border border-white/5" data-testid="proposal-discussion">
+            <div className="flex items-center justify-between gap-3 mb-8">
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-primary-container">forum</span>
+                <h3 className="font-headline-md text-lg font-bold text-text-primary">Discussion</h3>
+              </div>
+              {!isDiscussionLocked && (
+                <span
+                  data-testid="proposal-comment-count"
+                  className="text-xs font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-primary-container/10 border border-primary-container/20 text-primary-container"
+                >
+                  {comments.length} {comments.length === 1 ? 'Thread' : 'Threads'}
+                </span>
+              )}
             </div>
 
-            {/* Comment Form */}
-            <form onSubmit={handlePostComment} className="flex gap-4 mb-8">
-              <div className="w-9 h-9 rounded-full bg-surface-container flex-shrink-0 flex items-center justify-center text-sm font-bold border border-white/10 uppercase">
-                {user?.name ? user?.name[0] : (user?.username ? user?.username[0] : 'J')}
-              </div>
-              <div className="flex-1">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="w-full bg-surface-ink border border-white/10 rounded-xl p-4 text-lg text-text-primary focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all outline-none resize-none min-h-[80px]"
-                  placeholder="Ask questions or share your thoughts on backing this initiative..."
-                  rows="3"
-                ></textarea>
-                <div className="mt-3 flex justify-end">
-                  <button
-                    type="submit"
-                    className="bg-primary-container text-white px-5 py-2 rounded-xl font-bold text-lg hover:brightness-110 active:scale-95 transition-all crimson-glow"
-                  >
-                    Post Comment
-                  </button>
+            {isDiscussionLocked ? (
+              <div
+                data-testid="discussion-locked-banner"
+                className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 flex items-start gap-4 text-left"
+              >
+                <span className="material-symbols-outlined text-amber-500 dark:text-amber-400 text-2xl shrink-0">lock</span>
+                <div className="space-y-1.5">
+                  <h4 className="text-sm font-black text-amber-800 dark:text-amber-300 uppercase tracking-wider font-mono">
+                    Discussion locked
+                  </h4>
+                  <p className="text-sm text-text-secondary leading-relaxed">
+                    Discussion locked. This workspace conversation channel is restricted to verified residents of this state.
+                  </p>
+                  <p className="text-[11px] font-mono text-text-secondary/60 uppercase tracking-wider">
+                    Channel state: {proposalState}
+                    {normalizedUserState ? ` • Your state: ${normalizedUserState}` : ' • Your state is not verified'}
+                  </p>
                 </div>
               </div>
-            </form>
-
-            {/* Comments List */}
-            <div className="space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
-                  <img
-                    alt={comment.author}
-                    className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-white/10"
-                    src={comment.avatar}
-                  />
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg font-bold text-text-primary">@{comment.author}</span>
-                      {comment.verified && (
-                        <span className="material-symbols-outlined text-[14px] text-primary-container" style={{ fontVariationSettings: "'FILL' 1" }}>
-                          verified
-                        </span>
-                      )}
-                      <span className="text-sm text-text-secondary opacity-65">{comment.time}</span>
-                    </div>
-                    <p className="text-lg text-text-secondary leading-relaxed">
-                      {comment.text}
-                    </p>
+            ) : (
+              <>
+                {/* Composer */}
+                <form onSubmit={handlePostComment} className="flex gap-4 mb-8" data-testid="proposal-comment-form">
+                  <div className="w-9 h-9 rounded-full bg-surface-container flex-shrink-0 flex items-center justify-center text-sm font-bold border border-white/10 uppercase">
+                    {user?.name ? user?.name[0] : (user?.username ? user?.username[0] : 'J')}
                   </div>
+                  <div className="flex-1">
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      data-testid="proposal-comment-input"
+                      className="reply-composer-textarea w-full bg-surface-ink border border-white/10 rounded-xl p-4 text-lg text-text-primary focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all outline-none resize-none min-h-[80px]"
+                      placeholder="Ask questions or share your thoughts on backing this initiative..."
+                      rows="3"
+                    ></textarea>
+
+                    {commentImage && (
+                      <div className="relative mt-3 w-40 aspect-video rounded-xl overflow-hidden border border-white/10">
+                        <img src={commentImage} alt="Attachment preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setCommentImage(null)}
+                          className="absolute top-1 right-1 p-1 rounded-lg bg-black/70 text-white border-none cursor-pointer"
+                          aria-label="Remove attachment"
+                        >
+                          <span className="material-symbols-outlined text-sm">close</span>
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div>
+                        <input
+                          ref={commentFileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          data-testid="proposal-comment-file-input"
+                          onChange={(e) => readFileAsDataUrl(e.target.files?.[0], setCommentImage)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => commentFileInputRef.current?.click()}
+                          data-testid="proposal-comment-attach-btn"
+                          className="p-2 rounded-xl bg-transparent border border-white/10 text-text-secondary hover:text-primary-container hover:border-primary-container/30 transition-all cursor-pointer"
+                          title="Attach an image"
+                        >
+                          <span className="material-symbols-outlined text-lg">image</span>
+                        </button>
+                      </div>
+                      <button
+                        type="submit"
+                        data-testid="proposal-comment-submit"
+                        disabled={isSubmitting || (!newComment.trim() && !commentImage)}
+                        className="bg-primary-container text-white px-5 py-2 rounded-xl font-bold text-lg hover:brightness-110 active:scale-95 transition-all crimson-glow disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {isSubmitting ? 'Posting...' : 'Post Comment'}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+
+                {/* Threaded list */}
+                <div className="space-y-4 discussion-session" data-testid="proposal-comment-thread">
+                  {commentsLoading && (
+                    <p className="text-sm font-mono uppercase tracking-wider text-text-secondary/60">
+                      Loading discussion thread...
+                    </p>
+                  )}
+
+                  {!commentsLoading && comments.length === 0 && (
+                    <div className="p-6 rounded-xl border border-dashed border-white/10 text-center space-y-1">
+                      <span className="material-symbols-outlined text-text-secondary/40 text-2xl">forum</span>
+                      <p className="text-sm text-text-secondary font-mono uppercase tracking-wider">
+                        No discussion yet. Start the conversation!
+                      </p>
+                    </div>
+                  )}
+
+                  {!commentsLoading && comments.map((comment) => {
+                    const authorObj = comment.author || comment.user || {};
+                    const authorName = authorObj.name || authorObj.username || 'Citizen';
+                    const authorUsername = authorObj.username || authorName;
+                    const authorAvatar = authorObj.avatar_url || authorObj.avatar;
+                    const body = comment.content || comment.text || '';
+                    const imageUrl = comment.image_url || comment.imageUrl;
+                    const replyList = Array.isArray(comment.replies) ? comment.replies : [];
+                    const isReplying = replyParentId === comment.id;
+
+                    return (
+                      <div
+                        key={comment.id}
+                        data-testid="proposal-comment-row"
+                        className="comment-row p-4 rounded-xl bg-white/5 border border-white/5 space-y-3"
+                      >
+                        <div className="flex gap-4">
+                          <UserHoverCard author={{ ...authorObj, name: authorName, username: authorUsername }}>
+                            <img
+                              alt={authorName}
+                              className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-white/10 cursor-pointer"
+                              src={authorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'}
+                            />
+                          </UserHoverCard>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <UserHoverCard author={{ ...authorObj, name: authorName, username: authorUsername }}>
+                                <span className="text-lg font-bold text-text-primary hover:underline cursor-pointer">
+                                  {authorName}
+                                </span>
+                              </UserHoverCard>
+                              <span className="text-xs font-mono text-text-secondary">@{String(authorUsername).replace(/^@/, '')}</span>
+                              <span className="text-sm text-text-secondary opacity-65">
+                                {comment.inserted_at ? new Date(comment.inserted_at).toLocaleString() : (comment.time || 'Just now')}
+                              </span>
+                            </div>
+
+                            {body && (
+                              <p className="text-lg text-text-secondary leading-relaxed whitespace-pre-line">{body}</p>
+                            )}
+
+                            {imageUrl && (
+                              <div className="mt-3 rounded-xl overflow-hidden border border-white/10 max-w-sm">
+                                <img src={imageUrl} alt="Comment attachment" className="w-full h-auto object-cover" />
+                              </div>
+                            )}
+
+                            <div className="mt-2">
+                              <button
+                                type="button"
+                                data-testid="proposal-comment-reply-btn"
+                                onClick={() => {
+                                  setReplyParentId(isReplying ? null : comment.id);
+                                  setReplyText('');
+                                  setReplyImage(null);
+                                }}
+                                className="text-xs font-mono font-bold uppercase tracking-wider text-text-secondary hover:text-primary-container bg-transparent border-none cursor-pointer"
+                              >
+                                {isReplying ? 'Cancel' : 'Reply'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {isReplying && (
+                          <div className="ml-12 pl-4 border-l border-white/10 space-y-3">
+                            <textarea
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              data-testid="proposal-reply-input"
+                              className="reply-composer-textarea w-full bg-surface-ink border border-white/10 rounded-xl p-3 text-base text-text-primary focus:border-primary-container outline-none resize-none min-h-[64px]"
+                              placeholder={`Reply to @${String(authorUsername).replace(/^@/, '')}...`}
+                              rows="2"
+                            ></textarea>
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <input
+                                  ref={replyFileInputRef}
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => readFileAsDataUrl(e.target.files?.[0], setReplyImage)}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => replyFileInputRef.current?.click()}
+                                  className="p-2 rounded-xl bg-transparent border border-white/10 text-text-secondary hover:text-primary-container transition-all cursor-pointer"
+                                  title="Attach an image"
+                                >
+                                  <span className="material-symbols-outlined text-lg">image</span>
+                                </button>
+                                {replyImage && (
+                                  <span className="text-[11px] font-mono text-primary-container ml-2 uppercase">Attached</span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                data-testid="proposal-reply-submit"
+                                disabled={isSubmitting || (!replyText.trim() && !replyImage)}
+                                onClick={() => handlePostReply(comment.id)}
+                                className="bg-primary-container text-white px-4 py-2 rounded-xl font-bold text-sm hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                Post Reply
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {replyList.length > 0 && (
+                          <div className="ml-12 pl-4 border-l border-white/10 space-y-3" data-testid="proposal-comment-replies">
+                            {replyList.map((reply) => {
+                              const replyAuthor = reply.author || reply.user || {};
+                              const replyName = replyAuthor.name || replyAuthor.username || 'Citizen';
+                              const replyHandle = replyAuthor.username || replyName;
+                              return (
+                                <div key={reply.id} className="flex gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-white/5">
+                                  <img
+                                    alt={replyName}
+                                    className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-white/10"
+                                    src={replyAuthor.avatar_url || replyAuthor.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80'}
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="text-sm font-bold text-text-primary">{replyName}</span>
+                                      <span className="text-[11px] font-mono text-text-secondary">@{String(replyHandle).replace(/^@/, '')}</span>
+                                    </div>
+                                    <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-line">
+                                      {reply.content || reply.text}
+                                    </p>
+                                    {(reply.image_url || reply.imageUrl) && (
+                                      <div className="mt-2 rounded-lg overflow-hidden border border-white/10 max-w-xs">
+                                        <img src={reply.image_url || reply.imageUrl} alt="Reply attachment" className="w-full h-auto object-cover" />
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -387,25 +707,15 @@ export const BusinessProposalDetailsPage = () => {
               <span className="material-symbols-outlined text-primary-container">assignment_turned_in</span>
               <h3 className="font-headline-md text-lg font-bold text-text-primary">Project Milestones</h3>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/5">
-                <span className="material-symbols-outlined text-green-400 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>
-                <span className="text-lg text-text-secondary">Q1 2026: Finalize specs</span>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/5">
-                <span className="material-symbols-outlined text-green-400 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>
-                <span className="text-lg text-text-secondary">Q2 2026: Community approvals</span>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/5">
-                <span className="material-symbols-outlined text-text-secondary text-[18px]">
-                  radio_button_unchecked
-                </span>
-                <span className="text-lg text-text-secondary">Q3 2026: Beta deployment</span>
-              </div>
+            <div className="space-y-3" data-testid="proposal-milestones-list">
+              {projectMilestones.map((milestone, idx) => (
+                <div key={`proposal-milestone-${idx}`} className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/5">
+                  <span className="material-symbols-outlined text-green-400 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    {idx === projectMilestones.length - 1 && milestoneLines.length > 0 ? 'radio_button_unchecked' : 'check_circle'}
+                  </span>
+                  <span className="text-lg text-text-secondary">{milestone}</span>
+                </div>
+              ))}
             </div>
           </div>
 

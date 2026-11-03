@@ -51,6 +51,11 @@ export function PostBusinessProposalPage() {
         minInvest: '',
         maxInvest: '',
         image: '',
+        // 🧠 STRATEGIC METADATA (persisted inside proposal metadata JSONB)
+        implementationStrategy: '',
+        lookingFor: '',
+        projectMilestones: '',
+        cooperativeModel: '',
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,6 +109,11 @@ export function PostBusinessProposalPage() {
                 category: formData.category,
                 location: formData.location || 'Local District',
                 address: formData.location || 'Local District',
+                // 🧠 STRATEGIC METADATA: mapped 1:1 onto backend metadata keys
+                implementation_strategy: formData.implementationStrategy.trim(),
+                looking_for: formData.lookingFor.trim(),
+                project_milestones: formData.projectMilestones.trim(),
+                cooperative_model: formData.cooperativeModel.trim(),
                 latitude: userCoords?.latitude,
                 longitude: userCoords?.longitude,
                 profile_image_url: finalImageUrl || null,
@@ -136,7 +146,10 @@ export function PostBusinessProposalPage() {
                         status: 'New'
                     },
                     location: formData.location || 'Local District',
-                    looking_for: ['Co-founder', 'Tech Lead', 'Operations'],
+                    implementation_strategy: formData.implementationStrategy.trim(),
+                    looking_for: formData.lookingFor.trim(),
+                    project_milestones: formData.projectMilestones.trim(),
+                    cooperative_model: formData.cooperativeModel.trim(),
                     owner_handle: currentOwnerHandle,
                     owner_avatar: user?.avatar_url || user?.avatar || '',
                     image: finalImageUrl || null,
@@ -149,7 +162,7 @@ export function PostBusinessProposalPage() {
                     triggerToast('Community business proposal successfully published!', 'success');
                     setTimeout(() => {
                         setIsSubmitting(false);
-                        navigate('/businesses');
+                        navigate('/businesses', { state: { returnTab: 'proposals' } });
                     }, 1200);
                 },
                 onError: (err) => {
@@ -274,6 +287,79 @@ export function PostBusinessProposalPage() {
                                     </div>
                                 </div>
                             </div>
+                            {/* 🧠 STRATEGIC METADATA PANELS (Gap 2: proposal intake completeness) */}
+                            <div className="space-y-4 pt-4 border-t border-black/5 dark:border-white/5 font-mono">
+                                <div className="flex items-center gap-2 text-text-primary dark:text-white">
+                                    <Target className="w-4 h-4 text-primary-container" />
+                                    <h4 className="font-bold text-md uppercase tracking-wider">Strategic Metadata</h4>
+                                </div>
+                                <p className="text-xs text-text-secondary/70 font-sans leading-relaxed">
+                                    These blocks render directly on your proposal detail page. Clear strategy, needs,
+                                    milestones, and governance details dramatically increase community backing.
+                                </p>
+
+                                <div className="space-y-2 font-sans">
+                                    <label htmlFor="implementation_strategy" className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">
+                                        Implementation Strategy
+                                    </label>
+                                    <textarea
+                                        id="implementation_strategy"
+                                        name="implementation_strategy"
+                                        value={formData.implementationStrategy}
+                                        onChange={(e) => setFormData((prev) => ({ ...prev, implementationStrategy: e.target.value }))}
+                                        className="w-full bg-white dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary dark:text-white focus:border-primary-container focus:outline-none transition-all text-sm placeholder:text-text-secondary/30 min-h-[110px] resize-none font-normal"
+                                        placeholder="How will this venture actually be rolled out? Detail deployment phases, partners, and governance..."
+                                        rows={4}
+                                    />
+                                </div>
+
+                                <div className="space-y-2 font-sans">
+                                    <label htmlFor="looking_for" className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">
+                                        Looking For
+                                    </label>
+                                    <textarea
+                                        id="looking_for"
+                                        name="looking_for"
+                                        value={formData.lookingFor}
+                                        onChange={(e) => setFormData((prev) => ({ ...prev, lookingFor: e.target.value }))}
+                                        className="w-full bg-white dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary dark:text-white focus:border-primary-container focus:outline-none transition-all text-sm placeholder:text-text-secondary/30 min-h-[90px] resize-none font-normal"
+                                        placeholder="Cooperative farm partners, licensed electrician, seed capital, legal advisor..."
+                                        rows={3}
+                                    />
+                                    <p className="text-[11px] text-text-secondary/60 font-mono">Comma separated values become visible role badges.</p>
+                                </div>
+
+                                <div className="space-y-2 font-sans">
+                                    <label htmlFor="project_milestones" className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">
+                                        Project Milestones
+                                    </label>
+                                    <textarea
+                                        id="project_milestones"
+                                        name="project_milestones"
+                                        value={formData.projectMilestones}
+                                        onChange={(e) => setFormData((prev) => ({ ...prev, projectMilestones: e.target.value }))}
+                                        className="w-full bg-white dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary dark:text-white focus:border-primary-container focus:outline-none transition-all text-sm placeholder:text-text-secondary/30 min-h-[90px] resize-none font-normal"
+                                        placeholder="Q1 Node Setup, Q2 Launch, Q3 Member Assembly..."
+                                        rows={3}
+                                    />
+                                </div>
+
+                                <div className="space-y-2 font-sans">
+                                    <label htmlFor="cooperative_model" className="text-md font-bold text-text-secondary uppercase tracking-wider block font-mono select-none">
+                                        Cooperative Model
+                                    </label>
+                                    <textarea
+                                        id="cooperative_model"
+                                        name="cooperative_model"
+                                        value={formData.cooperativeModel}
+                                        onChange={(e) => setFormData((prev) => ({ ...prev, cooperativeModel: e.target.value }))}
+                                        className="w-full bg-white dark:bg-[#0d1117] border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-text-primary dark:text-white focus:border-primary-container focus:outline-none transition-all text-sm placeholder:text-text-secondary/30 min-h-[90px] resize-none font-normal"
+                                        placeholder="Equal equity share model, one-member-one-vote governance, surplus redistribution rules..."
+                                        rows={3}
+                                    />
+                                </div>
+                            </div>
+
                             {/* Funding Goal & Investment Bounds Setup */}
                             <div className="space-y-4 pt-4 border-t border-black/5 dark:border-white/5 select-none font-mono">
                                 <div className="flex items-center gap-2 text-text-primary dark:text-white">

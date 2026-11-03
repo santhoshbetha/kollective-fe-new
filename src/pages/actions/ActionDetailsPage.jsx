@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useOrganizeActionsQuery } from '../../features/organize/useOrganizeFeature';
 import { useRsvpToAction } from '../../features/organize/useOrganizeFeature';
 import { useAuthStore } from '../../store/auth/useAuthStore';
+import { UserHoverCard } from '../../components/accounts/UserHoverCard';
+import { getOrganizerName } from '../../utils/eventUtils';
 
 export const ActionDetailsPage = () => {
   const { id } = useParams();
@@ -110,8 +112,13 @@ export const ActionDetailsPage = () => {
           <h1 data-testid="action-title" className="font-display-lg text-2xl md:text-3xl font-extrabold text-text-primary leading-tight">
             {action?.title}
           </h1>
-          <p className="text-text-secondary text-sm mt-2 font-medium">
-            Initiated by <span data-testid="action-organizer" className="text-primary-container font-bold">{action?.organizer}</span>
+          <p className="text-text-secondary text-sm mt-2 font-medium flex items-center gap-1">
+            Initiated by{" "}
+            <UserHoverCard author={action?.author || (typeof action?.organizer === 'object' ? action?.organizer : { name: getOrganizerName(action?.author || action?.organizer), username: getOrganizerName(action?.author || action?.organizer) })}>
+              <span data-testid="action-organizer" className="text-primary-container font-bold hover:underline cursor-pointer">
+                {getOrganizerName(action?.author || action?.organizer)}
+              </span>
+            </UserHoverCard>
           </p>
         </div>
 

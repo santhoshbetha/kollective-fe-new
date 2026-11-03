@@ -9,7 +9,8 @@ import {
   useLikeEventComment
 } from '../../features/events/useEventsFeature';
 import { EventDateBadge, AttendeeStack } from '../../features/events/EventComponents';
-import { getDisplayLocation, getOrganizerName } from '../../utils/eventUtils';
+import { getDisplayLocation, getOrganizerName, getEventState } from '../../utils/eventUtils';
+import { UserHoverCard } from '../../components/accounts/UserHoverCard';
 import { CategoryGraphic } from '../../components/CategoryGraphic';
 import { EmojiSelector } from '../../components/EmojiSelector';
 import { useAuthStore } from '../../store/auth/useAuthStore';
@@ -47,12 +48,24 @@ export const EventDetailsPage = () => {
     return false;
   };
 
+  const { events, eventsLoading } = useEventsQuery();
+  const event = events?.find((e) => e.id === eventId);
+
+  // 🔒 STATE-LEVEL GEOFENCE: the event discussion is restricted to residents of
+  // the event's own state. Events without a declared state remain ungated.
+  const eventState = event ? getEventState(event) : null;
+  const currentUserStateRaw = currentUser?.state || currentUser?.origin_state || currentUser?.political_location?.state || null;
+  const normalizedUserState = currentUserStateRaw ? String(currentUserStateRaw).trim().toUpperCase() : null;
+  const isDiscussionLocked = Boolean(eventState) && normalizedUserState !== eventState;
+
   const toggleEventAttendanceMutation = useToggleEventAttendance(eventId);
   const commentMutation = useAddEventComment(eventId);
   const likeCommentMutation = useLikeEventComment(eventId);
-  const { data: fetchedComments } = useEventCommentsQuery(eventId);
+  const { data: fetchedComments } = useEventCommentsQuery(eventId, {
+    // Skip the read entirely for locked channels (and while the event resolves).
+    enabled: Boolean(event) && !isDiscussionLocked,
+  });
 
-  const { events, eventsLoading } = useEventsQuery();
   const toggleEventInterestMutation = useToggleEventInterest();
 
   const [activeTab, setActiveTab] = useState('discussion'); // 'info' or 'discussion'
@@ -77,11 +90,6 @@ export const EventDetailsPage = () => {
       setToastMessage('');
     }, 3000);
   };
-
-  const event = events?.find((e) => e.id === eventId);
-
-  console.log("EventDetailsPage event:", event);
-  console.log("EventDetailsPage fetchedComments:", fetchedComments)
 
   const allComments = (fetchedComments && Array.isArray(fetchedComments) && fetchedComments.length > 0)
     ? fetchedComments
@@ -303,19 +311,28 @@ export const EventDetailsPage = () => {
                     {event?.title}
                   </h2>
                   <div className="flex items-center gap-2.5 text-text-secondary">
-                    {organizerAvatar ? (
-                      <img
-                        alt={organizerName}
-                        className="w-6 h-6 rounded-full object-cover border border-primary-container/20"
-                        src={organizerAvatar}
-                      />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container font-black text-sm">
-                        {organizerName.charAt(0)}
+                    <UserHoverCard author={event?.organizer || event?.author || event?.user || { name: organizerName, username: organizerName }}>
+                      <div className="cursor-pointer">
+                        {organizerAvatar ? (
+                          <img
+                            alt={organizerName}
+                            className="w-6 h-6 rounded-full object-cover border border-primary-container/20"
+                            src={organizerAvatar}
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container font-black text-sm">
+                            {organizerName.charAt(0)}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <span className="text-md md:text-lg">
-                      Organized by <strong className="text-text-primary font-medium">{organizerName}</strong>
+                    </UserHoverCard>
+                    <span className="text-md md:text-lg flex items-center gap-1">
+                      Organized by{" "}
+                      <UserHoverCard author={event?.organizer || event?.author || event?.user || { name: organizerName, username: organizerName }}>
+                        <strong className="text-text-primary font-medium hover:underline cursor-pointer">
+                          {organizerName}
+                        </strong>
+                      </UserHoverCard>
                     </span>
                     <span className="material-symbols-outlined text-blue-400 text-sm">verified</span>
                   </div>
@@ -369,13 +386,12 @@ export const EventDetailsPage = () => {
                       }
                     });
                   }}
-                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all ${
-                    isOrgNonAdmin
+                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all ${isOrgNonAdmin
                       ? 'opacity-50 cursor-not-allowed bg-surface-container-high/10 text-text-secondary border-outline-variant'
                       : event?.isAttending
-                      ? 'bg-primary-container/20 text-primary-container border-primary-container/30 cursor-pointer'
-                      : 'bg-surface-container-high/20 hover:bg-surface-container-high/50 text-text-primary border-outline-variant cursor-pointer'
-                  } ${toggleEventAttendanceMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        ? 'bg-primary-container/20 text-primary-container border-primary-container/30 cursor-pointer'
+                        : 'bg-surface-container-high/20 hover:bg-surface-container-high/50 text-text-primary border-outline-variant cursor-pointer'
+                    } ${toggleEventAttendanceMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: !isOrgNonAdmin && event?.isAttending ? "'FILL' 1" : "'FILL' 0" }}>
                     {isOrgNonAdmin ? 'lock' : 'check_circle'}
@@ -397,13 +413,12 @@ export const EventDetailsPage = () => {
                       }
                     });
                   }}
-                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all ${
-                    isOrgNonAdmin
+                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl border transition-all ${isOrgNonAdmin
                       ? 'opacity-50 cursor-not-allowed bg-surface-container-high/10 text-text-secondary border-outline-variant'
                       : event?.isInterested
-                      ? 'bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/10 cursor-pointer'
-                      : 'bg-surface-container-high/20 hover:bg-surface-container-high/50 text-text-primary border-outline-variant cursor-pointer'
-                  } ${toggleEventInterestMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        ? 'bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/10 cursor-pointer'
+                        : 'bg-surface-container-high/20 hover:bg-surface-container-high/50 text-text-primary border-outline-variant cursor-pointer'
+                    } ${toggleEventInterestMutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: !isOrgNonAdmin && event?.isInterested ? "'FILL' 1" : "'FILL' 0" }}>
                     {isOrgNonAdmin ? 'lock' : 'favorite'}
@@ -470,6 +485,25 @@ export const EventDetailsPage = () => {
                 </p>
                 <div className="pt-4 border-t border-white/5 text-[14px] text-text-secondary">
                   Format: <span className="text-text-primary font-bold uppercase">{event?.format}</span> • Category: <span className="text-text-primary font-bold uppercase">{event?.category}</span>
+                </div>
+              </div>
+            ) : isDiscussionLocked ? (
+              <div
+                data-testid="event-discussion-locked-banner"
+                className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-6 flex items-start gap-4 text-left"
+              >
+                <span className="material-symbols-outlined text-amber-500 dark:text-amber-400 text-2xl shrink-0">lock</span>
+                <div className="space-y-1.5">
+                  <h4 className="text-sm font-black text-amber-800 dark:text-amber-300 uppercase tracking-wider font-mono">
+                    Discussion locked
+                  </h4>
+                  <p className="text-sm text-text-secondary leading-relaxed">
+                    Discussion channel restricted to local state participants.
+                  </p>
+                  <p className="text-[11px] font-mono text-text-secondary/60 uppercase tracking-wider">
+                    Channel state: {eventState}
+                    {normalizedUserState ? ` • Your state: ${normalizedUserState}` : ' • Your state is not verified'}
+                  </p>
                 </div>
               </div>
             ) : (
@@ -566,22 +600,28 @@ export const EventDetailsPage = () => {
                       return (
                         <div key={comment.id} className="bg-surface-container rounded-2xl border border-white/5 p-5 space-y-4">
                           <div className="flex gap-4">
-                            {authorAvatar ? (
-                              <img
-                                alt={authorName}
-                                className="w-9 h-9 rounded-full object-cover border border-white/10 flex-shrink-0"
-                                src={authorAvatar}
-                              />
-                            ) : (
-                              <div className="w-9 h-9 rounded-full bg-surface-bright flex items-center justify-center text-text-secondary font-black text-sm flex-shrink-0">
-                                {authorName.charAt(0).toUpperCase()}
+                            <UserHoverCard author={comment.author_obj || comment.user || { name: authorName, username: authorName }}>
+                              <div className="cursor-pointer flex-shrink-0">
+                                {authorAvatar ? (
+                                  <img
+                                    alt={authorName}
+                                    className="w-9 h-9 rounded-full object-cover border border-white/10"
+                                    src={authorAvatar}
+                                  />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-full bg-surface-bright flex items-center justify-center text-text-secondary font-black text-sm">
+                                    {authorName.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            </UserHoverCard>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <span className="text-sm md:text-base font-bold text-text-primary truncate">
-                                  {authorName}
-                                </span>
+                                <UserHoverCard author={comment.author_obj || comment.user || { name: authorName, username: authorName }}>
+                                  <span className="text-sm md:text-base font-bold text-text-primary truncate hover:underline cursor-pointer">
+                                    {authorName}
+                                  </span>
+                                </UserHoverCard>
                                 {authorName === organizerName && (
                                   <span className="bg-primary-container/20 text-primary-container text-[12px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
                                     Organizer
@@ -741,22 +781,28 @@ export const EventDetailsPage = () => {
 
                                 return (
                                   <div key={reply.id} className="flex gap-3">
-                                    {replyAvatar ? (
-                                      <img
-                                        alt={replyAuthor}
-                                        className="w-7 h-7 rounded-full object-cover border border-white/10 flex-shrink-0"
-                                        src={replyAvatar}
-                                      />
-                                    ) : (
-                                      <div className="w-7 h-7 rounded-full bg-surface-bright flex items-center justify-center text-text-secondary font-black text-[14px] flex-shrink-0">
-                                        {replyAuthor.charAt(0).toUpperCase()}
+                                    <UserHoverCard author={reply.author_obj || reply.user || { name: replyAuthor, username: replyAuthor }}>
+                                      <div className="cursor-pointer flex-shrink-0">
+                                        {replyAvatar ? (
+                                          <img
+                                            alt={replyAuthor}
+                                            className="w-7 h-7 rounded-full object-cover border border-white/10"
+                                            src={replyAvatar}
+                                          />
+                                        ) : (
+                                          <div className="w-7 h-7 rounded-full bg-surface-bright flex items-center justify-center text-text-secondary font-black text-[14px]">
+                                            {replyAuthor.charAt(0).toUpperCase()}
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
+                                    </UserHoverCard>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                        <span className="text-sm md:text-base font-bold text-text-primary truncate">
-                                          {replyAuthor}
-                                        </span>
+                                        <UserHoverCard author={reply.author_obj || reply.user || { name: replyAuthor, username: replyAuthor }}>
+                                          <span className="text-sm md:text-base font-bold text-text-primary truncate hover:underline cursor-pointer">
+                                            {replyAuthor}
+                                          </span>
+                                        </UserHoverCard>
                                         {(replyAuthor === organizerName || reply.role === 'Organizer') && (
                                           <span className="bg-primary-container/20 text-primary-container text-[12px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
                                             Organizer
@@ -825,21 +871,23 @@ export const EventDetailsPage = () => {
             <h3 className="text-sm font-bold text-text-secondary uppercase tracking-widest">
               Organizer
             </h3>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-primary-container/10 flex items-center justify-center border border-primary-container/25 text-primary-container">
-                <span className="material-symbols-outlined text-2xl">
-                  corporate_fare
-                </span>
+            <UserHoverCard author={event?.organizer || event?.author || event?.user || { name: organizerName, username: organizerName }}>
+              <div className="flex items-center gap-3 cursor-pointer">
+                <div className="w-12 h-12 rounded-xl bg-primary-container/10 flex items-center justify-center border border-primary-container/25 text-primary-container">
+                  <span className="material-symbols-outlined text-2xl">
+                    corporate_fare
+                  </span>
+                </div>
+                <div className="overflow-hidden">
+                  <h4 className="text-text-primary font-bold text-sm truncate hover:underline">
+                    {organizerName}
+                  </h4>
+                  <p className="text-[14px] text-text-secondary uppercase tracking-wider font-semibold">
+                    Verified Hub
+                  </p>
+                </div>
               </div>
-              <div className="overflow-hidden">
-                <h4 className="text-text-primary font-bold text-sm truncate">
-                  {organizerName}
-                </h4>
-                <p className="text-[14px] text-text-secondary uppercase tracking-wider font-semibold">
-                  Verified Hub
-                </p>
-              </div>
-            </div>
+            </UserHoverCard>
           </div>
 
           {/* Event Stats */}

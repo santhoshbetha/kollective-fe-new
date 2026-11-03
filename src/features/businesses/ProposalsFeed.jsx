@@ -97,13 +97,16 @@ export function ProposalsFeed({
     return (
         <div className="space-y-8 pb-20 relative w-full">
             {/* Suggested Focus Areas & Anti-Monopoly Guidance Alert Module Banner */}
-            <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#141414] to-primary-container/10 border border-amber-500/20 shadow-lg space-y-4 text-left select-none animate-in fade-in duration-200">
-                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider font-mono">
+            <div
+                data-testid="anti-monopoly-banner"
+                className="p-6 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 shadow-lg space-y-4 text-left select-none animate-in fade-in duration-200"
+            >
+                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-bold text-xs uppercase tracking-wider font-mono">
                     <span className="material-symbols-outlined text-base">lightbulb</span>
                     <span>High-Priority Community Ideas & Anti-Monopoly Focus</span>
                 </div>
 
-                <h3 className="text-xl font-black text-white tracking-tight font-headline-md">
+                <h3 className="text-xl font-black text-amber-800 dark:text-amber-400 tracking-tight font-headline-md">
                     Build Local Alternatives to Corporate Monopolies
                 </h3>
 
@@ -112,8 +115,8 @@ export function ProposalsFeed({
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 font-sans">
-                    <div className="p-4 rounded-xl bg-white/[0.01] border border-white/5 space-y-2">
-                        <div className="flex items-center gap-2 text-primary-container font-bold text-base">
+                    <div className="p-4 rounded-xl bg-white/70 dark:bg-white/[0.01] border border-amber-200/60 dark:border-white/5 space-y-2">
+                        <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-bold text-base">
                             <span className="material-symbols-outlined text-[18px]">local_cafe</span>
                             <h4>Local Coffee & Eateries</h4>
                         </div>
@@ -123,8 +126,8 @@ export function ProposalsFeed({
                         </p>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-white/[0.01] border border-white/5 space-y-2">
-                        <div className="flex items-center gap-2 text-emerald-400 font-bold text-base">
+                    <div className="p-4 rounded-xl bg-white/70 dark:bg-white/[0.01] border border-amber-200/60 dark:border-white/5 space-y-2">
+                        <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-bold text-base">
                             <span className="material-symbols-outlined text-[18px]">medical_services</span>
                             <h4>Low-Cost Medical & Clinics</h4>
                         </div>

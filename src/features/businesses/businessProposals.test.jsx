@@ -51,6 +51,16 @@ vi.mock('../../features/businesses/useProposalsFeature', () => ({
         proposalLoading: false,
         proposalError: null
     })),
+    useProposalCommentsQuery: vi.fn(() => ({
+        comments: [],
+        commentsLoading: false,
+        commentsError: null
+    })),
+    useAddProposalComment: vi.fn(() => ({
+        mutate: vi.fn(),
+        isPending: false
+    })),
+    uploadProposalCommentImage: vi.fn(async (src) => src),
     useUpdateProposal: vi.fn(() => ({
         mutate: vi.fn((data, options) => {
             if (options?.onSuccess) options.onSuccess(data);

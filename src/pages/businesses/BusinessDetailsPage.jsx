@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useBusinessDetailsQuery } from '../../features/businesses/useBusinessesFeature';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { useDirectMessageStore } from '../../store/useDirectMessageStore';
+import { UserHoverCard } from '../../components/accounts/UserHoverCard';
 import {
     ArrowLeft, Loader2, AlertCircle, CheckCircle2,
     Heart, Share2, MapPin, Phone, Mail, Globe, Clock,
@@ -245,18 +246,20 @@ export const BusinessDetailsPage = () => {
                                 </span>
                             )}
                             <div className="w-1.5 h-1.5 bg-black/10 dark:bg-white/10 rounded-full" />
-                            <div className="flex items-center gap-2 cursor-pointer group select-none">
-                                {ownerAvatar ? (
-                                    <img className="w-7 h-7 rounded-full object-cover border border-primary/20" src={ownerAvatar} alt="Owner" />
-                                ) : (
-                                    <div className="w-7 h-7 rounded-full bg-black/[0.04] dark:bg-white/[0.04] flex items-center justify-center border border-black/10 dark:border-white/10 text-xs uppercase font-black font-mono">
-                                        {ownerHandle ? ownerHandle[0] : 'O'}
-                                    </div>
-                                )}
-                                <span className="text-xs font-bold text-text-secondary group-hover:text-primary transition-colors">
-                                    Owned by <span className="text-text-primary dark:text-white font-black">@{ownerHandle}</span>
-                                </span>
-                            </div>
+                            <UserHoverCard author={business.owner || business.user || { name: ownerHandle, username: ownerHandle, avatar: ownerAvatar }}>
+                                <div className="flex items-center gap-2 cursor-pointer group select-none">
+                                    {ownerAvatar ? (
+                                        <img className="w-7 h-7 rounded-full object-cover border border-primary/20" src={ownerAvatar} alt="Owner" />
+                                    ) : (
+                                        <div className="w-7 h-7 rounded-full bg-black/[0.04] dark:bg-white/[0.04] flex items-center justify-center border border-black/10 dark:border-white/10 text-xs uppercase font-black font-mono">
+                                            {ownerHandle ? ownerHandle[0] : 'O'}
+                                        </div>
+                                    )}
+                                    <span className="text-xs font-bold text-text-secondary group-hover:text-primary transition-colors">
+                                        Owned by <span className="text-text-primary dark:text-white font-black hover:underline">@{ownerHandle}</span>
+                                    </span>
+                                </div>
+                            </UserHoverCard>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-text-secondary text-sm font-semibold select-none">

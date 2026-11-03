@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CategoryGraphic } from '../../components/CategoryGraphic';
+import { UserHoverCard } from '../../components/accounts/UserHoverCard';
 import { Star, MapPin, Clock, Phone, Globe, Share2, MessageSquare, CheckCircle2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,28 @@ export const BusinessCard = ({ biz }) => {
             return;
         }
         navigate(`/businesses/${bizId}`);
+    };
+
+    // 💬 CONTACT WIRING (Gap 4): Resolve the operator's handle from any of the
+    // supported owner payload shapes, then deep-link into the private message module.
+    const resolveOwnerHandle = () => {
+        const raw =
+            (typeof biz.owner === 'object' && (biz.owner?.handle || biz.owner?.username)) ||
+            (typeof biz.owner === 'string' ? biz.owner : null) ||
+            biz.owner_name ||
+            biz.owner?.username ||
+            null;
+
+        return raw ? String(raw).trim().replace(/^@/, '') : null;
+    };
+
+    const handleContactClick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const handle = resolveOwnerHandle();
+        if (handle) {
+            navigate(`/messages?user=${encodeURIComponent(handle)}`);
+        }
     };
 
     return (
@@ -139,7 +162,8 @@ export const BusinessCard = ({ biz }) => {
                     const ownerAvatarUrl = biz.ownerAvatar || (typeof biz.owner === 'object' ? biz.owner?.avatar_url : null);
                     return (
                         <div className="flex items-center justify-between gap-2 pt-3 mt-4 border-t border-black/5 dark:border-white/5">
-                            <div className="flex items-center gap-2 min-w-0 select-none">
+                            <UserHoverCard author={biz.owner || biz.user || { name: ownerHandle, username: ownerHandle, avatar: ownerAvatarUrl }}>
+                                <div className="flex items-center gap-2 min-w-0 select-none cursor-pointer">
                                 {ownerAvatarUrl ? (
                                     <img
                                         alt="Owner"
@@ -151,9 +175,10 @@ export const BusinessCard = ({ biz }) => {
                                         {ownerHandle ? ownerHandle[0].toUpperCase() : 'B'}
                                     </div>
                                 )}
-                                <span className="text-xs font-bold text-text-secondary truncate">@{ownerHandle}</span>
+                                <span className="text-xs font-bold text-text-secondary truncate hover:underline">@{ownerHandle}</span>
                                 <span className="text-[10px] text-text-secondary/40 font-mono font-bold shrink-0">({biz.reviewsCount || 0} reviews)</span>
                             </div>
+                            </UserHoverCard>
 
                             <div className="flex gap-2 shrink-0 font-mono text-[10px] uppercase font-black tracking-wider select-none">
                                 <button
@@ -166,8 +191,11 @@ export const BusinessCard = ({ biz }) => {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={(e) => { e.stopPropagation(); alert(`Starting secure workspace discussion stream with: @${ownerHandle}`); }}
-                                    className="px-3 py-1.5 rounded-xl border border-primary-container/30 text-primary-container hover:bg-primary-container hover:text-white font-bold text-[10px] transition-all cursor-pointer flex items-center gap-1.5 outline-none font-sans uppercase tracking-normal"
+                                    data-testid="business-card-contact-btn"
+                                    onClick={handleContactClick}
+                                    disabled={!resolveOwnerHandle()}
+                                    title={resolveOwnerHandle() ? `Message @${resolveOwnerHandle()}` : 'No operator handle available'}
+                                    className="px-3 py-1.5 rounded-xl border border-primary-container/30 text-primary-container hover:bg-primary-container hover:text-white font-bold text-[10px] transition-all cursor-pointer flex items-center gap-1.5 outline-none font-sans uppercase tracking-normal disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-primary-container"
                                 >
                                     <MessageSquare className="w-3.5 h-3.5 stroke-[2.5px]" />
                                     <span>Contact</span>

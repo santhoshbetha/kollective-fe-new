@@ -37,9 +37,9 @@ export function UserAvatar({
             ) : (
                 <div
                     style={{ backgroundColor: bgColor }}
-                    className={`w-full h-full ${roundedClassName} flex items-center justify-center font-bold text-white uppercase select-none shadow-sm font-sans text-[0.45em] tracking-wider leading-none`}
+                    className={`w-full h-full ${roundedClassName} flex items-center justify-center font-bold text-white uppercase select-none shadow-sm font-sans text-xs tracking-wider leading-none`}
                 >
-                    <span className="transform scale-[2.2] font-semibold">{initials}</span>
+                    <span className="font-semibold">{initials}</span>
                 </div>
             )}
 

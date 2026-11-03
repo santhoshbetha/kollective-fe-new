@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { UserHoverCard } from '../../components/accounts/UserHoverCard';
 
 export const BusinessProposalCard = ({ prop }) => {
     const navigate = useNavigate();
@@ -25,7 +26,7 @@ export const BusinessProposalCard = ({ prop }) => {
         <article
             key={prop.id}
             data-testid="proposal-card"
-            onClick={() => navigate(`/proposals/${prop.id}`)}
+            onClick={() => navigate(`/proposals/${prop.id}`, { state: { returnTab: 'proposals' } })}
             className="glass-card border border-white/10 p-4 sm:p-5 rounded-2xl group cursor-pointer transition-all hover:border-primary-container/30 bg-surface-container-low/90 hover:bg-surface-container-low shadow-md hover:shadow-xl relative overflow-hidden flex flex-col justify-between gap-3"
         >
             <div className="absolute top-0 right-0 w-28 h-28 bg-primary-container/5 rounded-full blur-2xl -mr-12 -mt-12 group-hover:bg-primary-container/10 transition-colors pointer-events-none"></div>
@@ -75,23 +76,27 @@ export const BusinessProposalCard = ({ prop }) => {
 
                 {/* Creator Avatar & Handle Node */}
                 <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-black/5 dark:border-white/5 select-none min-w-0">
-                    {ownerAvatarUrl && !imgFailed ? (
-                        <img
-                            alt={ownerHandle}
-                            src={ownerAvatarUrl}
-                            data-testid="proposal-creator-avatar"
-                            className="w-6 h-6 rounded-full object-cover border border-primary/20 shrink-0"
-                            onError={() => setImgFailed(true)}
-                        />
-                    ) : (
-                        <div
-                            data-testid="proposal-creator-avatar"
-                            className="w-6 h-6 rounded-full bg-primary-container/20 border border-primary-container/30 flex items-center justify-center text-[10px] font-bold text-primary-container shrink-0 font-mono"
-                        >
-                            {ownerHandle ? ownerHandle[0].toUpperCase() : 'P'}
+                    <UserHoverCard author={prop.proposer || prop.owner || prop.user || prop.author || { name: ownerHandle, username: ownerHandle, avatar: ownerAvatarUrl }}>
+                        <div className="flex items-center gap-2 min-w-0 cursor-pointer">
+                            {ownerAvatarUrl && !imgFailed ? (
+                                <img
+                                    alt={ownerHandle}
+                                    src={ownerAvatarUrl}
+                                    data-testid="proposal-creator-avatar"
+                                    className="w-6 h-6 rounded-full object-cover border border-primary/20 shrink-0"
+                                    onError={() => setImgFailed(true)}
+                                />
+                            ) : (
+                                <div
+                                    data-testid="proposal-creator-avatar"
+                                    className="w-6 h-6 rounded-full bg-primary-container/20 border border-primary-container/30 flex items-center justify-center text-[10px] font-bold text-primary-container shrink-0 font-mono"
+                                >
+                                    {ownerHandle ? ownerHandle[0].toUpperCase() : 'P'}
+                                </div>
+                            )}
+                            <span className="text-xs font-bold text-text-secondary truncate font-mono hover:underline">@{ownerHandle}</span>
                         </div>
-                    )}
-                    <span className="text-xs font-bold text-text-secondary truncate font-mono">@{ownerHandle}</span>
+                    </UserHoverCard>
                 </div>
             </div>
 

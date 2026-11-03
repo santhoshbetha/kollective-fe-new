@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PollCard } from '../polls/PollCard';
 import { EventCard } from '../events/EventCard';
 
+const HASHTAG_REGEX = /(#[a-zA-Z0-9_\u00C0-\u00FF]+)/g;
+
 export function PostContent({ post, isFocus }) {
+    const navigate = useNavigate();
     const [isTruncated, setIsTruncated] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const textRef = useRef(null);
@@ -17,18 +21,38 @@ export function PostContent({ post, isFocus }) {
         }
     }, [post?.text, isFocus]);
 
-    // Your existing character-safe text mention highlighter routine
+    // Native token parser supporting interactive hashtags and mentions without 3rd-party markdown wrappers
     const renderTextTokens = (text) => {
         if (!text) return null;
-        return text.split(/(\s+)/).map((word, idx) => {
-            if (word.startsWith('@')) {
+        const tokens = text.split(HASHTAG_REGEX);
+        return tokens.map((token, idx) => {
+            if (token.startsWith('#')) {
+                const tagName = token.replace('#', '').toLowerCase();
                 return (
-                    <span key={idx} className="text-primary-container font-black hover:underline cursor-pointer">
-                        {word}
+                    <span
+                        key={idx}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            navigate(`/timelines/tag/${encodeURIComponent(tagName)}`);
+                        }}
+                        className="text-primary-container font-semibold hover:underline cursor-pointer"
+                    >
+                        {token}
                     </span>
                 );
             }
-            return word;
+
+            return token.split(/(\s+)/).map((word, wordIdx) => {
+                if (word.startsWith('@')) {
+                    return (
+                        <span key={`${idx}-${wordIdx}`} className="text-primary-container font-black hover:underline cursor-pointer">
+                            {word}
+                        </span>
+                    );
+                }
+                return word;
+            });
         });
     };
 

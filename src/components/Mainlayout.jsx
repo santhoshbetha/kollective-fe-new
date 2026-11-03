@@ -303,6 +303,7 @@ export const MainLayout = () => {
 
                             <button
                                 onClick={toggleTheme}
+                                data-testid="theme-toggle-btn"
                                 className="flex items-center gap-1 cursor-pointer text-text-secondary hover:text-text-primary transition-colors focus:outline-none bg-transparent border-none"
                                 title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                             >

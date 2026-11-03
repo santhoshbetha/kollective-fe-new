@@ -1,24 +1,19 @@
-// src/features/timelines/useHashtagTimeline.js
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// src/features/timeline/useHashtagTimeline.js
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/apiClient';
 
-import { usePostsStore } from '../../store/usePostsStore';
-
-// 📡 Infinite Query: Streams an incremental virtualized feed tracking specific topical hashtags
+// 📡 Query: Streams a feed tracking specific topical hashtags
 export function useHashtagTimelineQuery(tagId) {
-    return useInfiniteQuery({
+    return useQuery({
         queryKey: ['timelines', 'hashtag', tagId],
-        queryFn: async ({ pageParam = null }) => {
-            const maxIdParam = pageParam ? `?max_id=${pageParam}` : '';
-            return apiFetch(`/api/v1/timelines/tag/${tagId}${maxIdParam}`); // Returns status array
+        queryFn: async () => {
+            if (!tagId) return { posts: [] };
+            const cleanTag = encodeURIComponent(String(tagId).trim().toLowerCase());
+            return apiFetch(`/api/v1/timelines/tag/${cleanTag}`);
         },
-        getNextPageParam: (lastPage) =>
-            lastPage?.nextPageId ?? (Array.isArray(lastPage) && lastPage.length > 0 ? lastPage[lastPage.length - 1]?.id : undefined) ?? undefined,
-        initialPageParam: null,
         enabled: !!tagId,
     });
 }
-
 
 // 🎛️ Mutation: Toggles relationship follow/unfollow boundaries over specific topic nodes
 export function useFollowTagMutation(tagId) {
@@ -26,12 +21,14 @@ export function useFollowTagMutation(tagId) {
 
     return useMutation({
         mutationFn: async ({ isFollowing }) => {
+            const cleanTag = encodeURIComponent(String(tagId).trim().toLowerCase());
             const method = 'POST';
-            const endpoint = isFollowing ? `/api/v1/tags/${tagId}/unfollow` : `/api/v1/tags/${tagId}/follow`;
+            const endpoint = isFollowing ? `/api/v1/tags/${cleanTag}/unfollow` : `/api/v1/tags/${cleanTag}/follow`;
             return apiFetch(endpoint, { method });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['timelines', 'hashtag', tagId] });
+            queryClient.invalidateQueries({ queryKey: ['followed_tags'] });
             queryClient.invalidateQueries({ queryKey: ['followed-tags'] });
         }
     });

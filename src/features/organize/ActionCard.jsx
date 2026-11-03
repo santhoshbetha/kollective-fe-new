@@ -3,6 +3,7 @@ import { useRsvpToAction } from "./useOrganizeFeature";
 import { useNavigate } from "react-router-dom";
 import { getOrganizerName } from "../../utils/eventUtils";
 import { useAuthStore } from "../../store/auth/useAuthStore";
+import { UserHoverCard } from "../../components/accounts/UserHoverCard";
 import { cn } from "@/lib/utils";
 
 export const ActionCard = ({ action, setToastMessage }) => {
@@ -30,9 +31,9 @@ export const ActionCard = ({ action, setToastMessage }) => {
 
     // Color Badges Taxonomy Maps
     const typeBadgeStyles = action?.type === 'Protest'
-        ? 'bg-red-500/10 text-red-400 border-red-500/20'
+        ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'
         : action?.type === 'Town Hall'
-            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
             : 'bg-primary-container/10 text-primary-container border-primary-container/20';
 
     const handleNavigateToDetails = () => {
@@ -45,7 +46,7 @@ export const ActionCard = ({ action, setToastMessage }) => {
         <article
             data-testid="action-card"
             onClick={handleNavigateToDetails}
-            className="rounded-xl p-4 sm:p-5 relative overflow-hidden group border border-white/5 transition-all duration-300 bg-[#141414] hover:bg-[#1c1b1b] shadow-md flex flex-col justify-between gap-3 text-left min-h-[220px] cursor-pointer"
+            className="rounded-xl p-4 sm:p-5 relative overflow-hidden group border border-black/10 dark:border-white/5 transition-all duration-300 bg-white dark:bg-[#141414] hover:bg-neutral-50/80 dark:hover:bg-[#1c1b1b] shadow-sm hover:shadow-md dark:shadow-md flex flex-col justify-between gap-3 text-left min-h-[220px] cursor-pointer"
         >
             <div className="absolute top-0 right-0 w-28 h-28 bg-primary-container/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-primary-container/10 transition-colors pointer-events-none"></div>
 
@@ -65,7 +66,7 @@ export const ActionCard = ({ action, setToastMessage }) => {
                             navigator.clipboard.writeText(`${window.location.origin}/organize/${action?.id}`);
                             triggerToast('Link copied to clipboard!');
                         }}
-                        className="text-text-secondary/60 hover:text-white cursor-pointer transition-colors p-1 bg-transparent border-none outline-none flex items-center"
+                        className="text-text-secondary/70 hover:text-text-primary dark:hover:text-white cursor-pointer transition-colors p-1 bg-transparent border-none outline-none flex items-center"
                         title="Share Action Node"
                     >
                         <span className="material-symbols-outlined text-base">share</span>
@@ -79,7 +80,7 @@ export const ActionCard = ({ action, setToastMessage }) => {
                         e.stopPropagation();
                         handleNavigateToDetails();
                     }}
-                    className="text-lg font-black text-white hover:text-primary-container transition-colors line-clamp-1 cursor-pointer tracking-tight mb-2 outline-none"
+                    className="text-lg font-black text-text-primary dark:text-white hover:text-primary-container transition-colors line-clamp-1 cursor-pointer tracking-tight mb-2 outline-none"
                 >
                     {action?.title}
                 </h3>
@@ -97,14 +98,19 @@ export const ActionCard = ({ action, setToastMessage }) => {
                     <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary-container text-base shrink-0 select-none">person</span>
                         <span className="truncate">
-                            Organized by <span className="text-primary-container hover:underline cursor-pointer font-bold font-mono">{getOrganizerName(action?.organizer)}</span>
+                            Organized by{" "}
+                            <UserHoverCard author={action?.author || (typeof action?.organizer === 'object' ? action?.organizer : { name: getOrganizerName(action?.author || action?.organizer), username: getOrganizerName(action?.author || action?.organizer) })}>
+                                <span className="text-primary-container hover:underline font-bold font-mono">
+                                    {getOrganizerName(action?.author || action?.organizer)}
+                                </span>
+                            </UserHoverCard>
                         </span>
                     </div>
                 </div>
             </div>
 
             {/* RSVP Interacting Selection Buttons Row */}
-            <div className="flex items-center gap-2.5 pt-3 border-t border-white/5 mt-1 font-mono text-[10px] select-none">
+            <div className="flex items-center gap-2.5 pt-3 border-t border-black/10 dark:border-white/5 mt-1 font-mono text-[10px] select-none">
                 <button
                     type="button"
                     data-testid="attend-btn"
@@ -118,12 +124,12 @@ export const ActionCard = ({ action, setToastMessage }) => {
                         triggerToast(targetStatus === 'Attending' ? 'Marked as Attending!' : 'RSVP Cancelled');
                     }}
                     className={cn(
-                        "flex-1 py-2 rounded-lg font-bold transition-all uppercase tracking-wider border-none flex items-center justify-center gap-1.5 outline-none",
+                        "flex-1 py-2 rounded-lg font-bold transition-all uppercase tracking-wider flex items-center justify-center gap-1.5 outline-none border",
                         isOrgNonAdmin
-                            ? "opacity-40 cursor-not-allowed bg-[#0d1117] border border-white/5 text-text-secondary"
+                            ? "opacity-40 cursor-not-allowed bg-black/5 dark:bg-[#0d1117] border-black/10 dark:border-white/5 text-text-secondary"
                             : isAttending
-                            ? "bg-primary-container text-white shadow-sm font-extrabold crimson-glow cursor-pointer active:scale-95"
-                            : "bg-[#0d1117] border border-white/5 text-text-secondary hover:text-white hover:border-white/10 cursor-pointer active:scale-95"
+                                ? "bg-primary-container text-white border-primary-container shadow-sm font-extrabold crimson-glow cursor-pointer active:scale-95"
+                                : "bg-black/5 hover:bg-black/10 dark:bg-[#0d1117] dark:hover:bg-[#1a222d] border-black/10 dark:border-white/5 text-text-secondary hover:text-text-primary dark:hover:text-white hover:border-black/20 dark:hover:border-white/10 cursor-pointer active:scale-95"
                     )}
                 >
                     <span className="material-symbols-outlined text-sm">
@@ -147,10 +153,10 @@ export const ActionCard = ({ action, setToastMessage }) => {
                     className={cn(
                         "flex-1 py-2 rounded-lg font-bold transition-all uppercase tracking-wider flex items-center justify-center gap-1.5 outline-none border",
                         isOrgNonAdmin
-                            ? "opacity-40 cursor-not-allowed bg-[#0d1117] border-white/5 text-text-secondary"
+                            ? "opacity-40 cursor-not-allowed bg-black/5 dark:bg-[#0d1117] border-black/10 dark:border-white/5 text-text-secondary"
                             : isInterested
-                            ? "bg-amber-500/10 border-amber-500/30 text-amber-400 font-extrabold cursor-pointer active:scale-95"
-                            : "bg-[#0d1117] border-white/5 text-text-secondary hover:text-white hover:border-white/10 cursor-pointer active:scale-95"
+                                ? "bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-400 font-extrabold cursor-pointer active:scale-95 shadow-xs"
+                                : "bg-black/5 hover:bg-black/10 dark:bg-[#0d1117] dark:hover:bg-[#1a222d] border-black/10 dark:border-white/5 text-text-secondary hover:text-text-primary dark:hover:text-white hover:border-black/20 dark:hover:border-white/10 cursor-pointer active:scale-95"
                     )}
                 >
                     <span className="material-symbols-outlined text-sm">

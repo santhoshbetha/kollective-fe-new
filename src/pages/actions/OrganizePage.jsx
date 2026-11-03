@@ -44,7 +44,7 @@ export const OrganizePage = () => {
             if (activeGeo === 'Country') return true;
 
             const scope = String(action.scope || action.target_scope || action.geography || '').toLowerCase();
-            return scope === activeGeo.toLowerCase();
+            return !scope || scope === activeGeo.toLowerCase();
         });
     }, [organizeActions, activeGeo]);
     return (

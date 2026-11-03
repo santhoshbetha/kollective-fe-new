@@ -1,6 +1,6 @@
 // src/pages/LocalBusinessesPage.jsx
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { LocalBusinessesFeed } from '../../features/businesses/LocalBusinessesFeed';
@@ -42,11 +42,23 @@ const BUSINESS_CATEGORIES = [
 
 export const LocalBusinessesPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [activeTab, setActiveTab] = useState('businesses'); // 'businesses' | 'proposals'
     const [activeCategory, setActiveCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDistance, setSelectedDistance] = useState('');
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+
+    // 🔁 ROUTE CONTEXT RESTORATION (Gap 3): When a user navigates back from a
+    // proposal detail page, `location.state.returnTab` pins the active pane so the
+    // parent page never silently falls back to the "Local Businesses" default tab.
+    useEffect(() => {
+        const returnTab = location.state?.returnTab;
+        if (returnTab === 'proposals' || returnTab === 'businesses') {
+            setActiveTab(returnTab);
+            setActiveCategory('All');
+        }
+    }, [location.state, location.key]);
 
     // 🗺️ Location Selectors
     const userState = useStore((state) => state.userState);
@@ -259,6 +271,7 @@ export const LocalBusinessesPage = () => {
                         <div className="flex p-1 bg-surface-container-low rounded-xl border border-black/10 dark:border-white/10 w-full lg:w-auto">
                             <button
                                 data-testid="tab-businesses-btn"
+                                data-state={activeTab === 'businesses' ? 'active' : 'inactive'}
                                 onClick={() => { setActiveTab('businesses'); setActiveCategory('All'); }}
                                 className={`px-6 py-2 rounded-lg font-label-md text-sm font-bold transition-all flex-1 lg:flex-none cursor-pointer ${activeTab === 'businesses' ? 'bg-surface-container-high text-text-primary shadow-sm font-bold' : 'text-text-secondary hover:text-text-primary'
                                     }`}
@@ -267,6 +280,7 @@ export const LocalBusinessesPage = () => {
                             </button>
                             <button
                                 data-testid="tab-proposals-btn"
+                                data-state={activeTab === 'proposals' ? 'active' : 'inactive'}
                                 onClick={() => { setActiveTab('proposals'); setActiveCategory('All'); }}
                                 className={`px-6 py-2 rounded-lg font-label-md text-sm font-bold transition-all flex-1 lg:flex-none cursor-pointer ${activeTab === 'proposals' ? 'bg-surface-container-high text-text-primary shadow-sm font-bold' : 'text-text-secondary hover:text-text-primary'
                                     }`}
@@ -504,7 +518,7 @@ export const LocalBusinessesPage = () => {
                                                             <div
                                                                 key={`prop-dropdown-${item.id}`}
                                                                 onClick={() => {
-                                                                    navigate(`/proposals/${item.id}`);
+                                                                    navigate(`/proposals/${item.id}`, { state: { returnTab: 'proposals' } });
                                                                     setIsSearchDropdownOpen(false);
                                                                 }}
                                                                 className="w-full px-3 py-2.5 rounded-xl hover:bg-black/[0.04] dark:hover:bg-white/[0.04] cursor-pointer transition-colors group flex items-start gap-3 text-left border border-transparent hover:border-black/5 dark:hover:border-white/5"
