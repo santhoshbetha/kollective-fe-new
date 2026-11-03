@@ -1,4 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/auth/useAuthStore';
 import { useCountry } from '../../hooks/useCountry';
@@ -7,6 +8,10 @@ import { apiFetch } from '../../api/apiClient';
 import * as api from '../../api/mockApi';
 
 export function useHomeTimeline() {
+    const [searchParams] = useSearchParams();
+    const searchType = searchParams.get('search_type');
+    const tagQuery = searchParams.get('tag');
+
     const activeTab = useStore((state) => state.homeFeedTab);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const activeAccount = useAuthStore((state) => state.activeAccount);
@@ -19,34 +24,42 @@ export function useHomeTimeline() {
 
     return useInfiniteQuery({
         // 🚀 THE TIMELINE CACHE MAP KEY: Matches your global syncAllCacheQueries partial matchers
-        queryKey: ['timeline', 'home', activeTab, accountContext, accountId, isAuthenticated, countryKey],
+        queryKey: ['timeline', 'home', activeTab, accountContext, accountId, isAuthenticated, countryKey, searchType, tagQuery],
         queryFn: async ({ pageParam, signal }) => {
-            const tabParamMap = {
-                'All Activity': 'all',
-                'Voices': 'voices',
-                'Following': 'following',
-                'Popular': 'popular',
-            };
-            const tabName = tabParamMap[activeTab] || (typeof activeTab === 'string' ? activeTab.toLowerCase() : 'all');
-
-            let filterQuery = '';
-            let sortQuery = 'sort=newest';
-
-            if (tabName === 'voices') {
-                filterQuery = '&category=voice';
-            } else if (tabName === 'following') {
-                filterQuery = '&feed=following&filter=following';
-            } else if (tabName === 'popular') {
-                sortQuery = 'sort=top';
-            }
-
-            const cursorParam = pageParam ? `&cursor=${pageParam}` : '';
             const detectedCountry = countryCode || countryName || 'US';
-            const countryParam = (!isAuthenticated && detectedCountry)
-                ? `&country=${encodeURIComponent(detectedCountry)}&country_code=${encodeURIComponent(countryCode || 'US')}`
-                : '';
-            const contextParam = `context=${encodeURIComponent(accountContext)}`;
-            const path = `/timeline?tab=${tabName}&${contextParam}&${sortQuery}${filterQuery}${countryParam}${cursorParam}`;
+            let path;
+
+            if (searchType === 'tag' && tagQuery) {
+                const sanitizedTag = tagQuery.replace(/^#/, '').trim().toLowerCase();
+                const cursorParam = pageParam ? `&cursor=${pageParam}` : '';
+                path = `/discovery/hashtag?tag=${encodeURIComponent(sanitizedTag)}${cursorParam}`;
+            } else {
+                const tabParamMap = {
+                    'All Activity': 'all',
+                    'Voices': 'voices',
+                    'Following': 'following',
+                    'Popular': 'popular',
+                };
+                const tabName = tabParamMap[activeTab] || (typeof activeTab === 'string' ? activeTab.toLowerCase() : 'all');
+
+                let filterQuery = '';
+                let sortQuery = 'sort=newest';
+
+                if (tabName === 'voices') {
+                    filterQuery = '&category=voice';
+                } else if (tabName === 'following') {
+                    filterQuery = '&feed=following&filter=following';
+                } else if (tabName === 'popular') {
+                    sortQuery = 'sort=top';
+                }
+
+                const cursorParam = pageParam ? `&cursor=${pageParam}` : '';
+                const countryParam = (!isAuthenticated && detectedCountry)
+                    ? `&country=${encodeURIComponent(detectedCountry)}&country_code=${encodeURIComponent(countryCode || 'US')}`
+                    : '';
+                const contextParam = `context=${encodeURIComponent(accountContext)}`;
+                path = `/timeline?tab=${tabName}&${contextParam}&${sortQuery}${filterQuery}${countryParam}${cursorParam}`;
+            }
 
             let rawData;
             try {
@@ -56,13 +69,13 @@ export function useHomeTimeline() {
                     throw err;
                 }
                 console.warn('apiFetch failed for home timeline, falling back to mockApi', err);
-                rawData = await api.getPosts({ tab: tabName, max_id: pageParam, country: detectedCountry });
+                rawData = await api.getPosts({ tab: 'all', max_id: pageParam, country: detectedCountry });
             }
 
             // Standardize shapes into a reliable internal contract:
             const rawPosts = Array.isArray(rawData)
                 ? rawData
-                : (rawData?.data || rawData?.posts || rawData?.posts?.data || []);
+                : (rawData?.posts || rawData?.data || rawData?.posts?.data || []);
 
             const posts = rawPosts.map((p) => {
                 if (!p) return p;

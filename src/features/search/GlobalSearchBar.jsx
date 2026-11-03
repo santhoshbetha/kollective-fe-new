@@ -34,6 +34,18 @@ export function GlobalSearchBar() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const handleSearchSubmit = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        const query = searchVal.trim();
+        if (!query) return;
+        setIsOpen(false);
+        const sanitizedQuery = query.replace('#', '').trim().toLowerCase();
+        navigate(`/timeline?search_type=tag&tag=${encodeURIComponent(sanitizedQuery)}`);
+    };
+
     return (
         <div ref={containerRef} className="w-full max-w-xl relative text-left font-sans z-50">
             {/* Search Input Bar Field */}
@@ -51,13 +63,12 @@ export function GlobalSearchBar() {
                         setIsOpen(true);
                     }}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter' && searchVal.trim()) {
-                            setIsOpen(false);
-                            navigate(`/explore?q=${encodeURIComponent(searchVal.trim())}`);
+                        if (e.key === 'Enter') {
+                            handleSearchSubmit(e);
                         }
                     }}
                     placeholder="Search posts, cooperatives, proposals..."
-                    className="w-full bg-surface-container-lowest/50 dark:bg-[#141414] text-text-primary dark:text-white border border-black/10 dark:border-white/10 rounded-full py-2.5 pl-11 pr-10 text-sm focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all font-medium placeholder:text-text-secondary/50 shadow-sm"
+                    className="search-box-input w-full bg-surface-container-lowest/50 dark:bg-[#141414] text-text-primary dark:text-white border border-black/10 dark:border-white/10 rounded-full py-2.5 pl-11 pr-10 text-sm focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all font-medium placeholder:text-text-secondary/50 shadow-sm"
                 />
                 {searchVal && (
                     <button
@@ -238,3 +249,5 @@ export function GlobalSearchBar() {
         </div>
     );
 }
+
+export default GlobalSearchBar;

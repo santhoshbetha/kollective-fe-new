@@ -20,6 +20,7 @@ import {
 import { Button } from './ui/button';
 import { DirectMessageDrawer } from '../features/conversations/DirectMessageDrawer';
 import { GlobalSearchBar } from '../features/search/GlobalSearchBar';
+import { FollowedTagsList } from './posts/FollowedTagsList';
 
 export const MainLayout = () => {
     const location = useLocation();
@@ -158,6 +159,7 @@ export const MainLayout = () => {
                         })}
                     </nav>
 
+                        <FollowedTagsList className="mt-2" />
                     {/* Create Button & User Card */}
                     <div className="mt-auto">
                         <Button

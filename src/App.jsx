@@ -137,6 +137,7 @@ export default function App() {
                 <Route element={<MainLayout />}>
                   {/* App Dashboard Pages */}
                   <Route path="/home" element={<HomePage />} />
+                  <Route path="/timeline" element={<HomePage />} />
                   <Route path="/communities" element={<CommunitiesPage />} />
                   <Route path="/messages" element={<MessagesPage />} />
                   <Route path="/messages/:conversationId" element={<MessagesPage />} />
